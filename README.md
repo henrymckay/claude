@@ -14,11 +14,26 @@ ln -s "/Users/henrymckay/Library/Mobile Documents/com~apple~CloudDocs/Git/claude
 ## Layout
 
 ```
-skills/
-  <skill-name>/
-    SKILL.md          # required: frontmatter (name, description) + instructions
-    ...               # optional supporting files, scripts, references
+skills/<name>/SKILL.md   # reusable instructions, can auto-invoke (primary mechanism)
+agents/<name>.md         # custom subagents
+commands/<name>.md       # simple, explicitly-invoked slash commands (/name)
 ```
+
+Each authored directory is symlinked into the matching `~/.claude/<dir>`:
+
+```
+~/.claude/skills   -> repo/skills
+~/.claude/agents   -> repo/agents
+~/.claude/commands -> repo/commands
+```
+
+Not symlinked (machine-local runtime state — never put in git/iCloud):
+`sessions/`, `projects/`, `history.jsonl`, `shell-snapshots/`, `cache/`,
+`plugins/`, `file-history/`, etc. Keep `~/.claude` itself a normal local dir.
+
+File-based config you can optionally track later: `CLAUDE.md` (global
+instructions), `keybindings.json`, and a sanitised copy of `settings.json`
+(which also holds hooks/permissions/env).
 
 ## Adding a skill
 
