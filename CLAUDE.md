@@ -21,6 +21,20 @@ Keep project-specific rules in that project's own `CLAUDE.md` instead.
 - Match the conventions of the surrounding code.
 -
 
+## Skills — consult these proactively
+
+These personal skills carry my conventions. Consult the relevant one *before*
+acting, not only when explicitly asked — their descriptions sit in a passive
+menu and are easy to skip on routine work.
+
+- Any git operation (commit, branch, PR, history) → follow **`use-git`**. In
+  particular: Conventional Commits format, and **no `Co-Authored-by` / "Generated
+  with" footers** on commit messages.
+- Writing or editing Python → **`write-python`**.
+- Starting a new Python project or packaging → **`setup-python`**.
+- Functional-style code, in any language → **`be-functional`**.
+- Working with Polars → **`use-polars`**.
+
 ## Tools & environment
 
 <!-- Anything true on this machine across projects, e.g. package managers,
