@@ -17,8 +17,9 @@ Conventions for keeping history clean and reviewable. These are defaults for
 repos without an established workflow — **an existing repo's conventions (its
 commit style, branch model, PR process) always win.**
 
-> Behavioral guardrail: don't `push`, force-push, rebase shared history, or run
-> destructive commands (`reset --hard`, `clean -fd`) without the user asking.
+> Behavioral guardrail: ordinary pushes of your own branch are fine (see
+> [Pushing](#pushing)), but **force-pushing, rebasing shared history, and
+> destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
 
 ## Branches
 
@@ -59,6 +60,17 @@ body (`Closes #123`).
 
 **No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`,
 or similar attribution/tool footers to commit messages.
+
+## Pushing
+
+Push freely — it backs work up and shows progress, with little downside. **Push
+after each atomic commit**, since each already leaves the branch in a coherent,
+working state; only batch when a commit is a deliberate mid-sequence step that
+would push the branch through a briefly-broken state. Always push before
+stepping away or opening/updating a PR.
+
+Pushing your own branch needs no sign-off; force-pushing, rebasing shared
+history, and destructive commands still do.
 
 ## Rebase vs merge
 
