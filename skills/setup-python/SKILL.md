@@ -77,11 +77,20 @@ select = [
     "E", "F",   # pycodestyle + pyflakes (defaults)
     "I",        # isort — import sorting
     "N",        # pep8-naming — naming conventions
+    "D",        # pydocstyle — docstring presence + style
     "UP",       # pyupgrade — modernize syntax (matches 3.11+ typing rules)
     "B",        # flake8-bugbear — likely-bug patterns
     "SIM",      # flake8-simplify
     "C4",       # flake8-comprehensions
 ]
+
+[tool.ruff.lint.pydocstyle]
+# ruff has no reST convention; pep257 enforces docstring presence + hygiene
+# without imposing Google/NumPy section formatting, so reST field lists are fine
+convention = "pep257"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]       # don't require docstrings on test functions
 
 [tool.pyright]
 typeCheckingMode = "standard"
