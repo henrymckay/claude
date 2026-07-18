@@ -25,7 +25,7 @@ Verb-first skills that encode consistent working conventions.
 ## 🛠️ Set up
 
 Clone the repo.
-Symlink the authored files into `~/.claude`.
+**Symlink the authored files into `~/.claude`.**
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
