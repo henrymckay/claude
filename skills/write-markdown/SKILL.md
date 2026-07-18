@@ -22,7 +22,10 @@ So **decide the audience first**, apply the universal rules, then add the audien
 
 ## Universal principles (both audiences)
 
-- **Be succinct — prefer fewer words over more.** Cut filler ("in order to" → "to") and throat-clearing; every word should earn its place.
+- **Be succinct — every word must earn its place.** Cut filler, throat-clearing, and anything the surrounding context already establishes.
+  - Filler and lead-ins: "in order to" → "to"; drop "It covers:" before a list that plainly elaborates the sentence above it.
+  - Words the context already fixes: in a Claude Code repo, "reinstall any Claude Code plugins" → "reinstall any plugins", and "Anthropic's marketplace" → "the marketplace".
+  - Parallel phrasing tightens a list: "When to commit and push, and when to hold off" beats a comma-spliced clause.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
