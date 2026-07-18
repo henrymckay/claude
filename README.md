@@ -1,11 +1,11 @@
 # 🤖 Claude Code
 
 Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
-Symlink them into `~/.claude` so they apply everywhere.
+Symlink them into `~/.claude` so they apply *everywhere*.
 
 ## ✏️ `CLAUDE.md`
 
-[`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into every repo.
+[`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into *every repo*.
 
 - When to commit, push or hold off.
 - Which skill to invoke and when.
@@ -54,5 +54,5 @@ Symlink `agents/`, `commands/` and `rules/` the same way once added.
 **Only** include `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md` in the repo.
 
 > [!WARNING]
-> Never commit Claude Code's runtime state.
+> **Never** commit Claude Code's runtime state.
 > Its sessions, history and caches must stay local to `~/.claude`.
