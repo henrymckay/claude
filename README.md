@@ -28,31 +28,10 @@ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 
 Symlink `agents/` and `commands/` the same way once you add them.
 
+> [!CAUTION]
+> Symlink only the files above, never all of `~/.claude`.
+> Its sessions, history, and caches must never be committed.
+
 > [!NOTE]
 > Reinstall any Claude Code plugins separately.
 > They live outside this repo, under `~/.claude/plugins`.
-
-## 🚫 Keep runtime state local
-
-> [!CAUTION]
-> Never symlink all of `~/.claude`.
-> Never commit its runtime state.
-> Symlink only the authored files above.
-
-This machine-local state stays out of `git` and iCloud:
-
-- Session and history state.
-  - `history.jsonl`, `projects/`, `sessions/`.
-- Caches and installed state.
-  - `cache/`, `file-history/`, `plugins/`, `shell-snapshots/`.
-
-## ➕ Add a skill
-
-1. Create `skills/<name>/SKILL.md`.
-2. Fill in the `name` and `description` frontmatter.
-   - The `description` drives auto-invocation.
-     Be specific about what it does and when to use it.
-3. Write the instructions in the body.
-4. Invoke it explicitly any time with `/<name>`.
-
-Copy an existing skill such as `skills/use-git/SKILL.md` as a starting template.
