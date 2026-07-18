@@ -8,8 +8,8 @@ Symlink them into `~/.claude` so they apply everywhere.
 [`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into every repo.
 It covers:
 
-- Working style, such as when to commit and push without being asked.
-- Which skill to invoke and when, so they reliably get used.
+- When to commit and push, and when to hold off.
+- Which skill to invoke, and when.
 
 ## 📦 Skills
 
