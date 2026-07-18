@@ -12,7 +12,7 @@ Symlink them into `~/.claude` so they apply everywhere.
 
 ## 📦 Skills
 
-Verb-first skills that encode consistent conventions for code, git, and docs.
+Verb-first skills that encode consistent working conventions.
 
 - [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms.
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
