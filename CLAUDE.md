@@ -9,7 +9,7 @@
 
 - Match the conventions of the surrounding code.
 
-## Skills — invoke the matching one before you act
+## Invoke the matching skill before you act
 
 These skills encode my conventions and are mandatory, not advisory.
 Before starting any task below, invoke the matching skill and follow it.
