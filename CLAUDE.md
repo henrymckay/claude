@@ -37,6 +37,9 @@ menu and are easy to skip on routine work.
 - Starting a new Python project or packaging → **`setup-python`**.
 - Functional-style code, in any language → **`be-functional`**.
 - Object-oriented design (classes, inheritance, SOLID, patterns) → **`be-oop`**.
+- Any Markdown, human- or LLM-facing (README, docs, SKILL.md, CLAUDE.md,
+  prompts) → **`write-markdown`** — it separates universal rules from
+  audience-specific ones.
 - Working with Polars → **`use-polars`**.
 
 ## Tools & environment
