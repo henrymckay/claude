@@ -55,6 +55,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **End every bullet with a full stop** for consistent, finished-looking lists.
 - **One idea per sentence.** This is the prose version of one clear statement per bullet. Split a compound sentence into short separate ones rather than joining independent clauses with a comma, an "and", an em-dash, a semicolon, or a parenthesis. "Personal skills and instructions. Symlinked everywhere." beats one long joined sentence.
   - Write two plain sentences, or in a list start a sub-bullet.
+  - No colons or dashes inside a bullet either — don't use them to bolt on an inline list or an aside. Break the items into sub-bullets, or rephrase. (A lead-in line ending in ":" that introduces a real bulleted list is fine, since that colon isn't inside a bullet.)
   - It's about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
   - LLMs parse joined clauses fine, so this is a human-only rule.
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".

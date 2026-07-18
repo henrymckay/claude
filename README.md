@@ -42,7 +42,7 @@ Symlink `agents/` and `commands/` the same way once added.
 
 ## 📚 Learn more
 
-- Pick the right [extension](https://code.claude.com/docs/en/features-overview) for a job: `CLAUDE.md`, skills, hooks, or plugins.
+- Pick the right [extension](https://code.claude.com/docs/en/features-overview) for a job, whether `CLAUDE.md`, a skill, a hook, or a plugin.
 - A [skill](https://code.claude.com/docs/en/skills) loads only when relevant, so it's cheap on context.
 - [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads every session, so keep it to continuous rules under 200 lines.
 - Claude Code reads config from `~/.claude` and a project's [`.claude/`](https://code.claude.com/docs/en/claude-directory).
