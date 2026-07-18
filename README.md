@@ -1,6 +1,6 @@
 # 🤖 Claude Code
 
-Personal Claude Code skills and global instructions, symlinked into `~/.claude` so they work in every repo and on every machine.
+Personal [Claude Code](https://claude.com/claude-code) skills and global instructions, symlinked into `~/.claude` so they work in every repo and on every machine.
 
 ## 📦 Skills
 
@@ -16,13 +16,12 @@ Verb-first skills that encode a consistent set of coding conventions.
 | `write-markdown` | Markdown for humans and LLMs, with audience-specific rules. |
 | `write-python` | In-code Python conventions: typing, docstrings, imports, idioms. |
 
-## 🔗 Link to `~/.claude`
+## 🔗 Set up
 
-Symlink each authored piece into `~/.claude`, and Claude Code picks it up in every repo.
-Keep `~/.claude` itself a normal local directory.
-Symlink only the tracked files below.
+Clone the repo, then symlink each authored piece into `~/.claude` so Claude Code loads it in every repo.
 
 ```bash
+git clone https://github.com/henrymckay/claude.git
 ln -s /path/to/claude/skills    ~/.claude/skills
 ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 # optional, once you add them:
@@ -30,21 +29,15 @@ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 # ln -s /path/to/claude/commands ~/.claude/commands
 ```
 
-The repo currently tracks `skills/` and `CLAUDE.md`.
-`agents/` and `commands/` follow the same pattern whenever you add them.
-
-```text
-~/.claude/skills    -> repo/skills
-~/.claude/CLAUDE.md -> repo/CLAUDE.md
-~/.claude/agents    -> repo/agents      # optional
-~/.claude/commands  -> repo/commands    # optional
-```
+> [!NOTE]
+> Reinstall any Claude Code plugins separately.
+> They live outside this repo, under `~/.claude/plugins`.
 
 ## 🚫 Keep runtime state local
 
 > [!CAUTION]
 > Never symlink all of `~/.claude`, and never commit its runtime state.
-> Symlink only the authored folders above.
+> Symlink only the authored files above.
 
 This machine-local state stays out of git and iCloud:
 
@@ -62,15 +55,3 @@ This machine-local state stays out of git and iCloud:
 4. Invoke it explicitly any time with `/<name>`.
 
 Copy an existing skill such as `skills/use-git/SKILL.md` as a starting template.
-
-## 💻 Set up on a new machine
-
-```bash
-git clone https://github.com/henrymckay/claude.git
-ln -s /path/to/claude/skills    ~/.claude/skills
-ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
-```
-
-> [!NOTE]
-> Reinstall any Claude Code plugins you rely on separately.
-> They live outside this repo, under `~/.claude/plugins`.
