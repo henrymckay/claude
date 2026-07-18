@@ -79,7 +79,9 @@ result = (
 )
 ```
 
-For data bigger than memory, `.collect(streaming=True)`.
+For data bigger than memory, use the streaming engine:
+`.collect(engine="streaming")` (the older `.collect(streaming=True)` is
+deprecated).
 
 ## Key habits (and pandas traps)
 
