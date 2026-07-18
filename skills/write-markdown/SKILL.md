@@ -77,6 +77,7 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 - **Lead with triggering/scope.** For a skill, the `description` frontmatter is what decides invocation — make it specific about *what* and *when*.
 - **Density is fine; cosmetic polish is waste.** Skip emojis, decorative badges, collapsible sections, and full-stop-on-every-bullet consistency — they cost tokens and add no parsing value for a model.
 - **Inline nuance is fine.** A model reads em-dashes, semicolons, and parentheticals without trouble, so don't fragment dense reasoning into sub-bullets just for looks.
+- **Skip the self-describing title and preamble in a `CLAUDE.md`.** The model already knows the file is the user's instructions, so a "# Global instructions" title or a "this file holds cross-project guidance" opener is pure meta-fluff. Lead straight with the instructions, and phrase them as commands to the model, not descriptions of the file.
 
 ## Human-only vs universal — quick reference
 
