@@ -55,8 +55,8 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
 - **Avoid first person** ("I", "we", "my"). Address the reader as "you" or write impersonally; "Personal coding conventions" beats "My coding conventions".
 - **Link references.** The first time you name a tool, library, spec, or standard, hyperlink it to its source so readers can jump there.
-  - Monospace names that are packages or commands: [`ruff`](https://docs.astral.sh/ruff/), [`uv`](https://docs.astral.sh/uv/).
-  - Leave prose names like [Conventional Commits](https://www.conventionalcommits.org) in plain text, just linked.
+  - Monospace names that are packages, libraries, or commands: [`ruff`](https://docs.astral.sh/ruff/), [`Polars`](https://pola.rs).
+  - Leave true prose names like [Conventional Commits](https://www.conventionalcommits.org) plain, just linked.
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
 - **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
