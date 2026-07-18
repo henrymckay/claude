@@ -20,16 +20,15 @@ Verb-first skills that encode a consistent set of coding conventions.
 `CLAUDE.md` holds cross-project guidance Claude Code loads in every repo.
 It sets:
 
-- The working style.
-- The `git` policy.
+- Working style.
+- `git` policy.
 - Coding preferences.
-- An index pointing to the skills above.
+- Index of the skills above.
 
 ## 🛠️ Set up
 
 Clone the repo.
 Symlink the authored files into `~/.claude`.
-Claude Code then loads them in every project.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
