@@ -52,6 +52,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
   - This is about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
   - (LLMs handle inline asides fine, so this is a human-only rule.)
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
+- **Avoid first person** ("I", "we", "my"). Address the reader as "you" or write impersonally; "Personal coding conventions" beats "My coding conventions".
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
 - **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):

@@ -1,10 +1,10 @@
-# Claude Code config
+# 🤖 Claude Code
 
-My personal Claude Code skills and global instructions, symlinked into `~/.claude` so they work in every repo and on every machine.
+Personal Claude Code skills and global instructions, symlinked into `~/.claude` so they work in every repo and on every machine.
 
 ## 📦 Skills
 
-Verb-first skills that encode my coding conventions.
+Verb-first skills that encode a consistent set of coding conventions.
 
 | Skill | Purpose |
 |---|---|
