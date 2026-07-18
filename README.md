@@ -10,7 +10,7 @@ It covers:
 
 - Working style, from staying concise to when to commit and push.
 - Coding preferences.
-- Which skill to invoke for each kind of task.
+- Which skill to invoke and when, so they reliably get used.
 
 ## 📦 Skills
 
