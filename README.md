@@ -1,7 +1,7 @@
 # 🤖 Claude Code
 
 Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
-Symlink them into `~/.claude` so they apply *everywhere*.
+**Symlink** them into `~/.claude` so they apply *everywhere*.
 
 ## ✏️ `CLAUDE.md`
 
@@ -25,7 +25,7 @@ Verb-first skills that encode consistent working conventions.
 ## 🛠️ Set up
 
 Clone the repo.
-**Symlink the authored files into `~/.claude`.**
+Symlink the authored files into `~/.claude`.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
