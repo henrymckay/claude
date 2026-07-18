@@ -44,6 +44,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 
 - **Front-load.** The first lines say what this is and whether the reader is in the right place.
   A README opens with a one-line description of the project, not its history.
+- **Target each section at its reader.** Put content where the reader who needs it will look. Don't strand a maintainer's warning in the setup path a new user reads.
 - **Default shape: sections of bullets.** Reserve prose for ideas that genuinely need connected sentences.
 - **Lean toward lists over tables.** Humans scan a list faster than they parse a grid. Even for a genuine comparison, prefer a list unless several columns' alignment truly aids reading. (LLM-facing docs can use tables more freely.)
 - **Start sections, and key bullets, with an emoji** as a visual anchor.
@@ -61,7 +62,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
 - **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
-  - `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`.
+  - Match the type to intent: `[!NOTE]` for info, `[!TIP]` for advice, `[!IMPORTANT]` for a key point, `[!WARNING]` or `[!CAUTION]` for hazards.
   - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
 - **Accessibility** — real heading hierarchy (screen readers navigate by it, don't fake headings with bold), image alt text, and don't rely on colour or emoji alone to carry meaning.
 
