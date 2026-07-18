@@ -3,7 +3,7 @@
 Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
 Symlink them into `~/.claude` so they apply everywhere.
 
-## 📝 `CLAUDE.md`
+## ✏️ `CLAUDE.md`
 
 [`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into every repo.
 
