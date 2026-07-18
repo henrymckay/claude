@@ -1,8 +1,8 @@
 # Polars expression cookbook
 
-Worked recipes for the expression API. Assumes `import polars` (house style — no
-`as pl`) and Polars 1.x. Expressions run inside contexts (`select`,
-`with_columns`, `filter`, `group_by().agg()`).
+Worked recipes for the expression API.
+Assumes `import polars` (house style — no `as pl`) and Polars 1.x.
+Expressions run inside contexts (`select`, `with_columns`, `filter`, `group_by().agg()`).
 
 ## Selecting & referencing columns
 
@@ -50,14 +50,12 @@ df.group_by("category").agg(
 )
 ```
 
-`group_by(..., maintain_order=True)` if you need deterministic group order
-(slower). Common reducers: `sum`, `mean`, `min`, `max`, `median`, `std`,
-`first`, `last`, `count`, `n_unique`, `quantile`.
+`group_by(..., maintain_order=True)` if you need deterministic group order (slower).
+Common reducers: `sum`, `mean`, `min`, `max`, `median`, `std`, `first`, `last`, `count`, `n_unique`, `quantile`.
 
 ## Window functions with `.over`
 
-Aggregate *without collapsing rows* — like a SQL window / pandas groupby-
-transform:
+Aggregate *without collapsing rows* — like a SQL window / pandas groupby-transform:
 
 ```python
 df.with_columns(
@@ -113,5 +111,4 @@ polars.col("x").fill_null(0)
 polars.col("x").fill_null(strategy="forward")
 df.drop_nulls(subset=["x"])
 ```
-Note: Polars separates null (missing) from `NaN` (float not-a-number) — they're
-not the same, unlike pandas.
+Note: Polars separates null (missing) from `NaN` (float not-a-number) — they're not the same, unlike pandas.

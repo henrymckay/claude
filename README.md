@@ -4,8 +4,7 @@ Personal Claude Code skills, shared across all my repos.
 
 ## How it works
 
-The `skills/` directory is symlinked into `~/.claude/skills`, so every skill
-here is available as a **personal skill** in every repo I work in.
+The `skills/` directory is symlinked into `~/.claude/skills`, so every skill here is available as a **personal skill** in every repo I work in.
 
 ```
 ln -s /path/to/claude/skills ~/.claude/skills
@@ -27,20 +26,15 @@ Each authored directory is symlinked into the matching `~/.claude/<dir>`:
 ~/.claude/commands -> repo/commands
 ```
 
-Not symlinked (machine-local runtime state — never put in git/iCloud):
-`sessions/`, `projects/`, `history.jsonl`, `shell-snapshots/`, `cache/`,
-`plugins/`, `file-history/`, etc. Keep `~/.claude` itself a normal local dir.
+Not symlinked (machine-local runtime state — never put in git/iCloud): `sessions/`, `projects/`, `history.jsonl`, `shell-snapshots/`, `cache/`, `plugins/`, `file-history/`, etc. Keep `~/.claude` itself a normal local dir.
 
-File-based config you can optionally track later: `CLAUDE.md` (global
-instructions), `keybindings.json`, and a sanitised copy of `settings.json`
-(which also holds hooks/permissions/env).
+File-based config you can optionally track later: `CLAUDE.md` (global instructions), `keybindings.json`, and a sanitised copy of `settings.json` (which also holds hooks/permissions/env).
 
 ## Adding a skill
 
 1. Create `skills/<skill-name>/SKILL.md`.
-2. Fill in the frontmatter `name` and `description`. The `description` is what
-   Claude matches against to decide when to auto-invoke — be specific about
-   *what it does* and *when to use it*.
+2. Fill in the frontmatter `name` and `description`.
+   The `description` is what Claude matches against to decide when to auto-invoke — be specific about *what it does* and *when to use it*.
 3. Write the instructions in the body.
 4. Invoke explicitly any time with `/<skill-name>`.
 

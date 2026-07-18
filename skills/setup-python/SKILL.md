@@ -13,23 +13,20 @@ description: >-
 
 # Setting up a Python project
 
-Getting the skeleton right up front — layout, packaging, tooling — saves pain
-later. This covers *structure and setup*; for how to write the code inside,
-see `write-python`.
+Getting the skeleton right up front — layout, packaging, tooling — saves pain later.
+This covers *structure and setup*; for how to write the code inside, see `write-python`.
 
-**Match an existing project first.** If there's already a `pyproject.toml` or
-an established layout, follow it rather than imposing this.
+**Match an existing project first.** If there's already a `pyproject.toml` or an established layout, follow it rather than imposing this.
 
 ## Pick a layout
 
-- **One-off script / tiny tool** → a single `.py` file. Don't ceremony it up.
+- **One-off script / tiny tool** → a single `.py` file.
+  Don't ceremony it up.
   If it needs a dependency, use an inline script block (see bottom).
 - **Anything installable or that others import** → the **`src/` layout** below.
 
-The `src/` layout puts the package one directory down so it *can't* be imported
-accidentally from the repo root before it's installed. That forces you to test
-against the actually-installed package and catches packaging mistakes early —
-the whole reason it's the default.
+The `src/` layout puts the package one directory down so it *can't* be imported accidentally from the repo root before it's installed.
+That forces you to test against the actually-installed package and catches packaging mistakes early — the whole reason it's the default.
 
 ```
 myproject/
@@ -44,12 +41,13 @@ myproject/
     test_core.py
 ```
 
-Keep modules small and cohesive (one responsibility). Tests live in `tests/`,
-mirroring the package — not beside the source.
+Keep modules small and cohesive (one responsibility).
+Tests live in `tests/`, mirroring the package — not beside the source.
 
 ## pyproject.toml
 
-One file for metadata, dependencies, and tool config. A sensible starting point:
+One file for metadata, dependencies, and tool config.
+A sensible starting point:
 
 ```toml
 [project]
@@ -101,8 +99,8 @@ testpaths = ["tests"]
 
 ## Dependencies & environment: use `uv`
 
-`uv` manages the Python version, the virtualenv, and dependencies — fast, and
-it replaces pip / pip-tools / virtualenv / pyenv. Core workflow:
+`uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces pip / pip-tools / virtualenv / pyenv.
+Core workflow:
 
 ```bash
 uv init                 # scaffold a new project (or set up by hand as above)
@@ -112,15 +110,13 @@ uv run pytest           # run inside the managed env, no manual activate
 uv sync                 # reproduce the env from uv.lock
 ```
 
-Commit `uv.lock` for applications (reproducible installs); libraries usually
-don't pin as hard. Pin the Python version with a `.python-version` file so
-everyone's on the same interpreter.
+Commit `uv.lock` for applications (reproducible installs); libraries usually don't pin as hard.
+Pin the Python version with a `.python-version` file so everyone's on the same interpreter.
 
 ## Standalone scripts
 
-A single script that needs a package shouldn't require a whole project. Declare
-deps inline (PEP 723) and run with `uv run script.py` — uv builds a throwaway
-env on the fly:
+A single script that needs a package shouldn't require a whole project.
+Declare deps inline (PEP 723) and run with `uv run script.py` — uv builds a throwaway env on the fly:
 
 ```python
 # /// script
@@ -129,14 +125,12 @@ env on the fly:
 # ///
 ```
 
-Never bundle an interpreter or assume packages are globally installed — declare
-what's needed and let uv resolve it.
+Never bundle an interpreter or assume packages are globally installed — declare what's needed and let uv resolve it.
 
 ## Pre-commit hooks
 
-Enforce formatting and linting on every commit with the `pre-commit` framework —
-deterministic, so it holds regardless of how the code got written. Add
-`.pre-commit-config.yaml`:
+Enforce formatting and linting on every commit with the `pre-commit` framework — deterministic, so it holds regardless of how the code got written.
+Add `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
@@ -148,10 +142,9 @@ repos:
       - id: ruff-format
 ```
 
-Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to
-register the git hook). `ruff-check --fix` auto-fixes and `ruff-format`
-reformats; if a hook changes files the commit stops so you can re-stage. This is
-also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
+Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to register the git hook).
+`ruff-check --fix` auto-fixes and `ruff-format` reformats; if a hook changes files the commit stops so you can re-stage.
+This is also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
 
 ## Toolchain summary
 
@@ -162,5 +155,5 @@ Set these up once and defer to them everywhere:
 - **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
 - **`pytest`** — tests in `tests/`.
 
-Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`,
-`.ruff_cache/`, and build artifacts. See the `use-git` skill for repo hygiene.
+Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, and build artifacts.
+See the `use-git` skill for repo hygiene.
