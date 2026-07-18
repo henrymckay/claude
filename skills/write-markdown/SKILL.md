@@ -59,7 +59,9 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Link references.** The first time you name a tool, library, spec, or standard, hyperlink it to its source so readers can jump there.
   - Code-like names stay monospaced (per the universal rule) and get linked: [`ruff`](https://docs.astral.sh/ruff/), [`polars`](https://pola.rs).
   - True prose names like [Conventional Commits](https://www.conventionalcommits.org) are linked but stay plain.
-- **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
+- **Descriptive link text, kept short.** Anchor the link on the one or two words that name its destination, not a whole phrase or clause.
+  - Write "install from a [marketplace](…)", not "[install from a marketplace](…)".
+  - Never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
 - **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
   - Match the type to intent: `[!NOTE]` for info, `[!TIP]` for advice, `[!IMPORTANT]` for a key point, `[!WARNING]` or `[!CAUTION]` for hazards.
