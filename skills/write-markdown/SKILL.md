@@ -23,7 +23,6 @@ So **decide the audience first**, apply the universal rules, then add the audien
 ## Universal principles (both audiences)
 
 - **Be succinct — prefer fewer words over more.** Cut filler ("in order to" → "to") and throat-clearing; every word should earn its place.
-- **Keep sentences short and punchy.** Split a compound sentence into separate ones instead of joining independent clauses with a comma or "and". "Personal skills and instructions. Symlinked into `~/.claude` so they apply everywhere." beats one long comma-joined sentence. Paired with one sentence per line, short sentences read fast and diff cleanly.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
@@ -48,10 +47,10 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Start sections, and key bullets, with an emoji** as a visual anchor.
   Use it purposefully, not on every line.
 - **End every bullet with a full stop** for consistent, finished-looking lists.
-- **Avoid mid-sentence asides.** Don't join clauses with an em-dash, semicolon, or parenthesis, in prose or in bullets.
-  - Write two plain sentences instead, or in a list start a sub-bullet.
-  - This is about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
-  - (LLMs handle inline asides fine, so this is a human-only rule.)
+- **One idea per sentence.** This is the prose version of one clear statement per bullet. Split a compound sentence into short separate ones rather than joining independent clauses with a comma, an "and", an em-dash, a semicolon, or a parenthesis. "Personal skills and instructions. Symlinked everywhere." beats one long joined sentence.
+  - Write two plain sentences, or in a list start a sub-bullet.
+  - It's about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
+  - LLMs parse joined clauses fine, so this is a human-only rule.
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
 - **Avoid first person** ("I", "we", "my"). Address the reader as "you" or write impersonally; "Personal coding conventions" beats "My coding conventions".
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
