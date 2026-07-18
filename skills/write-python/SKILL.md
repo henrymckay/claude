@@ -8,8 +8,9 @@ description: >-
   mention "conventions", "style", or "clean code". Targets Python 3.11+.
   Formatting/linting is delegated to ruff and type-checking to pyright — this
   skill does NOT restate their rules, only the judgment calls they can't make.
-  For project structure and packaging, see setup-python; for functional style,
-  see be-functional.
+  These are the baseline conventions that apply to all Python; layer a paradigm
+  skill on top as needed — be-functional for functional style, be-oop for
+  object-oriented design. For project structure and packaging, see setup-python.
 ---
 
 # Writing Python

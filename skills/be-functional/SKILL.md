@@ -9,7 +9,8 @@ description: >-
   opt-in style skill: apply it when a functional approach is requested or
   clearly fits, not to every piece of code. Principles here are
   language-agnostic; language-specific idioms live in references/<language>.md
-  (start with references/python.md).
+  (start with references/python.md). In Python it layers on top of write-python
+  (the baseline conventions); be-oop is the object-oriented counterpart.
 ---
 
 # Being functional
