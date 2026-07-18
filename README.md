@@ -1,6 +1,7 @@
 # 🤖 Claude Code
 
-Personal [Claude Code](https://claude.com/claude-code) skills and global instructions, symlinked into `~/.claude` so they work in every repo and on every machine.
+Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
+Symlinked into `~/.claude` so they apply everywhere.
 
 ## 📦 Skills
 
@@ -18,7 +19,9 @@ Verb-first skills that encode a consistent set of coding conventions.
 
 ## 🔗 Set up
 
-Clone the repo, then symlink each authored piece into `~/.claude` so Claude Code loads it in every repo.
+Clone the repo.
+Symlink each authored piece into `~/.claude`.
+Claude Code then loads it in every repo.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
@@ -36,7 +39,8 @@ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ## 🚫 Keep runtime state local
 
 > [!CAUTION]
-> Never symlink all of `~/.claude`, and never commit its runtime state.
+> Never symlink all of `~/.claude`.
+> Never commit its runtime state.
 > Symlink only the authored files above.
 
 This machine-local state stays out of git and iCloud:
@@ -50,7 +54,8 @@ This machine-local state stays out of git and iCloud:
 
 1. Create `skills/<name>/SKILL.md`.
 2. Fill in the `name` and `description` frontmatter.
-   - The `description` drives auto-invocation, so be specific about what it does and when to use it.
+   - The `description` drives auto-invocation.
+     Be specific about what it does and when to use it.
 3. Write the instructions in the body.
 4. Invoke it explicitly any time with `/<name>`.
 

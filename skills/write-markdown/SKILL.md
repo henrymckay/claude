@@ -23,6 +23,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 ## Universal principles (both audiences)
 
 - **Be succinct — prefer fewer words over more.** Cut filler ("in order to" → "to") and throat-clearing; every word should earn its place.
+- **Keep sentences short and punchy.** Split a compound sentence into separate ones instead of joining independent clauses with a comma or "and". "Personal skills and instructions. Symlinked into `~/.claude` so they apply everywhere." beats one long comma-joined sentence. Paired with one sentence per line, short sentences read fast and diff cleanly.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
