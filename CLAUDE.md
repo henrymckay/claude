@@ -15,10 +15,10 @@ These skills encode my conventions and are mandatory, not advisory.
 Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 
-- Git — committing, branching, PRs, history → **`use-git`** (Conventional Commits; no `Co-Authored-by` / "Generated with" footers).
-- Writing or editing Python → **`write-python`**.
-- Starting or packaging a Python project → **`setup-python`**.
-- Functional-style code, in any language → **`be-functional`**.
-- Object-oriented design — classes, inheritance, SOLID, patterns → **`be-oop`**.
-- Any Markdown, for humans or LLMs (README, docs, `SKILL.md`, `CLAUDE.md`, prompts) → **`write-markdown`**.
-- Working with Polars → **`use-polars`**.
+- **`use-git`** for any git operation: committing, branching, PRs, history (Conventional Commits; no `Co-Authored-by` / "Generated with" footers).
+- **`write-python`** when writing or editing Python.
+- **`setup-python`** when starting or packaging a Python project.
+- **`be-functional`** for functional-style code, in any language.
+- **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
+- **`write-markdown`** for any Markdown, for humans or LLMs: READMEs, docs, `SKILL.md`, `CLAUDE.md`, prompts.
+- **`use-polars`** when working with Polars.
