@@ -3,6 +3,8 @@
 Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
 Symlinked into `~/.claude` so they apply everywhere.
 
+## 🧠 `CLAUDE.md`
+
 ## 📦 Skills
 
 Verb-first skills that encode a consistent set of coding conventions.
@@ -14,16 +16,6 @@ Verb-first skills that encode a consistent set of coding conventions.
 - `use-polars` covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
 - `write-markdown` covers writing Markdown for humans and LLMs.
 - `write-python` defines in-code Python conventions for style and structure.
-
-## 🧠 Global instructions
-
-`CLAUDE.md` holds cross-project guidance Claude Code loads in every repo.
-It sets:
-
-- Working style.
-- `git` policy.
-- Coding preferences.
-- Index of the skills above.
 
 ## 🛠️ Set up
 
@@ -42,7 +34,7 @@ Symlink `agents/` and `commands/` the same way once you add them.
 > Reinstall any Claude Code plugins separately.
 > They live under `~/.claude/plugins`, outside the repo.
 
-## 🧹 Keep the repo clean
+## 🤝 Contribute
 
 Only the authored files belong in the repo:
 
@@ -50,6 +42,6 @@ Only the authored files belong in the repo:
 - `CLAUDE.md`.
 - `agents/` and `commands/`, once added.
 
-> [!CAUTION]
+> [!WARNING]
 > Never commit Claude Code's runtime state.
 > Its sessions, history, and caches must stay local to `~/.claude`.
