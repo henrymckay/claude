@@ -51,11 +51,7 @@ Symlink `agents/` and `commands/` the same way once added.
 
 ## 🤝 Contribute
 
-Only the authored files belong in the repo:
-
-- `skills/`.
-- `CLAUDE.md`.
-- `agents/` and `commands/`, once added.
+Only include `agents/`, `commands/`, `skills/`, and `CLAUDE.md` in the repo.
 
 > [!WARNING]
 > Never commit Claude Code's runtime state.
