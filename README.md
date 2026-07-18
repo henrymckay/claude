@@ -15,20 +15,18 @@ Verb-first skills that encode a consistent set of coding conventions.
 - `write-markdown` covers writing Markdown for humans and LLMs.
 - `write-python` defines in-code Python conventions for style and structure.
 
-## 🔗 Set up
+## 🛠️ Set up
 
-Clone the repo.
-Symlink each authored piece into `~/.claude`.
-Claude Code then loads it in every repo.
+Clone the repo, then symlink the authored files into `~/.claude`.
+Claude Code loads them in every project.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
-ln -s /path/to/claude/skills    ~/.claude/skills
+ln -s /path/to/claude/skills ~/.claude/skills
 ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
-# optional, once you add them:
-# ln -s /path/to/claude/agents   ~/.claude/agents
-# ln -s /path/to/claude/commands ~/.claude/commands
 ```
+
+Symlink `agents/` and `commands/` the same way once you add them.
 
 > [!NOTE]
 > Reinstall any Claude Code plugins separately.

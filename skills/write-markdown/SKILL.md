@@ -31,6 +31,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).
 - **Write imperatively.** Lead with a verb — "Install the CLI", not "The CLI can be installed".
 - **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, identifiers, and tool, package, or library names. Monospace them whether or not they are also linked.
+- **Keep runnable code blocks real and copy-pasteable.** Write commands exactly as you would type them: a single space between arguments, no cosmetic column alignment, and no explanatory comments inside the block. Put explanation in the surrounding prose instead. (Illustrative code examples that teach a pattern may still use teaching comments.)
 - **Prefer lists over tables.** If a table's later columns just describe the item in the first, it's a list in disguise, so write it as a bullet list with one item per line. Reserve tables for genuine comparison or translation, where every column holds a parallel value worth aligning (pandas → Polars, or a feature across several options).
 - **One sentence per line** (semantic line breaks).
   It renders identically to a wrapped paragraph but keeps diffs clean — rewording one sentence is a one-line change.
