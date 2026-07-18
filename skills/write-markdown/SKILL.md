@@ -58,6 +58,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
   - No colons or dashes inside a bullet either — don't use them to bolt on an inline list or an aside. Break the items into sub-bullets, or rephrase. (A lead-in line ending in ":" that introduces a real bulleted list is fine, since that colon isn't inside a bullet.)
   - It's about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
   - LLMs parse joined clauses fine, so this is a human-only rule.
+- **No Oxford comma.** Drop the serial comma before the final "and"/"or" in a list — "uv, ruff, pyright and pytest", not "…pyright, and pytest". More broadly avoid a comma before "and"/"or" unless it prevents a genuine ambiguity. LLMs parse both, so this is human-only.
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
 - **Avoid first person** ("I", "we", "my"). Address the reader as "you" or write impersonally; "Personal coding conventions" beats "My coding conventions".
 - **Link references.** The first time you name a tool, library, spec, or standard, hyperlink it to its source so readers can jump there.
