@@ -1,7 +1,7 @@
 # 🤖 Claude Code
 
 Personal [Claude Code](https://claude.com/claude-code) skills and global instructions.
-Symlinked into `~/.claude` so they apply everywhere.
+Symlink them into `~/.claude` so they apply everywhere.
 
 ## 🧠 `CLAUDE.md`
 
