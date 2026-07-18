@@ -7,15 +7,13 @@ Symlinked into `~/.claude` so they apply everywhere.
 
 Verb-first skills that encode a consistent set of coding conventions.
 
-| Skill | Purpose |
-|---|---|
-| `be-functional` | Functional style in any language: purity, immutability, composition. |
-| `be-oop` | Object-oriented design done well: composition, SOLID, patterns. |
-| `setup-python` | Scaffold a Python project: `src/` layout, `uv`, `ruff`, `pyright`, `pytest`. |
-| `use-git` | Git workflow: branches, atomic commits, Conventional Commits, rebase vs merge. |
-| `use-polars` | Idiomatic Polars: expressions, lazy execution, pandas migration. |
-| `write-markdown` | Markdown for humans and LLMs, with audience-specific rules. |
-| `write-python` | In-code Python conventions: typing, docstrings, imports, idioms. |
+- `be-functional` defines language-agnostic functional programming paradigms.
+- `be-oop` defines language-agnostic object-oriented paradigms.
+- `setup-python` scaffolds a Python project with uv, ruff, pyright, and pytest.
+- `use-git` defines a git workflow from branching to Conventional Commits.
+- `use-polars` covers idiomatic Polars from expressions to pandas migration.
+- `write-markdown` covers writing Markdown for humans and LLMs.
+- `write-python` defines in-code Python conventions for style and structure.
 
 ## 🔗 Set up
 
