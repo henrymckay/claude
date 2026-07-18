@@ -16,13 +16,13 @@ It covers:
 
 Verb-first skills that encode a consistent set of coding conventions.
 
-- `be-functional` defines language-agnostic functional programming paradigms.
-- `be-oop` defines language-agnostic object-oriented paradigms.
-- `setup-python` scaffolds a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`pyright`](https://microsoft.github.io/pyright/), and [`pytest`](https://docs.pytest.org/).
-- `use-git` defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
-- `use-polars` covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
-- `write-markdown` covers writing Markdown for humans and LLMs.
-- `write-python` defines in-code Python conventions for style and structure.
+- [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms.
+- [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
+- [`setup-python`](skills/setup-python) scaffolds a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`pyright`](https://microsoft.github.io/pyright/), and [`pytest`](https://docs.pytest.org/).
+- [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
+- [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
+- [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
+- [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
 
 ## 🛠️ Set up
 

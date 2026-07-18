@@ -59,6 +59,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Link references.** The first time you name a tool, library, spec, or standard, hyperlink it to its source so readers can jump there.
   - Code-like names stay monospaced (per the universal rule) and get linked: [`ruff`](https://docs.astral.sh/ruff/), [`polars`](https://pola.rs).
   - True prose names like [Conventional Commits](https://www.conventionalcommits.org) are linked but stay plain.
+  - Link the repo's own artifacts too, not just external tools — point a file, skill, or module name at its location in the tree so the reader can open it. If you link every dependency but not the thing the doc is about, the most useful link is the one missing.
 - **Descriptive link text, kept short.** Anchor the link on the one or two words that name its destination, not a whole phrase or clause.
   - Write "install from a [marketplace](…)", not "[install from a marketplace](…)".
   - Never `[click here](…)` or a bare URL.
