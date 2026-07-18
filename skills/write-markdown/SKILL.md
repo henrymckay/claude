@@ -30,7 +30,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Prefer bullets, one clear statement each.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
 - **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).
 - **Write imperatively.** Lead with a verb — "Install the CLI", not "The CLI can be installed".
-- **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, and identifiers.
+- **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, identifiers, and tool, package, or library names. Monospace them whether or not they are also linked.
 - **Prefer lists over tables.** If a table's later columns just describe the item in the first, it's a list in disguise, so write it as a bullet list with one item per line. Reserve tables for genuine comparison or translation, where every column holds a parallel value worth aligning (pandas → Polars, or a feature across several options).
 - **One sentence per line** (semantic line breaks).
   It renders identically to a wrapped paragraph but keeps diffs clean — rewording one sentence is a one-line change.
@@ -55,8 +55,8 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
 - **Avoid first person** ("I", "we", "my"). Address the reader as "you" or write impersonally; "Personal coding conventions" beats "My coding conventions".
 - **Link references.** The first time you name a tool, library, spec, or standard, hyperlink it to its source so readers can jump there.
-  - Monospace names that are packages, libraries, or commands: [`ruff`](https://docs.astral.sh/ruff/), [`Polars`](https://pola.rs).
-  - Leave true prose names like [Conventional Commits](https://www.conventionalcommits.org) plain, just linked.
+  - Code-like names stay monospaced (per the universal rule) and get linked: [`ruff`](https://docs.astral.sh/ruff/), [`polars`](https://pola.rs).
+  - True prose names like [Conventional Commits](https://www.conventionalcommits.org) are linked but stay plain.
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
 - **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
