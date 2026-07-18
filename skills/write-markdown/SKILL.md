@@ -28,6 +28,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
   - A verb tells the reader what they'll *do* in that section.
   - Reference or catalogue sections that don't describe an action (e.g. "Skills", "Requirements") can stay noun phrases.
 - **Prefer bullets, one clear statement each.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
+- **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).
 - **Write imperatively.** Lead with a verb — "Install the CLI", not "The CLI can be installed".
 - **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, and identifiers.
 - **Tables for genuine comparisons** (columns of like things); don't force prose into a table.
@@ -46,12 +47,16 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Start sections, and key bullets, with an emoji** as a visual anchor.
   Use it purposefully, not on every line.
 - **End every bullet with a full stop** for consistent, finished-looking lists.
-- **Keep asides out of the line.** Don't join clauses with an em-dash, semicolon, or parenthesis — start a sub-bullet instead.
-  - This is about prose punctuation, not Markdown syntax.
-  - Link brackets `[text](url)` and hyphenated words are fine.
+- **Avoid mid-sentence asides.** Don't join clauses with an em-dash, semicolon, or parenthesis, in prose or in bullets.
+  - Write two plain sentences instead, or in a list start a sub-bullet.
+  - This is about prose punctuation, not Markdown syntax: link brackets `[text](url)` and hyphenated words are fine.
+  - (LLMs handle inline asides fine, so this is a human-only rule.)
 - **Tone: second person, active voice, present tense.** "Run `x` to build" beats "The build may be performed by running `x`".
 - **Descriptive link text** — `[the install guide](…)`, never `[click here](…)` or a bare URL.
-- **Use richer render features when they serve the reader** — task lists, collapsible sections, callouts, badges, a table of contents for long docs.
+- **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
+- **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
+  - `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`.
+  - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
 - **Accessibility** — real heading hierarchy (screen readers navigate by it, don't fake headings with bold), image alt text, and don't rely on colour or emoji alone to carry meaning.
 
 ## For LLM consumption (apply instead of the human polish)
