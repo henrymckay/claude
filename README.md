@@ -5,7 +5,7 @@ Symlink them into `~/.claude` so they apply everywhere.
 
 ## 🧠 `CLAUDE.md`
 
-[`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions Claude Code loads in every repo.
+[`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into every repo.
 It covers:
 
 - Working style, such as when to commit and push without being asked.
