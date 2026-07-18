@@ -44,6 +44,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 - **Front-load.** The first lines say what this is and whether the reader is in the right place.
   A README opens with a one-line description of the project, not its history.
 - **Default shape: sections of bullets.** Reserve prose for ideas that genuinely need connected sentences.
+- **Lean toward lists over tables.** Humans scan a list faster than they parse a grid. Even for a genuine comparison, prefer a list unless several columns' alignment truly aids reading. (LLM-facing docs can use tables more freely.)
 - **Start sections, and key bullets, with an emoji** as a visual anchor.
   Use it purposefully, not on every line.
 - **End every bullet with a full stop** for consistent, finished-looking lists.
