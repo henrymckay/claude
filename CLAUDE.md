@@ -36,6 +36,7 @@ menu and are easy to skip on routine work.
 - Writing or editing Python → **`write-python`**.
 - Starting a new Python project or packaging → **`setup-python`**.
 - Functional-style code, in any language → **`be-functional`**.
+- Object-oriented design (classes, inheritance, SOLID, patterns) → **`be-oop`**.
 - Working with Polars → **`use-polars`**.
 
 ## Tools & environment
