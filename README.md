@@ -1,4 +1,4 @@
-# Claude Code skills
+# Claude Code skills & config
 
 Personal [Claude Code](https://claude.com/claude-code) skills and configuration, version-controlled and symlinked into `~/.claude` so they work across every repo and machine.
 
@@ -16,26 +16,31 @@ Verb-first skills that encode my coding conventions.
 | `use-polars` | Idiomatic Polars: expressions, lazy execution, pandas migration. |
 | `write-markdown` | Markdown for humans and LLMs, with audience-specific rules. |
 
-## 🔗 How it works
+## 🔗 Link it into `~/.claude`
 
-Symlink `skills/` into `~/.claude/skills`, and Claude Code loads every skill as a personal skill in all repos.
+Symlink each authored piece into `~/.claude`, and Claude Code picks it up in every repo.
+Keep `~/.claude` itself a normal local directory — symlink only the tracked files below.
 
 ```bash
-ln -s /path/to/claude/skills ~/.claude/skills
+ln -s /path/to/claude/skills    ~/.claude/skills
+ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
+# optional, once you add them:
+# ln -s /path/to/claude/agents   ~/.claude/agents
+# ln -s /path/to/claude/commands ~/.claude/commands
 ```
 
-The same pattern extends to other authored config if you add it.
+The repo currently tracks `skills/` and `CLAUDE.md`; `agents/` and `commands/` follow the same pattern whenever you add them.
 
 ```text
-~/.claude/skills   -> repo/skills
-~/.claude/agents   -> repo/agents      # optional, if you add agents/
-~/.claude/commands -> repo/commands    # optional, if you add commands/
+~/.claude/skills    -> repo/skills
+~/.claude/CLAUDE.md -> repo/CLAUDE.md
+~/.claude/agents    -> repo/agents      # optional
+~/.claude/commands  -> repo/commands    # optional
 ```
 
-## 🚫 What stays local
+## 🚫 Keep runtime state local
 
-Machine-local runtime state must never go in git or iCloud.
-Keep `~/.claude` itself a normal local directory and symlink only the authored folders.
+Machine-local runtime state must never go in git or iCloud, so never symlink all of `~/.claude` — only the authored folders above.
 
 - Session and history state.
   - `sessions/`, `projects/`, `history.jsonl`.
@@ -52,9 +57,12 @@ Keep `~/.claude` itself a normal local directory and symlink only the authored f
 
 Copy an existing skill such as `skills/use-git/SKILL.md` as a starting template.
 
-## 💻 On a new machine
+## 💻 Set up on a new machine
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
-ln -s /path/to/claude/skills ~/.claude/skills
+ln -s /path/to/claude/skills    ~/.claude/skills
+ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ```
+
+Reinstall any Claude Code plugins you rely on separately — they live outside this repo, under `~/.claude/plugins`.
