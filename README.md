@@ -15,6 +15,11 @@ Verb-first skills that encode a consistent set of coding conventions.
 - `write-markdown` covers writing Markdown for humans and LLMs.
 - `write-python` defines in-code Python conventions for style and structure.
 
+## 🧠 Global instructions
+
+`CLAUDE.md` holds cross-project guidance Claude Code loads in every repo.
+It sets the working style, the `git` policy, coding preferences, and an index pointing to the skills above.
+
 ## 🛠️ Set up
 
 Clone the repo, then symlink the authored files into `~/.claude`.
@@ -28,10 +33,14 @@ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 
 Symlink `agents/` and `commands/` the same way once you add them.
 
-> [!CAUTION]
-> Symlink only the files above, never all of `~/.claude`.
-> Its sessions, history, and caches must never be committed.
-
-> [!NOTE]
+> [!TIP]
 > Reinstall any Claude Code plugins separately.
 > They live outside this repo, under `~/.claude/plugins`.
+
+## 🔧 Editing the repo
+
+Only the authored files belong here: `skills/`, `CLAUDE.md`, and any `agents/` or `commands/`.
+
+> [!CAUTION]
+> Never commit Claude Code's runtime state.
+> Its sessions, history, and caches must stay local to `~/.claude`.
