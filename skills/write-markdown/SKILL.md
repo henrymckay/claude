@@ -24,6 +24,9 @@ So **decide the audience first**, apply the universal rules, then add the audien
 
 - **Be succinct — prefer fewer words over more.** Cut filler ("in order to" → "to") and throat-clearing; every word should earn its place.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
+- **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
+  - A verb tells the reader what they'll *do* in that section.
+  - Reference or catalogue sections that don't describe an action (e.g. "Skills", "Requirements") can stay noun phrases.
 - **Prefer bullets, one clear statement each.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
 - **Write imperatively.** Lead with a verb — "Install the CLI", not "The CLI can be installed".
 - **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, and identifiers.
