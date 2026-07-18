@@ -1,4 +1,6 @@
-## Working style
+# Claude Code
+
+## Work
 
 - Show a short diff or plan before large or risky changes.
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
