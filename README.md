@@ -38,6 +38,7 @@ Symlink `agents/` and `commands/` the same way once added.
 > [!TIP]
 > Reinstall any Claude Code plugins separately.
 > They live under `~/.claude/plugins`, outside the repo.
+> From [Anthropic's marketplace](https://github.com/anthropics/claude-plugins-official), `skill-creator`, `pyright-lsp`, and `commit-commands` pair well with these skills.
 
 ## 📚 Learn more
 
