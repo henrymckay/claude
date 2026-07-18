@@ -8,7 +8,7 @@ The `skills/` directory is symlinked into `~/.claude/skills`, so every skill
 here is available as a **personal skill** in every repo I work in.
 
 ```
-ln -s "/Users/henrymckay/Library/Mobile Documents/com~apple~CloudDocs/Git/claude/skills" ~/.claude/skills
+ln -s /path/to/claude/skills ~/.claude/skills
 ```
 
 ## Layout
@@ -44,7 +44,7 @@ instructions), `keybindings.json`, and a sanitised copy of `settings.json`
 3. Write the instructions in the body.
 4. Invoke explicitly any time with `/<skill-name>`.
 
-See `skills/example-skill/SKILL.md` for a template.
+Use any existing skill (e.g. `skills/use-git/SKILL.md`) as a template.
 
 ## On a new machine
 
