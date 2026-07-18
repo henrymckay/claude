@@ -43,7 +43,7 @@ Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
 The subject is imperative, ≤ ~50 chars, no trailing period.
 Then a blank line and a body wrapped at ~72 cols explaining **why**, not just what (the diff shows what):
 
-```
+```text
 feat(search): rank users by recent activity
 
 Sort results by last-active so the people you interact with most surface

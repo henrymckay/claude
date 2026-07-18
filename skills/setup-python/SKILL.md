@@ -28,7 +28,7 @@ This covers *structure and setup*; for how to write the code inside, see `write-
 The `src/` layout puts the package one directory down so it *can't* be imported accidentally from the repo root before it's installed.
 That forces you to test against the actually-installed package and catches packaging mistakes early — the whole reason it's the default.
 
-```
+```text
 myproject/
   pyproject.toml
   README.md
