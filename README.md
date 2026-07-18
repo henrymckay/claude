@@ -33,7 +33,7 @@ ln -s /path/to/claude/skills ~/.claude/skills
 ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ```
 
-Symlink `agents/` and `commands/` the same way once you add them.
+Symlink `agents/` and `commands/` the same way once added.
 
 > [!TIP]
 > Reinstall any Claude Code plugins separately.
