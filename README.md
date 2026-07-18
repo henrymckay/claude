@@ -20,10 +20,10 @@ Verb-first skills that encode a consistent set of coding conventions.
 Clone the repo, then symlink the authored files into `~/.claude`.
 Claude Code loads them in every project.
 
-```console
-$ git clone https://github.com/henrymckay/claude.git
-$ ln -s /path/to/claude/skills ~/.claude/skills
-$ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
+```bash
+git clone https://github.com/henrymckay/claude.git
+ln -s /path/to/claude/skills ~/.claude/skills
+ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ```
 
 Symlink `agents/` and `commands/` the same way once you add them.
