@@ -18,12 +18,18 @@ Verb-first skills that encode a consistent set of coding conventions.
 ## 🧠 Global instructions
 
 `CLAUDE.md` holds cross-project guidance Claude Code loads in every repo.
-It sets the working style, the `git` policy, coding preferences, and an index pointing to the skills above.
+It sets:
+
+- The working style.
+- The `git` policy.
+- Coding preferences.
+- An index pointing to the skills above.
 
 ## 🛠️ Set up
 
-Clone the repo, then symlink the authored files into `~/.claude`.
-Claude Code loads them in every project.
+Clone the repo.
+Symlink the authored files into `~/.claude`.
+Claude Code then loads them in every project.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
@@ -35,11 +41,15 @@ Symlink `agents/` and `commands/` the same way once you add them.
 
 > [!TIP]
 > Reinstall any Claude Code plugins separately.
-> They live outside this repo, under `~/.claude/plugins`.
+> They live under `~/.claude/plugins`, outside the repo.
 
-## 🔧 Editing the repo
+## 🧹 Keep the repo clean
 
-Only the authored files belong here: `skills/`, `CLAUDE.md`, and any `agents/` or `commands/`.
+Only the authored files belong in the repo:
+
+- `skills/`.
+- `CLAUDE.md`.
+- `agents/` and `commands/`, once added.
 
 > [!CAUTION]
 > Never commit Claude Code's runtime state.
