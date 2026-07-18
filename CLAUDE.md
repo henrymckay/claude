@@ -1,31 +1,24 @@
-# Global instructions
-
-Personal, cross-project guidance for Claude Code.
-Applies in every repo.
-Keep project-specific rules in that project's own `CLAUDE.md` instead.
-
 ## Working style
 
 - Be concise; lead with the answer, then the reasoning if needed.
-- Git: follow the `use-git` skill.
-  Commit and push your own branch without waiting to be asked once a change is complete and working; hold off on anything I'm still actively reviewing or iterating.
-  Force-pushing, rewriting shared history, and destructive commands need explicit sign-off.
-- Prefer showing a short diff/plan before large or risky changes.
+- Show a short diff or plan before large or risky changes.
+- Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
+- Force-pushing, rewriting shared history, and destructive commands need my explicit sign-off.
 
 ## Coding preferences
 
 - Match the conventions of the surrounding code.
 
-## Skills — consult these proactively
+## Skills — invoke the matching one before you act
 
-These personal skills carry my conventions.
-Consult the relevant one *before* acting, not only when explicitly asked — their descriptions sit in a passive menu and are easy to skip on routine work.
+These skills encode my conventions and are mandatory, not advisory.
+Before starting any task below, invoke the matching skill and follow it.
+Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 
-- Any git operation (commit, branch, PR, history) → follow **`use-git`**.
-  In particular: Conventional Commits format, and **no `Co-Authored-by` / "Generated with" footers** on commit messages.
+- Git — committing, branching, PRs, history → **`use-git`** (Conventional Commits; no `Co-Authored-by` / "Generated with" footers).
 - Writing or editing Python → **`write-python`**.
-- Starting a new Python project or packaging → **`setup-python`**.
+- Starting or packaging a Python project → **`setup-python`**.
 - Functional-style code, in any language → **`be-functional`**.
-- Object-oriented design (classes, inheritance, SOLID, patterns) → **`be-oop`**.
-- Any Markdown, human- or LLM-facing (README, docs, SKILL.md, CLAUDE.md, prompts) → **`write-markdown`** — it separates universal rules from audience-specific ones.
+- Object-oriented design — classes, inheritance, SOLID, patterns → **`be-oop`**.
+- Any Markdown, for humans or LLMs (README, docs, `SKILL.md`, `CLAUDE.md`, prompts) → **`write-markdown`**.
 - Working with Polars → **`use-polars`**.
