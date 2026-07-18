@@ -4,7 +4,7 @@
 
 - Show a short diff or plan before large or risky changes.
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
-- Force-pushing, rewriting shared history, and destructive commands need my explicit sign-off.
+- Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 
 ## Skills
 
