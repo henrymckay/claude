@@ -34,6 +34,17 @@ Symlink `agents/` and `commands/` the same way once you add them.
 > Reinstall any Claude Code plugins separately.
 > They live under `~/.claude/plugins`, outside the repo.
 
+## 📚 Learn more
+
+`CLAUDE.md` holds always-on facts and conventions.
+A skill packages a procedure that loads only when it's relevant.
+
+- [Skills](https://code.claude.com/docs/en/skills) covers what a skill is and when to prefer one over `CLAUDE.md`.
+- [Memory and `CLAUDE.md`](https://code.claude.com/docs/en/memory) covers what belongs in persistent instructions.
+- [Agent Skills](https://agentskills.io) is the open standard these skills follow.
+- [Discover plugins](https://code.claude.com/docs/en/discover-plugins) is how to find and install prebuilt skills and plugins.
+- [Anthropic's official marketplace](https://github.com/anthropics/claude-plugins-official) is the curated plugin directory.
+
 ## 🤝 Contribute
 
 Only the authored files belong in the repo:
