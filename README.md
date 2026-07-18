@@ -8,8 +8,7 @@ Symlinked into `~/.claude` so they apply everywhere.
 [`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions Claude Code loads in every repo.
 It covers:
 
-- Working style, from staying concise to when to commit and push.
-- Coding preferences.
+- Working style, such as when to commit and push without being asked.
 - Which skill to invoke and when, so they reliably get used.
 
 ## 📦 Skills
