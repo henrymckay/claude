@@ -42,13 +42,12 @@ Symlink `agents/` and `commands/` the same way once added.
 
 ## 📚 Learn more
 
-- Match a job to the right [extension](https://code.claude.com/docs/en/features-overview): `CLAUDE.md`, skills, hooks, or plugins.
-- A [skill](https://code.claude.com/docs/en/skills) loads its body only when relevant, so its reference material costs almost nothing until used.
-- [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads in full every session, so keep it to always-on rules under ~200 lines.
-- Claude Code reads its files from `~/.claude` and a project's [`.claude/`](https://code.claude.com/docs/en/claude-directory).
-- These skills follow the [Agent Skills](https://agentskills.io) open standard, so they work in other AI tools too.
-- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from a marketplace with `/plugin`.
-- Anthropic's [official marketplace](https://github.com/anthropics/claude-plugins-official) is a curated directory of high-quality plugins.
+- Pick the right [extension](https://code.claude.com/docs/en/features-overview) for a job: `CLAUDE.md`, skills, hooks, or plugins.
+- A [skill](https://code.claude.com/docs/en/skills) loads only when relevant, so it's cheap on context.
+- [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads every session, so keep it to always-on rules under ~200 lines.
+- Claude Code reads config from `~/.claude` and a project's [`.claude/`](https://code.claude.com/docs/en/claude-directory).
+- These skills follow the [Agent Skills](https://agentskills.io) open standard, usable in other tools.
+- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from the [official marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
 
 ## 🤝 Contribute
 
