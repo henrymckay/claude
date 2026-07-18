@@ -94,7 +94,8 @@ curried function specialises behavior without a class hierarchy. Reach for a
 **class only when extending an existing hierarchy** — subclassing a framework
 base, or overriding a hook the framework calls — where a class is what the API
 expects. Otherwise a class holding a single method is just a function wearing a
-costume.
+costume. When a class genuinely *is* the right call, `be-oop` covers doing it
+well.
 
 ## Model data so illegal states are unrepresentable
 

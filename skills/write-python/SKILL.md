@@ -35,7 +35,10 @@ existing style.
 library features before writing custom code or pulling in a dependency —
 out-of-the-box beats bespoke, because there's less to maintain and fewer places
 for bugs to hide. Add complexity (another abstraction, a dependency, a clever
-trick) only when a concrete need forces it.
+trick) only when a concrete need forces it. This is **KISS** (keep it simple),
+**YAGNI** (you aren't gonna need it — don't build for imagined futures), and
+**DRY** (don't repeat yourself — factor out *real* duplication, but don't
+over-abstract chasing it).
 
 ## Ordering
 
