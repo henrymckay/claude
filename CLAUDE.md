@@ -4,14 +4,8 @@ Personal, cross-project guidance for Claude Code.
 Applies in every repo.
 Keep project-specific rules in that project's own `CLAUDE.md` instead.
 
-## About me
-
-<!-- Who you are, your stack, expertise level — helps Claude pitch responses. -->
--
-
 ## Working style
 
-<!-- How you want Claude to operate across all projects. -->
 - Be concise; lead with the answer, then the reasoning if needed.
 - Git: follow the `use-git` skill.
   Commit and push your own branch without waiting to be asked once a change is complete and working; hold off on anything I'm still actively reviewing or iterating.
@@ -20,9 +14,7 @@ Keep project-specific rules in that project's own `CLAUDE.md` instead.
 
 ## Coding preferences
 
-<!-- Cross-language defaults. Per-language/per-repo specifics go in the repo. -->
 - Match the conventions of the surrounding code.
--
 
 ## Skills — consult these proactively
 
@@ -37,8 +29,3 @@ Consult the relevant one *before* acting, not only when explicitly asked — the
 - Object-oriented design (classes, inheritance, SOLID, patterns) → **`be-oop`**.
 - Any Markdown, human- or LLM-facing (README, docs, SKILL.md, CLAUDE.md, prompts) → **`write-markdown`** — it separates universal rules from audience-specific ones.
 - Working with Polars → **`use-polars`**.
-
-## Tools & environment
-
-<!-- Anything true on this machine across projects, e.g. package managers, preferred test runners, things to avoid. -->
--
