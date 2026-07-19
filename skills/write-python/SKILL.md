@@ -29,7 +29,7 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 These conventions are for new code or projects with no strong existing style.
 
 **Prefer the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
-Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it.
+Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it — and when a dependency is warranted, `setup-python` lists the house pick for common tasks.
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Ordering

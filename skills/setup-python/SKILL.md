@@ -117,6 +117,20 @@ That's usually the latest stable release, but a dependency without wheels for th
 Determine it when you create the project rather than hardcoding a number that ages — the `>=3.14` / `py314` above are just today's answer, not a fixed target.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
+## Reach-for libraries
+
+Prefer the standard library by default; only when a task genuinely needs a dependency, reach for the house pick below (see `write-python` on preferring the simplest solution).
+Listed by task:
+
+- **CLI** → `argparse` (stdlib) for a trivial one-or-two-flag script; `typer` once it grows, since it's type-hint-driven, generates `--help`, and pairs with `rich`. Reserve `fire` for a throwaway internal tool where reflecting an object straight into a CLI saves time.
+- **DataFrames** → `polars` (see the `use-polars` skill).
+- **HTTP** → `httpx` (sync and async) over `requests`.
+- **Logging** → stdlib `logging`, optionally with `rich.logging.RichHandler` for pretty console output, or `loguru` for a more ergonomic API. `rich` itself formats output; it isn't a logging framework.
+- **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
+- **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
+- **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.
+- **Validation & settings** → `pydantic` v2 for data models and validation, `pydantic-settings` for typed config from the environment.
+
 ## Standalone scripts
 
 A single script that needs a package shouldn't require a whole project.
