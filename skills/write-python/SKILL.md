@@ -84,6 +84,7 @@ Types stay out of the docstring — the annotations already carry them, so don't
 
 Document the *why* and the non-obvious (units, side effects, what raises), not the mechanically obvious.
 A trivial function still gets a docstring, but keep it a single line that says something its signature doesn't — a bare restatement of the name is wasted space, so make it earn its line.
+Phrase the summary line in the **imperative mood** ("Return the top products", not "Returns the top products" or the noun phrase "The top products") — ruff's `D401` flags anything else.
 
 Presence and basic hygiene are enforced by ruff's pydocstyle (`D`) rules on pre-commit.
 Note ruff has no reST convention, so it's configured with `pep257` — it checks that docstrings *exist* but doesn't impose section formatting, leaving the field-list style to you.

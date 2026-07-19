@@ -64,6 +64,9 @@ mycli = "mypackage.cli:main"   # only if it's a CLI
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/mypackage"]   # src/ layout: spell out the path so hatchling finds the package
+
 [tool.ruff]
 # ruff owns formatting + linting; keep line length etc. here, not in your head
 line-length = 88
@@ -100,6 +103,7 @@ testpaths = ["tests"]
 ## Dependencies & environment: use `uv`
 
 `uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces pip / pip-tools / virtualenv / pyenv.
+If it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which drops a prebuilt binary in `~/.local/bin`; prefer it over `brew install uv`, which on some machines falls back to a slow from-source build (compiling the whole Rust/LLVM toolchain).
 Core workflow:
 
 ```bash
@@ -155,5 +159,5 @@ Set these up once and defer to them everywhere:
 - **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
 - **`pytest`** — tests in `tests/`.
 
-Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, and build artifacts.
+Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
 See the `use-git` skill for repo hygiene.
