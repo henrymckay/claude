@@ -7,7 +7,7 @@ description: >-
   existing code; setting up dependencies, virtual environments, or project
   config; or deciding where files should live — even if the user just says
   "new project", "set this up", or "make this a package". Standardizes on uv,
-  ruff, pyright, and pytest for Python 3.11+. For in-code style once files
+  ruff, pyright, and pytest, targeting the latest stable Python. For in-code style once files
   exist, see the write-python skill.
 ---
 
@@ -54,7 +54,7 @@ A sensible starting point:
 name = "mypackage"
 version = "0.1.0"
 description = "..."
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
@@ -69,7 +69,7 @@ packages = ["src/mypackage"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
@@ -112,6 +112,9 @@ uv sync                 # reproduce the env from uv.lock
 Commit `uv.lock` for applications (reproducible installs); libraries usually don't pin as hard.
 Pin the Python version with a `.python-version` file so everyone's on the same interpreter.
 
+**Target the latest stable Python for a new project** — set `.python-version`, `requires-python`, and ruff's `target-version` to it (3.14 at the time of writing; check for a newer stable release when you start, and don't target a pre-release).
+A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
+
 ## Standalone scripts
 
 A single script that needs a package shouldn't require a whole project.
@@ -119,7 +122,7 @@ Declare deps inline (PEP 723) and run with `uv run script.py` — uv builds a th
 
 ```python
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = ["httpx"]
 # ///
 ```
