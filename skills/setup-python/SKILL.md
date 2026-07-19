@@ -112,7 +112,9 @@ uv sync                 # reproduce the env from uv.lock
 Commit `uv.lock` for applications (reproducible installs); libraries usually don't pin as hard.
 Pin the Python version with a `.python-version` file so everyone's on the same interpreter.
 
-**Target the latest stable Python for a new project** — set `.python-version`, `requires-python`, and ruff's `target-version` to it (3.14 at the time of writing; check for a newer stable release when you start, and don't target a pre-release).
+**Target the newest Python release that all your dependencies support** for a new project — set `.python-version`, `requires-python`, and ruff's `target-version` to it.
+That's usually the latest stable release, but a dependency without wheels for the very newest version can force you one release back, so pick the highest version for which `uv sync` resolves and the tests pass (and never a pre-release).
+Determine it when you create the project rather than hardcoding a number that ages — the `>=3.14` / `py314` above are just today's answer, not a fixed target.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
 ## Standalone scripts
