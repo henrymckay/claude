@@ -90,6 +90,14 @@ Presence and basic hygiene are enforced by ruff's pydocstyle (`D`) rules on pre-
 Note ruff has no reST convention, so it's configured with `pep257` — it checks that docstrings *exist* but doesn't impose section formatting, leaving the field-list style to you.
 See `setup-python`.
 
+## Comments
+
+Prefer self-documenting code to `#` comments.
+A descriptive name, a named constant, or a small well-named helper carries the same meaning as a comment and can't drift out of sync with the code the way a comment does — so lift the intent into a name (`invalid_rows = 3`, not a bare `3` with a comment).
+When a genuine *why* still needs stating — a non-obvious workaround or a subtle invariant — put it in the docstring, not a trailing comment.
+Reserve `#` for what has nowhere else to live: tooling directives (`# noqa`, `# type: ignore`) and the PEP 723 inline-script header.
+Keep config files (`pyproject.toml`, pre-commit, CI) comment-free the same way, explaining any non-obvious setting in prose in the docs rather than inline.
+
 ## Imports
 
 **Import modules, not names, and qualify at every use site.** Import the module or package and reach members through it — `import polars` then `polars.DataFrame`, never `from polars import DataFrame`.

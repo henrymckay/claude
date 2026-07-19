@@ -58,40 +58,27 @@ requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
-mycli = "mypackage.cli:main"   # only if it's a CLI
+mycli = "mypackage.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mypackage"]   # src/ layout: spell out the path so hatchling finds the package
+packages = ["src/mypackage"]
 
 [tool.ruff]
-# ruff owns formatting + linting; keep line length etc. here, not in your head
 line-length = 88
 target-version = "py311"
 
 [tool.ruff.lint]
-# ruff's defaults are just E+F; opt into a broader baseline
-select = [
-    "E", "F",   # pycodestyle + pyflakes (defaults)
-    "I",        # isort — import sorting
-    "N",        # pep8-naming — naming conventions
-    "D",        # pydocstyle — docstring presence + style
-    "UP",       # pyupgrade — modernize syntax (matches 3.11+ typing rules)
-    "B",        # flake8-bugbear — likely-bug patterns
-    "SIM",      # flake8-simplify
-    "C4",       # flake8-comprehensions
-]
+select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
 
 [tool.ruff.lint.pydocstyle]
-# ruff has no reST convention; pep257 enforces docstring presence + hygiene
-# without imposing Google/NumPy section formatting, so reST field lists are fine
 convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]       # don't require docstrings on test functions
+"tests/*" = ["D"]
 
 [tool.pyright]
 typeCheckingMode = "standard"
@@ -99,6 +86,14 @@ typeCheckingMode = "standard"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 ```
+
+The non-obvious choices:
+
+- `[project.scripts]` only when it's a CLI — it maps a command to an entry point.
+- `[tool.hatch.build.targets.wheel]` spells out the package path so hatchling finds it under `src/`; without it the wheel build can't locate the package.
+- `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
+- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`).
+- `per-file-ignores` drops the `D` rules on `tests/*`, since test functions don't need docstrings.
 
 ## Dependencies & environment: use `uv`
 
@@ -139,13 +134,14 @@ Add `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.x.x          # pin current; run `pre-commit autoupdate` to bump
+    rev: v0.x.x
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 ```
 
+Pin `rev` to the current `ruff-pre-commit` release and bump it later with `pre-commit autoupdate`.
 Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to register the git hook).
 `ruff-check --fix` auto-fixes and `ruff-format` reformats; if a hook changes files the commit stops so you can re-stage.
 This is also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
