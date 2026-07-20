@@ -19,3 +19,4 @@ Their trigger descriptions sit in a passive menu that is easy to skip on routine
 - **`use-polars`** when working with Polars.
 - **`write-markdown`** for any Markdown, for humans or LLMs: READMEs, docs, `SKILL.md`, `CLAUDE.md`, prompts.
 - **`write-python`** when writing or editing Python.
+- **`write-tests`** when writing or editing tests (pytest: fixtures, parametrization, property-based testing).

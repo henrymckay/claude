@@ -38,11 +38,15 @@ myproject/
       __init__.py
       core.py
   tests/
-    test_core.py
+    conftest.py
+    mypackage/
+      test_core.py
+    packages/
+      test_httpx.py
 ```
 
 Keep modules small and cohesive (one responsibility).
-Tests live in `tests/`, mirroring the package — not beside the source.
+Tests live in `tests/`, never beside the source: your own code mirrored under `tests/<package>/`, and the dependency behaviour you rely on under `tests/packages/` (see `write-tests`).
 
 ## pyproject.toml
 
@@ -77,14 +81,12 @@ select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D"]
-
 [tool.pyright]
 typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--import-mode=importlib"
 ```
 
 The non-obvious choices:
@@ -92,8 +94,8 @@ The non-obvious choices:
 - `[project.scripts]` only when it's a CLI — it maps a command to an entry point.
 - `[tool.hatch.build.targets.wheel]` spells out the package path so hatchling finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
-- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`).
-- `per-file-ignores` drops the `D` rules on `tests/*`, since test functions don't need docstrings.
+- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
+- `--import-mode=importlib` imports tests without putting their folders on `sys.path`, which a `src/` layout and nested `tests/<package>/` folders need to avoid import clashes (see `write-tests`).
 
 ## Dependencies & environment: use `uv`
 

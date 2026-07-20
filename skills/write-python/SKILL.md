@@ -10,7 +10,8 @@ description: >-
   skill does NOT restate their rules, only the judgment calls they can't make.
   These are the baseline conventions that apply to all Python; layer a paradigm
   skill on top as needed — be-functional for functional style, be-oop for
-  object-oriented design. For project structure and packaging, see setup-python.
+  object-oriented design, write-tests for test suites. For project structure
+  and packaging, see setup-python.
 ---
 
 # Writing Python
