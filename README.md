@@ -16,7 +16,7 @@ Verb-first skills that encode consistent working conventions.
 
 - [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms.
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
-- [`setup-python`](skills/setup-python) scaffolds a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and a recommended library for each common task.
+- [`setup-python`](skills/setup-python) scaffolds a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and recommended libraries like [`typer`](https://typer.tiangolo.com/) and [`rich`](https://rich.readthedocs.io/) for common tasks.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
 - [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
