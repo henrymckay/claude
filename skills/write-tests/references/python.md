@@ -17,6 +17,8 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 
 ## Table-driven: parametrize
 
+For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole, below).
+
 ```python
 @pytest.mark.parametrize(
     ("quantity", "unit_price", "expected"),
@@ -31,6 +33,28 @@ def test_revenue_multiplies_quantity_by_price(
 
 Give cases `ids` when the values don't read clearly in the output.
 
+## Whole-frame assertions
+
+Assert a dataframe transform on the whole frame in one test. A reusable `then_` custom assertion names the check and keeps the body a clean given-when-then:
+
+```python
+def then_column_equals(
+    frame: polars.DataFrame, column: str, values: collections.abc.Sequence[object]
+) -> None:
+    """Assert the collected frame's column holds exactly these values, in order."""
+    assert frame.get_column(column).to_list() == list(values)
+
+
+def test_revenue_by_region_totals_and_ranks(sales: polars.LazyFrame) -> None:
+    """Revenue totals per region, ranked richest first."""
+    summary = pipeline.revenue_by_region(pipeline.clean(sales)).collect()
+
+    then_column_equals(summary, "region", ["North", "South"])
+    then_column_equals(summary, "revenue", [40.0, 30.0])
+```
+
+For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
+
 ## Property-based: Hypothesis
 
 ```python
@@ -42,9 +66,10 @@ def test_sort_is_idempotent(xs: list[int]) -> None:
 
 ## Where test data lives
 
-- Salient values → `@pytest.mark.parametrize`, building the smallest frame or object the code under test actually reads.
-- A canonical dataset → a file under `tests/data/` that a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test.
-- A tailored input → a fixture that returns a builder function, or a fixture derived from another and narrowed.
+- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
+- A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
+- A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
+- Expected values → arguments to a `then_` custom assertion, not literals scattered through the body.
 
 ## Assertions
 

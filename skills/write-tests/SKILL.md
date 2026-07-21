@@ -35,15 +35,20 @@ Structure every test as **given / when / then** — the behavioural form of the 
 - **When** — the single action under test.
 - **Then** — the assertions on the outcome.
 
-Keep the three beats visually distinct. When a *when* or *then* step is shared or reads better named, extract it into a `when_<action>` helper and a `then_<expectation>` **custom assertion**, so the body reads as a sentence:
+Make the three beats visible through **structure and names, not comments** — the code should not need a `# given` label:
+
+- *Given* is the fixture parameter list — injected setup, not rebuilt in the body.
+- *When* is a single action on its own line, assigned to a well-named result.
+- *Then* is the assertions, ideally `then_<expectation>` **custom assertions**, with a blank line separating them from the when.
 
 ```
 def test_keep_valid_drops_non_positive_rows(raw_sales):
-    kept = when_kept_valid(raw_sales)
+    kept = keep_valid(raw_sales)
+
     then_every_row_is_positive(kept)
 ```
 
-Inline the assertions instead when the test is simple; don't extract for its own sake.
+A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place. Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
 
 ## Name the behaviour: when and then
 
@@ -69,18 +74,21 @@ Keep the imperative shell thin so little is left that needs slow integration tes
 
 ## Where test data lives
 
-Put each input where it keeps the test readable:
+Build inputs through a **fixture or builder, not inline literals** in the test body; keep the body about the action and the expectation.
 
-- **Salient values → table cases.** When the specific inputs are the point of the test (a formula, an edge case), pass them as parametrized `(input, expected)` rows and build the smallest structure the code actually reads — only the fields it uses, not a padded object. The reader sees input and expected output together.
-- **A canonical, reused dataset → an external file loaded by setup.** Keep a shared sample out of the source: a data file (CSV, Parquet, JSON) that a fixture loads. It stays inspectable as data and the test stays about behaviour — this matters most for dataframes and anything past a few rows.
-- **A tailored object → a builder or derived fixture.** For inputs that vary per test, a fixture can return a builder exposing only what varies, or narrow another fixture. Reach for this only when several tests need different shapes; a one-off is clearer built inline.
+- **A canonical or reused dataset → an external file loaded by a fixture.** Keep a shared sample out of the source — a data file (CSV, Parquet, JSON) a fixture loads — so it stays inspectable as data and the test stays about behaviour. This matters most for dataframes and anything past a few rows.
+- **A tailored input → a builder or derived fixture.** When inputs vary per test, a fixture can return a builder that exposes only what varies, or narrow another fixture. Reach for this only when several tests need different shapes; a genuinely trivial one-off can be built inline.
+- **Expected values → arguments to a `then_` assertion.** The expected output belongs with the assertion, but passing it into a named custom assertion (`then_column_equals(result, "revenue", [20, 20, 30])`) reads better than a bare `assert` buried in the body.
 
-Keep the padding out either way — a test should carry the data its assertion depends on and nothing more.
+Feed a function only the fields it actually reads, and assert only what the behaviour promises — no padding either side.
 
 ## Table-driven tests
 
-Run one assertion over many input rows instead of a loop or copy-pasted tests.
-Each row is reported and fails separately (a loop stops at the first failure), and adding a case is one line.
+Run one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.
+Each case is reported and fails separately (a loop stops at the first failure), and adding one is a single line.
+
+Reserve it for cases that are genuinely separate.
+Don't shred a single operation over a whole collection into a case per element: when a function transforms a list or dataframe, feed it the whole input and assert the whole output in **one** test — that exercises it the way it is actually called and reads far better than a row-at-a-time table.
 The runner's parametrization syntax is in `references/python.md`.
 
 ## Property-based tests
