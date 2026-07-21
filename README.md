@@ -21,6 +21,7 @@ Verb-first skills that encode consistent working conventions.
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
 - [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
 - [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
+- [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
 ## 🛠️ Set up
 
