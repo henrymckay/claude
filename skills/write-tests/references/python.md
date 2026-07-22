@@ -11,7 +11,7 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put fixtures shared across files in `conftest.py`, which pytest discovers automatically. To mirror the `when`/`then` modules, move them to a `given.py` and register it: `addopts = "-p given"` in pyproject needs no `conftest.py` at all (it resolves via `pythonpath`), whereas the `pytest_plugins = ["given"]` variable works only from a `conftest.py`, never pyproject.
+- Put fixtures shared across files in `conftest.py`, which pytest discovers automatically. To mirror the `when`/`then` modules, move them into the `support` package as `support/given.py` and register it with `addopts = "-p support.given"` — no `conftest.py` needed (it resolves via `pythonpath`). (The `pytest_plugins` variable works only from a `conftest.py`, never pyproject.)
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
@@ -69,10 +69,10 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
 
 ## Assertions
 
-Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality. Collect them in a shared module imported as `then`, so every test reads the same way and each check is defined once:
+Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality. Collect them in the `support` package's `then` module, imported as `from support import then`, so every test reads the same way and each check is defined once:
 
 ```python
-# tests/then.py
+# tests/support/then.py
 def equals(actual: object, expected: object) -> None:
     """Assert two values are equal."""
     assert actual == expected, f"expected {expected!r}, got {actual!r}"
@@ -87,8 +87,8 @@ def column_equals(
 
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
-- Put `pythonpath = ["tests"]` in the pytest config so `import then` resolves under `--import-mode importlib`.
-- Give each helper a failure message (or call `pytest.register_assert_rewrite("then")` in `conftest.py`), since pytest only rewrites asserts in test modules, not an imported helper.
+- Keep the helpers in a `support` package (`support/__init__.py`) on `pythonpath = ["tests"]` so `from support import then` resolves, and add `known-first-party = ["support"]` so isort groups it with your code, not third-party deps.
+- Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("support.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
 
@@ -106,24 +106,27 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 
 ```text
 tests/
-  given.py
-  then.py
-  mypackage/
-    test_core.py
-  packages/
-    test_httpx.py
+  data/
+  support/
+    __init__.py
+    given.py
+    then.py
+  suite/
+    mypackage/
+      test_core.py
+    packages/
+      test_httpx.py
 ```
 
-- Your code mirrored under `tests/<package>/`; dependency-behaviour tests under `tests/packages/`.
-- Support modules sit alongside: fixtures in `given.py` (registered by `-p given`), custom assertions in `then.py`, and action helpers in a `when.py` where actions earn naming.
-- Set `--import-mode importlib` (see `setup-python`) so nested folders and a test directory sharing the package's name don't confuse imports.
-- No `__init__.py` needed: `importlib` imports each test file by path, and `given`/`then` resolve as plain modules via `pythonpath`. Add `__init__.py` to the test folders only if two test files end up sharing a name.
+- Three folders, three jobs: `data/` (files a fixture loads), `support/` (imported helpers), `suite/` (the tests pytest collects). Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
+- `support/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming. The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
+- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p support.given` registers the fixtures; `known-first-party = ["support"]` keeps isort from filing it under third-party.
 
 ## Running
 
 ```bash
 uv run pytest                      # everything under testpaths
-uv run pytest tests/mypackage      # one directory
+uv run pytest tests/suite/packages # one directory
 uv run pytest -k revenue           # tests whose name matches
 uv run pytest -m slow              # tests carrying a marker
 ```

@@ -133,7 +133,7 @@ Tag genuinely slow or external tests so the default run stays quick and you opt 
 
 ## Layout
 
-Tests of your code **mirror the source** under `tests/<unit>/`; tests of the **dependency behaviour you rely on** live separately under `tests/packages/`, one file per dependency.
+Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **support code** they import (fixtures, custom assertions).
 The concrete tree, import mode, and runner setup are language-specific — see `references/python.md` and `setup-python`.
 
 ## Running the suite
