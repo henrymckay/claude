@@ -11,7 +11,7 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put fixtures shared across files in `conftest.py`, which pytest discovers automatically — or, to mirror the `when`/`then` modules, in a `given.py` registered from a one-line `conftest.py` with `pytest_plugins = ["given"]` (the file pytest must find stays, as a one-line registration).
+- Put fixtures shared across files in `conftest.py`, which pytest discovers automatically. To mirror the `when`/`then` modules, move them to a `given.py` and register it: `addopts = "-p given"` in pyproject needs no `conftest.py` at all (it resolves via `pythonpath`), whereas the `pytest_plugins = ["given"]` variable works only from a `conftest.py`, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
@@ -106,7 +106,6 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 
 ```text
 tests/
-  conftest.py
   given.py
   then.py
   mypackage/
@@ -116,7 +115,7 @@ tests/
 ```
 
 - Your code mirrored under `tests/<package>/`; dependency-behaviour tests under `tests/packages/`.
-- Support modules sit alongside: fixtures in `given.py` (registered by the one-line `conftest.py`), custom assertions in `then.py`, and action helpers in a `when.py` where actions earn naming.
+- Support modules sit alongside: fixtures in `given.py` (registered by `-p given`), custom assertions in `then.py`, and action helpers in a `when.py` where actions earn naming.
 - Set `--import-mode=importlib` (see `setup-python`) so nested folders and a test directory sharing the package's name don't confuse imports.
 
 ## Running
