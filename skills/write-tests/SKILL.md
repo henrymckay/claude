@@ -42,7 +42,7 @@ Make the three beats visible through **structure and names, not comments** — t
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**, with a blank line separating them from the when.
 
 ```
-def test_keep_valid_drops_non_positive_rows(raw_sales):
+def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
     kept = keep_valid(raw_sales)
 
     then_every_row_is_positive(kept)

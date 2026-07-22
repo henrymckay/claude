@@ -24,7 +24,7 @@ For independent scalar cases — not for splitting one whole-frame operation int
     ("quantity", "unit_price", "expected"),
     [(2, 10.0, 20.0), (0, 10.0, 0.0), (3, 4.5, 13.5)],
 )
-def test_revenue_multiplies_quantity_by_price(
+def test_when_revenue_then_quantity_times_price(
     quantity: int, unit_price: float, expected: float
 ) -> None:
     """Revenue is quantity times unit price."""
@@ -35,7 +35,7 @@ Give cases `ids` when the values don't read clearly in the output.
 
 ## Whole-frame assertions
 
-Assert a dataframe transform on the whole frame in one test. A reusable `then_` custom assertion names the check and keeps the body a clean given-when-then:
+Assert a dataframe transform on the whole frame in one test, with a reusable `then_` custom assertion and the expected values from a fixture — never a literal. Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
 
 ```python
 def then_column_equals(
@@ -45,12 +45,23 @@ def then_column_equals(
     assert frame.get_column(column).to_list() == list(values)
 
 
-def test_revenue_by_region_totals_and_ranks(sales: polars.LazyFrame) -> None:
-    """Revenue totals per region, ranked richest first."""
-    summary = pipeline.revenue_by_region(pipeline.clean(sales)).collect()
+def test_when_add_revenue_then_revenue_is_quantity_times_price(
+    sales: polars.LazyFrame, expected_revenue: list[float]
+) -> None:
+    """Revenue is quantity times unit price for every row."""
+    priced = pipeline.map_add_revenue(sales).collect()
 
-    then_column_equals(summary, "region", ["North", "South"])
-    then_column_equals(summary, "revenue", [40.0, 30.0])
+    then_column_equals(priced, "revenue", expected_revenue)
+```
+
+Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead:
+
+```python
+def then_conserves(
+    result: polars.DataFrame, source: polars.DataFrame, column: str
+) -> None:
+    """Assert the column sums to the same total in the result and the source."""
+    assert result.get_column(column).sum() == source.get_column(column).sum()
 ```
 
 For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
@@ -59,7 +70,7 @@ For an exact whole-frame match including dtypes, use `polars.testing.assert_fram
 
 ```python
 @hypothesis.given(xs=hypothesis.strategies.lists(hypothesis.strategies.integers()))
-def test_sort_is_idempotent(xs: list[int]) -> None:
+def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
     """Sorting an already-sorted list changes nothing."""
     assert sorted(sorted(xs)) == sorted(xs)
 ```
