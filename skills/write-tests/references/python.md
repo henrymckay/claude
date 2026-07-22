@@ -87,7 +87,7 @@ def column_equals(
 
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
-- Put `pythonpath = ["tests"]` in the pytest config so `import then` resolves under `--import-mode=importlib`.
+- Put `pythonpath = ["tests"]` in the pytest config so `import then` resolves under `--import-mode importlib`.
 - Give each helper a failure message (or call `pytest.register_assert_rewrite("then")` in `conftest.py`), since pytest only rewrites asserts in test modules, not an imported helper.
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
@@ -116,7 +116,7 @@ tests/
 
 - Your code mirrored under `tests/<package>/`; dependency-behaviour tests under `tests/packages/`.
 - Support modules sit alongside: fixtures in `given.py` (registered by `-p given`), custom assertions in `then.py`, and action helpers in a `when.py` where actions earn naming.
-- Set `--import-mode=importlib` (see `setup-python`) so nested folders and a test directory sharing the package's name don't confuse imports.
+- Set `--import-mode importlib` (see `setup-python`) so nested folders and a test directory sharing the package's name don't confuse imports.
 
 ## Running
 
