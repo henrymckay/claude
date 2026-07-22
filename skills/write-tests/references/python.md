@@ -117,6 +117,7 @@ tests/
 - Your code mirrored under `tests/<package>/`; dependency-behaviour tests under `tests/packages/`.
 - Support modules sit alongside: fixtures in `given.py` (registered by `-p given`), custom assertions in `then.py`, and action helpers in a `when.py` where actions earn naming.
 - Set `--import-mode importlib` (see `setup-python`) so nested folders and a test directory sharing the package's name don't confuse imports.
+- No `__init__.py` needed: `importlib` imports each test file by path, and `given`/`then` resolve as plain modules via `pythonpath`. Add `__init__.py` to the test folders only if two test files end up sharing a name.
 
 ## Running
 
