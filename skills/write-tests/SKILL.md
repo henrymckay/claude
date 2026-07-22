@@ -50,6 +50,8 @@ def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
 
 A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place even for a bare equality — a shared set (`then.equals`, `then.column_equals`) reads far more uniformly than scattered `assert` statements. Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
 
+Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarise_by_region(sales)` then `then.conserves(...)`. Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
+
 ## Name the behaviour: when and then
 
 Name every test `test_when_<action>_then_<outcome>`. The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
