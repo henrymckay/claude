@@ -87,7 +87,7 @@ def column_equals(
 
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
-- Keep the helpers in a `support` package (`support/__init__.py`) on `pythonpath = ["tests"]` so `from support import then` resolves, and add `known-first-party = ["support"]` so isort groups it with your code, not third-party deps.
+- Keep the helpers in a `support` package (`support/__init__.py`) on `pythonpath = ["tests"]` so `from support import then` resolves. Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `support` with your own code, not third-party deps.
 - Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("support.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
@@ -120,7 +120,7 @@ tests/
 
 - Three folders, three jobs: `data/` (files a fixture loads), `support/` (imported helpers), `suite/` (the tests pytest collects). Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
 - `support/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming. The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
-- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p support.given` registers the fixtures; `known-first-party = ["support"]` keeps isort from filing it under third-party.
+- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p support.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party, not third-party.
 
 ## Running
 
