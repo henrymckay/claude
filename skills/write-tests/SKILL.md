@@ -52,10 +52,10 @@ A `then_` custom assertion carries its own failure message and reuses across tes
 
 ## Name the behaviour: when and then
 
-The test name states the **when and then** — the action and its expected outcome — while the **given** lives in the arranged inputs, not the name.
-In `test_keep_valid_drops_non_positive_rows`, the when is `keep_valid` and the then is `drops_non_positive_rows`; the input scenario is whichever setup the test takes.
-The name then reads as a sentence a failure would falsify, which is most of the diagnosis.
-One when-and-then per test — if the name needs an "and", split it.
+Name every test `test_when_<action>_then_<outcome>`. The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
+`test_when_keep_valid_then_non_positive_rows_dropped`: the when is applying `keep_valid`, the then is that non-positive rows are dropped.
+The prescriptive split forces both halves to be explicit and makes a failure read as a falsified claim, which is most of the diagnosis.
+One when and one then per test — if either needs an "and", split the test.
 
 ## Assert on behaviour, not implementation
 
@@ -74,13 +74,14 @@ Keep the imperative shell thin so little is left that needs slow integration tes
 
 ## Where test data lives
 
-Build inputs through a **fixture or builder, not inline literals** in the test body; keep the body about the action and the expectation.
+Return every input **and expected value** from a function or fixture — never an inline literal in the test body. This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
 
-- **A canonical or reused dataset → an external file loaded by a fixture.** Keep a shared sample out of the source — a data file (CSV, Parquet, JSON) a fixture loads — so it stays inspectable as data and the test stays about behaviour. This matters most for dataframes and anything past a few rows.
-- **A tailored input → a builder or derived fixture.** When inputs vary per test, a fixture can return a builder that exposes only what varies, or narrow another fixture. Reach for this only when several tests need different shapes; a genuinely trivial one-off can be built inline.
-- **Expected values → arguments to a `then_` assertion.** The expected output belongs with the assertion, but passing it into a named custom assertion (`then_column_equals(result, "revenue", [20, 20, 30])`) reads better than a bare `assert` buried in the body.
+- **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data). Feed a function only the fields it reads.
+- **Expected values → a fixture that derives them from the raw data**, or a stored answers file — then pass them into a `then_` custom assertion, not a literal buried in the body.
+- **Reach an expected value by a route independent of the code under test.** A stored answers file, or a plain restatement of the spec, qualifies; re-deriving with the *same* transformation the code uses is circular and proves nothing.
+- **Prefer invariants where deriving the answer would just reimplement the code.** Assert properties that hold for any input — conservation (group totals sum to the whole), ordering (sorted), membership (output ⊆ input) — so there's no expected value to compute at all, and drive them with property-based tests.
 
-Feed a function only the fields it actually reads, and assert only what the behaviour promises — no padding either side.
+Feed a function only what it reads, and assert only what the behaviour promises.
 
 ## Table-driven tests
 

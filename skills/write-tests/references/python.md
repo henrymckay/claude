@@ -69,7 +69,7 @@ def test_sort_is_idempotent(xs: list[int]) -> None:
 - A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
 - A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
 - A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
-- Expected values → arguments to a `then_` custom assertion, not literals scattered through the body.
+- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then_` assertion. Where that would just reimplement the code, assert invariants instead (`then_conserves`, `then_column_sorted`).
 
 ## Assertions
 
