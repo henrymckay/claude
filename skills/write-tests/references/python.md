@@ -35,34 +35,19 @@ Give cases `ids` when the values don't read clearly in the output.
 
 ## Whole-frame assertions
 
-Assert a dataframe transform on the whole frame in one test, with a reusable `then_` custom assertion and the expected values from a fixture — never a literal. Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
+Assert a dataframe transform on the whole frame in one test, with the `then` assertions above and the expected values from a fixture — never a literal. Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
 
 ```python
-def then_column_equals(
-    frame: polars.DataFrame, column: str, values: collections.abc.Sequence[object]
-) -> None:
-    """Assert the collected frame's column holds exactly these values, in order."""
-    assert frame.get_column(column).to_list() == list(values)
-
-
 def test_when_add_revenue_then_revenue_is_quantity_times_price(
     sales: polars.LazyFrame, expected_revenue: list[float]
 ) -> None:
     """Revenue is quantity times unit price for every row."""
     priced = pipeline.map_add_revenue(sales).collect()
 
-    then_column_equals(priced, "revenue", expected_revenue)
+    then.column_equals(priced, "revenue", expected_revenue)
 ```
 
-Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead:
-
-```python
-def then_conserves(
-    result: polars.DataFrame, source: polars.DataFrame, column: str
-) -> None:
-    """Assert the column sums to the same total in the result and the source."""
-    assert result.get_column(column).sum() == source.get_column(column).sum()
-```
+Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
 
 For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
 
@@ -80,12 +65,31 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
 - A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
 - A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
 - A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
-- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then_` assertion. Where that would just reimplement the code, assert invariants instead (`then_conserves`, `then_column_sorted`).
+- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then` assertion. Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
 
 ## Assertions
 
-- Use the plain `assert` statement; pytest rewrites it to show the operands, so `assert x == y` needs no message.
-- Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message, not merely that something raised.
+Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality. Collect them in a shared module imported as `then`, so every test reads the same way and each check is defined once:
+
+```python
+# tests/then.py
+def equals(actual: object, expected: object) -> None:
+    """Assert two values are equal."""
+    assert actual == expected, f"expected {expected!r}, got {actual!r}"
+
+
+def column_equals(
+    frame: polars.DataFrame, column: str, values: collections.abc.Sequence[object]
+) -> None:
+    """Assert the frame's column holds exactly these values, in order."""
+    equals(frame.get_column(column).to_list(), list(values))
+```
+
+A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
+
+- Put `pythonpath = ["tests"]` in the pytest config so `import then` resolves under `--import-mode=importlib`.
+- Give each helper a failure message (or call `pytest.register_assert_rewrite("then")` in `conftest.py`), since pytest only rewrites asserts in test modules, not an imported helper.
+- Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
 
 ## Mocking
