@@ -39,12 +39,11 @@ Make the three beats visible through **structure and names, not comments** — t
 
 - *Given* is the fixture parameter list — injected setup, not rebuilt in the body.
 - *When* is a single action on its own line, assigned to a well-named result.
-- *Then* is the assertions, ideally `then_<expectation>` **custom assertions**, with a blank line separating them from the when.
+- *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
 ```
 def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
     kept = keep_valid(raw_sales)
-
     then_every_row_is_positive(kept)
 ```
 
@@ -157,6 +156,6 @@ Reach beyond example-based unit tests when the problem fits. The ones that shape
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (pytest: fixtures and `conftest.py`, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
+- **Python** → `references/python.md` (pytest: fixtures in the `support` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
 
 Add a new `references/<language>.md` when you start testing in another language rather than stuffing idioms into this file.

@@ -38,15 +38,20 @@ myproject/
       __init__.py
       core.py
   tests/
-    conftest.py
-    mypackage/
-      test_core.py
-    packages/
-      test_httpx.py
+    data/
+    support/
+      __init__.py
+      given.py
+      then.py
+    suite/
+      mypackage/
+        test_core.py
+      packages/
+        test_httpx.py
 ```
 
 Keep modules small and cohesive (one responsibility).
-Tests live in `tests/`, never beside the source: your own code mirrored under `tests/<package>/`, and the dependency behaviour you rely on under `tests/packages/` (see `write-tests`).
+Tests live in `tests/`, never beside the source, split three ways: the cases in `suite/` (your code mirrored in `suite/<package>/`, dependency-behaviour tests in `suite/packages/`), the data they load in `data/`, and the imported helpers — fixtures and custom assertions — in the `support/` package. See `write-tests`.
 
 ## pyproject.toml
 
@@ -74,6 +79,7 @@ packages = ["src/mypackage"]
 [tool.ruff]
 line-length = 88
 target-version = "py314"
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
@@ -85,8 +91,9 @@ convention = "pep257"
 typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "--import-mode importlib"
+testpaths = ["tests/suite"]
+addopts = "--import-mode importlib -p support.given"
+pythonpath = ["tests"]
 ```
 
 The non-obvious choices:
@@ -95,7 +102,7 @@ The non-obvious choices:
 - `[tool.hatch.build.targets.wheel]` spells out the package path so hatchling finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
-- `--import-mode importlib` imports tests without putting their folders on `sys.path`, which a `src/` layout and nested `tests/<package>/` folders need to avoid import clashes (see `write-tests`).
+- The test settings follow the `suite/` + `support/` layout in `write-tests`: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes the `support` package importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party. See `write-tests` for why each is needed.
 
 ## Dependencies & environment: use `uv`
 

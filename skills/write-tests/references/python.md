@@ -11,7 +11,7 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put fixtures shared across files in `conftest.py`, which pytest discovers automatically. To mirror the `when`/`then` modules, move them into the `support` package as `support/given.py` and register it with `addopts = "-p support.given"` — no `conftest.py` needed (it resolves via `pythonpath`). (The `pytest_plugins` variable works only from a `conftest.py`, never pyproject.)
+- Put shared fixtures in the `support` package's `given.py`, registered with `addopts = "-p support.given"` (no `conftest.py` needed — it resolves via `pythonpath`), so they sit alongside the `when`/`then` modules. The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
@@ -43,7 +43,6 @@ def test_when_add_revenue_then_revenue_is_quantity_times_price(
 ) -> None:
     """Revenue is quantity times unit price for every row."""
     priced = pipeline.map_add_revenue(sales).collect()
-
     then.column_equals(priced, "revenue", expected_revenue)
 ```
 

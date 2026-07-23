@@ -166,3 +166,5 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
   Keep the name only when it meaningfully documents an otherwise opaque expression.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
   When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
+- **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter. The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead. (Blank lines *between* definitions are the formatter's job.)
+- **Don't repeat a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`. It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
