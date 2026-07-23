@@ -43,6 +43,7 @@ myproject/
       __init__.py
       given.py
       then.py
+      when.py
     suite/
       mypackage/
         test_core.py
@@ -51,7 +52,7 @@ myproject/
 ```
 
 Keep modules small and cohesive (one responsibility).
-Tests live in `tests/`, never beside the source, split three ways: the cases in `suite/` (your code mirrored in `suite/<package>/`, dependency-behaviour tests in `suite/packages/`), the data they load in `data/`, and the imported helpers — fixtures and custom assertions — in the `support/` package. See `write-tests`.
+Tests live in `tests/`, never beside the source, split three ways: the cases in `suite/` (your code mirrored in `suite/<package>/`, dependency-behaviour tests in `suite/packages/`), the data they load in `data/`, and the imported helpers in the `support/` package — fixtures (`given`), custom assertions (`then`), and action helpers (`when`) where actions earn a name. See `write-tests`.
 
 ## pyproject.toml
 
