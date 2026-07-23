@@ -11,7 +11,7 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put shared fixtures in the `support` package's `given.py`, registered with `addopts = "-p support.given"` (no `conftest.py` needed — it resolves via `pythonpath`), so they sit alongside the `when`/`then` modules. The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
+- Put shared fixtures in the `support` package's `given.py`, registered as a plugin with `addopts = "-p support.given"`. `-p` must name the module where the fixtures are *defined* — `support.given`, not the package `support` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`. They sit alongside the `when`/`then` modules. The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
