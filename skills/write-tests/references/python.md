@@ -103,18 +103,54 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 
 ## Logging output
 
-To see logs from both the code under test and the tests during a run, enable pytest's live logging in the config — nothing is needed in the test files, since pytest attaches to the root logger and captures any `logging.getLogger(__name__)` call:
+To show logs from both the code under test and the tests during a run, Rich-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`. Nothing goes in the test files — pytest attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
+
+Configure it in the `support` package. A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam pytest's progress line, reset per test by an autouse fixture:
+
+```python
+# tests/support/given.py
+class _TestRichHandler(rich.logging.RichHandler):
+    """Rich handler that opens each test's first log line on a fresh row."""
+
+    def __init__(self) -> None:
+        super().__init__(rich_tracebacks=True)
+        self.new_test = True
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Break onto a new line before a test's first record, then render it."""
+        if self.new_test:
+            self.console.print()
+            self.new_test = False
+        super().emit(record)
+
+
+_log_handler = _TestRichHandler()
+
+
+@pytest.fixture(autouse=True)
+def _reset_log_newline() -> None:
+    """Arm a fresh leading newline for each test's logs."""
+    _log_handler.new_test = True
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _rich_logging() -> None:
+    """Route session logs through Rich, matching the app's handler."""
+    logging.basicConfig(
+        level=logging.INFO, format="%(message)s", datefmt="[%X]",
+        handlers=[_log_handler], force=True,
+    )
+```
 
 ```toml
 [tool.pytest.ini_options]
-log_cli = true
-log_cli_level = "INFO"
-log_cli_format = "%(levelname)-8s %(name)s: %(message)s"
+addopts = "... --capture=tee-sys"
 ```
 
-Without `log_cli` pytest still captures logs but shows them only for a *failing* test; with it they stream live, coloured by level.
+- Use `--capture=tee-sys`, not `--capture=no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work. Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
+- The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide. A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
-The application logs through stdlib `logging` with a `rich.logging.RichHandler` (configured in `main()`; see `setup-python`), and that Rich rendering shows when you run the app. It does **not** apply under pytest: pytest installs its own live-log handler for the run, so it formats the records, not RichHandler — enabling `log_cli` bypasses RichHandler entirely. Forcing RichHandler to render live would mean adding it to the root logger and running `--capture=no`, which disables output capture — not worth it. Use pytest's live logging for the test run; keep RichHandler for the app.
+If you don't need Rich specifically, the zero-code alternative is pytest's native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in pytest's own format with capture left on.
 
 ## Layout and import mode
 
