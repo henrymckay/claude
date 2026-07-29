@@ -8,15 +8,15 @@ description: >-
   tests, adding coverage, or setting up a suite, even if the user just says
   "write a test", "add tests", "test this", or names a runner like pytest. Tests
   are code: they follow the language's own conventions (Python → write-python).
-  Language-agnostic principles here; Python and pytest idioms in
-  references/python.md, the wider paradigms and patterns in references/patterns.md.
+  Language-agnostic principles and the paradigm/pattern catalogue here; Python
+  and pytest idioms in references/python.md.
 ---
 
 # Writing tests
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-This file is the language-agnostic mindset; the concrete runner idioms live in `references/python.md` (pytest), and the wider paradigm and pattern catalogue in `references/patterns.md`.
+This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the concrete runner idioms live in `references/python.md` (pytest).
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
@@ -118,7 +118,7 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 Prefer real objects and dependency injection to mocks.
 A mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
 Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
-See the test-double taxonomy in `references/patterns.md`.
+See the test-double taxonomy under Patterns below.
 
 ## Coverage is a guide, not a target
 
@@ -140,17 +140,30 @@ The concrete tree, import mode, and runner setup are language-specific — see `
 The **test runner is the entry point** — a test file never needs a `main`. Run the whole suite or a slice, selecting by directory, name, or tag.
 The exact commands are in `references/python.md`.
 
-## Paradigms and patterns
+## Paradigms — how to approach testing
 
-Reach beyond example-based unit tests when the problem fits. The ones that shape this house style:
+Reach beyond example-based unit tests when the problem fits.
 
-- **TDD** (red-green-refactor) — write the failing test first to drive design.
-- **BDD / given-when-then** — the structure above.
-- **Property-based** — invariants over generated inputs.
-- **Characterization / approval tests** — pin current output to make a refactor safe.
-- **Test doubles**, **custom assertions** and **builders** — keep tests decoupled and expressive.
+- **Test-Driven Development (TDD)** — write a failing test, make it pass, refactor (red-green-refactor). Drives design and guarantees every line exists to satisfy a stated intent.
+- **Behaviour-Driven Development (BDD)** — express tests as given-when-then behaviour in domain language, the structure above. Keeps tests tied to requirements, not implementation.
+- **Property-based** — assert invariants over generated, shrinking inputs (Hypothesis, QuickCheck). For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
+- **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end. A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.
+- **Characterization** — capture the *current* behaviour of existing code before changing it. A safety net around legacy or unfamiliar code ahead of a refactor.
+- **Approval / golden-master / snapshot** — assert output equals a stored, reviewed reference. For complex output (rendered text, serialized structures) painful to assert field by field; review the diff when it changes.
+- **Contract** — verify both sides of an integration agree on a shared contract (consumer-driven contracts, Pact). Across boundaries you don't control end to end.
+- **Fuzz** — feed random or adversarial inputs to surface crashes and unhandled cases. On parsers and anything taking untrusted input.
+- **Mutation** — inject faults into the code and check the suite catches them. Run occasionally to measure whether tests actually assert, not merely execute.
 
-`references/patterns.md` catalogues these and more, with when to reach for each.
+## Patterns — how to structure a test
+
+- **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form. The skeleton of every test.
+- **Test doubles** — *dummy* (filler, unused), *stub* (canned answers), *spy* (records calls), *mock* (asserts on expected calls), *fake* (a working lightweight implementation). Prefer fakes and injection; reserve mocks for genuine boundaries.
+- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message. Names a domain expectation and reuses it.
+- **Test data builder** — a fluent builder for a valid object with overridable parts (`a_sale().with_quantity(0)`). For objects with many fields where tests vary one at a time.
+- **Object mother** — a factory of canonical, named test objects (`Sales.typical()`). For a small set of standard scenarios shared across tests.
+- **Parametrized / table-driven** — one test, a table of cases. For the same assertion over many inputs.
+- **Humble object** — push logic out of a hard-to-test boundary (UI, I/O) into a plain, testable object; the functional-core / imperative-shell split is this pattern.
+- **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup. Default to fresh.
 
 ## Language idioms
 
