@@ -101,6 +101,21 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 - `pytest-cov` reports coverage (`uv run pytest --cov`).
 - Mark slow or external tests with a custom marker (`@pytest.mark.slow`) so the default run stays quick.
 
+## Logging output
+
+To see logs from both the code under test and the tests during a run, enable pytest's live logging in the config — nothing is needed in the test files, since pytest attaches to the root logger and captures any `logging.getLogger(__name__)` call:
+
+```toml
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(levelname)-8s %(name)s: %(message)s"
+```
+
+Without `log_cli` pytest still captures logs but shows them only for a *failing* test; with it they stream live, coloured by level.
+
+The application logs through stdlib `logging` with a `rich.logging.RichHandler` (configured in `main()`; see `setup-python`), and that Rich rendering shows when you run the app. It does **not** apply under pytest: pytest installs its own live-log handler for the run, so it formats the records, not RichHandler — enabling `log_cli` bypasses RichHandler entirely. Forcing RichHandler to render live would mean adding it to the root logger and running `--capture=no`, which disables output capture — not worth it. Use pytest's live logging for the test run; keep RichHandler for the app.
+
 ## Layout and import mode
 
 ```text

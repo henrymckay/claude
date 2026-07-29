@@ -37,7 +37,7 @@ Structure every test as **given / when / then** — the behavioural form of the 
 
 Make the three beats visible through **structure and names, not comments** — the code should not need a `# given` label:
 
-- *Given* is the fixture parameter list — injected setup, not rebuilt in the body.
+- *Given* arrives **entirely through the test's parameters** — every fixture and every piece of external data comes in as an argument (a fixture, or a fixture that loads a data file). Never a module-level global, and never data built inline in the body.
 - *When* is a single action on its own line, assigned to a well-named result.
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
