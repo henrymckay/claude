@@ -14,7 +14,7 @@ description: >-
 # Setting up a Python project
 
 Getting the skeleton right up front — layout, packaging, tooling — saves pain later.
-This covers *structure and setup*; for how to write the code inside, see `write-python`.
+This covers *structure and setup*; for how to write the code inside, see `write-python`, and for the tests, `write-tests`.
 
 **Match an existing project first.** If there's already a `pyproject.toml` or an established layout, follow it rather than imposing this.
 
