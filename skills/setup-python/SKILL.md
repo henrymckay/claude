@@ -100,14 +100,14 @@ pythonpath = ["tests"]
 The non-obvious choices:
 
 - `[project.scripts]` only when it's a CLI — it maps a command to an entry point.
-- `[tool.hatch.build.targets.wheel]` spells out the package path so hatchling finds it under `src/`; without it the wheel build can't locate the package.
+- `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
 - The test settings follow the `suite/` + `support/` layout in `write-tests`: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes the `support` package importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party. See `write-tests` for why each is needed.
 
 ## Dependencies & environment: use `uv`
 
-`uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces pip / pip-tools / virtualenv / pyenv.
+`uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`.
 If it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which drops a prebuilt binary in `~/.local/bin`; prefer it over `brew install uv`, which on some machines falls back to a slow from-source build (compiling the whole Rust/LLVM toolchain).
 Core workflow:
 
@@ -132,10 +132,10 @@ A library published for others is the exception: keep a lower `requires-python` 
 Prefer the standard library by default; only when a task genuinely needs a dependency, reach for the house pick below (see `write-python` on preferring the simplest solution).
 Listed by task:
 
-- **CLI** → `argparse` (stdlib) for a trivial one-or-two-flag script; `typer` once it grows, since it's type-hint-driven, generates `--help`, and pairs with `rich`. Reserve `fire` for a throwaway internal tool where reflecting an object straight into a CLI saves time.
+- **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **DataFrames** → `polars` (see the `use-polars` skill).
 - **HTTP** → `httpx` (sync and async) over `requests`.
-- **Logging** → stdlib `logging`, optionally with `rich.logging.RichHandler` for pretty console output, or `loguru` for a more ergonomic API. `rich` itself formats output; it isn't a logging framework.
+- **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
 - **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
 - **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.
