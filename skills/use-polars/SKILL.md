@@ -81,6 +81,8 @@ result = (
 
 For data bigger than memory, use the streaming engine: `.collect(engine="streaming")` (the older `.collect(streaming=True)` is deprecated).
 
+Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materializing the whole frame.
+
 ## Key habits (and pandas traps)
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
@@ -101,6 +103,7 @@ Reserve a bare `df` (or `frame`) for the cases where the contents genuinely aren
 ## Naming `.pipe()` UDFs: map / amap / bind
 
 When you factor pipeline steps into functions used with `.pipe()`, name them by their functional shape so a reader knows what each does at a glance.
+The map/bind vocabulary is `be-functional`'s — this is its composition and monad guidance applied to frames.
 On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **intent**, not the type signature.
 
 - **`map_`** (functor map) — a pure transform of the frame alone, behaviour fixed: `frame.pipe(map_round_2dp)`.

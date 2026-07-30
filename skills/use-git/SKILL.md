@@ -84,7 +84,7 @@ Pushing your own branch needs no sign-off; force-pushing, rebasing shared histor
 - **Generated/build artifacts, caches, virtualenvs** — `.gitignore` them.
 - **Large binaries** — use Git LFS or store them elsewhere.
 
-Keep a real `.gitignore` from the start so this never becomes a problem.
+Keep a real `.gitignore` from the start so this never becomes a problem (`setup-python` has a starter list for Python projects).
 
 ## Releases
 
