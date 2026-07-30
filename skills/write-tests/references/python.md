@@ -144,10 +144,10 @@ def _rich_logging() -> None:
 
 ```toml
 [tool.pytest.ini_options]
-addopts = "... --capture=tee-sys"
+addopts = "... --capture tee-sys"
 ```
 
-- Use `--capture=tee-sys`, not `--capture=no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work. Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
+- Use `--capture tee-sys`, not `--capture no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work. Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
 - The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide. A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
 If you don't need Rich specifically, the zero-code alternative is pytest's native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in pytest's own format with capture left on.

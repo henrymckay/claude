@@ -25,7 +25,7 @@ This file is the mental model; reach into `references/` for concrete recipes.
 
 ## The mental model
 
-**Expressions** describe a computation on columns — `polars.col("a") + polars.col("b")`, `polars.col("x").sum()`.
+**Expressions** describe a computation on columns — `polars.col("a").add(polars.col("b"))`, `polars.col("x").sum()`.
 They're lazy descriptions, run in parallel by the engine, and are the heart of Polars.
 You almost never loop over rows.
 
@@ -41,9 +41,9 @@ import polars
 
 out = (
     df
-    .filter(polars.col("amount") > 0)
+    .filter(polars.col("amount").gt(0))
     .with_columns(
-        (polars.col("amount") * polars.col("rate")).alias("value"),
+        polars.col("amount").mul(polars.col("rate")).alias("value"),
         polars.col("name").str.to_uppercase().alias("name_up"),
     )
     .group_by("category")
@@ -56,6 +56,12 @@ out = (
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelizes expressions within one context.
 
+**Prefer expression methods to operator symbols.** Write `polars.col("a").mul(polars.col("b"))` and `polars.col("x").gt(0)`, not `*` and `>`.
+The method form chains without wrapping parentheses and reads consistently with the rest of the expression API (`.sum()`, `.alias()`, `.over()`).
+Arithmetic and comparison operators all have method equivalents: `.add`, `.sub`, `.mul`, `.truediv`, `.floordiv`, `.mod`, `.pow`, and `.gt`, `.ge`, `.lt`, `.le`, `.eq`, `.ne`.
+This also sidesteps the precedence trap — `polars.col("a").gt(0) & polars.col("b").gt(0)` needs no inner parentheses, where the operator form does.
+Keep the boolean combinators `&`, `|`, `~` as operators, though — their method spellings (`.and_`, `.or_`, `.not_`) read worse and they are near-universal for combining masks.
+
 ## Eager vs lazy — prefer lazy for pipelines
 
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
@@ -66,7 +72,7 @@ Within a context, compute multiple columns in a single `with_columns` rather tha
 ```python
 result = (
     polars.scan_parquet("events/*.parquet")   # lazy: nothing read yet
-    .filter(polars.col("ts") >= start)
+    .filter(polars.col("ts").ge(start))
     .group_by("user_id")
     .agg(polars.len().alias("n"))
     .collect()                                # execute the optimized plan

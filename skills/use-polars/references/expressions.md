@@ -20,8 +20,8 @@ df.select(polars.col("a").alias("x"))
 
 ```python
 df.with_columns(
-    (polars.col("a") + polars.col("b")).alias("sum"),
-    polars.when(polars.col("score") >= 50)
+    polars.col("a").add(polars.col("b")).alias("sum"),
+    polars.when(polars.col("score").ge(50))
       .then(polars.lit("pass"))
       .otherwise(polars.lit("fail"))
       .alias("result"),
@@ -33,8 +33,8 @@ Chain multiple `when/then` before the final `otherwise` for multi-branch logic.
 ## Filtering
 
 ```python
-df.filter(polars.col("amount") > 0)
-df.filter((polars.col("a") > 0) & (polars.col("b").is_not_null()))  # & | ~, parenthesize
+df.filter(polars.col("amount").gt(0))
+df.filter(polars.col("a").gt(0) & polars.col("b").is_not_null())  # combine masks with & | ~
 df.filter(polars.col("cat").is_in(["x", "y"]))
 ```
 
@@ -46,7 +46,7 @@ df.group_by("category").agg(
     polars.col("value").sum().alias("total"),
     polars.col("value").mean().alias("avg"),
     polars.col("name").n_unique().alias("distinct_names"),
-    polars.col("value").filter(polars.col("value") > 0).sum().alias("pos_total"),
+    polars.col("value").filter(polars.col("value").gt(0)).sum().alias("pos_total"),
 )
 ```
 
@@ -60,7 +60,7 @@ Aggregate *without collapsing rows* — like a SQL window / pandas groupby-trans
 ```python
 df.with_columns(
     polars.col("value").sum().over("category").alias("cat_total"),
-    (polars.col("value") / polars.col("value").sum().over("category")).alias("share"),
+    polars.col("value").truediv(polars.col("value").sum().over("category")).alias("share"),
     polars.col("value").rank().over("category").alias("rank_in_cat"),
 )
 ```
@@ -83,7 +83,7 @@ polars.col("email").str.split("@").list.last()
 
 polars.col("ts").dt.year()
 polars.col("ts").dt.truncate("1d")              # floor to day
-(polars.col("end") - polars.col("start")).dt.total_seconds()
+polars.col("end").sub(polars.col("start")).dt.total_seconds()
 ```
 
 ## List & struct namespaces

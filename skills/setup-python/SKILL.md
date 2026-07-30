@@ -105,6 +105,10 @@ The non-obvious choices:
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
 - The test settings follow the `suite/` + `support/` layout in `write-tests`: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes the `support` package importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party. See `write-tests` for why each is needed.
 
+**TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
+`ruff` formats Python only, not TOML, so nothing enforces this out of the box (and `uv add` tends to leave arrays expanded).
+To automate it, add `taplo` — a `taplo fmt` pre-commit hook applies exactly this rule to every `.toml`.
+
 ## Dependencies & environment: use `uv`
 
 `uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`.

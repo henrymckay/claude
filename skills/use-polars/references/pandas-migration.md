@@ -11,7 +11,7 @@ The recurring theme: Polars has **no index**, is **immutable**, and wants **expr
 | implicit row index, `.loc`/`.iloc` | no index — `.filter()` / `.select()` with expressions |
 | `inplace=True`, column assignment mutates | every op returns a new frame; assign the result |
 | `df.apply(fn, axis=1)` row-wise | column expressions; avoid per-row Python |
-| chained boolean masks `df[df.a>0]` | `df.filter(polars.col("a") > 0)` |
+| chained boolean masks `df[df.a>0]` | `df.filter(polars.col("a").gt(0))` |
 | `groupby().agg()` keeps index | `group_by().agg()` returns plain columns |
 | `NaN` == missing | null (missing) and `NaN` (float) are distinct |
 
@@ -22,10 +22,10 @@ The recurring theme: Polars has **no index**, is **immutable**, and wants **expr
 df[["a", "b"]]                        -> df.select("a", "b")
 
 # new column
-df["c"] = df["a"] + df["b"]           -> df.with_columns((polars.col("a") + polars.col("b")).alias("c"))
+df["c"] = df["a"] + df["b"]           -> df.with_columns(polars.col("a").add(polars.col("b")).alias("c"))
 
 # filter rows
-df[df["a"] > 0]                       -> df.filter(polars.col("a") > 0)
+df[df["a"] > 0]                       -> df.filter(polars.col("a").gt(0))
 
 # rename
 df.rename(columns={"a": "b"})         -> df.rename({"a": "b"})
@@ -43,7 +43,7 @@ df["k"].value_counts()                -> df["k"].value_counts()   # returns a Da
 df["x"].fillna(0)                     -> polars.col("x").fill_null(0)
 
 # apply row-wise (AVOID) — express instead
-df.apply(lambda r: r.a * r.b, axis=1) -> (polars.col("a") * polars.col("b"))
+df.apply(lambda r: r.a * r.b, axis=1) -> polars.col("a").mul(polars.col("b"))
 ```
 
 ## Interop
@@ -62,7 +62,7 @@ result = (
     .to_pandas()
     .some_pandas_only_op()          # pandas
     .pipe(polars.from_pandas)       # back to Polars
-    .with_columns(polars.col("x") * 2)
+    .with_columns(polars.col("x").mul(2))
 )
 ```
 
