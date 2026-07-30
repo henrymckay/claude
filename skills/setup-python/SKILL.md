@@ -7,7 +7,7 @@ description: >-
   existing code; setting up dependencies, virtual environments, or project
   config; or deciding where files should live — even if the user just says
   "new project", "set this up", or "make this a package". Standardizes on uv,
-  ruff, pyright, and pytest, targeting the latest stable Python. For in-code style once files
+  ruff, taplo, pyright, and pytest, targeting the latest stable Python. For in-code style once files
   exist, see the write-python skill.
 ---
 
@@ -106,8 +106,7 @@ The non-obvious choices:
 - The test settings follow the `suite/` + `support/` layout in `write-tests`: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes the `support` package importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party. See `write-tests` for why each is needed.
 
 **TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
-`ruff` formats Python only, not TOML, so nothing enforces this out of the box (and `uv add` tends to leave arrays expanded).
-To automate it, add `taplo` — a `taplo fmt` pre-commit hook applies exactly this rule to every `.toml`.
+`ruff` formats Python only, not TOML, so `taplo` handles it (part of the toolchain below) — `taplo fmt` applies exactly this rule, collapsing the expanded arrays `uv add` leaves behind.
 
 ## Dependencies & environment: use `uv`
 
@@ -118,7 +117,7 @@ Core workflow:
 ```bash
 uv init                 # scaffold a new project (or set up by hand as above)
 uv add httpx            # add a runtime dependency (writes to pyproject + lock)
-uv add --dev pytest ruff pyright   # dev-only tooling
+uv add --dev pytest ruff pyright taplo   # dev-only tooling
 uv run pytest           # run inside the managed env, no manual activate
 uv sync                 # reproduce the env from uv.lock
 ```
@@ -172,11 +171,15 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.x.x
+    hooks:
+      - id: taplo-format
 ```
 
-Pin `rev` to the current `ruff-pre-commit` release and bump it later with `pre-commit autoupdate`.
+Pin each `rev` to the current release and bump it later with `pre-commit autoupdate`.
 Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to register the git hook).
-`ruff-check --fix` auto-fixes and `ruff-format` reformats; if a hook changes files the commit stops so you can re-stage.
+`ruff-check --fix` auto-fixes and `ruff-format` reformats Python; `taplo-format` does the same for TOML; if a hook changes files the commit stops so you can re-stage.
 This is also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
 
 ## Toolchain summary
@@ -184,7 +187,8 @@ This is also where a Conventional Commits `commit-msg` hook belongs (see `use-gi
 Set these up once and defer to them everywhere:
 
 - **`uv`** — Python version, env, dependencies, running.
-- **`ruff`** — format + lint + import sort (`ruff format`, `ruff check --fix`).
+- **`ruff`** — format + lint + import sort for Python (`ruff format`, `ruff check --fix`).
+- **`taplo`** — format + lint for TOML (`taplo fmt`), since `ruff` handles Python only.
 - **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
 - **`pytest`** — tests in `tests/`.
 
