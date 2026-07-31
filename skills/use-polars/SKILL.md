@@ -102,7 +102,7 @@ Reserve a bare `df` (or `frame`) for the cases where the contents genuinely aren
 
 ## Naming `.pipe()` UDFs: map / amap / bind
 
-When you factor pipeline steps into functions used with `.pipe()`, name them by their functional shape so a reader knows what each does at a glance.
+When you factor pipeline steps into user-defined functions (UDFs) used with `.pipe()`, name them by their functional shape so a reader knows what each does at a glance.
 The map/bind vocabulary is `be-functional`'s — this is its composition and monad guidance applied to frames.
 On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **intent**, not the type signature.
 
