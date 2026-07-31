@@ -75,7 +75,7 @@ Keep the imperative shell thin so little is left that needs slow integration tes
 
 ## Where test data lives
 
-Return every input **and expected value** from a function or fixture — never an inline literal in the test body. This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
+Every input **and expected value a test uses reaches it as an argument** — a fixture parameter that returns the data or loads it from a file — never a literal built in the body, a module global, or a bare constant. This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test. The test body should name only the *when* and the *then*; every *given* value comes in through the signature.
 
 - **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data). Feed a function only the fields it reads.
 - **Expected values → a fixture that derives them from the raw data**, or a stored answers file — then pass them into a `then_` custom assertion, not a literal buried in the body.
