@@ -14,7 +14,7 @@ Personal [Claude Code](https://claude.com/claude-code) skills and global instruc
 
 Verb-first skills that encode consistent working conventions.
 
-- [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms.
+- [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
 - [`setup-python`](skills/setup-python) scaffolds a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and recommended libraries like [`typer`](https://typer.tiangolo.com/) and [`rich`](https://rich.readthedocs.io/) for common tasks.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).

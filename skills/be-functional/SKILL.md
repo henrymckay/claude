@@ -100,6 +100,7 @@ Extending *behavior* is never in tension: composition, higher-order functions, a
 
 ## Chain with monads where they fit — but stay idiomatic
 
+These sit on a progression worth naming: a **functor** is a wrapper you can `map` a plain function over; an **applicative** also combines several independently-wrapped values in a fixed way; a **monad** goes further, letting the next step *depend on* the previous result (`bind`). (The `map`/`amap`/`bind` naming in `use-polars` for `.pipe()` steps follows exactly this functor/applicative/monad split.)
 Monadic patterns thread optionality, errors, or effects through a chain of steps that each might short-circuit (`Optional`/`Result`/`Maybe` with their `map`/`bind`), sequencing operations without a ladder of `if` checks.
 Use them where the language supports them well, but **don't force idioms a language doesn't have** — bolting Haskell-style monads onto a language without the syntax or types for them produces code nobody else can read.
 Stay true to the language: in Python that's usually `X | None` and early returns, reaching for `returns` only when it genuinely pays (see `references/python.md`).

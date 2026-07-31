@@ -47,6 +47,15 @@ If none of these hold, a function (or a plain dataclass + functions) is simpler.
 
 5. **Immutable where you can.** Even in OOP, prefer immutable value objects (frozen dataclasses) for data; reserve mutability for things that genuinely model changing state.
 
+## Mixins
+
+A **mixin** is a small class that *adds* a focused capability to other classes by being inherited.
+Python has no other native way to union behaviour into a class — you can't inject methods into the method-resolution order except through inheritance — so a mixin is the sanctioned use of (multiple) inheritance for **cross-cutting concerns**, distinct from is-a subclassing.
+
+- Keep it **behaviour-only and narrow** — a few related methods, ideally no state or `__init__` of its own — so several mixins stay orthogonal and combine cleanly.
+- Name it with a `Mixin` suffix (`SerializableMixin`, `ComparableMixin`) and list it left of the base class, since the method-resolution order reads left to right.
+- This doesn't contradict composition-over-inheritance: reach for a mixin when a capability is genuinely shared across otherwise-unrelated classes and reads better mixed in; prefer composition when the behaviour carries its own state or lifecycle.
+
 ## SOLID
 
 The classic OOP design-principle set.
@@ -65,21 +74,19 @@ Several principles span paradigms — cross-references noted so you see they are
 
 ## Design patterns — and their simpler forms
 
-Patterns are shared vocabulary, but many classic (GoF) patterns are workarounds for features Python already has.
+Patterns are shared vocabulary, but many classic Gang of Four (GoF) patterns are workarounds for features Python already has.
 Recognise the pattern, then reach for the **simplest form** that solves it (KISS/YAGNI — see `write-python`); don't cargo-cult a Java-style class where a function does.
 
-Patterns that usually **collapse** in Python:
+Patterns that usually **collapse** in Python — each with what it is, then the simpler form:
 
-| Pattern | Simpler Python form |
-|---|---|
-| Strategy | pass a **function** |
-| Command | a **function** (or `functools.partial`) |
-| Factory | a **function** or `classmethod` |
-| Singleton | a **module** (imported once) |
-| Observer | a list of **callbacks** / pub-sub |
-| Template Method | pass in the varying **functions**, or a base hook |
-| Iterator | a **generator** / `__iter__` |
-| Visitor | `functools.singledispatch` or `match` (see `be-functional`) |
+- **Strategy** — swap one of a family of interchangeable algorithms at runtime → pass a **function**.
+- **Command** — package an action as an object to store, queue, or undo → a **function** (or `functools.partial`).
+- **Factory** — centralise how objects get created → a **function** or `classmethod`.
+- **Singleton** — one shared instance for the whole program → a **module** (imported once).
+- **Observer** — notify dependents when state changes → a list of **callbacks** / pub-sub.
+- **Template Method** — fix an algorithm's skeleton but vary specific steps → pass in the varying **functions**, or a base hook.
+- **Iterator** — traverse a collection without exposing its internals → a **generator** / `__iter__`.
+- **Visitor** — add an operation across a type hierarchy without editing the classes → `functools.singledispatch` or `match` (see `be-functional`).
 
 Patterns that stay **genuinely useful** as classes:
 

@@ -115,6 +115,17 @@ The line between `amap_` and `bind_` is exactly the one between applicative and 
 That has teeth in Polars — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
 So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimizable.
 
+## Passing extra data through `.pipe()`
+
+`.pipe(udf, *args, **kwargs)` hands the frame plus any extra arguments to the UDF, so you can thread additional data through a chain without breaking it — `frame.pipe(amap_attach_rates, rate_table)`. Supplying **read-only** inputs this way is exactly the `amap_` pattern above, and it's clean.
+
+A mutable **state object** the UDF reads *and writes* also works, but treat it with care:
+
+- It's a **side effect** — it breaks the referential transparency the rest of the pipeline relies on, since a step's result now depends on hidden mutable state.
+- On a `LazyFrame` the UDF runs at **plan-build time**, not at execution, so it can only record schema- or plan-level facts; writing a *data-derived* value forces a `.collect()` (the `bind_` case, breaking laziness).
+
+Prefer carrying state **as data in the frame** — an extra column or a `struct` — so it flows through the query natively and stays lazy. If it genuinely must live outside the frame, thread it explicitly with a plain function returning `(frame, state)` rather than a mutable side-channel. Reserve a write-through state argument for pragmatic cases like collecting diagnostics, knowing it's impure and runs at build time.
+
 ## Reference cookbooks
 
 Read the relevant file for detail and worked examples:

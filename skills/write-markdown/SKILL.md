@@ -13,7 +13,7 @@ description: >-
 
 # Writing Markdown
 
-Markdown has two very different readers: **humans**, who skim and scan, and **LLMs**, which parse every token.
+Markdown has two very different readers: **humans**, who skim and scan, and **Large Language Models (LLMs)**, which parse every token.
 Most principles serve both, but some polish helps humans and wastes tokens on a model, and some density suits a model but loses a human.
 So **decide the audience first**, apply the universal rules, then add the audience-specific set.
 
@@ -42,6 +42,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
   It renders identically to a wrapped paragraph but keeps diffs clean — rewording one sentence is a one-line change.
   Separate paragraphs with a blank line; don't hard-wrap at a fixed column (it reflows the whole paragraph and produces noisy diffs).
 - **Be concrete.** A short example beats a paragraph describing one — this helps a human learn and gives a model a pattern to follow.
+- **Expand an acronym on first use.** Give the full term with the acronym in parentheses once — "Method-Resolution Order (MRO)", "Easier to Ask Forgiveness than Permission (EAFP)" — then use the short form. A reader, human or model, shouldn't have to decode it. Skip only acronyms more familiar than their expansion (`HTTP`, `URL`, `CLI`).
 
 ## For human readers (add on top)
 
@@ -49,6 +50,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
 
 - **Front-load.** The first lines say what this is and whether the reader is in the right place.
   A README opens with a one-line description of the project, not its history.
+- **Docstrings are human-facing prose too.** Though a docstring is reStructuredText, not Markdown (format it per `write-python`), the same human principles apply — a succinct, imperative summary line, one idea per sentence, the *why* and the non-obvious rather than a restatement of the name.
 - **Target each section at its reader.** Put content where the reader who needs it will look. Don't strand a maintainer's warning in the setup path a new user reads.
 - **Default shape: sections of bullets.** Reserve prose for ideas that genuinely need connected sentences.
 - **Lean toward lists over tables.** Humans scan a list faster than they parse a grid. Even for a genuine comparison, prefer a list unless several columns' alignment truly aids reading. (LLM-facing docs can use tables more freely.)

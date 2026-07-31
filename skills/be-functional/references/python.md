@@ -162,12 +162,15 @@ If you want richer functional error handling (Result/Either types), the `returns
 
 ## Libraries
 
-- **`toolz`** — curated functional helpers; the go-to for currying and composition (see above), plus `pipe`, `groupby`, `merge`, etc.
+Two stand out and are worth reaching for by default: **`toolz`** for composition, currying, and dict/iterable helpers, and **`plum`** for multiple dispatch — both are well-maintained, well-typed, and cover the gaps the stdlib leaves.
+
+- **`toolz`** — *the* curated functional-helper toolkit and the go-to for currying and composition (see above), plus `pipe`, `groupby`, `juxt`, `merge`, and immutable dict ops. Reach for it first.
+- **`plum`** — *the* multiple-dispatch library (dispatch on several argument types via annotations), for when `functools.singledispatch` isn't enough. Prefer it to the older `multipledispatch`.
 - **`cytoolz`** — a C reimplementation of `toolz`, near drop-in, much faster on hot paths.
 - **`funcy`** — an alternative functional-utils library; a peer to `toolz`, not a replacement — pick whichever API you prefer.
-- **`returns`** — Result/Maybe/IO containers for a stricter functional style.
-- **`plum`** — multiple dispatch (on several argument types) via type annotations, for when `functools.singledispatch` isn't enough.
+- **`returns`** — Result/Maybe/IO containers for a stricter functional style, integrated with typing.
+- **`pymonad`** — explicit monad implementations (Maybe, Either, State, Writer, Reader) for a more Haskell-style approach; heavier than `returns`, so reach for it only when you genuinely want the full monad toolkit.
 - **`pyrsistent`** — persistent immutable collections (especially an immutable map) with efficient structural-sharing updates; reach for it when you update collections repeatedly in a functional style.
-  Prefer frozen dataclasses for typed records — they integrate better with pyright.
+  Prefer frozen dataclasses for typed records — they integrate better with `pyright`.
 
 Beyond these, stdlib comprehensions + `functools`/`itertools` handle most cases; reach for a library when it genuinely simplifies things.

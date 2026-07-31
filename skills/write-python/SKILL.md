@@ -50,7 +50,7 @@ Don't reorder purely to enforce this in a file that already uses another scheme 
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-In a package's `__init__.py`, define `__all__` to make the public API explicit and keep `import *` honest.
+In a package's `__init__.py`, define `__all__` to make the public Application Programming Interface (API) explicit and keep `import *` honest.
 
 **Annotate every function** — every argument and the return value, on public and internal functions alike.
 Full signatures let pyright check call sites, document intent, and make refactors safe. **Don't annotate local variables** inside function bodies — let inference do its job and keep bodies uncluttered (add a hint only in the rare case inference genuinely can't resolve a type).
@@ -63,7 +63,7 @@ Typing conventions (Python 3.11+):
 - **`typing.Any`** for a genuinely unspecified type, and **`typing.Callable`** for callable types (qualified, per the import rule above).
 
 Reach for `dataclasses.dataclass` for plain data holders before hand-writing `__init__`.
-Use `typing.Protocol` for structural "duck typing" interfaces rather than forcing an ABC inheritance hierarchy.
+Use `typing.Protocol` for structural "duck typing" interfaces rather than forcing an Abstract Base Class (ABC) inheritance hierarchy.
 
 ## Docstrings (reStructuredText / Sphinx style)
 
@@ -157,7 +157,7 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
   Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
   Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the string isn't built when not logged.
-- **EAFP over LBYL** where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
+- **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
 - Avoid `from module import *` in code (fine only in a curated `__init__.py`).
 - Don't reach for a class when a function will do; don't add abstraction (factories, base classes, config layers) before there's a second case.
 - **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterize, or override the value without callers changing; a bare global has to be torn out to extend.
