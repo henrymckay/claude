@@ -181,9 +181,10 @@ An HTTP API (`fastapi`, served with `uvicorn`) is a shell in its own `api/` pack
 
 ### Dashboards
 
-A dashboard (a web UI over the same core — `streamlit`, `dash`, `panel`, or similar) is a shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its own rendering.
+A dashboard is a web UI over the same core — a shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its rendering.
+House pick: `shiny` (Shiny for Python, from Posit). Its reactive model — only the outputs affected by a changed input re-render — and clean UI/server split fit the shell-over-core shape far better than Streamlit's whole-script rerun or Dash's manual callbacks.
 
-*(Placeholder — house library pick to come.)*
+*(Placeholder — fuller guidance to come.)*
 
 ### Scheduled and event-driven jobs
 
@@ -221,6 +222,7 @@ Listed by task:
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
+- **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over Streamlit's whole-script rerun.
 - **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a pandas result (e.g. from `yfinance`) with `polars.from_pandas`. Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
