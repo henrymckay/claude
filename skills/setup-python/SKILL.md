@@ -39,9 +39,9 @@ myproject/
       core.py
       cli/
         __init__.py
-        arguments.py
-        commands.py
-        options.py
+        argument.py
+        command.py
+        option.py
   tests/
     data/
     support/
@@ -148,11 +148,11 @@ def report(symbols: typing.Annotated[list[str], tickers()]) -> None:
 ```
 
 - **A single-command CLI stays one `cli.py`** — the `app`, its command(s), and the argument/option factory functions together.
-- **Several commands, or arguments/options shared across them, → a `cli/` package:**
-  - `arguments.py` — functions returning `typer.Argument`.
-  - `options.py` — functions returning `typer.Option`.
-  - `commands.py` — the commands: `from mypackage.cli import app, arguments, options`, then `@app.command()`.
-  - `__init__.py` — define `app = typer.Typer()`, then import the command modules so their `@app.command()` decorators run: `from mypackage.cli import commands  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
+- **Several commands, or arguments/options shared across them, → a `cli/` package** (singular module names, read as `category.member` — `argument.tickers()`, `option.raw()`):
+  - `argument.py` — functions returning `typer.Argument`.
+  - `option.py` — functions returning `typer.Option`.
+  - `command.py` — the commands: `from mypackage.cli import app, argument, option`, then `@app.command()`.
+  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.cli import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
 
 ## Dependencies & environment: use `uv`
 
