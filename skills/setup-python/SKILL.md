@@ -42,6 +42,7 @@ myproject/
         argument.py
         command.py
         option.py
+        render.py
   tests/
     data/
     support/
@@ -150,12 +151,21 @@ def report(symbols: typing.Annotated[list[str], tickers()]) -> None:
     ...
 ```
 
-- **A single-command CLI stays one `cli.py`** — the `app`, its command(s), and the argument/option factory functions together.
+**Presentation lives with the CLI, not in the shared core.** Formatting the output — building the `rich` table, choosing colours — is CLI-specific, so it belongs in the CLI shell (a `render.py`), taking the core's plain results and rendering them. The core (`report`, `setups`) stays presentation-agnostic, so another entry point (a dashboard) can render the same results its own way. Presentation config obeys the usual function-over-constant rule — a `_colour(direction)` function, not a module-level `dict` (see `be-functional`).
+
+- **A single-command CLI stays one `cli.py`** — the `app`, its command(s), the argument/option factory functions, and the rendering, together.
 - **Several commands, or arguments/options shared across them, → a `cli/` package** (singular module names, read as `category.member` — `argument.tickers()`, `option.raw()`):
   - `argument.py` — functions returning `typer.Argument`.
   - `option.py` — functions returning `typer.Option`.
-  - `command.py` — the commands: `from mypackage.cli import app, argument, option`, then `@app.command()`.
+  - `render.py` — output formatting: the `rich` table, colours, taking the core's results.
+  - `command.py` — the commands: `from mypackage.cli import app, argument, option, render`, then `@app.command()`.
   - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.cli import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
+
+## Dashboards
+
+A dashboard (a web UI over the same core — `streamlit`, `dash`, `panel`, or similar) is just another entry point, structured like the CLI: a thin shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its own rendering.
+
+*(Placeholder — fuller guidance, and a house library pick, to come.)*
 
 ## Dependencies & environment: use `uv`
 

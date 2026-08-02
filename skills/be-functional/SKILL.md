@@ -54,6 +54,7 @@ Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — t
 
 **Separate pure code from impure code.** Real programs must do I/O and hold state, so don't pretend otherwise: push side effects (input, output, network, mutation) to a thin outer **shell**, and keep the **core** — the decisions and transformations — pure.
 The core is where the logic and the bugs live, so keeping it pure buys testability and clarity while the shell stays small and dumb.
+A program often has *several* shells — one per entry point (a CLI, a dashboard, an HTTP API) — each thin and each owning its own **presentation** over the one shared core; so rendering and formatting belong with their entry point, never in the core.
 
 **Inject impure dependencies as default arguments.** When a function needs something impure — the environment, the clock, randomness, a database handle — take it as a parameter whose *default* is the real thing.
 Normal callers pass nothing (convenient); tests pass explicit values (so the function stays pure and deterministic under test).
