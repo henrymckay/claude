@@ -31,6 +31,7 @@ These conventions are for new code or projects with no strong existing style.
 
 **Prefer the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
 Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it — and when a dependency is warranted, `setup-python` lists the house pick for common tasks.
+**Once a dependency is in play, use *its* built-in features rather than hand-rolling around them.** Before writing validation, grouping, parsing, retries, or serialisation yourself, check the library's own API — a CLI framework's callbacks and validation, a dataframe library's operations, an HTTP client's retry/auth. Reinventing what a dependency already offers is more code to maintain and usually a worse version. (Do confirm the feature exists, though — not every library has every convenience; a genuine gap is fine to fill.)
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Ordering

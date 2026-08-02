@@ -132,6 +132,9 @@ Wire the CLI to a console command with `[project.scripts]` — `mycli = "mypacka
 Run it with `uv run mycli ...` during development, or just `mycli` once installed.
 Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
 
+**Keep help text terse — lean on defaults, not examples.**
+Don't stuff usage examples into an option's help string; a well-chosen **default value** documents both the accepted format and a sensible choice at once (a `--period` defaulting to `"1y"` is its own example), and `typer` already shows defaults in `--help`.
+
 **Break each argument and option out into a function returning its config — at any size.**
 A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once as a function and reference it in the annotation.
 This is the same shared-helper idea as `given`/`when`/`then` in tests: config defined once, signatures readable.
