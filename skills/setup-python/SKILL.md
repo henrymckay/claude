@@ -37,6 +37,11 @@ myproject/
     mypackage/
       __init__.py
       core.py
+      cli/
+        __init__.py
+        arguments.py
+        commands.py
+        options.py
   tests/
     data/
     support/
@@ -52,7 +57,7 @@ myproject/
 ```
 
 Keep modules small and cohesive (one responsibility).
-Tests live in `tests/`, never beside the source, split three ways: the cases in `suite/` (your code mirrored in `suite/<package>/`, dependency-behaviour tests in `suite/packages/`), the data they load in `data/`, and the imported helpers in the `support/` package — fixtures (`given`), custom assertions (`then`), and action helpers (`when`) where actions earn a name. See `write-tests`.
+The `tests/` tree is covered under [Tests](#tests) and the `cli/` package under [Command-line interfaces](#command-line-interfaces) below.
 
 ## pyproject.toml
 
@@ -68,7 +73,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
-mycli = "mypackage.cli:main"
+mycli = "mypackage.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -99,16 +104,55 @@ pythonpath = ["tests"]
 
 The non-obvious choices:
 
-- `[project.scripts]` only when it's a CLI — it maps a command to an entry point (a `main` function, or a `typer`/`click` app object, in `cli.py`). Keep the CLI code in that named, importable `cli.py` module, not in `__main__.py`; add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage` to run it.
-  Once a CLI grows to several commands, or reuses arguments/options across them, promote `cli.py` to a `cli/` package: `commands.py` for the commands, and `arguments.py`/`options.py` that expose each reusable argument or option as a **function returning its `typer.Argument`/`Option`** (e.g. `def tickers() -> typer.models.ArgumentInfo`), used in a command's `Annotated[list[str], arguments.tickers()]`. This keeps the config defined once and command signatures readable — the same shared-helper split as `given`/`when`/`then` in `write-tests`. A single-command CLI stays one `cli.py` (KISS).
+- `[project.scripts]` only when it's a CLI — it maps a command to an entry point (see [Command-line interfaces](#command-line-interfaces)).
 - `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
-- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
-- The test settings follow the `suite/` + `support/` layout in `write-tests`: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes the `support` package importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party. See `write-tests` for why each is needed.
-  Scaffold `tests/support/given.py` (with its `__init__.py`) up front — `-p support.given` fails to load if the module is missing, so create the support package before the first `pytest` run.
+- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption.
+- The `[tool.pytest.ini_options]`, `pythonpath` and `src` settings serve the test layout (see [Tests](#tests)).
 
 **TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
 `ruff` formats Python only, not TOML, so `taplo` handles it (part of the toolchain below) — `taplo fmt` applies exactly this rule, collapsing the expanded arrays `uv add` leaves behind.
+
+## Tests
+
+Tests live in `tests/`, never beside the source, split three ways:
+
+- **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
+- **`data/`** — data files the tests load.
+- **`support/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name.
+
+The pytest settings in the template serve this layout: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes `support` importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party.
+Scaffold `tests/support/given.py` (with its `__init__.py`) up front — `-p support.given` fails to load if the module is missing.
+
+That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
+
+## Command-line interfaces
+
+Wire the CLI to a console command with `[project.scripts]` — `mycli = "mypackage.cli:app"` points at the `typer` app object (a `typer.Typer()` is callable, so it works as the entry point).
+Run it with `uv run mycli ...` during development, or just `mycli` once installed.
+Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
+
+**Break each argument and option out into a function returning its config — at any size.**
+A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once as a function and reference it in the annotation.
+This is the same shared-helper idea as `given`/`when`/`then` in tests: config defined once, signatures readable.
+
+```python
+def tickers() -> typer.models.ArgumentInfo:
+    """The tickers positional argument."""
+    return typer.Argument(help="Ticker symbols, e.g. AAPL MSFT.")
+
+
+@app.command()
+def report(symbols: typing.Annotated[list[str], tickers()]) -> None:
+    ...
+```
+
+- **A single-command CLI stays one `cli.py`** — the `app`, its command(s), and the argument/option factory functions together.
+- **Several commands, or arguments/options shared across them, → a `cli/` package:**
+  - `arguments.py` — functions returning `typer.Argument`.
+  - `options.py` — functions returning `typer.Option`.
+  - `commands.py` — the commands: `from mypackage.cli import app, arguments, options`, then `@app.command()`.
+  - `__init__.py` — define `app = typer.Typer()`, then import the command modules so their `@app.command()` decorators run: `from mypackage.cli import commands  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
 
 ## Dependencies & environment: use `uv`
 
