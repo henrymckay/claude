@@ -90,10 +90,12 @@ When another library hands you a frame (a `pandas` result from `yfinance`, an AP
 Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimizer, and it's the most common way people accidentally leave Polars.
 Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
 
-**Do per-group work in one frame with `.over(group)`, never a per-group Python loop.**
-Anything you'd compute by looping over groups — per ticker, per user, per category — stack into one long frame and compute together with a window expression partitioned by the group.
-This holds even for *sequential, stateful* per-group logic — a running total, a consecutive-run length, a reset-on-change counter. Express it as a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)` — not a Python accumulator. See the run-length recipe in `references/expressions.md`.
-Feeding rows one group at a time is the same mistake as looping rows one at a time, one level up.
+**Keep every group in one long-form frame — don't split it up.**
+Stack all groups (all tickers, all users, all categories) into a single frame and compute across them together, rather than holding a frame per group and looping.
+Most work is plain column expressions that apply to every group in one pass — element-wise maths, filters, `when/then` — with **no `.over` at all**.
+Reach for `.over(group)` only where an operation must respect group boundaries: a `.shift`, a cumulative, a rank, or a per-group window.
+Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
+Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.
 
 ## Key habits (and pandas traps)
 
