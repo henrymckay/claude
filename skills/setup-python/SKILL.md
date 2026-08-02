@@ -39,13 +39,17 @@ myproject/
       core.py
       cli/
         __init__.py
+      typer_/
+        __init__.py
         argument.py
         command.py
         option.py
+      rich_/
+        __init__.py
         render.py
   tests/
     data/
-    support/
+    pytest_/
       __init__.py
       given.py
       then.py
@@ -99,7 +103,7 @@ typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/suite"]
-addopts = "--import-mode importlib -p support.given"
+addopts = "--import-mode importlib -p pytest_.given"
 pythonpath = ["tests"]
 ```
 
@@ -120,19 +124,24 @@ Tests live in `tests/`, never beside the source, split three ways:
 
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 - **`data/`** — data files the tests load.
-- **`support/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name.
+- **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
 
-The pytest settings in the template serve this layout: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p support.given` makes `support` importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party.
-Scaffold `tests/support/given.py` (with its `__init__.py`) up front — `-p support.given` fails to load if the module is missing.
+The pytest settings in the template serve this layout: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
+Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pytest_.given` fails to load if the module is missing.
 
 That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
 
 ## Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
-Each is a thin **shell** over the presentation-agnostic **core** (see `be-functional`): it lives in its own package, calls the shared core, and owns its own presentation.
-Keep the core free of any entry point's concerns, so a second entry point can serve or render the same results its own way.
-The shell types are the CLI, an API, a dashboard, and scheduled/event-driven jobs, below.
+Each is a thin **shell** over the presentation-agnostic **core** (see `be-functional`): it calls the shared core and owns its own presentation, so a second entry point can serve or render the same results its own way.
+
+Split each shell into a **role package** and one or more **framework packages**:
+
+- The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.cli:app`) that hides which library is behind it.
+- The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects. They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`. Swap the library and only the framework package changes; the role name stays put.
+
+The shell types are the CLI, an API, a GUI, and scheduled/event-driven jobs, below.
 
 Two things are *not* separate entry points:
 
@@ -141,48 +150,41 @@ Two things are *not* separate entry points:
 
 ### Command-line interfaces
 
-Wire the CLI to a console command with `[project.scripts]` — `mycli = "mypackage.cli:app"` points at the `typer` app object (a `typer.Typer()` is callable, so it works as the entry point).
-Run it with `uv run mycli ...` during development, or just `mycli` once installed.
-Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
+`typer` for the CLI, `rich` for output (see Reach-for libraries). Three packages:
 
-**Keep help text terse — lean on defaults, not examples.**
-Don't stuff usage examples into an option's help string; a well-chosen **default value** documents both the accepted format and a sensible choice at once (a `--period` defaulting to `"1y"` is its own example), and `typer` already shows defaults in `--help`.
+- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.typer_ import app`, giving the stable entry point `mypackage.cli:app`. Wire it with `[project.scripts]` (`mycli = "mypackage.cli:app"`); run it with `uv run mycli ...`, or `mycli` once installed. Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
+- **`typer_/`** — the typer-coupled code, singular modules read as `category.member`:
+  - `argument.py` — functions returning `typer.Argument` (e.g. `argument.tickers()`).
+  - `option.py` — functions returning `typer.Option` (e.g. `option.raw()`).
+  - `command.py` — the commands: `from mypackage.typer_ import app, argument, option` and `from mypackage.rich_ import render`, then `@app.command()`.
+  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.typer_ import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect).
+- **`rich_/`** — the rich-coupled rendering: `render.py` builds the `rich` table and colours from the core's plain results.
 
 **Break each argument and option out into a function returning its config — at any size.**
-A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once as a function and reference it in the annotation.
+A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it: `symbols: typing.Annotated[list[str], argument.tickers()]`.
 This is the same shared-helper idea as `given`/`when`/`then` in tests: config defined once, signatures readable.
 
 ```python
 def tickers() -> typer.models.ArgumentInfo:
     """The tickers positional argument."""
     return typer.Argument(help="Ticker symbols, e.g. AAPL MSFT.")
-
-
-@app.command()
-def report(symbols: typing.Annotated[list[str], tickers()]) -> None:
-    ...
 ```
 
-**Presentation lives with the CLI, not in the shared core.** Formatting the output — building the `rich` table, choosing colours — is CLI-specific, so it belongs in the CLI shell (a `render.py`), taking the core's plain results and rendering them. The core (`report`, `setups`) stays presentation-agnostic, so another entry point (a dashboard) can render the same results its own way. Presentation config obeys the usual function-over-constant rule — a `_colour(direction)` function, not a module-level `dict` (see `be-functional`).
+**Keep help text terse — lean on defaults, not examples.**
+Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--period` defaulting to `"1y"` is its own example), and `typer` shows defaults in `--help`.
 
-- **A single-command CLI stays one `cli.py`** — the `app`, its command(s), the argument/option factory functions, and the rendering, together.
-- **Several commands, or arguments/options shared across them, → a `cli/` package** (singular module names, read as `category.member` — `argument.tickers()`, `option.raw()`):
-  - `argument.py` — functions returning `typer.Argument`.
-  - `option.py` — functions returning `typer.Option`.
-  - `render.py` — output formatting: the `rich` table, colours, taking the core's results.
-  - `command.py` — the commands: `from mypackage.cli import app, argument, option, render`, then `@app.command()`.
-  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.cli import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
+Presentation config obeys the function-over-constant rule — a `_colour(direction)` function in `rich_`, not a module-level `dict` (see `be-functional`).
+A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cli.py` (KISS) — but keep it out of the core.
 
 ### APIs
 
-An HTTP API (`fastapi`, served with `uvicorn`) is a shell in its own `api/` package: routers call the core and serialise its results through Pydantic models (see `pydantic` in Reach-for libraries). The `fastapi` app object is the entry point.
+`fastapi` for an HTTP API (see Reach-for libraries). A hollow `api/` role package re-exports the app (`mypackage.api:app`, served with `uvicorn`), over a `fastapi_/` package holding the routers and Pydantic models that call the core.
 
 *(Placeholder — fuller guidance to come.)*
 
-### Dashboards
+### Graphical interfaces
 
-A dashboard is a web UI over the same core — a shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its rendering.
-House pick: `shiny` (Shiny for Python, from Posit). Its reactive model — only the outputs affected by a changed input re-render — and clean UI/server split fit the shell-over-core shape far better than Streamlit's whole-script rerun or Dash's manual callbacks.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. A hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core.
 
 *(Placeholder — fuller guidance to come.)*
 

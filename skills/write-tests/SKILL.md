@@ -132,7 +132,7 @@ Tag genuinely slow or external tests so the default run stays quick and you opt 
 
 ## Layout
 
-Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **support code** they import (fixtures, custom assertions).
+Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **shared helpers** they import (fixtures, custom assertions).
 The concrete tree, import mode, and runner setup are language-specific — see `references/python.md` and `setup-python`.
 
 ## Running the suite
@@ -169,6 +169,6 @@ Reach beyond example-based unit tests when the problem fits.
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (pytest: fixtures in the `support` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
+- **Python** → `references/python.md` (pytest: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
 
 Add a new `references/<language>.md` when you start testing in another language rather than stuffing idioms into this file.

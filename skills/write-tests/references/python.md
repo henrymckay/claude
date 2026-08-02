@@ -11,7 +11,7 @@ Installing pytest and the `tests/` layout live in `setup-python`.
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put shared fixtures in the `support` package's `given.py`, registered as a plugin with `addopts = "-p support.given"`. `-p` must name the module where the fixtures are *defined* — `support.given`, not the package `support` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`. They sit alongside the `when`/`then` modules. The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
+- Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"`. `-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`. They sit alongside the `when`/`then` modules. The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
@@ -68,10 +68,10 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
 
 ## Assertions
 
-Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality. Collect them in the `support` package's `then` module, imported as `from support import then`, so every test reads the same way and each check is defined once:
+Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality. Collect them in the `pytest_` package's `then` module, imported as `from pytest_ import then`, so every test reads the same way and each check is defined once:
 
 ```python
-# tests/support/then.py
+# tests/pytest_/then.py
 def equals(actual: object, expected: object) -> None:
     """Assert two values are equal."""
     assert actual == expected, f"expected {expected!r}, got {actual!r}"
@@ -86,8 +86,8 @@ def column_equals(
 
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
-- Keep the helpers in a `support` package (`support/__init__.py`) on `pythonpath = ["tests"]` so `from support import then` resolves. Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `support` with your own code, not third-party deps.
-- Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("support.then")`).
+- Keep the helpers in a `pytest_` package (`pytest_/__init__.py`) on `pythonpath = ["tests"]` so `from pytest_ import then` resolves. Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `pytest_` with your own code, not third-party deps.
+- Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
 
@@ -105,10 +105,10 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 
 To show logs from both the code under test and the tests during a run, Rich-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`. Nothing goes in the test files — pytest attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
 
-Configure it in the `support` package. A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam pytest's progress line, reset per test by an autouse fixture:
+Configure it in the `pytest_` package. A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam pytest's progress line, reset per test by an autouse fixture:
 
 ```python
-# tests/support/given.py
+# tests/pytest_/given.py
 class _TestRichHandler(rich.logging.RichHandler):
     """Rich handler that opens each test's first log line on a fresh row."""
 
@@ -157,7 +157,7 @@ If you don't need Rich specifically, the zero-code alternative is pytest's nativ
 ```text
 tests/
   data/
-  support/
+  pytest_/
     __init__.py
     given.py
     then.py
@@ -169,10 +169,10 @@ tests/
       test_httpx.py
 ```
 
-- Three folders, three jobs: `data/` (files a fixture loads), `support/` (imported helpers), `suite/` (the tests pytest collects). Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
-- `support/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming. Only `given` is loaded as a plugin (`-p support.given`, naming the module that *holds* the fixtures — `-p support` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests. The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
-- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p support.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `support` as first-party, not third-party.
-- `pythonpath` only applies while pytest runs, so static tools resolve `from support import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
+- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests pytest collects). Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
+- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming. Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests. The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
+- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
+- `pythonpath` only applies while pytest runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
 
 ## Running
 

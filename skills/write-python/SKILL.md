@@ -121,7 +121,7 @@ Relative imports (`from . import db`) are fine for tight intra-package reference
 **Avoid `as` renames** unless genuinely unavoidable (a real name clash) — that includes the popular ones: prefer `import polars` / `polars.col(...)` over the conventional `import polars as pl`.
 When a rename truly is forced, derive it from the *true* name with an underscore prefix or suffix (`import numpy as numpy_`), never an arbitrary short alias like `np`.
 
-**Name a local directory that extends a third-party package with a trailing underscore** — e.g. `polars_/` for your own Polars helpers — so it never shadows or gets confused with the real `polars`.
+**Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`. Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `setup-python`'s Entry points for the split.
 
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.
