@@ -78,7 +78,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
-mycli = "mypackage.cli:app"
+mypackage-cli = "mypackage.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -109,7 +109,7 @@ pythonpath = ["tests"]
 
 The non-obvious choices:
 
-- `[project.scripts]` only when it's a CLI — it maps a command to an entry point (see [Command-line interfaces](#command-line-interfaces)).
+- `[project.scripts]` — a `<project>-<role>` command per launchable entry point (see [Entry points](#entry-points)).
 - `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption.
@@ -143,6 +143,11 @@ Split each shell into a **role package** and one or more **framework packages**:
 
 The shell types are the CLI, an API, a GUI, and scheduled/event-driven jobs, below.
 
+**Launch each entry point with a `[project.scripts]` command named `<project>-<role>`** — `mypackage-cli`, `mypackage-api`, `mypackage-gui`, run with `uv run mypackage-cli ...`.
+That name is a *global* command (it lands on `PATH` when the package is installed), so it must be namespaced to the project, not a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
+(If one interface is clearly primary you can give it the bare project name and suffix only the rest, but symmetric `<project>-<role>` reads better for peers.)
+The command points at whatever *starts* that entry point: a callable app object where the framework gives one (a `typer` app is callable), or a thin `run()` launcher where it doesn't (`uvicorn.run(app)` for an API, `shiny.run_app(app)` for a GUI).
+
 Two things are *not* separate entry points:
 
 - A **library** — if the project is imported by other code, its public API *is* the interface; there is no shell, only the `__all__` / public surface (see `write-python`).
@@ -152,7 +157,7 @@ Two things are *not* separate entry points:
 
 `typer` for the CLI, `rich` for output (see Reach-for libraries). Three packages:
 
-- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.typer_ import app`, giving the stable entry point `mypackage.cli:app`. Wire it with `[project.scripts]` (`mycli = "mypackage.cli:app"`); run it with `uv run mycli ...`, or `mycli` once installed. Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
+- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.typer_ import app`, giving the stable entry point `mypackage.cli:app`. Wire it with `[project.scripts]` (`mypackage-cli = "mypackage.cli:app"`) — a `typer` app is callable, so it points straight at the app; run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed. Add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage`.
 - **`typer_/`** — the typer-coupled code, singular modules read as `category.member`:
   - `argument.py` — functions returning `typer.Argument` (e.g. `argument.tickers()`).
   - `option.py` — functions returning `typer.Option` (e.g. `option.raw()`).
@@ -178,13 +183,13 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see Reach-for libraries). A hollow `api/` role package re-exports the app (`mypackage.api:app`, served with `uvicorn`), over a `fastapi_/` package holding the routers and Pydantic models that call the core.
+`fastapi` for an HTTP API (see Reach-for libraries). A hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.api:run"`), or serve it directly with `uvicorn mypackage.api:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
 ### Graphical interfaces
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. A hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. A hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.gui:run"`), or `shiny run mypackage.gui:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
