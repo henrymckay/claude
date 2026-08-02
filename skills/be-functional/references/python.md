@@ -71,6 +71,7 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   total = sum(x * x for x in numbers)
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
+- **For tabular or columnar data, the vectorized declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* the frame (grouped and sequential work via `.over`); see the `use-polars` skill. Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
 
 ## functools & itertools
 

@@ -137,7 +137,7 @@ Prefer the standard library by default; only when a task genuinely needs a depen
 Listed by task:
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
-- **DataFrames** → `polars` (see the `use-polars` skill).
+- **Tabular / columnar data** → `polars` (see `use-polars`). Reach for it whenever data is dataframe-shaped — *including* a dataframe another library hands you (convert a pandas result from something like `yfinance` with `polars.from_pandas`) — and do the work with dataframe expressions rather than pulling columns out to Python lists and looping.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
@@ -193,5 +193,5 @@ Set these up once and defer to them everywhere:
 - **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
 - **`pytest`** — tests in `tests/`.
 
-Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
+Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `.hypothesis/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
 See the `use-git` skill for repo hygiene.

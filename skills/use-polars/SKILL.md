@@ -83,6 +83,18 @@ For data bigger than memory, use the streaming engine: `.collect(engine="streami
 
 Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materializing the whole frame.
 
+## Stay in the dataframe
+
+**If data is a dataframe, or you're doing dataframe-shaped work, do it *in* Polars — don't drop to Python lists and loops.**
+When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it once with `polars.from_pandas` and keep going with expressions.
+Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimizer, and it's the most common way people accidentally leave Polars.
+Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
+
+**Do per-group work in one frame with `.over(group)`, never a per-group Python loop.**
+Anything you'd compute by looping over groups — per ticker, per user, per category — stack into one long frame and compute together with a window expression partitioned by the group.
+This holds even for *sequential, stateful* per-group logic — a running total, a consecutive-run length, a reset-on-change counter. Express it as a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)` — not a Python accumulator. See the run-length recipe in `references/expressions.md`.
+Feeding rows one group at a time is the same mistake as looping rows one at a time, one level up.
+
 ## Key habits (and pandas traps)
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.

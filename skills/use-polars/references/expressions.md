@@ -65,6 +65,26 @@ df.with_columns(
 )
 ```
 
+## Consecutive-run length per group (gaps and islands)
+
+Sequential per-group logic — a consecutive-run length, a reset-on-change counter — stays one dataframe operation: number each run with a change flag + `cum_sum`, then count within it. No Python loop, and every group runs together under `.over`:
+
+```python
+runs = (
+    frame.sort("group", "order")
+    .with_columns(
+        run_id=(polars.col("state") != polars.col("state").shift(1).over("group"))
+        .fill_null(True)                                   # first row per group starts a run
+        .cum_sum()
+        .over("group")
+    )
+    .with_columns(run_len=polars.int_range(1, polars.len() + 1).over("group", "run_id"))
+)
+current = runs.group_by("group").tail(1)                   # the run active on each group's last row
+```
+
+`.fill_null(True)` matters: `x != null` is null under Polars' three-valued logic, so without it the first row of each group is misclassified and the count comes out one short. `state` is whatever you're measuring runs of — e.g. `polars.col("close").sub(polars.col("close").shift(4).over("group")).sign()` for a DeMark-style up/down/flat run.
+
 ## Joins
 
 ```python
