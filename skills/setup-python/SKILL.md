@@ -99,7 +99,7 @@ pythonpath = ["tests"]
 
 The non-obvious choices:
 
-- `[project.scripts]` only when it's a CLI — it maps a command to an entry point.
+- `[project.scripts]` only when it's a CLI — it maps a command to an entry point (a `main` function, or a `typer`/`click` app object, in `cli.py`). Keep the CLI code in that named, importable `cli.py` module, not in `__main__.py`; add a thin `__main__.py` (`from mypackage.cli import app` then `app()`) only if you also want `python -m mypackage` to run it.
 - `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
 - `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption (see `write-tests`).
