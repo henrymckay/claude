@@ -127,7 +127,19 @@ Scaffold `tests/support/given.py` (with its `__init__.py`) up front — `-p supp
 
 That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
 
-## Command-line interfaces
+## Entry points
+
+Every project is reached through one or more **entry points** — the ways it gets invoked.
+Each is a thin **shell** over the presentation-agnostic **core** (see `be-functional`): it lives in its own package, calls the shared core, and owns its own presentation.
+Keep the core free of any entry point's concerns, so a second entry point can serve or render the same results its own way.
+The shell types are the CLI, an API, a dashboard, and scheduled/event-driven jobs, below.
+
+Two things are *not* separate entry points:
+
+- A **library** — if the project is imported by other code, its public API *is* the interface; there is no shell, only the `__all__` / public surface (see `write-python`).
+- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them (see [Scheduled and event-driven jobs](#scheduled-and-event-driven-jobs)).
+
+### Command-line interfaces
 
 Wire the CLI to a console command with `[project.scripts]` — `mycli = "mypackage.cli:app"` points at the `typer` app object (a `typer.Typer()` is callable, so it works as the entry point).
 Run it with `uv run mycli ...` during development, or just `mycli` once installed.
@@ -161,11 +173,24 @@ def report(symbols: typing.Annotated[list[str], tickers()]) -> None:
   - `command.py` — the commands: `from mypackage.cli import app, argument, option, render`, then `@app.command()`.
   - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.cli import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect). The `[project.scripts]` entry point stays `mypackage.cli:app`.
 
-## Dashboards
+### APIs
 
-A dashboard (a web UI over the same core — `streamlit`, `dash`, `panel`, or similar) is just another entry point, structured like the CLI: a thin shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its own rendering.
+An HTTP API (`fastapi`, served with `uvicorn`) is a shell in its own `api/` package: routers call the core and serialise its results through Pydantic models (see `pydantic` in Reach-for libraries). The `fastapi` app object is the entry point.
 
-*(Placeholder — fuller guidance, and a house library pick, to come.)*
+*(Placeholder — fuller guidance to come.)*
+
+### Dashboards
+
+A dashboard (a web UI over the same core — `streamlit`, `dash`, `panel`, or similar) is a shell in its own `dashboard/` package that calls the presentation-agnostic core and owns its own rendering.
+
+*(Placeholder — house library pick to come.)*
+
+### Scheduled and event-driven jobs
+
+A cron run, a queue worker, a webhook handler, or a serverless function is a shell triggered by *time or events* rather than a person.
+It reads its trigger, runs the core — a data pipeline's transforms, say — and writes the result; keep the trigger wiring thin so the work stays in the core.
+
+*(Placeholder — house library pick to come.)*
 
 ## Dependencies & environment: use `uv`
 
@@ -195,6 +220,7 @@ Prefer the standard library by default; only when a task genuinely needs a depen
 Listed by task:
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
+- **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a pandas result (e.g. from `yfinance`) with `polars.from_pandas`. Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
