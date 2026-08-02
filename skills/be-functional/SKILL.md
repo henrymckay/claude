@@ -56,9 +56,12 @@ Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — t
 The core is where the logic and the bugs live, so keeping it pure buys testability and clarity while the shell stays small and dumb.
 A program often has *several* shells — one per entry point (a CLI, a dashboard, an HTTP API) — each thin and each owning its own **presentation** over the one shared core; so rendering and formatting belong with their entry point, never in the core.
 
-**Inject impure dependencies as default arguments.** When a function needs something impure — the environment, the clock, randomness, a database handle — take it as a parameter whose *default* is the real thing.
-Normal callers pass nothing (convenient); tests pass explicit values (so the function stays pure and deterministic under test).
-See `references/python.md` for the `os.environ` and clock patterns.
+**Inject impure dependencies as arguments.** When a function needs something impure — the environment, the clock, randomness, a data source — take it as a parameter rather than reaching for it. Tests then pass explicit values, so the function stays pure and deterministic under test.
+
+Where the default goes depends on *what* the effect is:
+
+- **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`. Normal callers pass nothing; tests pass a fixed value. See `references/python.md` for the `os.environ` and clock patterns.
+- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**. Defaulting it would drag that library's import into the core and point the dependency arrow outward. Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `setup-python`'s Core, adapter, driver. The core calls the dependency at runtime without ever importing it.
 
 ## Functions over classes
 
