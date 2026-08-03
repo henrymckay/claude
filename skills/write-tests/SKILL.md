@@ -41,7 +41,7 @@ Make the three beats visible through **structure and names, not comments** — t
 - *When* is a single action on its own line, assigned to a well-named result.
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
-```
+```python
 def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
     kept = keep_valid(raw_sales)
     then_every_row_is_positive(kept)

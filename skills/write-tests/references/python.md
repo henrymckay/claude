@@ -177,10 +177,15 @@ tests/
 ## Running
 
 ```bash
-uv run pytest                      # everything under testpaths
-uv run pytest tests/suite/packages # one directory
-uv run pytest -k revenue           # tests whose name matches
-uv run pytest -m slow              # tests carrying a marker
+uv run pytest
+uv run pytest tests/suite/packages
+uv run pytest -k revenue
+uv run pytest -m slow
 ```
+
+- `uv run pytest` runs everything under `testpaths`.
+- `uv run pytest tests/suite/packages` runs one directory.
+- `uv run pytest -k revenue` runs tests whose name matches.
+- `uv run pytest -m slow` runs tests carrying a marker.
 
 There is no `if __name__ == "__main__"` in a test file — pytest is the entry point.

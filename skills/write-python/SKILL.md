@@ -2,8 +2,8 @@
 name: write-python
 description: >-
   In-code conventions for writing Python that a formatter can't decide —
-  function/member ordering, public API design, typing, docstrings, import
-  style, error handling, and idioms. Use whenever writing, editing,
+  function/member ordering, naming, public API design, typing, docstrings,
+  import style, error handling, and idioms. Use whenever writing, editing,
   refactoring, or reviewing Python code, even if the user doesn't explicitly
   mention "conventions", "style", or "clean code". Targets Python 3.11+.
   Formatting/linting is delegated to ruff and type-checking to pyright — this
