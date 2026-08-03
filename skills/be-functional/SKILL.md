@@ -61,7 +61,7 @@ A program often has *several* shells — one per entry point (a CLI, a dashboard
 Where the default goes depends on *what* the effect is:
 
 - **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`. Normal callers pass nothing; tests pass a fixed value. See `references/python.md` for the `os.environ` and clock patterns.
-- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**. Defaulting it would drag that library's import into the core and point the dependency arrow outward. Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `setup-python`'s Core, adapter, driver. The core calls the dependency at runtime without ever importing it.
+- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**. Defaulting it would drag that library's import into the core and point the dependency arrow outward. Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `setup-python`'s package layers (`transform` / `operate` / `adapt` / `drive`). The core calls the dependency at runtime without ever importing it.
 
 ## Functions over classes
 

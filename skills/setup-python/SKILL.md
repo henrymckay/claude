@@ -36,17 +36,19 @@ myproject/
   src/
     mypackage/
       __init__.py
-      domain/
+      transform/
         __init__.py
+        setups.py
       port/
         __init__.py
-      operation/
+        fetch.py
+      operate/
         __init__.py
         report.py
-      adapter/
+      adapt/
         __init__.py
         yfinance_.py
-      driver/
+      drive/
         __init__.py
         cli/
           __init__.py
@@ -73,29 +75,96 @@ myproject/
 ```
 
 Keep modules small and cohesive (one responsibility).
-The five packages under `mypackage/` are the hexagonal split covered in [Core, adapter, driver](#core-adapter-driver) next; the `tests/` tree is under [Tests](#tests) and the `driver/` entry points under [Entry points](#entry-points).
+The packages under `mypackage/` are the hexagonal split covered in [The package layers](#the-package-layers) next; the `tests/` tree is under [Tests](#tests) and the `drive/` entry points under [Entry points](#entry-points).
 
-## Core, adapter, driver
+## The package layers
 
-Structure a non-trivial app as three groups — a pure **core**, the **adapters** that reach the outside world, and the **drivers** that start it — the ports-and-adapters (hexagonal) shape.
-One rule makes it work: **dependencies point inward.** The core imports nothing from the adapters or drivers; the adapters and drivers import the core, never the reverse.
+Structure a non-trivial app as layers named for what they do: a pure core (`transform`, `port`, `operate`), an `adapt` layer that reaches the outside world, and a `drive` layer that starts it — the ports-and-adapters (hexagonal) shape.
+The behavioural layers take imperative-verb names (per `write-python`); `port`, a package of definitions, stays a noun.
 
-- **Core** — three inner packages, pure and framework-free:
-  - **`domain/`** — the types and rules of the problem (a `Setup`, a `Direction`), depending on nothing else. Model it so illegal states can't be built (see `be-functional`).
-  - **`port/`** — the interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`). A port names *what* the core needs, not *how* it's supplied.
-  - **`operation/`** — the use-cases: functions that orchestrate a whole task (`report(tickers, fetch)`), calling the domain for logic and a port for I/O. Imports `domain` and `port` only. Singular, read as `operation.report`.
-- **`adapter/`** — the **driven** side: concrete implementations of the ports, each adapting an outside system to what the core expects (`yfinance_.fetch` adapts yfinance's pandas API to the `Fetch` port). Imports `domain`/`port` to conform to them; never imports `operation` or `driver`. Framework-coupled, so trailing-underscore module names.
-- **`driver/`** — the **driving** side: the entry points (CLI, API, GUI, jobs) that start the program. A driver is the **composition root** — the one place that imports both an operation and a concrete adapter and **injects** the adapter into the operation (`operation.report(tickers, fetch=yfinance_.fetch)`). See [Entry points](#entry-points).
+Two rules hold it together:
 
-Two directions to keep straight:
+- **IO lives only in `adapt` and `drive`.** The core — `transform`, `port`, `operate` — imports nothing that touches the network, filesystem, clock, or a third-party library.
+- **Imports point inward.** `adapt` and `drive` import the core; the core imports neither. `drive` alone imports both an operation and a concrete adapter.
 
-- **Dependency direction** (imports) points **inward**, always toward the core.
-- **Control flow** at runtime points **outward** — a running operation calls out through a port to whichever adapter the driver injected.
+Control flows the other way: a running operation calls *out* through a port to whichever adapter `drive` injected.
+Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
+That injection is the essential idea (see `be-functional`).
 
-Dependency injection reconciles them: because the driver passes the adapter *in* as an argument, the operation *calls* the adapter at runtime without *importing* it, so the core stays free of every framework.
-That injection is the essential idea — it's what keeps the dependency arrow pointing inward while control flows out.
+**Let it grow into the app.** A tiny tool is a module or two (`transform.py` + `drive.py`); introduce `port/` and `adapt/` only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold five packages for a script (KISS, YAGNI).
 
-This is the full shape; **let it grow into the app.** A small tool keeps a single `core.py` and one driver, and splits out `port/` and `adapter/` packages only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold five packages for a script (KISS, YAGNI).
+### transform — the pure core
+
+The types and rules of the problem, plus the pure functions over them, depending on nothing outward.
+Model data so illegal states can't be built (see `be-functional`).
+Reads as a phrase where it's called: `transform.setups(prices)`.
+
+```text
+transform/
+  __init__.py
+  setups.py
+```
+
+Domain types (a `Setup`, a `Direction`) live here for a small app; split them into a noun `domain/` package once they outgrow the module.
+
+### port — the seams
+
+The interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
+A port names *what* the core needs, not *how*: `operate` depends on it, `adapt` implements it.
+A noun, because it only defines.
+
+```text
+port/
+  __init__.py
+  fetch.py
+```
+
+### operate — the use cases
+
+The functions that orchestrate a whole task (`operate.report(tickers, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
+Imports `transform` and `port` only.
+Its `__init__.py` re-exports the use cases (`from mypackage.operate.report import report`) so a driver calls `operate.report(...)` without the module stutter.
+
+```text
+operate/
+  __init__.py
+  report.py
+```
+
+### adapt — the driven adapters
+
+The IO layer: concrete implementations of the ports, each adapting an outside system to what the core expects — `adapt`'s `yfinance_.fetch` adapts yfinance's pandas API to the `Fetch` port.
+Imports `transform`/`port` to conform to them; never imports `operate` or `drive`.
+Library-coupled modules take trailing-underscore names.
+
+```text
+adapt/
+  __init__.py
+  yfinance_.py
+```
+
+An ETL-shaped batch pipeline can split this by direction into `extract/` (input) and `load/` (output) — where `load` means *persist to a store*, not on-screen presentation, which belongs in `drive`.
+
+### drive — the entry points
+
+The driving side and composition root: the entry points (CLI, API, GUI, jobs) that start the program.
+A driver imports both an operation and a concrete adapter and injects one into the other:
+
+```python
+from mypackage import operate
+from mypackage.adapt import yfinance_
+
+operate.report(tickers, fetch=yfinance_.fetch)
+```
+
+The role packages, framework packages, and presentation a driver holds are covered in [Entry points](#entry-points) next.
+
+```text
+drive/
+  cli/
+  typer_/
+  rich_/
+```
 
 ## pyproject.toml
 
@@ -111,7 +180,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
-mypackage-cli = "mypackage.driver.cli:app"
+mypackage-cli = "mypackage.drive.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -167,12 +236,12 @@ That is the *scaffold*; the `write-tests` skill covers how to write the tests th
 ## Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
-These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Core, adapter, driver](#core-adapter-driver)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
-Everything below lives under `driver/`.
+These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [The package layers](#the-package-layers)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
+Everything below lives under `drive/`.
 
 Split each shell into a **role package** and one or more **framework packages**:
 
-- The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.driver.cli:app`) that hides which library is behind it.
+- The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.drive.cli:app`) that hides which library is behind it.
 - The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects. They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`. Swap the library and only the framework package changes; the role name stays put.
 
 The shell types are the CLI, an API, a GUI, and scheduled/event-driven jobs, below.
@@ -189,14 +258,14 @@ Two things are *not* separate entry points:
 
 ### Command-line interfaces
 
-`typer` for the CLI, `rich` for output (see Reach-for libraries). Three packages under `driver/`:
+`typer` for the CLI, `rich` for output (see Reach-for libraries). Three packages under `drive/`:
 
-- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.driver.typer_ import app`, giving the stable entry point `mypackage.driver.cli:app`. Wire it with `[project.scripts]` (`mypackage-cli = "mypackage.driver.cli:app"`) — a `typer` app is callable, so it points straight at the app; run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed. Add a thin `__main__.py` (`from mypackage.driver.cli import app` then `app()`) only if you also want `python -m mypackage.driver.cli`.
+- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.drive.typer_ import app`, giving the stable entry point `mypackage.drive.cli:app`. Wire it with `[project.scripts]` (`mypackage-cli = "mypackage.drive.cli:app"`) — a `typer` app is callable, so it points straight at the app; run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed. Add a thin `__main__.py` (`from mypackage.drive.cli import app` then `app()`) only if you also want `python -m mypackage.drive.cli`.
 - **`typer_/`** — the typer-coupled code, singular modules read as `category.member`:
   - `argument.py` — functions returning `typer.Argument` (e.g. `argument.tickers()`).
   - `option.py` — functions returning `typer.Option` (e.g. `option.raw()`).
-  - `command.py` — the commands, and the **composition root**: it imports the core and a concrete adapter, wires them, and renders. `from mypackage.driver.typer_ import app, argument, option`, `from mypackage.driver.rich_ import render`, `from mypackage.operation import report`, `from mypackage.adapter import yfinance_`, then under `@app.command()` calls `report.report(tickers, fetch=yfinance_.fetch)` and hands the plain result to `render`.
-  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.driver.typer_ import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect).
+  - `command.py` — the commands, and the **composition root**: it imports the core and a concrete adapter, wires them, and renders. `from mypackage.drive.typer_ import app, argument, option`, `from mypackage.drive.rich_ import render`, `from mypackage import operate`, `from mypackage.adapt import yfinance_`, then under `@app.command()` calls `operate.report(tickers, fetch=yfinance_.fetch)` and hands the plain result to `render`.
+  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.drive.typer_ import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect).
 - **`rich_/`** — the rich-coupled rendering: `render.py` builds the `rich` table and colours from the core's plain results.
 
 **Break each argument and option out into a function returning its config — at any size.**
@@ -217,13 +286,13 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see Reach-for libraries). Under `driver/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.driver.api:run"`), or serve it directly with `uvicorn mypackage.driver.api:app`.
+`fastapi` for an HTTP API (see Reach-for libraries). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.drive.api:run"`), or serve it directly with `uvicorn mypackage.drive.api:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
 ### Graphical interfaces
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `driver/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.driver.gui:run"`), or `shiny run mypackage.driver.gui:app`.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.drive.gui:run"`), or `shiny run mypackage.drive.gui:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
