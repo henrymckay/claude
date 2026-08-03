@@ -22,7 +22,7 @@ This covers *structure and setup*; for how to write the code inside, see `write-
 
 - **One-off script / tiny tool** → a single `.py` file.
   Don't ceremony it up.
-  If it needs a dependency, use an inline script block (see bottom).
+  If it needs a dependency, use an inline script block (see [Standalone scripts](#standalone-scripts)).
 - **Anything installable or that others import** → the **`src/` layout** below.
 
 The `src/` layout puts the package one directory down so it *can't* be imported accidentally from the repo root before it's installed.
@@ -217,7 +217,13 @@ tests/
 - **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 
-The pytest settings in the template serve this layout: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
+The pytest settings in the template serve this layout:
+
+- `testpaths = ["tests/suite"]` collects only the cases.
+- `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders.
+- `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures.
+- `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
+
 Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pytest_.given` fails to load if the module is missing.
 
 That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
@@ -247,19 +253,53 @@ Two things are *not* separate entry points:
 
 ### Command-line interfaces
 
-`typer` for the CLI, `rich` for output (see Reach-for libraries). Three packages under `drive/`:
+`typer` for the CLI, `rich` for output (see [Reach-for libraries](#reach-for-libraries)).
+Three packages under `drive/`:
 
-- **`cli/`** (role, hollow) — `__init__.py` does `from mypackage.drive.typer_ import app`, giving the stable entry point `mypackage.drive.cli:app`. Wire it with `[project.scripts]` (`mypackage-cli = "mypackage.drive.cli:app"`) — a `typer` app is callable, so it points straight at the app; run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed. Add a thin `__main__.py` (`from mypackage.drive.cli import app` then `app()`) only if you also want `python -m mypackage.drive.cli`.
-- **`typer_/`** — the typer-coupled code, singular modules read as `category.member`:
-  - `argument.py` — functions returning `typer.Argument` (e.g. `argument.tickers()`).
-  - `option.py` — functions returning `typer.Option` (e.g. `option.raw()`).
-  - `command.py` — the commands, and the **composition root**: it imports the core and a concrete adapter, wires them, and renders. `from mypackage.drive.typer_ import app, argument, option`, `from mypackage.drive.rich_ import render`, `from mypackage import operate`, `from mypackage.adapt import yfinance_`, then under `@app.command()` calls `operate.report(tickers, fetch=yfinance_.fetch)` and hands the plain result to `render`.
-  - `__init__.py` — define `app = typer.Typer()`, then import the command module so its `@app.command()` decorators run: `from mypackage.drive.typer_ import command  # noqa: E402, F401` (imported after `app` is defined, purely for that registration side effect).
-- **`rich_/`** — the rich-coupled rendering: `render.py` builds the `rich` table and colours from the core's plain results.
+- **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.drive.cli:app`.
+- **`typer_/`** — the typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
+- **`rich_/`** — the rich-coupled rendering, building the table and colours from the core's plain results.
+
+`cli/__init__.py` is a one-line re-export, so the entry point never names the framework behind it:
+
+```python
+from mypackage.drive.typer_ import app
+
+__all__ = ["app"]
+```
+
+`typer_/__init__.py` creates the app, then imports `command` for the side effect of registering its `@app.command()` decorators — the import sits after `app` exists, hence the `noqa`:
+
+```python
+import typer
+
+app = typer.Typer()
+
+from mypackage.drive.typer_ import command  # noqa: E402, F401
+```
+
+`command.py` is the **composition root**: the one place that imports an operation and a concrete adapter, injects the adapter into the operation, and hands the plain result to `rich_` to render:
+
+```python
+import typing
+
+from mypackage import operate
+from mypackage.adapt import yfinance_
+from mypackage.drive.rich_ import render
+from mypackage.drive.typer_ import app, argument, option
+
+
+@app.command()
+def report(tickers: typing.Annotated[list[str], argument.tickers()]) -> None:
+    """Report the DeMark setup count for each ticker."""
+    render.table(operate.report(tickers, fetch=yfinance_.fetch))
+```
+
+A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
+Add a thin `__main__.py` that imports `app` and calls `app()` only if you also want `python -m mypackage.drive.cli`.
 
 **Break each argument and option out into a function returning its config — at any size.**
-A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it: `symbols: typing.Annotated[list[str], argument.tickers()]`.
-This is the same shared-helper idea as `given`/`when`/`then` in tests: config defined once, signatures readable.
+A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it — the same shared-helper idea as `given`/`when`/`then` in tests, config defined once and signatures kept readable:
 
 ```python
 def tickers() -> typer.models.ArgumentInfo:
@@ -275,13 +315,13 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see Reach-for libraries). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.drive.api:run"`), or serve it directly with `uvicorn mypackage.drive.api:app`.
+`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.drive.api:run"`), or serve it directly with `uvicorn mypackage.drive.api:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
 ### Graphical interfaces
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.drive.gui:run"`), or `shiny run mypackage.drive.gui:app`.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see [Reach-for libraries](#reach-for-libraries)) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.drive.gui:run"`), or `shiny run mypackage.drive.gui:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
@@ -296,15 +336,21 @@ It reads its trigger, runs the core — a data pipeline's transforms, say — an
 
 `uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`.
 If it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which drops a prebuilt binary in `~/.local/bin`; prefer it over `brew install uv`, which on some machines falls back to a slow from-source build (compiling the whole Rust/LLVM toolchain).
-Core workflow:
+The core workflow:
 
 ```bash
-uv init                 # scaffold a new project (or set up by hand as above)
-uv add httpx            # add a runtime dependency (writes to pyproject + lock)
-uv add --dev pytest ruff pyright taplo   # dev-only tooling
-uv run pytest           # run inside the managed env, no manual activate
-uv sync                 # reproduce the env from uv.lock
+uv init
+uv add httpx
+uv add --dev pytest ruff pyright taplo
+uv run pytest
+uv sync
 ```
+
+- `uv init` scaffolds a new project (or set one up by hand as above).
+- `uv add httpx` adds a runtime dependency, writing it to `pyproject.toml` and the lock.
+- `uv add --dev pytest ruff pyright taplo` adds dev-only tooling.
+- `uv run pytest` runs inside the managed env — no manual `activate`.
+- `uv sync` reproduces the env from `uv.lock`.
 
 Commit `uv.lock` for applications (reproducible installs); libraries usually don't pin as hard.
 Pin the Python version with a `.python-version` file so everyone's on the same interpreter.
