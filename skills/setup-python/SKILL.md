@@ -2,13 +2,15 @@
 name: setup-python
 description: >-
   How to scaffold and structure a new Python project or package — directory
-  layout, pyproject.toml, dependency management, and toolchain. Use whenever
-  starting a new Python project, package, script, or tool; adding packaging to
-  existing code; setting up dependencies, virtual environments, or project
-  config; or deciding where files should live — even if the user just says
-  "new project", "set this up", or "make this a package". Standardizes on uv,
-  ruff, taplo, pyright, and pytest, targeting the latest stable Python. For in-code style once files
-  exist, see the write-python skill.
+  layout, application architecture (a pure core behind ports, with adapters and
+  entry-point drivers), pyproject.toml, dependency management, and toolchain.
+  Use whenever starting a new Python project, package, script, or tool; adding
+  packaging to existing code; setting up dependencies, virtual environments, or
+  project config; structuring an app into layers; or deciding where a module,
+  entry point (CLI, API, GUI, or job), or IO adapter belongs — even if the user
+  just says "new project", "set this up", or "make this a package". Standardizes
+  on uv, ruff, taplo, pyright, and pytest, targeting the latest stable Python.
+  For in-code style once files exist, see the write-python skill.
 ---
 
 # Setting up a Python project
