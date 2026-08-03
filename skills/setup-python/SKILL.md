@@ -30,57 +30,33 @@ That forces you to test against the actually-installed package and catches packa
 
 ```text
 myproject/
+  .gitignore
   pyproject.toml
   README.md
-  .gitignore
   src/
     mypackage/
-      __init__.py
-      transform/
-        __init__.py
-        setups.py
-      port/
-        __init__.py
-        fetch.py
-      operate/
-        __init__.py
-        report.py
-      adapt/
-        __init__.py
-        yfinance_.py
-      drive/
-        __init__.py
-        cli/
-          __init__.py
-        typer_/
-          __init__.py
-          argument.py
-          command.py
-          option.py
-        rich_/
-          __init__.py
-          render.py
   tests/
     data/
     pytest_/
-      __init__.py
-      given.py
-      then.py
-      when.py
     suite/
-      mypackage/
-        test_report.py
-      packages/
-        test_httpx.py
 ```
 
 Keep modules small and cohesive (one responsibility).
-The packages under `mypackage/` are the hexagonal split covered in [The package layers](#the-package-layers) next; the `tests/` tree is under [Tests](#tests) and the `drive/` entry points under [Entry points](#entry-points).
+This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [The package layers](#the-package-layers), `tests/` in [Tests](#tests), and the `drive/` entry points in [Entry points](#entry-points).
 
 ## The package layers
 
 Structure a non-trivial app as layers named for what they do: a pure core (`transform`, `port`, `operate`), an `adapt` layer that reaches the outside world, and a `drive` layer that starts it — the ports-and-adapters (hexagonal) shape.
 The behavioural layers take imperative-verb names (per `write-python`); `port`, a package of definitions, stays a noun.
+
+```text
+mypackage/
+  adapt/
+  drive/
+  operate/
+  port/
+  transform/
+```
 
 Two rules hold it together:
 
@@ -162,8 +138,8 @@ The role packages, framework packages, and presentation a driver holds are cover
 ```text
 drive/
   cli/
-  typer_/
   rich_/
+  typer_/
 ```
 
 ## pyproject.toml
@@ -224,9 +200,22 @@ The non-obvious choices:
 
 Tests live in `tests/`, never beside the source, split three ways:
 
-- **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
+```text
+tests/
+  data/
+  pytest_/
+    __init__.py
+    given.py
+    then.py
+    when.py
+  suite/
+    mypackage/
+    packages/
+```
+
 - **`data/`** — data files the tests load.
 - **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
+- **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 
 The pytest settings in the template serve this layout: `testpaths = ["tests/suite"]` collects only the cases; `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders; `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
 Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pytest_.given` fails to load if the module is missing.
