@@ -18,6 +18,60 @@ This covers *structure and setup*; for how to write the code inside, see `write-
 
 **Match an existing project first.** If there's already a `pyproject.toml` or an established layout, follow it rather than imposing this.
 
+## pyproject.toml
+
+One file for metadata, dependencies, and tool config.
+A sensible starting point:
+
+```toml
+[project]
+name = "mypackage"
+version = "0.1.0"
+description = "..."
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+mypackage-cli = "mypackage.drive.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mypackage"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.pyright]
+typeCheckingMode = "standard"
+
+[tool.pytest.ini_options]
+testpaths = ["tests/suite"]
+addopts = "--import-mode importlib -p pytest_.given"
+pythonpath = ["tests"]
+```
+
+The non-obvious choices:
+
+- `[project.scripts]` — a `<project>-<role>` command per launchable entry point (see [Entry points](#entry-points)).
+- `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
+- `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
+- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption.
+- The `[tool.pytest.ini_options]`, `pythonpath` and `src` settings serve the test layout (see [Tests](#tests)).
+
+**TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
+`ruff` formats Python only, not TOML, so `taplo` handles it (part of the toolchain below) — `taplo fmt` applies exactly this rule, collapsing the expanded arrays `uv add` leaves behind.
+
 ## Pick a layout
 
 - **One-off script / tiny tool** → a single `.py` file.
@@ -73,15 +127,15 @@ That injection is the essential idea (see `be-functional`).
 
 The types and rules of the problem, plus the pure functions over them, depending on nothing outward.
 Model data so illegal states can't be built (see `be-functional`).
-Reads as a phrase where it's called: `transform.setups(prices)`.
+Reads as a phrase where it's called: `transform.averages(readings)`.
 
 ```text
 transform/
   __init__.py
-  setups.py
+  average.py
 ```
 
-Domain types (a `Setup`, a `Direction`) live here for a small app; split them into a noun `domain/` package once they outgrow the module.
+Domain types (a `Reading`, a `Scale`) live here for a small app; split them into a noun `domain/` package once they outgrow the module.
 
 ### port — the seams
 
@@ -97,7 +151,7 @@ port/
 
 ### operate — the use cases
 
-The functions that orchestrate a whole task (`operate.report(tickers, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
+The functions that orchestrate a whole task (`operate.report(stations, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
 Imports `transform` and `port` only.
 Its `__init__.py` re-exports the use cases (`from mypackage.operate.report import report`) so a driver calls `operate.report(...)` without the module stutter.
 
@@ -109,14 +163,14 @@ operate/
 
 ### adapt — the driven adapters
 
-The IO layer: concrete implementations of the ports, each adapting an outside system to what the core expects — `adapt`'s `yfinance_.fetch` adapts yfinance's pandas API to the `Fetch` port.
+The IO layer: concrete implementations of the ports, each adapting an outside system to what the core expects — `adapt`'s `httpx_.fetch` calls the weather service over HTTP and adapts its JSON response to the `Fetch` port.
 Imports `transform`/`port` to conform to them; never imports `operate` or `drive`.
 Library-coupled modules take trailing-underscore names.
 
 ```text
 adapt/
   __init__.py
-  yfinance_.py
+  httpx_.py
 ```
 
 An ETL-shaped batch pipeline can split this by direction into `extract/` (input) and `load/` (output) — where `load` means *persist to a store*, not on-screen presentation, which belongs in `drive`.
@@ -128,9 +182,9 @@ A driver imports both an operation and a concrete adapter and injects one into t
 
 ```python
 from mypackage import operate
-from mypackage.adapt import yfinance_
+from mypackage.adapt import httpx_
 
-operate.report(tickers, fetch=yfinance_.fetch)
+operate.report(stations, fetch=httpx_.fetch)
 ```
 
 The role packages, framework packages, and presentation a driver holds are covered in [Entry points](#entry-points) next.
@@ -141,92 +195,6 @@ drive/
   rich_/
   typer_/
 ```
-
-## pyproject.toml
-
-One file for metadata, dependencies, and tool config.
-A sensible starting point:
-
-```toml
-[project]
-name = "mypackage"
-version = "0.1.0"
-description = "..."
-requires-python = ">=3.14"
-dependencies = []
-
-[project.scripts]
-mypackage-cli = "mypackage.drive.cli:app"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/mypackage"]
-
-[tool.ruff]
-line-length = 88
-target-version = "py314"
-src = ["src", "tests"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "pep257"
-
-[tool.pyright]
-typeCheckingMode = "standard"
-
-[tool.pytest.ini_options]
-testpaths = ["tests/suite"]
-addopts = "--import-mode importlib -p pytest_.given"
-pythonpath = ["tests"]
-```
-
-The non-obvious choices:
-
-- `[project.scripts]` — a `<project>-<role>` command per launchable entry point (see [Entry points](#entry-points)).
-- `[tool.hatch.build.targets.wheel]` spells out the package path so `hatchling` finds it under `src/`; without it the wheel build can't locate the package.
-- `[tool.ruff.lint] select` opts into a broader baseline than ruff's `E`+`F` default: `I` (isort import sorting), `N` (pep8-naming), `D` (pydocstyle docstring presence), `UP` (pyupgrade modern syntax), `B` (bugbear likely-bug patterns), `SIM` (simplify) and `C4` (comprehensions).
-- `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reST field-list style stays free (see `write-python`). Tests are held to the same standard — there is no `tests/` exemption.
-- The `[tool.pytest.ini_options]`, `pythonpath` and `src` settings serve the test layout (see [Tests](#tests)).
-
-**TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
-`ruff` formats Python only, not TOML, so `taplo` handles it (part of the toolchain below) — `taplo fmt` applies exactly this rule, collapsing the expanded arrays `uv add` leaves behind.
-
-## Tests
-
-Tests live in `tests/`, never beside the source, split three ways:
-
-```text
-tests/
-  data/
-  pytest_/
-    __init__.py
-    given.py
-    then.py
-    when.py
-  suite/
-    mypackage/
-    packages/
-```
-
-- **`data/`** — data files the tests load.
-- **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
-- **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
-
-The pytest settings in the template serve this layout:
-
-- `testpaths = ["tests/suite"]` collects only the cases.
-- `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders.
-- `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures.
-- `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
-
-Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pytest_.given` fails to load if the module is missing.
-
-That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
 
 ## Entry points
 
@@ -284,15 +252,15 @@ from mypackage.drive.typer_ import command  # noqa: E402, F401
 import typing
 
 from mypackage import operate
-from mypackage.adapt import yfinance_
+from mypackage.adapt import httpx_
 from mypackage.drive.rich_ import render
 from mypackage.drive.typer_ import app, argument, option
 
 
 @app.command()
-def report(tickers: typing.Annotated[list[str], argument.tickers()]) -> None:
-    """Report the DeMark setup count for each ticker."""
-    render.table(operate.report(tickers, fetch=yfinance_.fetch))
+def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
+    """Report the average temperature for each station."""
+    render.table(operate.report(stations, fetch=httpx_.fetch))
 ```
 
 A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
@@ -302,13 +270,13 @@ Add a thin `__main__.py` that imports `app` and calls `app()` only if you also w
 A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it — the same shared-helper idea as `given`/`when`/`then` in tests, config defined once and signatures kept readable:
 
 ```python
-def tickers() -> typer.models.ArgumentInfo:
-    """The tickers positional argument."""
-    return typer.Argument(help="Ticker symbols, e.g. AAPL MSFT.")
+def stations() -> typer.models.ArgumentInfo:
+    """The stations positional argument."""
+    return typer.Argument(help="Weather station IDs, e.g. london tokyo.")
 ```
 
 **Keep help text terse — lean on defaults, not examples.**
-Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--period` defaulting to `"1y"` is its own example), and `typer` shows defaults in `--help`.
+Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--days` defaulting to `7` is its own example), and `typer` shows defaults in `--help`.
 
 Presentation config obeys the function-over-constant rule — a `_colour(direction)` function in `rich_`, not a module-level `dict` (see `be-functional`).
 A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cli.py` (KISS) — but keep it out of the core.
@@ -331,6 +299,38 @@ A cron run, a queue worker, a webhook handler, or a serverless function is a she
 It reads its trigger, runs the core — a data pipeline's transforms, say — and writes the result; keep the trigger wiring thin so the work stays in the core.
 
 *(Placeholder — house library pick to come.)*
+
+## Tests
+
+Tests live in `tests/`, never beside the source, split three ways:
+
+```text
+tests/
+  data/
+  pytest_/
+    __init__.py
+    given.py
+    then.py
+    when.py
+  suite/
+    mypackage/
+    packages/
+```
+
+- **`data/`** — data files the tests load.
+- **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
+- **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
+
+The pytest settings in the template serve this layout:
+
+- `testpaths = ["tests/suite"]` collects only the cases.
+- `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders.
+- `pythonpath = ["tests"]` with `-p pytest_.given` makes `pytest_` importable and loads its fixtures.
+- `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party.
+
+Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pytest_.given` fails to load if the module is missing.
+
+That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
 
 ## Dependencies & environment: use `uv`
 
@@ -368,7 +368,7 @@ Listed by task:
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over Streamlit's whole-script rerun.
-- **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a pandas result (e.g. from `yfinance`) with `polars.from_pandas`. Keep the work in the frame rather than extracting to Python lists, per `write-python`.
+- **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a pandas result with `polars.from_pandas`. Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
