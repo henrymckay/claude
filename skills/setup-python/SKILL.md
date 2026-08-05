@@ -35,7 +35,7 @@ requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
-mypackage-cli = "mypackage.drive.cli:app"
+mypackage-cli = "mypackage.code.drive.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -99,24 +99,29 @@ myproject/
 ```
 
 Keep modules small and cohesive (one responsibility).
-This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [The package layers](#the-package-layers), `tests/` in [Tests](#tests), and the `drive/` entry points in [Entry points](#entry-points).
+This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [The package layers](#the-package-layers), `tests/` in [Tests](#tests), and the `code/drive/` entry points in [Entry points](#entry-points).
 
 ## The package layers
 
-Structure a non-trivial app as two groups: a pure **core** that holds the logic, and an outer **edge** that does all the IO — the ports-and-adapters (hexagonal) shape.
-The standard packages are `transform`, `port` and `operate` in the core, and `adapt` and `drive` at the edge, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun).
+Under `mypackage/`, keep all Python in a `code/` package and all non-code assets in a `data/` directory beside it — two parallel trees, `data/` mirroring the code layers (see [Package data and assets](#package-data-and-assets)).
 
 ```text
 mypackage/
   __init__.py
-  adapt/
-  drive/
-  operate/
-  port/
-  transform/
+  code/
+    __init__.py
+    adapt/
+    drive/
+    operate/
+    port/
+    transform/
+  data/
 ```
 
-`mypackage/` and every layer under it is a regular package — each carries an `__init__.py` (shown in the per-layer trees) — which is what makes `from mypackage import operate` and the `importlib.resources.files("mypackage")` anchor resolve.
+Structure `code/` as two groups: a pure **core** that holds the logic, and an outer **edge** that does all the IO — the ports-and-adapters (hexagonal) shape.
+The standard packages are `transform`, `port` and `operate` in the core, and `adapt` and `drive` at the edge, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun).
+
+`mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
 
 Two rules hold it together:
 
@@ -129,7 +134,7 @@ That injection is the essential idea (see `be-functional`).
 
 **The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`. Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say. Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
 
-**Let it grow into the app.** A tiny tool is a module or two (`transform.py` + `drive.py`); introduce `port/` and `adapt/` only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold the full set for a script (KISS, YAGNI).
+**Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code. Don't scaffold the full set for a script (KISS, YAGNI).
 
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`. A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`. Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
@@ -174,7 +179,7 @@ operate/
 Each use case is a module, re-exported in `operate/__init__.py` per the package-API rule above, so a driver calls `operate.report(...)`:
 
 ```python
-from mypackage.operate.report import report
+from mypackage.code.operate.report import report
 
 __all__ = ["report"]
 ```
@@ -199,8 +204,8 @@ The driving side and composition root: the entry points (CLI, API, GUI, jobs) th
 A driver imports both an operation and a concrete adapter and injects one into the other:
 
 ```python
-from mypackage import operate
-from mypackage.adapt import httpx_
+from mypackage.code import operate
+from mypackage.code.adapt import httpx_
 
 operate.report(stations, fetch=httpx_.fetch)
 ```
@@ -218,11 +223,11 @@ drive/
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
 These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [The package layers](#the-package-layers)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
-Everything below lives under `drive/`.
+Everything below lives under `code/drive/`.
 
 Split each shell into a **role package** and one or more **framework packages**:
 
-- The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.drive.cli:app`) that hides which library is behind it.
+- The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.code.drive.cli:app`) that hides which library is behind it.
 - The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects. They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`. Swap the library and only the framework package changes; the role name stays put.
 
 The shell types are the CLI, an API, a GUI, and scheduled/event-driven jobs, below.
@@ -240,16 +245,16 @@ Two things are *not* separate entry points:
 ### Command-line interfaces
 
 `typer` for the CLI, `rich` for output (see [Reach-for libraries](#reach-for-libraries)).
-Three packages under `drive/`:
+Three packages under `code/drive/`:
 
-- **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.drive.cli:app`.
+- **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.code.drive.cli:app`.
 - **`typer_/`** — the typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
 - **`rich_/`** — the rich-coupled rendering, building the table and colours from the core's plain results.
 
 `cli/__init__.py` is a one-line re-export, so the entry point never names the framework behind it:
 
 ```python
-from mypackage.drive.typer_ import app
+from mypackage.code.drive.typer_ import app
 
 __all__ = ["app"]
 ```
@@ -261,7 +266,7 @@ import typer
 
 app = typer.Typer()
 
-from mypackage.drive.typer_ import command  # noqa: E402, F401
+from mypackage.code.drive.typer_ import command  # noqa: E402, F401
 ```
 
 `command.py` is the **composition root**: the one place that imports an operation and a concrete adapter, injects the adapter into the operation, and hands the plain result to `rich_` to render:
@@ -269,10 +274,10 @@ from mypackage.drive.typer_ import command  # noqa: E402, F401
 ```python
 import typing
 
-from mypackage import operate
-from mypackage.adapt import httpx_
-from mypackage.drive.rich_ import render
-from mypackage.drive.typer_ import app, argument, option
+from mypackage.code import operate
+from mypackage.code.adapt import httpx_
+from mypackage.code.drive.rich_ import render
+from mypackage.code.drive.typer_ import app, argument, option
 
 
 @app.command()
@@ -281,8 +286,8 @@ def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     render.table(operate.report(stations, fetch=httpx_.fetch))
 ```
 
-A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
-Add a thin `__main__.py` that imports `app` and calls `app()` only if you also want `python -m mypackage.drive.cli`.
+A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.code.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
+Add a thin `__main__.py` that imports `app` and calls `app()` only if you also want `python -m mypackage.code.drive.cli`.
 
 **Break each argument and option out into a function returning its config — at any size.**
 A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it — the same shared-helper idea as `given`/`when`/`then` in tests, config defined once and signatures kept readable:
@@ -301,13 +306,13 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.drive.api:run"`), or serve it directly with `uvicorn mypackage.drive.api:app`.
+`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.code.drive.api:run"`), or serve it directly with `uvicorn mypackage.code.drive.api:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
 ### Graphical interfaces
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see [Reach-for libraries](#reach-for-libraries)) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.drive.gui:run"`), or `shiny run mypackage.drive.gui:app`.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see [Reach-for libraries](#reach-for-libraries)) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.code.drive.gui:run"`), or `shiny run mypackage.code.drive.gui:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
@@ -322,11 +327,16 @@ It reads its trigger, runs the core — a data pipeline's transforms, say — an
 
 Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — load through `importlib.resources`, never a path built from `__file__` or the repo root.
 
-Keep them all in one `data/` directory whose inside **mirrors the package layers**, so every asset's path names the layer that owns it — the same way `tests/` mirrors the source. One place to manage, with ownership still explicit:
+Keep them all in one `data/` directory whose inside **mirrors the code layers**, so every asset's path names the layer that owns it — `data/` and `code/` are the two parallel trees under the package. One place to manage, with ownership still explicit:
 
 ```text
 mypackage/
-  adapt/
+  code/
+    adapt/
+    drive/
+    operate/
+    port/
+    transform/
   data/
     adapt/
       orders.sql
@@ -334,10 +344,6 @@ mypackage/
       report.html
     transform/
       regions.csv
-  drive/
-  operate/
-  port/
-  transform/
 ```
 
 - `data/adapt/` — SQL and other files a driven adapter runs.
