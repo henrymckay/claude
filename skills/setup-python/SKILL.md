@@ -341,7 +341,7 @@ mypackage/
 - `data/drive/` — templates and static web files a driver renders.
 - `data/transform/` — static reference data the core computes over; an edge still *loads* it and passes it in, keeping the core pure (reading a file is IO).
 
-Where `data/` sits follows whether the assets ship. Put it **inside the package** (`src/mypackage/data/`, as above) for anything the installed app needs, so it's packaged and reachable via `importlib.resources`; put it at the **repo root** (a sibling of `src/`, mirroring the package the same way) for data that stays out of the wheel — large datasets, dev seed data.
+Where `data/` sits follows whether the assets ship — the one place its level does *not* follow `tests/`. Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources`; `tests/` can sit at the repo root precisely because it never ships. Reserve a repo-root `data/` (a sibling of `src/` and `tests/`, mirroring the package the same way) for data that deliberately stays out of the wheel — large datasets, dev seed data.
 
 Reach a packaged asset by navigating from the package, not the filesystem:
 
