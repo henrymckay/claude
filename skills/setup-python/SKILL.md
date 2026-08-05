@@ -127,6 +127,8 @@ That injection is the essential idea (see `be-functional`).
 
 **Let it grow into the app.** A tiny tool is a module or two (`transform.py` + `drive.py`); introduce `port/` and `adapt/` only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold the full set for a script (KISS, YAGNI).
 
+**Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`. A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`. Either way you import a *module* and reach its members qualified through it (see `write-python`).
+
 ### transform — the pure core
 
 The types and rules of the problem, plus the pure functions over them, depending on nothing outward.
@@ -164,7 +166,7 @@ operate/
   report.py
 ```
 
-Each use case is a module. `operate/__init__.py` re-exports their entry functions, so a driver imports the *package* and qualifies once — `operate.report(...)`, not the stuttering `report.report(...)` a bare module import would force (see `write-python` on qualifying through a namespace):
+Each use case is a module, re-exported in `operate/__init__.py` per the package-API rule above, so a driver calls `operate.report(...)`:
 
 ```python
 from mypackage.operate.report import report
