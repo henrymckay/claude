@@ -317,39 +317,41 @@ It reads its trigger, runs the core — a data pipeline's transforms, say — an
 
 ## Package data and assets
 
-Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — ship *inside* the package (under `src/mypackage/`) so they install with it, and load through `importlib.resources`, never a path built from `__file__` or the repo root.
-Only what lives under the package is installed; repo-root files aren't.
+Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — load through `importlib.resources`, never a path built from `__file__` or the repo root.
 
-Co-locate each asset with the layer that owns it rather than pooling everything in one `data/` — an asset follows the same layering as the code that reads it:
-
-- **SQL and other query files** → beside the driven adapter that runs them; talking to the store is that adapter's job.
-- **HTML templates and static web files** → with the driver that renders them; presentation is a driver's job.
-- **Static reference data the core computes over** (lookup tables, rules-as-data) → a top-level `data/` directory is the right home, since it's layer-agnostic domain data. Load it at an edge and pass it into the core, keeping the core pure (reading a file is IO); embed it as a real constant only if it's genuinely fixed and tiny.
+Keep them all in one `data/` directory whose inside **mirrors the package layers**, so every asset's path names the layer that owns it — the same way `tests/` mirrors the source. One place to manage, with ownership still explicit:
 
 ```text
 mypackage/
   adapt/
-    postgres_.py
-    sql/
-      orders.sql
   data/
-    regions.csv
+    adapt/
+      orders.sql
+    drive/
+      report.html
+    transform/
+      regions.csv
   drive/
-    fastapi_/
-      templates/
-        report.html
+  operate/
+  port/
+  transform/
 ```
 
-Reach an asset through its package anchor, not the filesystem:
+- `data/adapt/` — SQL and other files a driven adapter runs.
+- `data/drive/` — templates and static web files a driver renders.
+- `data/transform/` — static reference data the core computes over; an edge still *loads* it and passes it in, keeping the core pure (reading a file is IO).
+
+Where `data/` sits follows whether the assets ship. Put it **inside the package** (`src/mypackage/data/`, as above) for anything the installed app needs, so it's packaged and reachable via `importlib.resources`; put it at the **repo root** (a sibling of `src/`, mirroring the package the same way) for data that stays out of the wheel — large datasets, dev seed data.
+
+Reach a packaged asset by navigating from the package, not the filesystem:
 
 ```python
 import importlib.resources
 
-query = (importlib.resources.files("mypackage.adapt") / "sql" / "orders.sql").read_text()
+query = (importlib.resources.files("mypackage") / "data" / "adapt" / "orders.sql").read_text()
 ```
 
-`hatchling` ships non-`.py` files that live inside the package automatically, so committed assets are included with no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files.
-This is package data, distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
+`hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files. All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
 
 ## Tests
 
