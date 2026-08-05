@@ -102,8 +102,8 @@ This is just the skeleton; each part expands in its own section, with its own di
 
 ## The package layers
 
-Structure a non-trivial app as layers named for what they do: a pure core (`transform`, `port`, `operate`), an `adapt` layer that reaches the outside world, and a `drive` layer that starts it — the ports-and-adapters (hexagonal) shape.
-The behavioural layers take imperative-verb names (per `write-python`); `port`, a package of definitions, stays a noun.
+Structure a non-trivial app as two groups: a pure **core** that holds the logic, and an outer **edge** that does all the IO — the ports-and-adapters (hexagonal) shape.
+The standard packages are `transform`, `port` and `operate` in the core, and `adapt` and `drive` at the edge, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun).
 
 ```text
 mypackage/
@@ -116,14 +116,16 @@ mypackage/
 
 Two rules hold it together:
 
-- **IO lives only in `adapt` and `drive`.** The core — `transform`, `port`, `operate` — imports nothing that touches the network, filesystem, clock, or a third-party library.
-- **Imports point inward.** `adapt` and `drive` import the core; the core imports neither. `drive` alone imports both an operation and a concrete adapter.
+- **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the network, filesystem, clock, or a third-party library. The core (`transform`, `port`, `operate`) stays pure.
+- **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward. A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
 
-Control flows the other way: a running operation calls *out* through a port to whichever adapter `drive` injected.
+Control flows the other way: a running operation calls *out* through a port to whichever adapter a driver injected.
 Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
 That injection is the essential idea (see `be-functional`).
 
-**Let it grow into the app.** A tiny tool is a module or two (`transform.py` + `drive.py`); introduce `port/` and `adapt/` only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold five packages for a script (KISS, YAGNI).
+**The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`. Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say. Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
+
+**Let it grow into the app.** A tiny tool is a module or two (`transform.py` + `drive.py`); introduce `port/` and `adapt/` only once there's a real boundary to name — an external service, a second entry point, more than one operation. Don't scaffold the full set for a script (KISS, YAGNI).
 
 ### transform — the pure core
 
@@ -155,12 +157,19 @@ port/
 
 The functions that orchestrate a whole task (`operate.report(stations, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
 Imports `transform` and `port` only.
-Its `__init__.py` re-exports the use cases (`from mypackage.operate.report import report`) so a driver calls `operate.report(...)` without the module stutter.
 
 ```text
 operate/
   __init__.py
   report.py
+```
+
+Each use case is a module. `operate/__init__.py` re-exports their entry functions, so a driver imports the *package* and qualifies once — `operate.report(...)`, not the stuttering `report.report(...)` a bare module import would force (see `write-python` on qualifying through a namespace):
+
+```python
+from mypackage.operate.report import report
+
+__all__ = ["report"]
 ```
 
 ### adapt — the driven adapters
@@ -175,7 +184,7 @@ adapt/
   httpx_.py
 ```
 
-An ETL-shaped batch pipeline can split this by direction into `extract/` (input) and `load/` (output) — where `load` means *persist to a store*, not on-screen presentation, which belongs in `drive`.
+When the IO splits into the `extract`/`load` pair above, `load` means *persist to a store* — not on-screen presentation, which is a driver's job and belongs in `drive`.
 
 ### drive — the entry points
 
