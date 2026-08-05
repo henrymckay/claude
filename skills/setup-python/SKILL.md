@@ -7,8 +7,9 @@ description: >-
   Use whenever starting a new Python project, package, script, or tool; adding
   packaging to existing code; setting up dependencies, virtual environments, or
   project config; structuring an app into layers; or deciding where a module,
-  entry point (CLI, API, GUI, or job), or IO adapter belongs — even if the user
-  just says "new project", "set this up", or "make this a package". Standardizes
+  entry point (CLI, API, GUI, or job), IO adapter, or data asset (SQL,
+  templates, static data) belongs — even if the user just says "new project",
+  "set this up", or "make this a package". Standardizes
   on uv, ruff, taplo, pyright, and pytest, targeting the latest stable Python.
   For in-code style once files exist, see the write-python skill.
 ---
@@ -141,13 +142,14 @@ transform/
   average.py
 ```
 
-Domain types (a `Reading`, a `Scale`) live here for a small app; split them into a noun `domain/` package once they outgrow the module.
+The domain types that model the problem — dataclasses and enums like a `Reading` or a `Scale` — live here too for a small app; split them into a dedicated `domain/` package (a noun) once they multiply, leaving the pure functions in `transform`. They're the domain's data, so they sit in the core, never in `port`.
 
 ### port — the seams
 
-The interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
+The *behavioural* interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A port names *what* the core needs, not *how*: `operate` depends on it, `adapt` implements it.
 A noun, because it only defines.
+Ports are interfaces, not data — the domain's own dataclasses and enums are *not* ports; they belong with the domain (see `transform` below), though a port's signature may reference them.
 
 ```text
 port/
@@ -312,6 +314,42 @@ A cron run, a queue worker, a webhook handler, or a serverless function is a she
 It reads its trigger, runs the core — a data pipeline's transforms, say — and writes the result; keep the trigger wiring thin so the work stays in the core.
 
 *(Placeholder — house library pick to come.)*
+
+## Package data and assets
+
+Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — ship *inside* the package (under `src/mypackage/`) so they install with it, and load through `importlib.resources`, never a path built from `__file__` or the repo root.
+Only what lives under the package is installed; repo-root files aren't.
+
+Co-locate each asset with the layer that owns it rather than pooling everything in one `data/` — an asset follows the same layering as the code that reads it:
+
+- **SQL and other query files** → beside the driven adapter that runs them; talking to the store is that adapter's job.
+- **HTML templates and static web files** → with the driver that renders them; presentation is a driver's job.
+- **Static reference data the core computes over** (lookup tables, rules-as-data) → a top-level `data/` directory is the right home, since it's layer-agnostic domain data. Load it at an edge and pass it into the core, keeping the core pure (reading a file is IO); embed it as a real constant only if it's genuinely fixed and tiny.
+
+```text
+mypackage/
+  adapt/
+    postgres_.py
+    sql/
+      orders.sql
+  data/
+    regions.csv
+  drive/
+    fastapi_/
+      templates/
+        report.html
+```
+
+Reach an asset through its package anchor, not the filesystem:
+
+```python
+import importlib.resources
+
+query = (importlib.resources.files("mypackage.adapt") / "sql" / "orders.sql").read_text()
+```
+
+`hatchling` ships non-`.py` files that live inside the package automatically, so committed assets are included with no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files.
+This is package data, distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
 
 ## Tests
 
