@@ -108,12 +108,15 @@ The standard packages are `transform`, `port` and `operate` in the core, and `ad
 
 ```text
 mypackage/
+  __init__.py
   adapt/
   drive/
   operate/
   port/
   transform/
 ```
+
+`mypackage/` and every layer under it is a regular package — each carries an `__init__.py` (shown in the per-layer trees) — which is what makes `from mypackage import operate` and the `importlib.resources.files("mypackage")` anchor resolve.
 
 Two rules hold it together:
 
