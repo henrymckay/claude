@@ -306,15 +306,61 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.code.drive.api:run"`), or serve it directly with `uvicorn mypackage.code.drive.api:app`.
+`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `code/drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.code.drive.api:run"`), or serve it directly with `uvicorn mypackage.code.drive.api:app`.
 
 *(Placeholder — fuller guidance to come.)*
 
 ### Graphical interfaces
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see [Reach-for libraries](#reach-for-libraries)) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun. Under `drive/`, a hollow `gui/` role package over a `shiny_/` package holding the reactive UI and server code that calls the core. A `shiny.App` isn't callable to start a server either, so launch it with a `run()` that calls `shiny.run_app(app)` (`mypackage-gui = "mypackage.code.drive.gui:run"`), or `shiny run mypackage.code.drive.gui:app`.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see [Reach-for libraries](#reach-for-libraries)) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun.
 
-*(Placeholder — fuller guidance to come.)*
+**Use Shiny Core, not Express, in a packaged app.** Express is easier — it intermingles the layout and the callbacks in one module, so a throwaway single-view dashboard is fewer lines. But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(app_ui, server)` object for the launcher. So `shiny_/` separates the way `typer_/` does:
+
+```text
+gui/
+  __init__.py   role, hollow: re-exports app and run
+shiny_/
+  __init__.py   app = shiny.App(app_ui, server); run() launcher
+  server.py     the server(input, output, session) callbacks
+  ui.py         the app_ui layout
+```
+
+`ui.py` is pure declarative layout — `app_ui = shiny.ui.page_fluid(shiny.ui.input_text("stations", "Stations", "london tokyo"), shiny.ui.output_text("report"))`.
+`server.py` holds the reactive callbacks and is the **composition root**: each render binds an input to an operation with the injected adapter, exactly like the CLI's `command.py`:
+
+```python
+import shiny
+
+from mypackage.code import operate
+from mypackage.code.adapt import httpx_
+
+
+def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -> None:
+    """Wire inputs to the core and render the results."""
+
+    @shiny.render.text
+    def report() -> str:
+        return operate.report(input.stations().split(), fetch=httpx_.fetch)
+```
+
+`shiny_/__init__.py` wires the two halves and adds the launcher — a `shiny.App` isn't callable to start a server, so `run()` calls `shiny.run_app(app)`; `gui/__init__.py` re-exports `app` and `run`:
+
+```python
+import shiny
+
+from mypackage.code.drive.shiny_.server import server
+from mypackage.code.drive.shiny_.ui import app_ui
+
+app = shiny.App(app_ui, server)
+
+
+def run() -> None:
+    """Launch the Shiny server."""
+    shiny.run_app(app)
+```
+
+Launch with `mypackage-gui = "mypackage.code.drive.gui:run"`, or `shiny run mypackage.code.drive.gui:app`.
+A throwaway single-view dashboard can collapse the split into one Shiny Express module (`gui.py`) — the parallel of collapsing a one-command CLI into `cli.py` — but keep the work in the core either way.
 
 ### Scheduled and event-driven jobs
 
