@@ -306,9 +306,63 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)). Under `code/drive/`, a hollow `api/` role package re-exports the `fastapi` app, over a `fastapi_/` package holding the routers and Pydantic models that call the core. The ASGI app isn't a callable that starts a server, so launch it with a `run()` that calls `uvicorn.run(app)` (`mypackage-api = "mypackage.code.drive.api:run"`), or serve it directly with `uvicorn mypackage.code.drive.api:app`.
+`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)), served with `uvicorn` and its models built on `pydantic`. Under `code/drive/`, a hollow `api/` role package re-exports the app and launcher, over a `fastapi_/` package that splits the way `typer_/` does:
 
-*(Placeholder — fuller guidance to come.)*
+```text
+api/
+  __init__.py   role, hollow: re-exports app and run
+fastapi_/
+  __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
+  route.py      the path operations — the composition root
+  schema.py     the pydantic request/response models
+```
+
+`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`), the API's presentation kept out of the core.
+`route.py` is the **composition root**: an `APIRouter` whose endpoints call an operation with the injected adapter and shape the result into those models, exactly like the CLI's `command.py`:
+
+```python
+import typing
+
+import fastapi
+
+from mypackage.code import operate
+from mypackage.code.adapt import httpx_
+from mypackage.code.drive.fastapi_ import schema
+
+router = fastapi.APIRouter()
+
+
+@router.get("/report")
+def report(
+    stations: typing.Annotated[list[str], fastapi.Query()],
+) -> list[schema.Reading]:
+    """Report the average temperature for each station."""
+    averages = operate.report(stations, fetch=httpx_.fetch)
+    return [
+        schema.Reading(station=station, average=average)
+        for station, average in averages.items()
+    ]
+```
+
+`fastapi_/__init__.py` builds the app, includes the router, and adds the launcher — an ASGI app isn't callable to start a server, so `run()` calls `uvicorn.run(app)`; `api/__init__.py` re-exports `app` and `run`:
+
+```python
+import fastapi
+import uvicorn
+
+from mypackage.code.drive.fastapi_ import route
+
+app = fastapi.FastAPI()
+app.include_router(route.router)
+
+
+def run() -> None:
+    """Launch the API server."""
+    uvicorn.run(app)
+```
+
+Launch with `mypackage-api = "mypackage.code.drive.api:run"`, or serve directly with `uvicorn mypackage.code.drive.api:app`.
+The route wires the concrete adapter directly, like `command.py`; to make it overridable in tests the FastAPI-native way, provide it through `Depends` and swap it via `app.dependency_overrides`.
 
 ### Graphical interfaces
 
@@ -340,7 +394,10 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
 
     @shiny.render.text
     def report() -> str:
-        return operate.report(input.stations().split(), fetch=httpx_.fetch)
+        averages = operate.report(input.stations().split(), fetch=httpx_.fetch)
+        return "\n".join(
+            f"{station}: {average}" for station, average in averages.items()
+        )
 ```
 
 `shiny_/__init__.py` wires the two halves and adds the launcher — a `shiny.App` isn't callable to start a server, so `run()` calls `shiny.run_app(app)`; `gui/__init__.py` re-exports `app` and `run`:
@@ -403,7 +460,9 @@ Reach a packaged asset by navigating from the package, not the filesystem:
 ```python
 import importlib.resources
 
-query = (importlib.resources.files("mypackage") / "data" / "adapt" / "orders.sql").read_text()
+query = (
+    importlib.resources.files("mypackage") / "data" / "adapt" / "orders.sql"
+).read_text()
 ```
 
 `hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files. All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
