@@ -40,7 +40,7 @@ operate/
   report.py
 ```
 
-Each use case is a module, re-exported in `operate/__init__.py` per the package-API rule above, so a driver calls `operate.report(...)`:
+Each use case is a module, re-exported in `operate/__init__.py` per the qualified-name rule in `SKILL.md`, so a driver calls `operate.report(...)`:
 
 ```python
 from mypackage.code.operate.report import report
@@ -60,7 +60,7 @@ adapt/
   httpx_.py
 ```
 
-When the IO splits into the `extract`/`load` pair above, `load` means *persist to a store* — not on-screen presentation, which is a driver's job and belongs in `drive`.
+When the IO splits into an `extract`/`load` pair (see `SKILL.md`), `load` means *persist to a store* — not on-screen presentation, which is a driver's job and belongs in `drive`.
 
 ## drive — the entry points
 
