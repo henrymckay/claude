@@ -13,7 +13,7 @@ description: >-
   on uv, ruff, taplo, pyright, and pytest, targeting the latest stable Python.
   For in-code style once files exist, see the write-python skill. Depth lives
   in references/: the layers walk-through (package-layers.md) and one file per
-  entry point (cli.md, api.md, gui.md, jobs.md).
+  entry point (entry-points/cli.md, api.md, gui.md, jobs.md).
 ---
 
 # Setting up a Python project
@@ -161,9 +161,9 @@ The command points at whatever *starts* that entry point: a callable app object 
 Two things are *not* separate entry points:
 
 - A **library** — if the project is imported by other code, its public API *is* the interface; there is no shell, only the `__all__` / public surface (see `write-python`).
-- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them (see `references/jobs.md`).
+- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them (see `references/entry-points/jobs.md`).
 
-Each shell type is built out in its own reference — the module layout, composition-root wiring, and launcher: `references/cli.md` (`typer` + `rich`), `references/api.md` (`fastapi` + `pydantic`), `references/gui.md` (`shiny`), and `references/jobs.md` (an external scheduler by default; `apscheduler`/`dramatiq`/`prefect` in-process).
+Each shell type is built out in its own reference under `references/entry-points/` — the module layout, composition-root wiring, and launcher: `cli.md` (`typer` + `rich`), `api.md` (`fastapi` + `pydantic`), `gui.md` (`shiny`), and `jobs.md` (an external scheduler by default; `apscheduler`/`dramatiq`/`prefect` in-process).
 
 ## Package data and assets
 
