@@ -157,7 +157,7 @@ The domain types that model the problem — dataclasses and enums like a `Readin
 The *behavioural* interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A port names *what* the core needs, not *how*: `operate` depends on it, `adapt` implements it.
 A noun, because it only defines.
-Ports are interfaces, not data — the domain's own dataclasses and enums are *not* ports; they belong with the domain (see `transform` below), though a port's signature may reference them.
+Ports are interfaces, not data — the domain's own dataclasses and enums are *not* ports; they belong with the domain (see `transform` above), though a port's signature may reference them.
 
 ```text
 port/
@@ -430,7 +430,17 @@ shiny_/
   ui.py         the app_ui layout
 ```
 
-`ui.py` is pure declarative layout — `app_ui = shiny.ui.page_fluid(shiny.ui.input_text("stations", "Stations", "london tokyo"), shiny.ui.output_text("report"))`.
+`ui.py` is pure declarative layout:
+
+```python
+import shiny
+
+app_ui = shiny.ui.page_fluid(
+    shiny.ui.input_text("stations", "Stations", "london tokyo"),
+    shiny.ui.output_text("report"),
+)
+```
+
 `server.py` holds the reactive callbacks and is the **composition root**: each render binds an input to an operation with the injected adapter, exactly like the CLI's `command.py`:
 
 ```python
