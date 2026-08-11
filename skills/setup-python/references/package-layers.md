@@ -78,6 +78,7 @@ The role packages, framework packages, and presentation a driver holds are cover
 
 ```text
 drive/
+  __init__.py
   cli/
   rich_/
   typer_/

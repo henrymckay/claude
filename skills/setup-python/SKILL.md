@@ -180,7 +180,9 @@ Keep them all in one `data/` directory whose inside **mirrors the code layers**,
 
 ```text
 mypackage/
+  __init__.py
   code/
+    __init__.py
     adapt/
     drive/
     operate/
