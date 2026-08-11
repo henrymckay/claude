@@ -313,31 +313,50 @@ api/
   __init__.py   role, hollow: re-exports app and run
 fastapi_/
   __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
+  param.py      reusable Annotated params (Query, Depends)
   route.py      the path operations — the composition root
   schema.py     the pydantic request/response models
 ```
 
 `schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`), the API's presentation kept out of the core.
-`route.py` is the **composition root**: an `APIRouter` whose endpoints call an operation with the injected adapter and shape the result into those models, exactly like the CLI's `command.py`:
+**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata. Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`. So the same convention holds (see the CLI's argument/option factories): factor each parameter out of the signature — here into `param.py`, as reusable `Annotated` aliases, the one form covering what `typer_` splits across `argument.py` and `option.py`.
+
+`Depends` is the marker Typer has no counterpart for — it *is* dependency injection. Declaring the adapter as a `Depends` alias makes the composition root **native to the framework**: one provider names the concrete adapter, every route receives it as a parameter, and tests swap it in one line. `param.py` holds both kinds — a plain `Query` and the injected `Fetch`:
 
 ```python
 import typing
 
 import fastapi
 
-from mypackage.code import operate
+from mypackage.code import port
 from mypackage.code.adapt import httpx_
-from mypackage.code.drive.fastapi_ import schema
+
+Stations = typing.Annotated[list[str], fastapi.Query(description="Station IDs.")]
+
+
+def provide_fetch() -> port.Fetch:
+    """Provide the live temperature source; overridden in tests."""
+    return httpx_.fetch
+
+
+Fetch = typing.Annotated[port.Fetch, fastapi.Depends(provide_fetch)]
+```
+
+`route.py` is then the **composition root** in FastAPI's idiom — its endpoints receive the injected adapter as a parameter (where the CLI's `command.py` wires it by hand) and shape the core's result into the response models:
+
+```python
+import fastapi
+
+from mypackage.code import operate
+from mypackage.code.drive.fastapi_ import param, schema
 
 router = fastapi.APIRouter()
 
 
 @router.get("/report")
-def report(
-    stations: typing.Annotated[list[str], fastapi.Query()],
-) -> list[schema.Reading]:
+def report(stations: param.Stations, fetch: param.Fetch) -> list[schema.Reading]:
     """Report the average temperature for each station."""
-    averages = operate.report(stations, fetch=httpx_.fetch)
+    averages = operate.report(stations, fetch=fetch)
     return [
         schema.Reading(station=station, average=average)
         for station, average in averages.items()
@@ -362,7 +381,7 @@ def run() -> None:
 ```
 
 Launch with `mypackage-api = "mypackage.code.drive.api:run"`, or serve directly with `uvicorn mypackage.code.drive.api:app`.
-The route wires the concrete adapter directly, like `command.py`; to make it overridable in tests the FastAPI-native way, provide it through `Depends` and swap it via `app.dependency_overrides`.
+Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[param.provide_fetch] = lambda: fake_fetch` — the FastAPI-native seam, no patching.
 
 ### Graphical interfaces
 
