@@ -158,6 +158,7 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
   Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
+- **Prefer a named method to an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`. A named method also reads in evaluation order and says what a symbol only implies — Polars `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`). Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
 - **Context managers** (`with`) for anything with cleanup — files, locks, connections.
   Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
