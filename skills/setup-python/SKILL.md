@@ -218,9 +218,7 @@ Reach a packaged asset by navigating from the package, not the filesystem:
 ```python
 import importlib.resources
 
-query = (
-    importlib.resources.files("mypackage") / "data" / "adapt" / "orders.sql"
-).read_text()
+query = (importlib.resources.files("mypackage") / "data/adapt/orders.sql").read_text()
 ```
 
 `hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files. All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
