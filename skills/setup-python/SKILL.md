@@ -216,9 +216,9 @@ Where `data/` sits follows whether the assets ship — the one place its level d
 Reach a packaged asset by navigating from the package, not the filesystem:
 
 ```python
-import importlib.resources
+from importlib import resources
 
-query = (importlib.resources.files("mypackage") / "data/adapt/orders.sql").read_text()
+query = resources.files("mypackage").joinpath("data/adapt/orders.sql").read_text()
 ```
 
 `hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files. All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
