@@ -313,7 +313,8 @@ api/
   __init__.py   role, hollow: re-exports app and run
 fastapi_/
   __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
-  depend.py     Depends providers — the injection seams
+  depend.py     factories returning a fastapi.Depends marker
+  provide.py    the providers Depends calls — names the concrete adapter
   query.py      functions returning a configured fastapi.Query
   route.py      the path operations that call the core
   schema.py     the pydantic request/response models
@@ -331,28 +332,34 @@ def stations() -> fastapi.params.Query:
     return fastapi.Query(description="Station IDs.")
 ```
 
-`Depends` is the exception — not request-parameter config but **dependency injection**, so it gets its own `depend.py` rather than joining the marker modules. `depend.py` holds the provider (the **injection seam**, the driver's place for naming a concrete adapter) and a factory returning the `Depends` marker. `Depends(fn)` **calls `fn` and injects its return value**, so `provide_fetch` *returns* the adapter — the factory passes the provider, `Depends(provide_fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
+`Depends` is the exception — not request-parameter config but **dependency injection** — and it needs *two* functions, which split by coupling. `depend.py` holds the marker factory (FastAPI-coupled, like `query.py`); `provide.py` holds the **provider** it wraps — the function that names the concrete adapter. `Depends(fn)` **calls `fn` and injects its return value**, so the provider *returns* the adapter — the factory passes the provider, `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
 
 ```python
 import fastapi
 
-from mypackage.code import port
-from mypackage.code.adapt import httpx_
+from mypackage.code.drive.fastapi_ import provide
 
 
 def fetch() -> fastapi.params.Depends:
     """Inject the temperature source."""
-    return fastapi.Depends(provide_fetch)
+    return fastapi.Depends(provide.fetch)
+```
+
+`provide.py` is the **injection seam** — the driver's place for naming a concrete adapter. It imports no FastAPI (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because FastAPI is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
+
+```python
+from mypackage.code import port
+from mypackage.code.adapt import httpx_
 
 
-def provide_fetch() -> port.Fetch:
-    """Provide the live temperature source; overridden in tests."""
+def fetch() -> port.Fetch:
+    """Provide the temperature source adapter; overridden in tests."""
     return httpx_.fetch
 ```
 
-Naming `httpx_` in `depend.py` doesn't leak it into the core: `depend.py` is part of the driver — the **composition root** — so naming the one concrete adapter is its job. The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the provider's body names `httpx_`.
+Naming `httpx_` in `provide.py` doesn't leak it into the core: it's part of the driver — the **composition root** — so naming the one concrete adapter is its job. The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the body names `httpx_`.
 
-The driver splits across `depend.py` and `route.py` the composition root that the CLI keeps in one `command.py`: `depend.py` provides the concrete adapter, and `route.py`'s endpoints receive it as a parameter (where `command.py` passes it by hand) and shape the core's result into the response models:
+`route.py`'s endpoints then receive the injected adapter as a parameter (where the CLI's `command.py` passes it by hand) and shape the core's result into the response models:
 
 ```python
 import typing
@@ -396,7 +403,7 @@ def run() -> None:
 ```
 
 Launch with `mypackage-api = "mypackage.code.drive.api:run"`, or serve directly with `uvicorn mypackage.code.drive.api:app`.
-Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[depend.provide_fetch] = lambda: fake_fetch` — the FastAPI-native seam, no patching.
+Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — the FastAPI-native seam, no patching.
 
 ### Graphical interfaces
 
