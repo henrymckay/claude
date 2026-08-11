@@ -314,41 +314,40 @@ api/
 fastapi_/
   __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
   depend.py     Depends providers — the injection seams
-  param.py      reusable request-parameter aliases (Query, Path, ...)
+  query.py      functions returning a configured fastapi.Query
   route.py      the path operations that call the core
   schema.py     the pydantic request/response models
 ```
 
 `schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`), the API's presentation kept out of the core.
-**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata. Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`. So the same factor-the-parameter-out convention holds (see the CLI's argument/option factories) — but **split the aliases by concern, not by marker**. FastAPI's request markers (`Query`, `Path`, `Body`, `Header`, …) all answer the same question — where in the request a value lives and how it's validated — so they share one `param.py`; splitting one module per marker just fragments that. `Depends` is a *different* concern, so it gets its own module (below). Typer's `argument`/`option` split is itself concern-based; it only looks per-marker because Typer has just those two.
-
-`param.py` holds the reusable request-parameter aliases:
+**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata. Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`. So `fastapi_` mirrors `typer_`'s structure: where `typer_` splits factory functions across `argument.py` and `option.py`, `fastapi_` has **a module per request marker** — `query.py`, plus `path.py`/`body.py`/`header.py` as those markers are used — each holding functions that return a configured marker, one per parameter (`query.stations()`, read as `category.member`). `fastapi.Query` alone takes many arguments (validation, docs, deprecation), and an app has many query parameters, so `query.py` earns its place exactly as `argument.py` does.
 
 ```python
-import typing
-
 import fastapi
 
-Stations = typing.Annotated[list[str], fastapi.Query(description="Station IDs.")]
+
+def stations() -> fastapi.params.Query:
+    """The stations query parameter."""
+    return fastapi.Query(description="Station IDs.")
 ```
 
-`depend.py` holds the `Depends` providers — the marker Typer has no counterpart for, because it *is* dependency injection. It's a separate concern from request parsing: these providers are the **injection seams**, the driver's place for naming a concrete adapter. `Depends(fn)` **calls `fn` and injects its return value**, so `provide_fetch` *returns* the adapter — pass the provider, `Depends(provide_fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
+`Depends` is the exception — not request-parameter config but **dependency injection**, so it gets its own `depend.py` rather than joining the marker modules. `depend.py` holds the provider (the **injection seam**, the driver's place for naming a concrete adapter) and a factory returning the `Depends` marker. `Depends(fn)` **calls `fn` and injects its return value**, so `provide_fetch` *returns* the adapter — the factory passes the provider, `Depends(provide_fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
 
 ```python
-import typing
-
 import fastapi
 
 from mypackage.code import port
 from mypackage.code.adapt import httpx_
 
 
+def fetch() -> fastapi.params.Depends:
+    """Inject the temperature source."""
+    return fastapi.Depends(provide_fetch)
+
+
 def provide_fetch() -> port.Fetch:
     """Provide the live temperature source; overridden in tests."""
     return httpx_.fetch
-
-
-Fetch = typing.Annotated[port.Fetch, fastapi.Depends(provide_fetch)]
 ```
 
 Naming `httpx_` in `depend.py` doesn't leak it into the core: `depend.py` is part of the driver — the **composition root** — so naming the one concrete adapter is its job. The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the provider's body names `httpx_`.
@@ -356,16 +355,21 @@ Naming `httpx_` in `depend.py` doesn't leak it into the core: `depend.py` is par
 The driver splits across `depend.py` and `route.py` the composition root that the CLI keeps in one `command.py`: `depend.py` provides the concrete adapter, and `route.py`'s endpoints receive it as a parameter (where `command.py` passes it by hand) and shape the core's result into the response models:
 
 ```python
+import typing
+
 import fastapi
 
-from mypackage.code import operate
-from mypackage.code.drive.fastapi_ import depend, param, schema
+from mypackage.code import operate, port
+from mypackage.code.drive.fastapi_ import depend, query, schema
 
 router = fastapi.APIRouter()
 
 
 @router.get("/report")
-def report(stations: param.Stations, fetch: depend.Fetch) -> list[schema.Reading]:
+def report(
+    stations: typing.Annotated[list[str], query.stations()],
+    fetch: typing.Annotated[port.Fetch, depend.fetch()],
+) -> list[schema.Reading]:
     """Report the average temperature for each station."""
     averages = operate.report(stations, fetch=fetch)
     return [
