@@ -472,10 +472,27 @@ A throwaway single-view dashboard can collapse the split into one Shiny Express 
 
 ### Scheduled and event-driven jobs
 
-A cron run, a queue worker, a webhook handler, or a serverless function is a shell triggered by *time or events* rather than a person.
-It reads its trigger, runs the core — a data pipeline's transforms, say — and writes the result; keep the trigger wiring thin so the work stays in the core.
+A cron run, a queue worker, a webhook handler, or a serverless function is a driver triggered by *time or events* rather than a person. It reads its trigger, runs an operation — injecting the adapters, the composition root's job — and writes the result through an output adapter (this is the ETL shape: `extract` in, `transform` in the core, `load` out); keep the trigger wiring thin so the work stays in the core.
 
-*(Placeholder — house library pick to come.)*
+**Default to no library.** The cleanest scheduler is *external* to the app — cron, a systemd timer, a Kubernetes `CronJob`, a cloud scheduler, or a serverless trigger — so the schedule lives in infrastructure, not code. The app just exposes a console script that runs once and exits. A job is `command.py` without the parsing: a thin composition root wiring a source and a sink around an operation.
+
+```python
+from mypackage.code import operate
+from mypackage.code.adapt import httpx_, postgres_
+
+
+def run() -> None:
+    """Fetch the latest readings and store the daily averages."""
+    operate.refresh(fetch=httpx_.fetch, store=postgres_.save)
+```
+
+`mypackage-job = "mypackage.code.drive.job:run"`, invoked by the external trigger. Reach for a library only when the trigger must live *inside* the process (see [Reach-for libraries](#reach-for-libraries)):
+
+- **In-process scheduling** (a long-running process firing work on a clock) → `apscheduler`, in an `apscheduler_/` package holding the scheduler.
+- **A task queue** (events enqueue work, worker processes consume it) → `dramatiq` (a cleaner Celery) over a Redis/RabbitMQ broker, its actors in a `dramatiq_/` package.
+- **Orchestration** (dependent steps, retries, backfills, observability) → `prefect` or `dagster`.
+
+Whichever it is, the scheduler or broker is the shell; the work stays an operation over the pure core.
 
 ## Package data and assets
 
@@ -586,6 +603,7 @@ Listed by task:
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over Streamlit's whole-script rerun.
+- **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over Celery), `prefect` or `dagster` for orchestration.
 - **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a pandas result with `polars.from_pandas`. Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API. `rich` formats output but isn't itself a logging framework.
