@@ -80,6 +80,9 @@ The role packages, framework packages, and presentation a driver holds are cover
 drive/
   __init__.py
   cli/
+    __init__.py
   rich_/
+    __init__.py
   typer_/
+    __init__.py
 ```

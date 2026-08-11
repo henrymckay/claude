@@ -118,10 +118,15 @@ mypackage/
   code/
     __init__.py
     adapt/
+      __init__.py
     drive/
+      __init__.py
     operate/
+      __init__.py
     port/
+      __init__.py
     transform/
+      __init__.py
   data/
 ```
 
@@ -184,10 +189,15 @@ mypackage/
   code/
     __init__.py
     adapt/
+      __init__.py
     drive/
+      __init__.py
     operate/
+      __init__.py
     port/
+      __init__.py
     transform/
+      __init__.py
   data/
     adapt/
       orders.sql
