@@ -94,18 +94,23 @@ myproject/
   README.md
   src/
     mypackage/
+      __init__.py
+      code/
+        __init__.py
+      data/
   tests/
     data/
     pytest_/
+      __init__.py
     suite/
 ```
 
 Keep modules small and cohesive (one responsibility).
-This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [Package layers](#package-layers), `tests/` in [Tests](#tests), and the `code/drive/` entry points in [Entry points](#entry-points).
+This is just the skeleton; each part expands in its own section — `code/` in [Package code](#package-code), `data/` in [Package data](#package-data), `tests/` in [Tests](#tests). An `__init__.py` marks a package (`mypackage/`, `code/`, `pytest_/`); the rest are plain directories.
 
-## Package layers
+## Package code
 
-Under `mypackage/`, keep all Python in a `code/` package and all non-code assets in a `data/` directory beside it — two parallel trees, `data/` mirroring the code layers (see [Package data and assets](#package-data-and-assets)).
+Under `mypackage/`, all the Python lives in a `code/` package, split into layers; the non-code assets sit in a `data/` directory beside it, mirroring those layers (see [Package data](#package-data)).
 
 ```text
 mypackage/
@@ -119,6 +124,8 @@ mypackage/
     transform/
   data/
 ```
+
+### Layers
 
 Structure `code/` as two groups: a pure **core** that holds the logic, and an outer **edge** that does all the IO — the ports-and-adapters (hexagonal) shape.
 The standard packages are `transform`, `port` and `operate` in the core, and `adapt` and `drive` at the edge, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun).
@@ -142,10 +149,10 @@ That injection is the essential idea (see `be-functional`).
 
 Each layer in detail — what it holds, its module tree, and the specifics — is in `references/package-layers.md`: `transform` (domain types and pure logic), `port` (the interfaces), `operate` (use cases), `adapt` (driven adapters), `drive` (entry points and the composition root).
 
-## Entry points
+### Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
-These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Package layers](#package-layers)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
+These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Layers](#layers) above) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
 Every driver lives under `code/drive/`.
 
 Split each shell into a **role package** and one or more **framework packages**:
@@ -165,7 +172,7 @@ Two things are *not* separate entry points:
 
 Each shell type is built out in its own reference under `references/entry-points/` — the module layout, composition-root wiring, and launcher: `cli.md` (`typer` + `rich`), `api.md` (`fastapi` + `pydantic`), `gui.md` (`shiny`), and `jobs.md` (an external scheduler by default; `apscheduler`/`dramatiq`/`prefect` in-process).
 
-## Package data and assets
+## Package data
 
 Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — load through `importlib.resources`, never a path built from `__file__` or the repo root.
 

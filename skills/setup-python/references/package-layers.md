@@ -74,7 +74,7 @@ from mypackage.code.adapt import httpx_
 operate.report(stations, fetch=httpx_.fetch)
 ```
 
-The role packages, framework packages, and presentation a driver holds are covered in [Entry points](#entry-points) next.
+The role packages, framework packages, and presentation a driver holds are covered under Entry points in `SKILL.md`.
 
 ```text
 drive/
