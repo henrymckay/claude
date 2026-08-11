@@ -314,7 +314,7 @@ api/
 fastapi_/
   __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
   param.py      reusable Annotated params (Query, Depends)
-  route.py      the path operations — the composition root
+  route.py      the path operations that call the core
   schema.py     the pydantic request/response models
 ```
 
@@ -342,7 +342,10 @@ def provide_fetch() -> port.Fetch:
 Fetch = typing.Annotated[port.Fetch, fastapi.Depends(provide_fetch)]
 ```
 
-`route.py` is then the **composition root** in FastAPI's idiom — its endpoints receive the injected adapter as a parameter (where the CLI's `command.py` wires it by hand) and shape the core's result into the response models:
+`Depends(fn)` **calls `fn` and injects its return value**, so `provide_fetch` *returns* the adapter — pass the provider, `Depends(provide_fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs.
+Naming `httpx_` here doesn't leak it into the core: `param.py` is part of the driver — the **composition root** — so naming the one concrete adapter is its job. The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the provider's body names `httpx_`.
+
+The driver splits the composition root that the CLI keeps in one `command.py`: `param.py` provides the concrete adapter, and `route.py`'s endpoints receive it as a parameter (where `command.py` passes it by hand) and shape the core's result into the response models:
 
 ```python
 import fastapi
