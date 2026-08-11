@@ -12,7 +12,7 @@ description: >-
   and pytest idioms in references/python.md.
 ---
 
-# Writing tests
+# Write tests
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.

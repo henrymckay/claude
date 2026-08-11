@@ -14,7 +14,7 @@ description: >-
   and packaging, see setup-python.
 ---
 
-# Writing Python
+# Write Python
 
 The judgment calls that make Python readable and maintainable — the decisions a formatter or linter can't make for you.
 

@@ -16,16 +16,16 @@ description: >-
   entry point (entry-points/cli.md, api.md, gui.md, jobs.md).
 ---
 
-# Setting up a Python project
+# Set up a Python project
 
 Getting the skeleton right up front — layout, packaging, tooling — saves pain later.
 This covers *structure and setup*; for how to write the code inside, see `write-python`, and for the tests, `write-tests`.
 
 **Match an existing project first.** If there's already a `pyproject.toml` or an established layout, follow it rather than imposing this.
 
-## pyproject.toml
+## Configure the project
 
-One file for metadata, dependencies, and tool config.
+`pyproject.toml` is the one file for metadata, dependencies, and tool config.
 A sensible starting point:
 
 ```toml
@@ -101,9 +101,9 @@ myproject/
 ```
 
 Keep modules small and cohesive (one responsibility).
-This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [The package layers](#the-package-layers), `tests/` in [Tests](#tests), and the `code/drive/` entry points in [Entry points](#entry-points).
+This is just the skeleton; each part expands in its own section, with its own directory block: `mypackage/` in [Package layers](#package-layers), `tests/` in [Tests](#tests), and the `code/drive/` entry points in [Entry points](#entry-points).
 
-## The package layers
+## Package layers
 
 Under `mypackage/`, keep all Python in a `code/` package and all non-code assets in a `data/` directory beside it — two parallel trees, `data/` mirroring the code layers (see [Package data and assets](#package-data-and-assets)).
 
@@ -145,7 +145,7 @@ Each layer in detail — what it holds, its module tree, and the specifics — i
 ## Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
-These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [The package layers](#the-package-layers)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
+These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Package layers](#package-layers)) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
 Every driver lives under `code/drive/`.
 
 Split each shell into a **role package** and one or more **framework packages**:
@@ -238,7 +238,7 @@ Scaffold `tests/pytest_/given.py` (with its `__init__.py`) up front — `-p pyte
 
 That is the *scaffold*; the `write-tests` skill covers how to write the tests themselves — the given/when/then shape, naming, fixtures, and the rest.
 
-## Dependencies & environment: use `uv`
+## Dependencies and environment
 
 `uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`.
 If it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which drops a prebuilt binary in `~/.local/bin`; prefer it over `brew install uv`, which on some machines falls back to a slow from-source build (compiling the whole Rust/LLVM toolchain).

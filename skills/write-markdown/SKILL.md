@@ -11,7 +11,7 @@ description: >-
   rules.
 ---
 
-# Writing Markdown
+# Write Markdown
 
 Markdown has two very different readers: **humans**, who skim and scan, and **Large Language Models (LLMs)**, which parse every token.
 Most principles serve both, but some polish helps humans and wastes tokens on a model, and some density suits a model but loses a human.
@@ -29,6 +29,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
+  - This applies to the document's `#` title too when the doc is a how-to — a skill or a guide — so "Write Python", not "Writing Python". A doc that *names* a thing keeps a noun title: a README's project name, a reference file's topic.
   - Reference or catalogue sections that don't describe an action (e.g. "Skills", "Requirements") can stay noun phrases.
 - **Prefer bullets, one clear statement each.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
 - **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).

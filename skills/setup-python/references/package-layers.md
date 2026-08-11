@@ -1,4 +1,4 @@
-# The package layers — each layer in detail
+# Package layers — each layer in detail
 
 Part of `setup-python`'s package-layers architecture — see `SKILL.md` for the `code`/`data` split, the two rules (IO at the edge, imports inward), and the naming/qualified-access conventions these layers obey. This file walks each layer: what it holds, its module tree, and the specifics.
 

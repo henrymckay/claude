@@ -11,7 +11,7 @@ description: >-
   should follow.
 ---
 
-# Using git
+# Use git
 
 Conventions for keeping history clean and reviewable.
 These are defaults for repos without an established workflow — **an existing repo's conventions (its commit style, branch model, PR process) always win.**

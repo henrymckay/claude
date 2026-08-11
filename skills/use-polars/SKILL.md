@@ -11,7 +11,7 @@ description: >-
   general write-python conventions still apply on top.
 ---
 
-# Using Polars
+# Use Polars
 
 Polars is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
 Most mistakes come from writing pandas habits in Polars syntax.

@@ -13,7 +13,7 @@ description: >-
   (the baseline conventions); be-oop is the object-oriented counterpart.
 ---
 
-# Being functional
+# Be functional
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behavior depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
