@@ -306,7 +306,7 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### APIs
 
-`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)), served with `uvicorn` and its models built on `pydantic`. Under `code/drive/`, a hollow `api/` role package re-exports the app and launcher, over a `fastapi_/` package that splits the way `typer_/` does:
+`fastapi` for an HTTP API (see [Reach-for libraries](#reach-for-libraries)), served with `uvicorn` and its models built on `pydantic`. Under `code/drive/`, a hollow `api/` role package re-exports the app and launcher, over two framework packages — `fastapi_/` for the routing and `pydantic_/` for the schemas — the way the CLI splits `typer_/` and `rich_/`:
 
 ```text
 api/
@@ -317,10 +317,14 @@ fastapi_/
   provide.py    the providers Depends calls — names the concrete adapter
   query.py      functions returning a configured fastapi.Query
   route.py      the path operations that call the core
-  schema.py     the pydantic request/response models
+pydantic_/
+  __init__.py
+  schema.py     the request/response models (BaseModel DTOs)
 ```
 
-`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`), the API's presentation kept out of the core.
+`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`). These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
+
+A DTO is **not** a domain type, even when their fields match. The core models the domain in plain stdlib — frozen `dataclasses.dataclass` and `enum.Enum`, never `pydantic` (a framework stays out of the pure core) — and lives in `transform`/`domain`; the pydantic DTO is a separate wire shape at the edge that the two evolve independently (domain logic vs API contract). Map between them in `route.py`, as `schema.Reading(...)` does below. Neither goes in `port/`, which is protocols only. Enums are the one thing you don't duplicate: pydantic accepts a stdlib `enum.Enum`, so a domain enum (`Scale`) is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) would live in the driver.
 **FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata. Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`. So `fastapi_` mirrors `typer_`'s structure: where `typer_` splits factory functions across `argument.py` and `option.py`, `fastapi_` has **a module per request marker** — `query.py`, plus `path.py`/`body.py`/`header.py` as those markers are used — each holding functions that return a configured marker, one per parameter (`query.stations()`, read as `category.member`). `fastapi.Query` alone takes many arguments (validation, docs, deprecation), and an app has many query parameters, so `query.py` earns its place exactly as `argument.py` does.
 
 ```python
@@ -367,7 +371,8 @@ import typing
 import fastapi
 
 from mypackage.code import operate, port
-from mypackage.code.drive.fastapi_ import depend, query, schema
+from mypackage.code.drive.fastapi_ import depend, query
+from mypackage.code.drive.pydantic_ import schema
 
 router = fastapi.APIRouter()
 
