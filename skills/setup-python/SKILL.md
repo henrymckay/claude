@@ -11,9 +11,9 @@ description: >-
   templates, static data) belongs — even if the user just says "new project",
   "set this up", or "make this a package". Standardizes
   on uv, ruff, taplo, pyright, and pytest, targeting the latest stable Python.
-  For in-code style once files exist, see the write-python skill; the
-  per-framework entry-point build-outs (CLI, API, GUI, jobs) are in
-  references/entry-points.md.
+  For in-code style once files exist, see the write-python skill. Depth lives
+  in references/: the layers walk-through (package-layers.md) and one file per
+  entry point (cli.md, api.md, gui.md, jobs.md).
 ---
 
 # Setting up a Python project
@@ -140,86 +140,7 @@ That injection is the essential idea (see `be-functional`).
 
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`. A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`. Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
-### transform — the pure core
-
-The types and rules of the problem, plus the pure functions over them, depending on nothing outward.
-Model data so illegal states can't be built (see `be-functional`).
-Reads as a phrase where it's called: `transform.averages(readings)`.
-
-```text
-transform/
-  __init__.py
-  average.py
-```
-
-The domain types that model the problem — dataclasses and enums like a `Reading` or a `Scale` — live here too for a small app; split them into a dedicated `domain/` package (a noun) once they multiply, leaving the pure functions in `transform`. They're the domain's data, so they sit in the core, never in `port`.
-
-### port — the seams
-
-The *behavioural* interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
-A port names *what* the core needs, not *how*: `operate` depends on it, `adapt` implements it.
-A noun, because it only defines.
-Ports are interfaces, not data — the domain's own dataclasses and enums are *not* ports; they belong with the domain (see `transform` above), though a port's signature may reference them.
-
-```text
-port/
-  __init__.py
-  fetch.py
-```
-
-### operate — the use cases
-
-The functions that orchestrate a whole task (`operate.report(stations, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
-Imports `transform` and `port` only.
-
-```text
-operate/
-  __init__.py
-  report.py
-```
-
-Each use case is a module, re-exported in `operate/__init__.py` per the package-API rule above, so a driver calls `operate.report(...)`:
-
-```python
-from mypackage.code.operate.report import report
-
-__all__ = ["report"]
-```
-
-### adapt — the driven adapters
-
-The IO layer: concrete implementations of the ports, each adapting an outside system to what the core expects — `adapt`'s `httpx_.fetch` calls the weather service over HTTP and adapts its JSON response to the `Fetch` port.
-Imports `transform`/`port` to conform to them; never imports `operate` or `drive`.
-Library-coupled modules take trailing-underscore names.
-
-```text
-adapt/
-  __init__.py
-  httpx_.py
-```
-
-When the IO splits into the `extract`/`load` pair above, `load` means *persist to a store* — not on-screen presentation, which is a driver's job and belongs in `drive`.
-
-### drive — the entry points
-
-The driving side and composition root: the entry points (CLI, API, GUI, jobs) that start the program.
-A driver imports both an operation and a concrete adapter and injects one into the other:
-
-```python
-from mypackage.code import operate
-from mypackage.code.adapt import httpx_
-
-operate.report(stations, fetch=httpx_.fetch)
-```
-
-The role packages, framework packages, and presentation a driver holds are covered in [Entry points](#entry-points) next.
-
-```text
-drive/
-  cli/
-  rich_/
-  typer_/
-```
+Each layer in detail — what it holds, its module tree, and the specifics — is in `references/package-layers.md`: `transform` (domain types and pure logic), `port` (the interfaces), `operate` (use cases), `adapt` (driven adapters), `drive` (entry points and the composition root).
 
 ## Entry points
 
@@ -240,9 +161,9 @@ The command points at whatever *starts* that entry point: a callable app object 
 Two things are *not* separate entry points:
 
 - A **library** — if the project is imported by other code, its public API *is* the interface; there is no shell, only the `__all__` / public surface (see `write-python`).
-- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them (see `references/entry-points.md`).
+- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them (see `references/jobs.md`).
 
-The shell types — CLI (`typer` + `rich`), API (`fastapi` + `pydantic`), GUI (`shiny`), and scheduled/event-driven jobs — are each built out in `references/entry-points.md`: the module layout, composition-root wiring, and launcher.
+Each shell type is built out in its own reference — the module layout, composition-root wiring, and launcher: `references/cli.md` (`typer` + `rich`), `references/api.md` (`fastapi` + `pydantic`), `references/gui.md` (`shiny`), and `references/jobs.md` (an external scheduler by default; `apscheduler`/`dramatiq`/`prefect` in-process).
 
 ## Package data and assets
 
