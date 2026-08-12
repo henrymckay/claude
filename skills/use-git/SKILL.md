@@ -16,7 +16,7 @@ description: >-
 Conventions for keeping history clean and reviewable.
 These are defaults for repos without an established workflow — **an existing repo's conventions (its commit style, branch model, PR process) always win.**
 
-> Behavioural guardrail: ordinary pushes of your own branch are fine (see [Pushing](#pushing)), but **force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
+> Behavioural guardrail: ordinary pushes of your own branch are fine (see [Push](#push)), but **force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
 
 ## Branches
 
@@ -30,7 +30,7 @@ Long-running branches drift and cause painful merges.
 - **Atomic commits:** one logical change each.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
-- Commit locally often; tidy up before sharing (see history hygiene).
+- Commit locally often; tidy up before sharing.
 
 ### Commit messages
 
@@ -38,7 +38,7 @@ Every commit uses [Conventional Commits](https://www.conventionalcommits.org): a
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
 
-The subject is imperative, ≤ ~50 chars, no trailing period.
+The subject is imperative, ≤ 50 chars, no trailing period.
 Then a blank line and a body wrapped at ~72 cols explaining **why**, not just what (the diff shows what):
 
 ```text
@@ -53,7 +53,7 @@ Reference issues/PRs in the body (`Closes #123`).
 
 **No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`, or similar attribution/tool footers to commit messages.
 
-## Pushing
+## Push
 
 Push freely — it backs work up and shows progress, with little downside.
 **Push after each atomic commit**, since each already leaves the branch in a coherent, working state; only batch when a commit is a deliberate mid-sequence step that would push the branch through a briefly-broken state.
