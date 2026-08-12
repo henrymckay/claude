@@ -16,7 +16,7 @@ description: >-
 # Be functional
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
-When behavior depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
+When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
 This file is the *mindset and principles*; concrete idioms for a language live in `references/` (e.g. `references/python.md`).
 
 **This is opt-in.** Apply it when a functional approach is asked for or clearly fits (data transformations, pipelines, pure logic).
@@ -32,13 +32,13 @@ Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — t
    Shared mutable state is the source of most order-dependent bugs.
 
 3. **Explicit inputs and outputs.** Take everything a function needs as **arguments** rather than reaching for local or global state, and return results rather than writing them somewhere.
-   The more of a function's behavior its arguments determine, the more reusable and testable it is — so prefer adding a parameter over reading ambient state.
+   The more of a function's behaviour its arguments determine, the more reusable and testable it is — so prefer adding a parameter over reading ambient state.
 
 4. **Express everything as a function.** Prefer a function returning a value over a bare constant — even a fixed value.
    `def default_rate() -> float: return 0.05` can be passed around, composed, overridden, or later made to depend on inputs, where a module-level constant must be torn out to extend.
    Functions are the unit of composition, so make everything one.
 
-5. **Composition & currying.** Build behavior by combining small, single-purpose functions rather than one large procedure.
+5. **Composition & currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
    Write **generic** functions and derive specific variants by **currying** (binding some arguments — a.k.a. partial application) or **composing** (chaining functions end to end) instead of writing each from scratch — e.g. define a general `get_many`, then get `get_one` by composing it with `take_one`.
 
 6. **Higher-order functions.** Treat functions as first-class values — pass them, return them, store them.
@@ -72,7 +72,7 @@ Where the default goes depends on *what* the effect is:
 ## Functions over classes
 
 Default to functions, closures, and curried functions rather than classes.
-A closure captures state just as an object does but without the ceremony, and a curried function specialises behavior without a class hierarchy.
+A closure captures state just as an object does but without the ceremony, and a curried function specialises behaviour without a class hierarchy.
 Reach for a **class only when extending an existing hierarchy** — subclassing a framework base, or overriding a hook the framework calls — where a class is what the API expects.
 Otherwise a class holding a single method is just a function wearing a costume.
 When a class genuinely *is* the right call, `be-oop` covers doing it well.
@@ -106,7 +106,7 @@ Neither is more extensible in the abstract; they're open along *opposite* axes.
 Pick by what you expect to grow: **stable variants, growing operations → sum types + `match`** (keep the exhaustiveness safety); **variants others must extend → open dispatch (like `singledispatch`), a protocol/interface, or a class hierarchy** (the open escape hatch, per "Functions over classes").
 Open dispatch buys that extensibility by giving up exhaustiveness — nothing statically checks that every variant has a handler, so a missing one fails at runtime, not at type-check time.
 
-Extending *behavior* is never in tension: composition, higher-order functions, and dependency injection add and reconfigure behavior without modifying existing code — the open/closed principle, done functionally.
+Extending *behaviour* is never in tension: composition, higher-order functions, and dependency injection add and reconfigure behaviour without modifying existing code — the open/closed principle, done functionally.
 
 ## Chain with monads where they fit — but stay idiomatic
 
@@ -119,7 +119,7 @@ Stay true to the language: in Python that's usually `X | None` and early returns
 ## Recursion, idiomatically
 
 Recursion expresses self-similar and tree-shaped problems naturally, and in pure FP it stands in for mutation-driven loops.
-But **stay true to the language**: where there's no tail-call optimization (Python included), deep recursion overflows the stack — so prefer iteration or comprehensions for linear passes and reserve recursion for genuinely recursive structures.
+But **stay true to the language**: where there's no tail-call optimisation (Python included), deep recursion overflows the stack — so prefer iteration or comprehensions for linear passes and reserve recursion for genuinely recursive structures.
 
 ## Language idioms
 

@@ -51,7 +51,7 @@ def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
 A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place even for a bare equality — a shared set (`then.equals`, `then.column_equals`) reads far more uniformly than scattered `assert` statements.
 Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
 
-Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarise_by_region(sales)` then `then.conserves(...)`.
+Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarize_by_region(sales)` then `then.conserves(...)`.
 Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
 
 ## Name the behaviour: when and then
@@ -164,7 +164,7 @@ Reach beyond example-based unit tests when the problem fits.
 - **Characterization** — capture the *current* behaviour of existing code before changing it.
   A safety net around legacy or unfamiliar code ahead of a refactor.
 - **Approval / golden-master / snapshot** — assert output equals a stored, reviewed reference.
-  For complex output (rendered text, serialized structures) painful to assert field by field; review the diff when it changes.
+  For complex output (rendered text, serialised structures) painful to assert field by field; review the diff when it changes.
 - **Contract** — verify both sides of an integration agree on a shared contract (consumer-driven contracts, Pact).
   Across boundaries you don't control end to end.
 - **Fuzz** — feed random or adversarial inputs to surface crashes and unhandled cases.

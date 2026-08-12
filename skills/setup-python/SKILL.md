@@ -7,7 +7,7 @@ description: >-
   starting a new Python project, package, script, or tool; adding packaging to
   existing code; setting up dependencies, virtual environments, or project
   config; or choosing a house-pick library for a task — even if the user just
-  says "new project", "set this up", or "make this a package". Standardizes on
+  says "new project", "set this up", or "make this a package". Standardises on
   uv, ruff, taplo, pyright, and pytest, targeting the latest stable Python. For
   how to organise the application's code into layers, see structure-python; for
   in-code style, write-python.

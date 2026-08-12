@@ -77,7 +77,7 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
 ## functools & itertools
 
 - **`functools.reduce`** for genuine folds, but reach for a comprehension or `sum`/`math.prod`/`any`/`all` first — they're clearer.
-- **`functools.partial`** to specialize a function without a wrapper.
+- **`functools.partial`** to specialise a function without a wrapper.
 - **`functools.lru_cache` / `cache`** to memoize pure functions.
 - **`functools.singledispatch`** for type-based dispatch instead of `if/elif`.
 - **`itertools`**: `chain`, `groupby`, `accumulate`, `takewhile`/`dropwhile`, `islice`, `product`, `starmap` — composable building blocks for iterators.

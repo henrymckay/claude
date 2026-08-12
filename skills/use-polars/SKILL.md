@@ -52,7 +52,7 @@ out = (
 )
 ```
 
-**Prefer one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimizer can work on.
+**Prefer one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelizes expressions within one context.
 
@@ -67,7 +67,7 @@ Keep the boolean combinators `&`, `|`, `~` as operators, though — their method
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
   Fine for small data and quick interactive work.
 - **Lazy** (`polars.scan_csv`, `df.lazy()`) builds a query plan and only executes on `.collect()`.
-  The optimizer can push filters down, prune columns, and stream — so lazy is the default for real pipelines and large files.
+  The optimiser can push filters down, prune columns, and stream — so lazy is the default for real pipelines and large files.
 
 ```python
 result = (
@@ -87,7 +87,7 @@ Two more lazy-execution habits: run several independent queries together with `p
 
 **If data is a dataframe, or you're doing dataframe-shaped work, do it *in* Polars — don't drop to Python lists and loops.**
 When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it once with `polars.from_pandas` and keep going with expressions.
-Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimizer, and it's the most common way people accidentally leave Polars.
+Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimiser, and it's the most common way people accidentally leave Polars.
 Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
 
 **Keep every group in one long-form frame — don't split it up.**
@@ -104,7 +104,7 @@ Splitting into per-group sub-frames and looping is the same mistake as looping r
   Assign the result.
 - **Don't use `.map_elements`/Python loops** for per-row work — express it with column expressions.
   Row-wise Python callbacks kill Polars' performance.
-- **Select before compute.** Only pull the columns you need; with lazy frames the optimizer does this for you.
+- **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
 - **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
 - **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
 
@@ -127,7 +127,7 @@ On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **i
 
 The line between `amap_` and `bind_` is exactly the one between applicative and monad: **an applicative step's behaviour is fixed regardless of the values inside; a bind step's behaviour depends on the materialised data.**
 That has teeth in Polars — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
-So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimizable.
+So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimisable.
 
 ## Passing extra data through `.pipe()`
 

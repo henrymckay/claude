@@ -79,7 +79,7 @@ df.write_csv("out.csv")
 df.write_parquet("out.pq")   # prefer parquet: typed, compressed, columnar
 ```
 
-Prefer `scan_*` + `.collect()` over `read_*` for anything nontrivial so the query optimizer can push work down and read only what's needed.
+Prefer `scan_*` + `.collect()` over `read_*` for anything nontrivial so the query optimiser can push work down and read only what's needed.
 
 ## When pandas is still fine
 

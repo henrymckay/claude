@@ -64,6 +64,8 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Expand an acronym on first use.** Give the full term with the acronym in parentheses once — "Method-Resolution Order (MRO)", "Easier to Ask Forgiveness than Permission (EAFP)" — then use the short form.
   A reader, human or model, shouldn't have to decode it.
   Skip only acronyms more familiar than their expansion (`HTTP`, `URL`, `CLI`).
+- **Use British spelling, consistently** — `-ise`/`-our` (organise, capitalise, colour, behaviour), not the US `-ize`/`-or`.
+  Code keeps its own spelling, though: a `serialize` method or a `SerializableMixin` class stays as the code names it.
 
 ## For humans
 
