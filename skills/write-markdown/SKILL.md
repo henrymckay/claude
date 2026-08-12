@@ -45,7 +45,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
   Monospace them whether or not they are also linked.
   - **Inside backticks, use the real code spelling, not the brand capitalisation.** Backticks mark a token as code, so write the import or command name: `polars` not `Polars`, `numpy` not `NumPy`, `fastapi` not `FastAPI`.
     (An *unmonospaced* brand mention in prose or a title may keep its capitalisation — "Polars is fast".)
-- **Emphasize key terms with bold and italic.** Bold the word (or few words) a scanner must not miss — never a whole sentence, since emphasis on everything emphasizes nothing.
+- **Emphasise key terms with bold and italic.** Bold the word (or few words) a scanner must not miss — never a whole sentence, since emphasis on everything emphasises nothing.
   Use italics for lighter stress or for a term you are defining.
   Underline isn't native Markdown (it needs raw HTML and reads as a link), so avoid it.
 - **Keep runnable code blocks real and copy-pasteable.** Write commands exactly as you would type them: a single space between arguments, no cosmetic column alignment, and no explanatory comments inside the block.
@@ -105,7 +105,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
   - Write "install from a [marketplace](…)", not "[install from a marketplace](…)".
   - Never `[click here](…)` or a bare URL.
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
-- **Reach for GitHub-flavored alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
+- **Reach for GitHub-flavoured alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
   - Match the type to intent: `[!NOTE]` for info, `[!TIP]` for advice, `[!IMPORTANT]` for a key point, `[!WARNING]` or `[!CAUTION]` for hazards.
   - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
 - **Accessibility** — real heading hierarchy (screen readers navigate by it, don't fake headings with bold), image alt text, and don't rely on colour or emoji alone to carry meaning.
@@ -126,7 +126,7 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 - **Skip meta-preamble in a `CLAUDE.md`.** The model already knows the file is the user's instructions, so a role-describing title like "# Global instructions" or a "this file holds cross-project guidance" opener is pure fluff — cut it.
   A short `#` name for the project or scope is optional and harmless; just never follow it with prose describing the file.
   Phrase the instructions as commands to the model, not descriptions of the file.
-- **Cut default behavior from a `CLAUDE.md`.** It earns its always-on context only with what deviates from the model's defaults or is specific to the user.
+- **Cut default behaviour from a `CLAUDE.md`.** It earns its always-on context only with what deviates from the model's defaults or is specific to the user.
   "Be concise" and "match the surrounding code" are already how the model behaves, so they are wasted lines.
   Keep the corrections, autonomy grants, and conventions the model would not infer on its own — and if a whole section reduces to defaults, drop the section.
 
