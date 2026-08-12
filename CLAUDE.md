@@ -14,7 +14,8 @@ Their trigger descriptions sit in a passive menu that is easy to skip on routine
 
 - **`be-functional`** for functional-style code, in any language.
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
-- **`setup-python`** when starting or packaging a Python project.
+- **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
+- **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
 - **`use-git`** for any git operation: committing, branching, PRs, history (Conventional Commits; no `Co-Authored-by` / "Generated with" footers).
 - **`use-polars`** when working with Polars.
 - **`write-markdown`** for any Markdown, for humans or LLMs: READMEs, docs, `SKILL.md`, `CLAUDE.md`, prompts.

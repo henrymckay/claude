@@ -10,8 +10,8 @@ description: >-
   skill does NOT restate their rules, only the judgment calls they can't make.
   These are the baseline conventions that apply to all Python; layer a paradigm
   skill on top as needed — be-functional for functional style, be-oop for
-  object-oriented design, write-tests for test suites. For project structure
-  and packaging, see setup-python.
+  object-oriented design, write-tests for test suites. For project structure, see
+  structure-python; for packaging and tooling, setup-python.
 ---
 
 # Write Python
@@ -21,7 +21,7 @@ The judgment calls that make Python readable and maintainable — the decisions 
 **Scope, so this skill earns its place:** `ruff` handles formatting, import sorting, line length, and lint rules; `pyright` handles type checking.
 Don't restate or fight those tools.
 Spend attention on API design, typing intent, and idioms instead.
-Project layout and dependencies live in `setup-python`.
+Project structure lives in `structure-python`; packaging and dependencies in `setup-python`.
 
 In particular, **don't spend effort on what `ruff format` fixes automatically** on pre-commit — line length, wrapping and stacking function arguments, quote style, trailing commas.
 Write it naturally and let the hook format it; hand-formatting just creates needless churn and diff noise.
@@ -123,9 +123,9 @@ When a rename truly is forced, derive it from the *true* name with an underscore
 
 **Name a package for what it does or holds.** A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
 Functions, methods, and CLI commands are imperative verbs regardless.
-`setup-python`'s package layers are the worked example.
+`structure-python`'s package layers are the worked example.
 
-**Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`. Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `setup-python`'s Entry points for the split.
+**Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`. Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `structure-python`'s Entry points for the split.
 
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.

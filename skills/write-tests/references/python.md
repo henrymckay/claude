@@ -1,7 +1,7 @@
 # Python testing idioms (pytest)
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python with `pytest`.
-Installing pytest and the `tests/` layout live in `setup-python`.
+Installing pytest lives in `setup-python`; the `tests/` layout in `structure-python`.
 
 ## Tests are code
 
@@ -171,7 +171,7 @@ tests/
 
 - Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests pytest collects). Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
 - `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming. Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests. The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
-- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `setup-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
+- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
 - `pythonpath` only applies while pytest runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
 
 ## Running

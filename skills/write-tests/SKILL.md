@@ -133,7 +133,7 @@ Tag genuinely slow or external tests so the default run stays quick and you opt 
 ## Layout
 
 Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **shared helpers** they import (fixtures, custom assertions).
-The concrete tree, import mode, and runner setup are language-specific — see `references/python.md` and `setup-python`.
+The concrete tree, import mode, and runner setup are language-specific — see `references/python.md`, `structure-python` (the `tests/` layout) and `setup-python` (the pytest config).
 
 ## Running the suite
 
