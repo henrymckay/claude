@@ -95,16 +95,6 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 - **Skip meta-preamble in a `CLAUDE.md`.** The model already knows the file is the user's instructions, so a role-describing title like "# Global instructions" or a "this file holds cross-project guidance" opener is pure fluff — cut it. A short `#` name for the project or scope is optional and harmless; just never follow it with prose describing the file. Phrase the instructions as commands to the model, not descriptions of the file.
 - **Cut default behavior from a `CLAUDE.md`.** It earns its always-on context only with what deviates from the model's defaults or is specific to the user. "Be concise" and "match the surrounding code" are already how the model behaves, so they are wasted lines. Keep the corrections, autonomy grants, and conventions the model would not infer on its own — and if a whole section reduces to defaults, drop the section.
 
-## Reference
-
-| Convention | Humans | LLMs |
-|---|---|---|
-| Succinct, structured, imperative, code fences, tables, semantic line breaks | ✅ | ✅ |
-| Front-loading, scannable sections-of-bullets | ✅ | ➖ (structure yes, skim-tuning no) |
-| Emojis, full stop on every bullet, no inline asides | ✅ | ❌ (token cost, no benefit) |
-| Badges, collapsible sections, callouts, TOC | ✅ | ❌ |
-| Explain the *why*, progressive disclosure, triggering-first | ➖ | ✅ |
-
 ## Avoid
 
 - Burying the point below background or history — front-load instead.
