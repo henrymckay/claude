@@ -65,9 +65,9 @@ Keep the boolean combinators `&`, `|`, `~` as operators, though — their method
 ## Eager vs lazy — prefer lazy for pipelines
 
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
-  Fine for small data and quick interactive work.
+Fine for small data and quick interactive work.
 - **Lazy** (`polars.scan_csv`, `df.lazy()`) builds a query plan and only executes on `.collect()`.
-  The optimiser can push filters down, prune columns, and stream — so lazy is the default for real pipelines and large files.
+The optimiser can push filters down, prune columns, and stream — so lazy is the default for real pipelines and large files.
 
 ```python
 result = (
@@ -101,9 +101,9 @@ Splitting into per-group sub-frames and looping is the same mistake as looping r
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
 - **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
-  Assign the result.
+Assign the result.
 - **Don't use `.map_elements`/Python loops** for per-row work — express it with column expressions.
-  Row-wise Python callbacks kill Polars' performance.
+Row-wise Python callbacks kill Polars' performance.
 - **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
 - **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
 - **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
@@ -123,7 +123,7 @@ On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **i
 - **`map_`** (functor map) — a pure transform of the frame alone, behaviour fixed: `frame.pipe(map_round_2dp)`.
 - **`amap_`** (applicative map) — combines the frame with one or more **independently provided** inputs in a **fixed** way; the operation does *not* branch on the data: `customers.pipe(amap_join_orders, orders)`.
 - **`bind_`** (monadic bind) — the operation **chosen depends on the frame's own data**: you inspect the contents and branch.
-  E.g. attach FX rates by looking at which currencies are actually present and joining only those tables: `trades.pipe(bind_attach_fx, rate_tables)`.
+E.g. attach FX rates by looking at which currencies are actually present and joining only those tables: `trades.pipe(bind_attach_fx, rate_tables)`.
 
 The line between `amap_` and `bind_` is exactly the one between applicative and monad: **an applicative step's behaviour is fixed regardless of the values inside; a bind step's behaviour depends on the materialised data.**
 That has teeth in Polars — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.

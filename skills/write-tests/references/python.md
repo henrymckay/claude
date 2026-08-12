@@ -6,16 +6,16 @@ Installing pytest lives in `setup-python`; the `tests/` layout in `structure-pyt
 ## Tests are code
 
 - Tests obey `write-python` in full: docstring and annotate every test — return `-> None`, and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`).
-  There is no `per-file-ignores` exemption for `tests/`.
+There is no `per-file-ignores` exemption for `tests/`.
 - Fixture docstrings are imperative too (ruff `D401`): "Load the sample dataset", not "The sample dataset".
 
 ## Given via fixtures
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
 - Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"`.
-  `-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`.
-  They sit alongside the `when`/`then` modules.
-  The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
+`-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`.
+They sit alongside the `when`/`then` modules.
+The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
@@ -70,7 +70,7 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
 - A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
 - A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
 - Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then` assertion.
-  Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
+Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
 
 ## Assertions
 
@@ -94,7 +94,7 @@ def column_equals(
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
 - Keep the helpers in a `pytest_` package (`pytest_/__init__.py`) on `pythonpath = ["tests"]` so `from pytest_ import then` resolves.
-  Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `pytest_` with your own code, not third-party deps.
+Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `pytest_` with your own code, not third-party deps.
 - Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
@@ -158,9 +158,9 @@ addopts = "... --capture tee-sys"
 ```
 
 - Use `--capture tee-sys`, not `--capture no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work.
-  Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
+Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
 - The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide.
-  A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
+A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
 If you don't need Rich specifically, the zero-code alternative is pytest's native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in pytest's own format with capture left on.
 
@@ -182,10 +182,10 @@ tests/
 ```
 
 - Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests pytest collects).
-  Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
+Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
 - `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming.
-  Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
-  The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
+Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
+The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
 - Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
 - `pythonpath` only applies while pytest runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
 

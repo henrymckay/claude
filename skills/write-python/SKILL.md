@@ -41,11 +41,11 @@ This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't
 Order things alphabetically so every name has *one predictable location* — you never scan a whole file to find something, and diffs stay stable as code grows.
 
 - **Module-level definitions** (functions, classes, constants) alphabetically where possible.
-  Carve-outs: dunders and a script's entry point (e.g. `main`) may sit conventionally, and grouped constants/`__all__` can stay at the top.
+Carve-outs: dunders and a script's entry point (e.g. `main`) may sit conventionally, and grouped constants/`__all__` can stay at the top.
 - **Class methods** alphabetically, with dunders (`__init__`, `__repr__`, …) first in conventional order.
 - **Function arguments** alphabetically where possible, both when defining and when calling.
-  "Where possible" is doing real work here: `self`/`cls` come first, positional-only and required-before-default constraints win, and don't reorder where argument order itself carries meaning.
-  It applies most cleanly to keyword arguments at the call site.
+"Where possible" is doing real work here: `self`/`cls` come first, positional-only and required-before-default constraints win, and don't reorder where argument order itself carries meaning.
+It applies most cleanly to keyword arguments at the call site.
 
 Don't reorder purely to enforce this in a file that already uses another scheme — consistency within a file wins.
 
@@ -158,31 +158,31 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 ## Idioms & things to avoid
 
 - **Mutable default arguments** are a classic trap: `def f(x=[])` shares one list across all calls.
-  Use `def f(x: list | None = None)` and create inside.
+Use `def f(x: list | None = None)` and create inside.
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
-  Don't nest past two levels.
+Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
 - **Prefer a named method to an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
-  A named method also reads in evaluation order and says what a symbol only implies — Polars `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
-  Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
+A named method also reads in evaluation order and says what a symbol only implies — Polars `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
+Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
 - **Context managers** (`with`) for anything with cleanup — files, locks, connections.
-  Write your own with `contextlib.contextmanager` when useful.
+Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
-  Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the string isn't built when not logged.
+Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the string isn't built when not logged.
 - **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
 - Avoid `from module import *` in code (fine only in a curated `__init__.py`).
 - Don't reach for a class when a function will do; don't add abstraction (factories, base classes, config layers) before there's a second case.
 - **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterize, or override the value without callers changing; a bare global has to be torn out to extend.
-  (Genuinely fixed constants can stay globals.)
+(Genuinely fixed constants can stay globals.)
 - **Don't introduce a single-use local variable — inline the expression.** A name for a value used exactly once adds reading overhead without payoff.
-  Keep the name only when it meaningfully documents an otherwise opaque expression.
+Keep the name only when it meaningfully documents an otherwise opaque expression.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
-  When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
+When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
 - **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorized engine.
-  Stack every group into one long-form frame rather than processing a group at a time.
-  See the `use-polars` skill.
+Stack every group into one long-form frame rather than processing a group at a time.
+See the `use-polars` skill.
 - **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
-  The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead.
-  (Blank lines *between* definitions are the formatter's job.)
+The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead.
+(Blank lines *between* definitions are the formatter's job.)
 - **Don't repeat a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
-  It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
+It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.

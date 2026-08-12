@@ -62,15 +62,15 @@ The classic OOP design-principle set.
 Several principles span paradigms — cross-references noted so you see they aren't OOP trivia:
 
 - **S — Single Responsibility.** One reason to change per class.
-  (General — cf. cohesive modules in `write-python`, small functions in `be-functional`.)
+(General — cf. cohesive modules in `write-python`, small functions in `be-functional`.)
 - **O — Open/Closed.** Open to extension, closed to modification.
-  (Covered in depth by `be-functional`'s expression-problem section — add behaviour by adding code, not editing existing code.)
+(Covered in depth by `be-functional`'s expression-problem section — add behaviour by adding code, not editing existing code.)
 - **L — Liskov Substitution.** A subtype must work anywhere its base does, honouring the base's contract (don't strengthen preconditions or weaken postconditions).
-  The genuinely OOP one — a broken override here is a real bug.
+The genuinely OOP one — a broken override here is a real bug.
 - **I — Interface Segregation.** Many small, focused interfaces beat one fat one; a client shouldn't depend on methods it doesn't use.
-  In Python, small `Protocol`s.
+In Python, small `Protocol`s.
 - **D — Dependency Inversion.** Depend on abstractions, not concretions, and inject dependencies rather than hard-wiring them.
-  (This *is* the dependency injection in `be-functional` — pass collaborators in.)
+(This *is* the dependency injection in `be-functional` — pass collaborators in.)
 
 ## Design patterns — and their simpler forms
 

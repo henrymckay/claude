@@ -52,11 +52,11 @@ The standard packages are `transform`, `port` and `operate` in the core, and `ad
 Two rules hold it together:
 
 - **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the outside world: network, filesystem, clock, randomness, external services.
-  The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free.
-  Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO.
-  (Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
+The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free.
+Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO.
+(Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
 - **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward.
-  A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
+A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
 
 Control flows the other way: a running operation calls *out* through a port to whichever adapter a driver injected.
 Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
@@ -169,8 +169,8 @@ Split each shell into a **role package** and one or more **framework packages**:
 
 - The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.code.drive.cli:app`) that hides which library is behind it.
 - The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects.
-  They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`.
-  Swap the library and only the framework package changes; the role name stays put.
+They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`.
+Swap the library and only the framework package changes; the role name stays put.
 
 **Launch each entry point with a `[project.scripts]` command named `<project>-<role>`** — `mypackage-cli`, `mypackage-api`, `mypackage-gui`, run with `uv run mypackage-cli ...`.
 That name is a *global* command (it lands on `PATH` when the package is installed), so it must be namespaced to the project, not a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
@@ -538,8 +538,8 @@ tests/
 
 - **`data/`** — data files the tests load.
 - **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name.
-  It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
-  Tests import it as `from pytest_ import then`.
+It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
+Tests import it as `from pytest_ import then`.
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 
 The pytest settings in `setup-python`'s `pyproject.toml` serve this layout:

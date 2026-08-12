@@ -21,7 +21,7 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
   ```
 - **`typing.NamedTuple`** for lightweight immutable tuples with names.
 - Don't mutate arguments.
-  Return a new structure instead of editing in place (`sorted(xs)` not `xs.sort()`; comprehension not `for … .append()`).
+Return a new structure instead of editing in place (`sorted(xs)` not `xs.sort()`; comprehension not `for … .append()`).
 - **Immutable dict updates** with `toolz`: `assoc`/`dissoc` (add/remove a key), `update_in`/`get_in` (nested update/lookup), `valmap`/`keymap`/`valfilter` (map or filter a dict) — each returns a **new** dict instead of mutating.
 
 ## Algebraic data types & pattern matching
@@ -72,7 +72,7 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
 - **For tabular or columnar data, the vectorized declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
-  Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
+Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
 
 ## functools & itertools
 
@@ -89,7 +89,7 @@ Write **generic** functions and derive specific variants by currying or composin
 `toolz` provides both cleanly — use it rather than rolling your own:
 
 - **`toolz.curry`** — bind arguments to produce a new, more specific function.
-  Prefer it to `functools.partial`: it auto-curries, works as a decorator, and composes cleanly (`partial` is fine when you want zero dependencies).
+Prefer it to `functools.partial`: it auto-curries, works as a decorator, and composes cleanly (`partial` is fine when you want zero dependencies).
 - **`toolz.compose`** / **`toolz.compose_left`** — chain functions into a new one (right-to-left, or left-to-right for readability).
 - **`toolz.pipe(data, f, g, h)`** — thread a value through functions left-to-right; the most readable one-off pipeline.
 
@@ -167,14 +167,14 @@ If you want richer functional error handling (Result/Either types), the `returns
 Two stand out and are worth reaching for by default: **`toolz`** for composition, currying, and dict/iterable helpers, and **`plum`** for multiple dispatch — both are well-maintained, well-typed, and cover the gaps the stdlib leaves.
 
 - **`toolz`** — *the* curated functional-helper toolkit and the go-to for currying and composition (see above), plus `pipe`, `groupby`, `juxt`, `merge`, and immutable dict ops.
-  Reach for it first.
+Reach for it first.
 - **`plum`** — *the* multiple-dispatch library (dispatch on several argument types via annotations), for when `functools.singledispatch` isn't enough.
-  Prefer it to the older `multipledispatch`.
+Prefer it to the older `multipledispatch`.
 - **`cytoolz`** — a C reimplementation of `toolz`, near drop-in, much faster on hot paths.
 - **`funcy`** — an alternative functional-utils library; a peer to `toolz`, not a replacement — pick whichever API you prefer.
 - **`returns`** — Result/Maybe/IO containers for a stricter functional style, integrated with typing.
 - **`pymonad`** — explicit monad implementations (Maybe, Either, State, Writer, Reader) for a more Haskell-style approach; heavier than `returns`, so reach for it only when you genuinely want the full monad toolkit.
 - **`pyrsistent`** — persistent immutable collections (especially an immutable map) with efficient structural-sharing updates; reach for it when you update collections repeatedly in a functional style.
-  Prefer frozen dataclasses for typed records — they integrate better with `pyright`.
+Prefer frozen dataclasses for typed records — they integrate better with `pyright`.
 
 Beyond these, stdlib comprehensions + `functools`/`itertools` handle most cases; reach for a library when it genuinely simplifies things.

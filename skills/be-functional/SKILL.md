@@ -62,12 +62,12 @@ Tests then pass explicit values, so the function stays pure and deterministic un
 Where the default goes depends on *what* the effect is:
 
 - **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`.
-  Normal callers pass nothing; tests pass a fixed value.
-  See `references/python.md` for the `os.environ` and clock patterns.
+Normal callers pass nothing; tests pass a fixed value.
+See `references/python.md` for the `os.environ` and clock patterns.
 - **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**.
-  Defaulting it would drag that library's import into the core and point the dependency arrow outward.
-  Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `structure-python`'s package layers (`transform` / `operate` / `adapt` / `drive`).
-  The core calls the dependency at runtime without ever importing it.
+Defaulting it would drag that library's import into the core and point the dependency arrow outward.
+Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `structure-python`'s package layers (`transform` / `operate` / `adapt` / `drive`).
+The core calls the dependency at runtime without ever importing it.
 
 ## Functions over classes
 
@@ -99,7 +99,7 @@ Closed sum types and exhaustive `match` trade one kind of extensibility for safe
 Code grows along two axes: new **variants** (kinds of data) and new **operations** (things you do with them).
 
 - **Sum types + functions** (this style): adding an **operation** is easy — write another function over the type.
-  Adding a **variant** is hard — you must extend every `match`.
+Adding a **variant** is hard — you must extend every `match`.
 - **Classes + inheritance** (OOP): the mirror image — a new **variant** is just a subclass (touches nothing else), but a new **operation** means editing every class.
 
 Neither is more extensible in the abstract; they're open along *opposite* axes.

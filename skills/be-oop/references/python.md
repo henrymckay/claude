@@ -28,7 +28,7 @@ Use `frozen=True` for immutable value objects and `slots=True` to save memory an
 ## Interfaces: Protocol vs ABC
 
 - **`typing.Protocol`** — *structural* typing: any class with the right methods satisfies it, no inheritance needed.
-  Prefer this for interfaces (ISP/DIP) — it's duck typing the type checker understands.
+Prefer this for interfaces (ISP/DIP) — it's duck typing the type checker understands.
   ```python
   import typing
 
@@ -38,7 +38,7 @@ Use `frozen=True` for immutable value objects and `slots=True` to save memory an
       def read(self) -> bytes: ...
   ```
 - **`abc.ABC` + `@abc.abstractmethod`** — *nominal* typing: subclasses must inherit and implement, enforced at instantiation.
-  Use when you own a hierarchy and want shared base code plus enforcement.
+Use when you own a hierarchy and want shared base code plus enforcement.
 
 Default to `Protocol` for "what a collaborator must provide"; reach for ABC when you own the hierarchy and want shared code + enforcement.
 
