@@ -20,7 +20,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Human-facing** — READMEs, documentation, guides, tutorials, changelogs, wikis, issue/PR descriptions.
 - **LLM-facing** — `SKILL.md`, `CLAUDE.md`, agent/tool instructions, prompts, anything a model consumes as context.
 
-## Universal principles (both audiences)
+## Universal principles
 
 - **Be succinct — every word must earn its place.** Cut filler, throat-clearing, and anything the surrounding context already establishes.
   - Filler and lead-ins: "in order to" → "to"; drop "It covers:" before a list that plainly elaborates the sentence above it.
@@ -47,7 +47,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Be concrete.** A short example beats a paragraph describing one — this helps a human learn and gives a model a pattern to follow.
 - **Expand an acronym on first use.** Give the full term with the acronym in parentheses once — "Method-Resolution Order (MRO)", "Easier to Ask Forgiveness than Permission (EAFP)" — then use the short form. A reader, human or model, shouldn't have to decode it. Skip only acronyms more familiar than their expansion (`HTTP`, `URL`, `CLI`).
 
-## For human readers (add on top)
+## For humans
 
 Humans skim, jump to headings, and copy code — optimise for the scan:
 
@@ -81,7 +81,7 @@ Humans skim, jump to headings, and copy code — optimise for the scan:
   - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
 - **Accessibility** — real heading hierarchy (screen readers navigate by it, don't fake headings with bold), image alt text, and don't rely on colour or emoji alone to carry meaning.
 
-## For LLM consumption (apply instead of the human polish)
+## For LLMs
 
 A model parses every token and doesn't skim, so optimise for clarity and context-efficiency, not visual appeal:
 
@@ -94,7 +94,7 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 - **Skip meta-preamble in a `CLAUDE.md`.** The model already knows the file is the user's instructions, so a role-describing title like "# Global instructions" or a "this file holds cross-project guidance" opener is pure fluff — cut it. A short `#` name for the project or scope is optional and harmless; just never follow it with prose describing the file. Phrase the instructions as commands to the model, not descriptions of the file.
 - **Cut default behavior from a `CLAUDE.md`.** It earns its always-on context only with what deviates from the model's defaults or is specific to the user. "Be concise" and "match the surrounding code" are already how the model behaves, so they are wasted lines. Keep the corrections, autonomy grants, and conventions the model would not infer on its own — and if a whole section reduces to defaults, drop the section.
 
-## Human-only vs universal — quick reference
+## Reference
 
 | Convention | Humans | LLMs |
 |---|---|---|
@@ -104,7 +104,7 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 | Badges, collapsible sections, callouts, TOC | ✅ | ❌ |
 | Explain the *why*, progressive disclosure, triggering-first | ➖ | ✅ |
 
-## Things to avoid (either audience)
+## Avoid
 
 - Burying the point below background or history — front-load instead.
 - Deep heading nesting past `###` — usually a sign to split the doc.
