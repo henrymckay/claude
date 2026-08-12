@@ -16,9 +16,7 @@ description: >-
 Conventions for keeping history clean and reviewable.
 These are defaults for repos without an established workflow — **an existing repo's conventions (its commit style, branch model, PR process) always win.**
 
-> Behavioural guardrail: ordinary pushes of your own branch are fine (see
-> [Pushing](#pushing)), but **force-pushing, rebasing shared history, and
-> destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
+> Behavioural guardrail: ordinary pushes of your own branch are fine (see [Pushing](#pushing)), but **force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
 
 ## Branches
 
