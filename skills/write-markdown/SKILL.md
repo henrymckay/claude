@@ -28,6 +28,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
   - Parallel phrasing tightens a list: "When to commit and push, and when to hold off" beats a comma-spliced clause.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Keep headings punchy and precise.** A heading is a label, not a sentence — use the fewest words that name the section exactly, and cut filler ("Toolchain", not "Toolchain summary"; "Data", not "Package data and assets"). Prune articles and trailing nouns that add nothing.
+- **Headings use sentence case** — capitalise the first word, proper nouns, and code as it's really spelled; not Title Case. "Configure the project", "Reach-for libraries", "Naming `.pipe()` helpers" — never "Configure The Project". It's the technical-docs standard, and it keeps identifiers in a heading (`polars`, `.pipe()`, `code/`) as the code reads them.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
   - This applies to the document's `#` title too when the doc is a how-to — a skill or a guide — so "Write Python", not "Writing Python". A doc that *names* a thing keeps a noun title: a README's project name, a reference file's topic.
