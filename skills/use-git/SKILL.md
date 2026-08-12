@@ -25,7 +25,7 @@ Long-running branches drift and cause painful merges.
 - Name branches `type/short-description`, kebab-cased: `feat/user-search`, `fix/null-login`, `chore/bump-deps`, `docs/readme`.
 - Keep a branch focused on one piece of work.
 
-## Commits
+## Commit
 
 - **Atomic commits:** one logical change each.
 The build/tests should pass at each commit so history is bisectable and revertable.
