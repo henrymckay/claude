@@ -2,7 +2,7 @@
 name: write-markdown
 description: >-
   How to write clear, well-structured Markdown for any audience — READMEs, docs,
-  guides, changelogs, issues/PRs written for HUMANS, and SKILL.md, CLAUDE.md,
+  guides, changelogs, issues/PRs written for humans, and SKILL.md, CLAUDE.md,
   agent/tool instructions and prompts written for an LLM. Use whenever writing or
   editing Markdown, even if the user just says "write a README", "document this",
   "update the docs", "write a skill", or "tidy up this CLAUDE.md". Covers the
