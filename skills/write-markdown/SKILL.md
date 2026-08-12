@@ -88,7 +88,7 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 
 - **Explain the *why*, not just the rule.** A model follows an instruction more reliably when it understands the reason — this is the one place to spend extra words, not save them.
 - **Progressive disclosure.** Keep the entry file lean and push depth into referenced files that load only when needed (e.g. a skill's `references/`).
-- **Lead with triggering/scope.** For a skill, the `description` frontmatter is what decides invocation — make it specific about *what* and *when*.
+- **Lead with triggering/scope.** For a skill, the `description` frontmatter is what decides invocation — make it specific about *what* and *when*. Write it as **plain prose**: it's matched as text and rendered nowhere, so backticks, bold, and links in it are literal noise (name `SKILL.md` or `write-python` bare, even though the body monospaces them).
 - **Density is fine; cosmetic polish is waste.** Skip emojis, decorative badges, collapsible sections, and full-stop-on-every-bullet consistency — they cost tokens and add no parsing value for a model.
 - **Emphasis is a weak lever for a model.** Bold earns its place as a *label* — it marks where a rule or key term starts, which aids parsing (as this skill bolds each rule name) — but as a signal of importance it barely registers. Never rely on `**bold**` to force compliance; state importance in words ("mandatory, not advisory"). Italics add even less, so spend them only where they genuinely clarify.
 - **Inline nuance is fine.** A model reads em-dashes, semicolons, and parentheticals without trouble, so don't fragment dense reasoning into sub-bullets just for looks.
