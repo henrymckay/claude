@@ -41,7 +41,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Emphasize key terms with bold and italic.** Bold the word (or few words) a scanner must not miss — never a whole sentence, since emphasis on everything emphasizes nothing. Use italics for lighter stress or for a term you are defining. Underline isn't native Markdown (it needs raw HTML and reads as a link), so avoid it.
 - **Keep runnable code blocks real and copy-pasteable.** Write commands exactly as you would type them: a single space between arguments, no cosmetic column alignment, and no explanatory comments inside the block. Put explanation in the surrounding prose instead. (Illustrative code examples that teach a pattern may still use teaching comments.)
   - Prefer a space to `=` before a flag's value — `--import-mode importlib`, not `--import-mode=importlib` — since it reads cleaner. Keep `=` only where a space would misparse: the value starts with `-`, or the option's argument is optional.
-- **Prefer lists over tables.** If a table's later columns just describe the item in the first, it's a list in disguise, so write it as a bullet list with one item per line. Reserve tables for genuine comparison or translation, where every column holds a parallel value worth aligning (pandas → Polars, or a feature across several options).
+- **Prefer lists over tables.** If a table's later columns just describe the item in the first, it's a list in disguise, so write it as a bullet list with one item per line. Reserve tables for genuine comparison or translation, where every column holds a parallel value worth aligning (`pandas` → `polars`, or a feature across several options).
 - **One sentence per line** (semantic line breaks).
   It renders identically to a wrapped paragraph but keeps diffs clean — rewording one sentence is a one-line change.
   Separate paragraphs with a blank line; don't hard-wrap at a fixed column (it reflows the whole paragraph and produces noisy diffs).
@@ -99,6 +99,6 @@ A model parses every token and doesn't skim, so optimise for clarity and context
 
 - Burying the point below background or history — front-load instead.
 - Deep heading nesting past `###` — usually a sign to split the doc.
+- Documenting the obvious while omitting what the reader actually needs.
 - Giant unbroken paragraphs and walls of undifferentiated bullets.
 - Screenshots of text or code that could be a copy-pasteable code block.
-- Documenting the obvious while omitting what the reader actually needs.
