@@ -2,7 +2,7 @@
 name: use-git
 description: >-
   Conventions for using git well — branch strategy, commit granularity, commit
-  message format, rebase vs merge, pushing/PRs, and what never to commit. Use
+  messages, rebase or merge, pushing/PRs, and what to exclude from commits. Use
   whenever committing, branching, writing commit messages, opening pull
   requests, or managing git history in any repository and any language, even if
   the user just says "commit this", "make a branch", or "clean up the history".
@@ -32,7 +32,7 @@ The build/tests should pass at each commit so history is bisectable and revertab
 Don't bundle an unrelated refactor into a feature commit.
 - Commit locally often; tidy up before sharing (see history hygiene).
 
-### Commit message format
+### Commit messages
 
 Every commit uses [Conventional Commits](https://www.conventionalcommits.org): a `type(scope): subject` header, where the type is required and the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
@@ -61,7 +61,7 @@ Always push before stepping away or opening/updating a PR.
 
 Pushing your own branch needs no sign-off; force-pushing, rebasing shared history, and destructive commands still do.
 
-## Rebase vs merge
+## Rebase or merge
 
 - **Rebase your *local, unpushed* feature branch** onto the latest main to keep history linear and avoid noisy merge commits.
 `git pull --rebase` for the same reason.
@@ -76,7 +76,7 @@ If you must force-push your *own* branch, use `--force-with-lease`, never bare `
 Link related issues.
 - Push work-in-progress to back it up / open a draft PR; mark ready when it is.
 
-## What never to commit
+## Exclude from commits
 
 - **Secrets** — API keys, tokens, passwords, `.env` files.
 If one lands in history, rotate it; removing the commit isn't enough.
