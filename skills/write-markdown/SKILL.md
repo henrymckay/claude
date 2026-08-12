@@ -107,7 +107,7 @@ Address the reader as "you" or write impersonally; "Personal coding conventions"
 - **Descriptive link text, kept short.** Anchor the link on the one or two words that name its destination, not a whole phrase or clause.
   - Write "install from a [marketplace](…)", not "[install from a marketplace](…)".
   - Never `[click here](…)` or a bare URL.
-- **Use richer render features when they serve the reader** — task lists, collapsible sections, badges, a table of contents for long docs.
+- **Use richer render features when they serve the reader** — task lists, collapsible sections, badges and a table of contents for long docs.
 - **Reach for GitHub-flavoured alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
   - Match the type to intent: `[!NOTE]` for info, `[!TIP]` for advice, `[!IMPORTANT]` for a key point, `[!WARNING]` or `[!CAUTION]` for hazards.
   - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
