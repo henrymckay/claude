@@ -57,7 +57,8 @@ Reference issues/PRs in the body (`Closes #123`).
 
 ## Pushing
 
-Push freely — it backs work up and shows progress, with little downside. **Push after each atomic commit**, since each already leaves the branch in a coherent, working state; only batch when a commit is a deliberate mid-sequence step that would push the branch through a briefly-broken state.
+Push freely — it backs work up and shows progress, with little downside.
+**Push after each atomic commit**, since each already leaves the branch in a coherent, working state; only batch when a commit is a deliberate mid-sequence step that would push the branch through a briefly-broken state.
 Always push before stepping away or opening/updating a PR.
 
 Pushing your own branch needs no sign-off; force-pushing, rebasing shared history, and destructive commands still do.

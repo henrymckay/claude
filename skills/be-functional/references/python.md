@@ -71,7 +71,8 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   total = sum(x * x for x in numbers)
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
-- **For tabular or columnar data, the vectorized declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill. Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
+- **For tabular or columnar data, the vectorized declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
+  Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
 
 ## functools & itertools
 
@@ -165,8 +166,10 @@ If you want richer functional error handling (Result/Either types), the `returns
 
 Two stand out and are worth reaching for by default: **`toolz`** for composition, currying, and dict/iterable helpers, and **`plum`** for multiple dispatch — both are well-maintained, well-typed, and cover the gaps the stdlib leaves.
 
-- **`toolz`** — *the* curated functional-helper toolkit and the go-to for currying and composition (see above), plus `pipe`, `groupby`, `juxt`, `merge`, and immutable dict ops. Reach for it first.
-- **`plum`** — *the* multiple-dispatch library (dispatch on several argument types via annotations), for when `functools.singledispatch` isn't enough. Prefer it to the older `multipledispatch`.
+- **`toolz`** — *the* curated functional-helper toolkit and the go-to for currying and composition (see above), plus `pipe`, `groupby`, `juxt`, `merge`, and immutable dict ops.
+  Reach for it first.
+- **`plum`** — *the* multiple-dispatch library (dispatch on several argument types via annotations), for when `functools.singledispatch` isn't enough.
+  Prefer it to the older `multipledispatch`.
 - **`cytoolz`** — a C reimplementation of `toolz`, near drop-in, much faster on hot paths.
 - **`funcy`** — an alternative functional-utils library; a peer to `toolz`, not a replacement — pick whichever API you prefer.
 - **`returns`** — Result/Maybe/IO containers for a stricter functional style, integrated with typing.

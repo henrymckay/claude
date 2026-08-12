@@ -31,7 +31,9 @@ These conventions are for new code or projects with no strong existing style.
 
 **Prefer the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
 Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it — and when a dependency is warranted, `setup-python` lists the house pick for common tasks.
-**Once a dependency is in play, use *its* built-in features rather than hand-rolling around them.** Before writing validation, grouping, parsing, retries, or serialisation yourself, check the library's own API — a CLI framework's callbacks and validation, a dataframe library's operations, an HTTP client's retry/auth. Reinventing what a dependency already offers is more code to maintain and usually a worse version. (Do confirm the feature exists, though — not every library has every convenience; a genuine gap is fine to fill.)
+**Once a dependency is in play, use *its* built-in features rather than hand-rolling around them.** Before writing validation, grouping, parsing, retries, or serialisation yourself, check the library's own API — a CLI framework's callbacks and validation, a dataframe library's operations, an HTTP client's retry/auth.
+Reinventing what a dependency already offers is more code to maintain and usually a worse version.
+(Do confirm the feature exists, though — not every library has every convenience; a genuine gap is fine to fill.)
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Ordering
@@ -54,7 +56,8 @@ A leading underscore (`_helper`, `_Internal`) signals "implementation detail, ma
 In a package's `__init__.py`, define `__all__` to make the public Application Programming Interface (API) explicit and keep `import *` honest.
 
 **Annotate every function** — every argument and the return value, on public and internal functions alike.
-Full signatures let pyright check call sites, document intent, and make refactors safe. **Don't annotate local variables** inside function bodies — let inference do its job and keep bodies uncluttered (add a hint only in the rare case inference genuinely can't resolve a type).
+Full signatures let pyright check call sites, document intent, and make refactors safe.
+**Don't annotate local variables** inside function bodies — let inference do its job and keep bodies uncluttered (add a hint only in the rare case inference genuinely can't resolve a type).
 
 Typing conventions (Python 3.11+):
 
@@ -125,7 +128,8 @@ When a rename truly is forced, derive it from the *true* name with an underscore
 Functions, methods, and CLI commands are imperative verbs regardless.
 `structure-python`'s package layers are the worked example.
 
-**Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`. Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `structure-python`'s Entry points for the split.
+**Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`.
+Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `structure-python`'s Entry points for the split.
 
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.
@@ -158,7 +162,9 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
   Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
-- **Prefer a named method to an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`. A named method also reads in evaluation order and says what a symbol only implies — Polars `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`). Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
+- **Prefer a named method to an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
+  A named method also reads in evaluation order and says what a symbol only implies — Polars `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
+  Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
 - **Context managers** (`with`) for anything with cleanup — files, locks, connections.
   Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
@@ -172,6 +178,11 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
   Keep the name only when it meaningfully documents an otherwise opaque expression.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
   When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
-- **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorized engine. Stack every group into one long-form frame rather than processing a group at a time. See the `use-polars` skill.
-- **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter. The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead. (Blank lines *between* definitions are the formatter's job.)
-- **Don't repeat a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`. It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
+- **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorized engine.
+  Stack every group into one long-form frame rather than processing a group at a time.
+  See the `use-polars` skill.
+- **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
+  The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead.
+  (Blank lines *between* definitions are the formatter's job.)
+- **Don't repeat a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
+  It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.

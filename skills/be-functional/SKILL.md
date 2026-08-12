@@ -56,12 +56,18 @@ Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — t
 The core is where the logic and the bugs live, so keeping it pure buys testability and clarity while the shell stays small and dumb.
 A program often has *several* shells — one per entry point (a CLI, a dashboard, an HTTP API) — each thin and each owning its own **presentation** over the one shared core; so rendering and formatting belong with their entry point, never in the core.
 
-**Inject impure dependencies as arguments.** When a function needs something impure — the environment, the clock, randomness, a data source — take it as a parameter rather than reaching for it. Tests then pass explicit values, so the function stays pure and deterministic under test.
+**Inject impure dependencies as arguments.** When a function needs something impure — the environment, the clock, randomness, a data source — take it as a parameter rather than reaching for it.
+Tests then pass explicit values, so the function stays pure and deterministic under test.
 
 Where the default goes depends on *what* the effect is:
 
-- **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`. Normal callers pass nothing; tests pass a fixed value. See `references/python.md` for the `os.environ` and clock patterns.
-- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**. Defaulting it would drag that library's import into the core and point the dependency arrow outward. Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `structure-python`'s package layers (`transform` / `operate` / `adapt` / `drive`). The core calls the dependency at runtime without ever importing it.
+- **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`.
+  Normal callers pass nothing; tests pass a fixed value.
+  See `references/python.md` for the `os.environ` and clock patterns.
+- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**.
+  Defaulting it would drag that library's import into the core and point the dependency arrow outward.
+  Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `structure-python`'s package layers (`transform` / `operate` / `adapt` / `drive`).
+  The core calls the dependency at runtime without ever importing it.
 
 ## Functions over classes
 
@@ -104,7 +110,8 @@ Extending *behavior* is never in tension: composition, higher-order functions, a
 
 ## Chain with monads where they fit — but stay idiomatic
 
-These sit on a progression worth naming: a **functor** is a wrapper you can `map` a plain function over; an **applicative** also combines several independently-wrapped values in a fixed way; a **monad** goes further, letting the next step *depend on* the previous result (`bind`). (The `map`/`amap`/`bind` naming in `use-polars` for `.pipe()` steps follows exactly this functor/applicative/monad split.)
+These sit on a progression worth naming: a **functor** is a wrapper you can `map` a plain function over; an **applicative** also combines several independently-wrapped values in a fixed way; a **monad** goes further, letting the next step *depend on* the previous result (`bind`).
+(The `map`/`amap`/`bind` naming in `use-polars` for `.pipe()` steps follows exactly this functor/applicative/monad split.)
 Monadic patterns thread optionality, errors, or effects through a chain of steps that each might short-circuit (`Optional`/`Result`/`Maybe` with their `map`/`bind`), sequencing operations without a ladder of `if` checks.
 Use them where the language supports them well, but **don't force idioms a language doesn't have** — bolting Haskell-style monads onto a language without the syntax or types for them produces code nobody else can read.
 Stay true to the language: in Python that's usually `X | None` and early returns, reaching for `returns` only when it genuinely pays (see `references/python.md`).

@@ -51,18 +51,27 @@ The standard packages are `transform`, `port` and `operate` in the core, and `ad
 
 Two rules hold it together:
 
-- **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the outside world: network, filesystem, clock, randomness, external services. The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free. Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO. (Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
-- **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward. A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
+- **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the outside world: network, filesystem, clock, randomness, external services.
+  The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free.
+  Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO.
+  (Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
+- **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward.
+  A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
 
 Control flows the other way: a running operation calls *out* through a port to whichever adapter a driver injected.
 Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
 That injection is the essential idea (see `be-functional`).
 
-**The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`. Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say. Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
+**The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`.
+Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say.
+Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
 
-**Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code. Don't scaffold the full set for a script (KISS, YAGNI).
+**Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
+Don't scaffold the full set for a script (KISS, YAGNI).
 
-**Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`. A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`. Either way you import a *module* and reach its members qualified through it (see `write-python`).
+**Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
+A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`.
+Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
 ### transform
 
@@ -76,7 +85,8 @@ transform/
   average.py
 ```
 
-The domain types that model the problem — dataclasses and enums like a `Reading` or a `Scale` — live here too for a small app; split them into a dedicated `domain/` package (a noun) once they multiply, leaving the pure functions in `transform`. They're the domain's data, so they sit in the core, never in `port`.
+The domain types that model the problem — dataclasses and enums like a `Reading` or a `Scale` — live here too for a small app; split them into a dedicated `domain/` package (a noun) once they multiply, leaving the pure functions in `transform`.
+They're the domain's data, so they sit in the core, never in `port`.
 
 ### port
 
@@ -158,7 +168,9 @@ Every driver lives under `code/drive/`.
 Split each shell into a **role package** and one or more **framework packages**:
 
 - The **role package** (`cli`, `api`, `gui`) is named for *what it is* and is hollow — it just re-exports the app object, giving a stable entry point (`mypackage.code.drive.cli:app`) that hides which library is behind it.
-- The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects. They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`. Swap the library and only the framework package changes; the role name stays put.
+- The **framework packages** (`typer_`, `rich_`, `fastapi_`, `shiny_`) hold the tightly-coupled code — everything that uses or returns that library's objects.
+  They take the trailing-underscore name (per `write-python`), which both marks the coupling and avoids shadowing the real `typer`/`rich`.
+  Swap the library and only the framework package changes; the role name stays put.
 
 **Launch each entry point with a `[project.scripts]` command named `<project>-<role>`** — `mypackage-cli`, `mypackage-api`, `mypackage-gui`, run with `uv run mypackage-cli ...`.
 That name is a *global* command (it lands on `PATH` when the package is installed), so it must be namespaced to the project, not a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
@@ -236,7 +248,8 @@ A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cl
 
 ### API
 
-`fastapi` for an HTTP API (see Reach-for libraries in `setup-python`), served with `uvicorn` and its models built on `pydantic`. Under `code/drive/`, a hollow `api/` role package re-exports the app and launcher, over two framework packages — `fastapi_/` for the routing and `pydantic_/` for the schemas — the way the CLI splits `typer_/` and `rich_/`:
+`fastapi` for an HTTP API (see Reach-for libraries in `setup-python`), served with `uvicorn` and its models built on `pydantic`.
+Under `code/drive/`, a hollow `api/` role package re-exports the app and launcher, over two framework packages — `fastapi_/` for the routing and `pydantic_/` for the schemas — the way the CLI splits `typer_/` and `rich_/`:
 
 ```text
 api/
@@ -252,15 +265,26 @@ pydantic_/
   schema.py     the request/response models (BaseModel DTOs)
 ```
 
-`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`). These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
+`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`).
+These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
 
-A DTO is **not** a domain type, even when their fields match. The schema is the external **contract**; the domain model is the internal truth; keep them separate so they evolve independently (API versioning vs domain logic) and untrusted input is validated at the boundary. Map between them in `route.py`, as `schema.Reading(...)` does below. Neither belongs in `port/`, which is protocols only; the domain types live in `transform`/`domain`.
+A DTO is **not** a domain type, even when their fields match.
+The schema is the external **contract**; the domain model is the internal truth; keep them separate so they evolve independently (API versioning vs domain logic) and untrusted input is validated at the boundary.
+Map between them in `route.py`, as `schema.Reading(...)` does below.
+Neither belongs in `port/`, which is protocols only; the domain types live in `transform`/`domain`.
 
-Pydantic is best used at exactly this kind of **trust boundary** — validating and (de)serialising data as it crosses in or out: API bodies here, `pydantic-settings` for config from the environment, or parsing an external response inside an adapter. It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for pydantic in the core only when you specifically want its validation or serialisation there. Enums are the one thing you never duplicate: pydantic accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
+Pydantic is best used at exactly this kind of **trust boundary** — validating and (de)serialising data as it crosses in or out: API bodies here, `pydantic-settings` for config from the environment, or parsing an external response inside an adapter.
+It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for pydantic in the core only when you specifically want its validation or serialisation there.
+Enums are the one thing you never duplicate: pydantic accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
 
-**A model shared across layers moves inward, to the core.** `pydantic_` here holds *only* the API's own schemas. Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a pydantic model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (pydantic is fine there). Each boundary DTO otherwise stays with its own edge — the API's schemas in `drive/pydantic_`, an external service's shape in the `adapt` module that parses it — never hoisted into one shared edge package.
+**A model shared across layers moves inward, to the core.** `pydantic_` here holds *only* the API's own schemas.
+Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a pydantic model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (pydantic is fine there).
+Each boundary DTO otherwise stays with its own edge — the API's schemas in `drive/pydantic_`, an external service's shape in the `adapt` module that parses it — never hoisted into one shared edge package.
 
-**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata. Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`. So `fastapi_` mirrors `typer_`'s structure: where `typer_` splits factory functions across `argument.py` and `option.py`, `fastapi_` has **a module per request marker** — `query.py`, plus `path.py`/`body.py`/`header.py` as those markers are used — each holding functions that return a configured marker, one per parameter (`query.stations()`, read as `category.member`). `fastapi.Query` alone takes many arguments (validation, docs, deprecation), and an app has many query parameters, so `query.py` earns its place exactly as `argument.py` does.
+**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata.
+Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`.
+So `fastapi_` mirrors `typer_`'s structure: where `typer_` splits factory functions across `argument.py` and `option.py`, `fastapi_` has **a module per request marker** — `query.py`, plus `path.py`/`body.py`/`header.py` as those markers are used — each holding functions that return a configured marker, one per parameter (`query.stations()`, read as `category.member`).
+`fastapi.Query` alone takes many arguments (validation, docs, deprecation), and an app has many query parameters, so `query.py` earns its place exactly as `argument.py` does.
 
 ```python
 import fastapi
@@ -271,7 +295,9 @@ def stations() -> fastapi.params.Query:
     return fastapi.Query(description="Station IDs.")
 ```
 
-`Depends` is the exception — not request-parameter config but **dependency injection** — and it needs *two* functions, which split by coupling. `depend.py` holds the marker factory (FastAPI-coupled, like `query.py`); `provide.py` holds the **provider** it wraps — the function that names the concrete adapter. `Depends(fn)` **calls `fn` and injects its return value**, so the provider *returns* the adapter — the factory passes the provider, `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
+`Depends` is the exception — not request-parameter config but **dependency injection** — and it needs *two* functions, which split by coupling.
+`depend.py` holds the marker factory (FastAPI-coupled, like `query.py`); `provide.py` holds the **provider** it wraps — the function that names the concrete adapter.
+`Depends(fn)` **calls `fn` and injects its return value**, so the provider *returns* the adapter — the factory passes the provider, `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
 
 ```python
 import fastapi
@@ -284,7 +310,8 @@ def fetch() -> fastapi.params.Depends:
     return fastapi.Depends(provide.fetch)
 ```
 
-`provide.py` is the **injection seam** — the driver's place for naming a concrete adapter. It imports no FastAPI (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because FastAPI is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
+`provide.py` is the **injection seam** — the driver's place for naming a concrete adapter.
+It imports no FastAPI (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because FastAPI is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
 
 ```python
 from mypackage.code import port
@@ -296,7 +323,8 @@ def fetch() -> port.Fetch:
     return httpx_.fetch
 ```
 
-Naming `httpx_` in `provide.py` doesn't leak it into the core: it's part of the driver — the **composition root** — so naming the one concrete adapter is its job. The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the body names `httpx_`.
+Naming `httpx_` in `provide.py` doesn't leak it into the core: it's part of the driver — the **composition root** — so naming the one concrete adapter is its job.
+The invariant that holds is that `operate` imports only `port`; and even here the signature depends on the abstraction `port.Fetch` while only the body names `httpx_`.
 
 `route.py`'s endpoints then receive the injected adapter as a parameter (where the CLI's `command.py` passes it by hand) and shape the core's result into the response models:
 
@@ -349,7 +377,9 @@ Because the adapter arrives through `Depends`, a test swaps it for a fake by ove
 
 `shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Reach-for libraries in `setup-python`) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun.
 
-**Use Shiny Core, not Express, in a packaged app.** Express is easier — it intermingles the layout and the callbacks in one module, so a throwaway single-view dashboard is fewer lines. But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(app_ui, server)` object for the launcher. So `shiny_/` separates the way `typer_/` does:
+**Use Shiny Core, not Express, in a packaged app.** Express is easier — it intermingles the layout and the callbacks in one module, so a throwaway single-view dashboard is fewer lines.
+But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(app_ui, server)` object for the launcher.
+So `shiny_/` separates the way `typer_/` does:
 
 ```text
 gui/
@@ -412,9 +442,12 @@ A throwaway single-view dashboard can collapse the split into one Shiny Express 
 
 ### Jobs
 
-A cron run, a queue worker, a webhook handler, or a serverless function is a driver triggered by *time or events* rather than a person. It reads its trigger, runs an operation — injecting the adapters, the composition root's job — and writes the result through an output adapter (this is the ETL shape: `extract` in, `transform` in the core, `load` out); keep the trigger wiring thin so the work stays in the core.
+A cron run, a queue worker, a webhook handler, or a serverless function is a driver triggered by *time or events* rather than a person.
+It reads its trigger, runs an operation — injecting the adapters, the composition root's job — and writes the result through an output adapter (this is the ETL shape: `extract` in, `transform` in the core, `load` out); keep the trigger wiring thin so the work stays in the core.
 
-**Default to no library.** The cleanest scheduler is *external* to the app — cron, a systemd timer, a Kubernetes `CronJob`, a cloud scheduler, or a serverless trigger — so the schedule lives in infrastructure, not code. The app just exposes a console script that runs once and exits. A job is `command.py` without the parsing: a thin composition root wiring a source and a sink around an operation.
+**Default to no library.** The cleanest scheduler is *external* to the app — cron, a systemd timer, a Kubernetes `CronJob`, a cloud scheduler, or a serverless trigger — so the schedule lives in infrastructure, not code.
+The app just exposes a console script that runs once and exits.
+A job is `command.py` without the parsing: a thin composition root wiring a source and a sink around an operation.
 
 ```python
 from mypackage.code import operate
@@ -426,7 +459,8 @@ def run() -> None:
     operate.refresh(fetch=httpx_.fetch, store=postgres_.save)
 ```
 
-`mypackage-job = "mypackage.code.drive.job:run"`, invoked by the external trigger. Reach for a library only when the trigger must live *inside* the process (see Reach-for libraries in `setup-python`):
+`mypackage-job = "mypackage.code.drive.job:run"`, invoked by the external trigger.
+Reach for a library only when the trigger must live *inside* the process (see Reach-for libraries in `setup-python`):
 
 - **In-process scheduling** (a long-running process firing work on a clock) → `apscheduler`, in an `apscheduler_/` package holding the scheduler.
 - **A task queue** (events enqueue work, worker processes consume it) → `dramatiq` (a cleaner Celery) over a Redis/RabbitMQ broker, its actors in a `dramatiq_/` package.
@@ -438,7 +472,8 @@ Whichever it is, the scheduler or broker is the shell; the work stays an operati
 
 Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — load through `importlib.resources`, never a path built from `__file__` or the repo root.
 
-Keep them all in one `data/` directory whose inside **mirrors the code layers**, so every asset's path names the layer that owns it — `data/` and `code/` are the two parallel trees under the package. One place to manage, with ownership still explicit:
+Keep them all in one `data/` directory whose inside **mirrors the code layers**, so every asset's path names the layer that owns it — `data/` and `code/` are the two parallel trees under the package.
+One place to manage, with ownership still explicit:
 
 ```text
 mypackage/
@@ -468,7 +503,10 @@ mypackage/
 - `data/drive/` — templates and static web files a driver renders.
 - `data/transform/` — static reference data the core computes over; an edge still *loads* it and passes it in, keeping the core pure (reading a file is IO).
 
-Where `data/` sits follows whether the assets ship — the one place its level does *not* follow `tests/`. Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources` — not a bare `src/data/`, since `src/` is only a source root: just the package beneath it ships, with the `src/` prefix stripped, so a sibling of the package is neither packaged nor reachable as `mypackage`'s data. `tests/` can sit at the repo root precisely because it never ships. Reserve a repo-root `data/` (a sibling of `src/` and `tests/`, mirroring the package the same way) for data that deliberately stays out of the wheel — large datasets, dev seed data.
+Where `data/` sits follows whether the assets ship — the one place its level does *not* follow `tests/`.
+Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources` — not a bare `src/data/`, since `src/` is only a source root: just the package beneath it ships, with the `src/` prefix stripped, so a sibling of the package is neither packaged nor reachable as `mypackage`'s data.
+`tests/` can sit at the repo root precisely because it never ships.
+Reserve a repo-root `data/` (a sibling of `src/` and `tests/`, mirroring the package the same way) for data that deliberately stays out of the wheel — large datasets, dev seed data.
 
 Reach a packaged asset by navigating from the package, not the filesystem:
 
@@ -478,7 +516,8 @@ from importlib import resources
 query = resources.files("mypackage").joinpath("data/adapt/orders.sql").read_text()
 ```
 
-`hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files. All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
+`hatchling` ships non-`.py` files under the package automatically, so a committed in-package `data/` needs no extra config; add `[tool.hatch.build.targets.wheel]` `artifacts` only for generated or git-ignored files.
+All of this is distinct from `tests/data/` — test fixtures that never ship (see [Tests](#tests)).
 
 ## Tests
 
@@ -498,7 +537,9 @@ tests/
 ```
 
 - **`data/`** — data files the tests load.
-- **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name. It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods. Tests import it as `from pytest_ import then`.
+- **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name.
+  It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
+  Tests import it as `from pytest_ import then`.
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 
 The pytest settings in `setup-python`'s `pyproject.toml` serve this layout:

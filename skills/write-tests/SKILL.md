@@ -37,7 +37,8 @@ Structure every test as **given / when / then** — the behavioural form of the 
 
 Make the three beats visible through **structure and names, not comments** — the code should not need a `# given` label:
 
-- *Given* arrives **entirely through the test's parameters** — every fixture and every piece of external data comes in as an argument (a fixture, or a fixture that loads a data file). Never a module-level global, and never data built inline in the body.
+- *Given* arrives **entirely through the test's parameters** — every fixture and every piece of external data comes in as an argument (a fixture, or a fixture that loads a data file).
+  Never a module-level global, and never data built inline in the body.
 - *When* is a single action on its own line, assigned to a well-named result.
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
@@ -47,13 +48,16 @@ def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
     then_every_row_is_positive(kept)
 ```
 
-A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place even for a bare equality — a shared set (`then.equals`, `then.column_equals`) reads far more uniformly than scattered `assert` statements. Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
+A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place even for a bare equality — a shared set (`then.equals`, `then.column_equals`) reads far more uniformly than scattered `assert` statements.
+Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
 
-Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarise_by_region(sales)` then `then.conserves(...)`. Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
+Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarise_by_region(sales)` then `then.conserves(...)`.
+Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
 
 ## Name the behaviour: when and then
 
-Name every test `test_when_<action>_then_<outcome>`. The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
+Name every test `test_when_<action>_then_<outcome>`.
+The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
 `test_when_keep_valid_then_non_positive_rows_dropped`: the when is applying `keep_valid`, the then is that non-positive rows are dropped.
 The prescriptive split forces both halves to be explicit and makes a failure read as a falsified claim, which is most of the diagnosis.
 One when and one then per test — if either needs an "and", split the test.
@@ -70,14 +74,18 @@ Keep the imperative shell thin so little is left that needs slow integration tes
 
 - A test must pass **in any order and on its own** — no shared mutable state, no test depending on another having run.
 - Prefer **injected setup over globals**: shared data or context belongs in the runner's setup mechanism (a fixture), not a module-level constant, so each test gets its own fresh copy.
-- Never touch the real clock, randomness, or network. Inject them (the default-argument seams from `be-functional`) and pass fixed values, or seed the generator, so a run is reproducible.
+- Never touch the real clock, randomness, or network.
+  Inject them (the default-argument seams from `be-functional`) and pass fixed values, or seed the generator, so a run is reproducible.
 - A flaky test is a broken test: fix or delete it, since one that cries wolf trains you to ignore the suite.
 
 ## Where test data lives
 
-Every input **and expected value a test uses reaches it as an argument** — a fixture parameter that returns the data or loads it from a file — never a literal built in the body, a module global, or a bare constant. This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test. The test body should name only the *when* and the *then*; every *given* value comes in through the signature.
+Every input **and expected value a test uses reaches it as an argument** — a fixture parameter that returns the data or loads it from a file — never a literal built in the body, a module global, or a bare constant.
+This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
+The test body should name only the *when* and the *then*; every *given* value comes in through the signature.
 
-- **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data). Feed a function only the fields it reads.
+- **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data).
+  Feed a function only the fields it reads.
 - **Expected values → a fixture that derives them from the raw data**, or a stored answers file — then pass them into a `then_` custom assertion, not a literal buried in the body.
 - **Reach an expected value by a route independent of the code under test.** A stored answers file, or a plain restatement of the spec, qualifies; re-deriving with the *same* transformation the code uses is circular and proves nothing.
 - **Prefer invariants where deriving the answer would just reimplement the code.** Assert properties that hold for any input — conservation (group totals sum to the whole), ordering (sorted), membership (output ⊆ input) — so there's no expected value to compute at all, and drive them with property-based tests.
@@ -137,33 +145,50 @@ The concrete tree, import mode, and runner setup are language-specific — see `
 
 ## Running the suite
 
-The **test runner is the entry point** — a test file never needs a `main`. Run the whole suite or a slice, selecting by directory, name, or tag.
+The **test runner is the entry point** — a test file never needs a `main`.
+Run the whole suite or a slice, selecting by directory, name, or tag.
 The exact commands are in `references/python.md`.
 
 ## Paradigms — how to approach testing
 
 Reach beyond example-based unit tests when the problem fits.
 
-- **Test-Driven Development (TDD)** — write a failing test, make it pass, refactor (red-green-refactor). Drives design and guarantees every line exists to satisfy a stated intent.
-- **Behaviour-Driven Development (BDD)** — express tests as given-when-then behaviour in domain language, the structure above. Keeps tests tied to requirements, not implementation.
-- **Property-based** — assert invariants over generated, shrinking inputs (Hypothesis, QuickCheck). For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
-- **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end. A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.
-- **Characterization** — capture the *current* behaviour of existing code before changing it. A safety net around legacy or unfamiliar code ahead of a refactor.
-- **Approval / golden-master / snapshot** — assert output equals a stored, reviewed reference. For complex output (rendered text, serialized structures) painful to assert field by field; review the diff when it changes.
-- **Contract** — verify both sides of an integration agree on a shared contract (consumer-driven contracts, Pact). Across boundaries you don't control end to end.
-- **Fuzz** — feed random or adversarial inputs to surface crashes and unhandled cases. On parsers and anything taking untrusted input.
-- **Mutation** — inject faults into the code and check the suite catches them. Run occasionally to measure whether tests actually assert, not merely execute.
+- **Test-Driven Development (TDD)** — write a failing test, make it pass, refactor (red-green-refactor).
+  Drives design and guarantees every line exists to satisfy a stated intent.
+- **Behaviour-Driven Development (BDD)** — express tests as given-when-then behaviour in domain language, the structure above.
+  Keeps tests tied to requirements, not implementation.
+- **Property-based** — assert invariants over generated, shrinking inputs (Hypothesis, QuickCheck).
+  For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
+- **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end.
+  A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.
+- **Characterization** — capture the *current* behaviour of existing code before changing it.
+  A safety net around legacy or unfamiliar code ahead of a refactor.
+- **Approval / golden-master / snapshot** — assert output equals a stored, reviewed reference.
+  For complex output (rendered text, serialized structures) painful to assert field by field; review the diff when it changes.
+- **Contract** — verify both sides of an integration agree on a shared contract (consumer-driven contracts, Pact).
+  Across boundaries you don't control end to end.
+- **Fuzz** — feed random or adversarial inputs to surface crashes and unhandled cases.
+  On parsers and anything taking untrusted input.
+- **Mutation** — inject faults into the code and check the suite catches them.
+  Run occasionally to measure whether tests actually assert, not merely execute.
 
 ## Patterns — how to structure a test
 
-- **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form. The skeleton of every test.
-- **Test doubles** — *dummy* (filler, unused), *stub* (canned answers), *spy* (records calls), *mock* (asserts on expected calls), *fake* (a working lightweight implementation). Prefer fakes and injection; reserve mocks for genuine boundaries.
-- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message. Names a domain expectation and reuses it.
-- **Test data builder** — a fluent builder for a valid object with overridable parts (`a_sale().with_quantity(0)`). For objects with many fields where tests vary one at a time.
-- **Object mother** — a factory of canonical, named test objects (`Sales.typical()`). For a small set of standard scenarios shared across tests.
-- **Parametrized / table-driven** — one test, a table of cases. For the same assertion over many inputs.
+- **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form.
+  The skeleton of every test.
+- **Test doubles** — *dummy* (filler, unused), *stub* (canned answers), *spy* (records calls), *mock* (asserts on expected calls), *fake* (a working lightweight implementation).
+  Prefer fakes and injection; reserve mocks for genuine boundaries.
+- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message.
+  Names a domain expectation and reuses it.
+- **Test data builder** — a fluent builder for a valid object with overridable parts (`a_sale().with_quantity(0)`).
+  For objects with many fields where tests vary one at a time.
+- **Object mother** — a factory of canonical, named test objects (`Sales.typical()`).
+  For a small set of standard scenarios shared across tests.
+- **Parametrized / table-driven** — one test, a table of cases.
+  For the same assertion over many inputs.
 - **Humble object** — push logic out of a hard-to-test boundary (UI, I/O) into a plain, testable object; the functional-core / imperative-shell split is this pattern.
-- **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup. Default to fresh.
+- **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup.
+  Default to fresh.
 
 ## Language idioms
 
