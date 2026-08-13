@@ -101,9 +101,11 @@ myproject/
   README.md
   src/
     mypackage/
+      __init__.py
   tests/
 ```
 
+An `__init__.py` marks a directory as an importable package — here only `mypackage/` is one; `src/` and `tests/` are plain directories.
 Keep modules small and cohesive (one responsibility).
 This is just the top-level skeleton; how `mypackage/` splits into `code/` and `data/` layers, and how `tests/` is laid out, is covered in `structure-python`.
 
