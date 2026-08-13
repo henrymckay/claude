@@ -26,8 +26,7 @@ Project structure lives in `structure-python`; packaging and dependencies in `se
 In particular, **don't spend effort on what `ruff format` fixes automatically** on pre-commit — line length, wrapping and stacking function arguments, quote style, trailing commas.
 Write it naturally and let the hook format it; hand-formatting just creates needless churn and diff noise.
 
-**Above all: match the surrounding code.** An existing project's patterns beat anything below.
-These conventions are for new code or projects with no strong existing style.
+**In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 **Prefer the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
 Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it — and when a dependency is warranted, `setup-python` lists the house pick for common tasks.

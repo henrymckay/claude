@@ -14,7 +14,7 @@ description: >-
 # Use git
 
 Conventions for keeping history clean and reviewable.
-These are defaults for repos without an established workflow — **an existing repo's conventions (its commit style, branch model, PR process) always win.**
+**In an existing project, ask first.** Where a repo already has an established workflow (commit style, branch model, PR process), check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 > Behavioural guardrail: ordinary pushes of your own branch are fine (see [Push](#push)), but **force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
 

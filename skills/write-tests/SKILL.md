@@ -21,6 +21,8 @@ This file is the language-agnostic mindset, ending with a catalogue of the wider
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
 
+**In an existing project, ask first.** Where a repo already has an established test style or layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+
 ## Tests are code
 
 Hold a test to the same standard as the code it covers — documented, typed, named and ordered the same way, with no "it's only a test" exemption.

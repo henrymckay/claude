@@ -20,6 +20,8 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Human-facing** — READMEs, documentation, guides, tutorials, changelogs, wikis, issue/PR descriptions.
 - **LLM-facing** — `SKILL.md`, `CLAUDE.md`, agent/tool instructions, prompts, anything a model consumes as context.
 
+**In an existing project, ask first.** Where a repo already has an established house style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+
 ## Universal principles
 
 - **Be succinct — every word must earn its place.** Cut filler, throat-clearing, and anything the surrounding context already establishes.

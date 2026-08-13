@@ -9,6 +9,7 @@
 ## Skills
 
 These skills encode my conventions and are mandatory, not advisory.
+When editing an existing project that already has its own established style, ask whether to match it or apply the skill, and prefer the skill unless I say to match.
 Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 

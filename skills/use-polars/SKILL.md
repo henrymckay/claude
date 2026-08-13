@@ -17,6 +17,8 @@ Polars is fast and correct when you work *with* its model: **expressions** evalu
 Most mistakes come from writing pandas habits in Polars syntax.
 This file is the mental model; reach into `references/` for concrete recipes.
 
+**In an existing project, ask first.** Where a codebase already has an established Polars style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+
 > Targets **Polars 1.x**. Verify version-specific method names against the
 > installed version if something doesn't resolve.
 >

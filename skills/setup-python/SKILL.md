@@ -18,7 +18,7 @@ description: >-
 Getting the skeleton right up front — layout, packaging, tooling — saves pain later.
 This covers *scaffolding, packaging, and tooling*; for how to organise the code into layers, see `structure-python`; for in-code style, `write-python`; for tests, `write-tests`.
 
-**Match an existing project first.** If there's already a `pyproject.toml` or an established layout, follow it rather than imposing this.
+**In an existing project, ask first.** Where a repo already has a `pyproject.toml` or an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 ## Configure the project
 
