@@ -20,6 +20,16 @@ This covers *scaffolding, packaging, and tooling*; for how to organise the code 
 
 **In an existing project, ask first.** Where a repo already has a `pyproject.toml` or an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
+## Toolchain
+
+Standardise on these five tools; set them up once and defer to them everywhere:
+
+- **`uv`** — Python version, env, dependencies, running.
+- **`ruff`** — format + lint + import sort for Python (`ruff format`, `ruff check --fix`).
+- **`taplo`** — format + lint for TOML (`taplo fmt`), since `ruff` handles Python only.
+- **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
+- **`pytest`** — tests in `tests/`.
+
 ## Configure the project
 
 `pyproject.toml` is the one file for metadata, dependencies, and tool config.
@@ -97,6 +107,9 @@ myproject/
 
 Keep modules small and cohesive (one responsibility).
 This is just the top-level skeleton; how `mypackage/` splits into `code/` and `data/` layers, and how `tests/` is laid out, is covered in `structure-python`.
+
+Keep a real `.gitignore` from the start, covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `.hypothesis/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
+See the `use-git` skill for repo hygiene.
 
 ## Dependencies and environment
 
@@ -182,16 +195,3 @@ Pin each `rev` to the current release and bump it later with `pre-commit autoupd
 Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to register the git hook).
 `ruff-check --fix` auto-fixes and `ruff-format` reformats Python; `taplo-format` does the same for TOML; if a hook changes files the commit stops so you can re-stage.
 This is also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
-
-## Toolchain
-
-Set these up once and defer to them everywhere:
-
-- **`uv`** — Python version, env, dependencies, running.
-- **`ruff`** — format + lint + import sort for Python (`ruff format`, `ruff check --fix`).
-- **`taplo`** — format + lint for TOML (`taplo fmt`), since `ruff` handles Python only.
-- **`pyright`** — type checking (the `pyright-lsp` plugin surfaces it live).
-- **`pytest`** — tests in `tests/`.
-
-Add a `.gitignore` covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `.hypothesis/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
-See the `use-git` skill for repo hygiene.
