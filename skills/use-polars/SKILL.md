@@ -19,11 +19,11 @@ This file is the mental model; reach into `references/` for concrete recipes.
 
 **In an existing project, ask first.** Where a codebase already has an established Polars style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
-> Targets **Polars 1.x**. Verify version-specific method names against the
-> installed version if something doesn't resolve.
->
-> Import convention (house style): `import polars` and qualify — `polars.col(...)`
-> — not the conventional `import polars as pl`. See the write-python skill.
+Targets **Polars 1.x**.
+Verify version-specific method names against the installed version if something doesn't resolve.
+
+Import convention (house style): `import polars` and qualify — `polars.col(...)` — not the conventional `import polars as pl`.
+See the write-python skill.
 
 ## The mental model
 
