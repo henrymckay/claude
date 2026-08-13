@@ -52,7 +52,7 @@ Don't reorder purely to enforce this in a file that already uses another scheme 
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-In a package's `__init__.py`, define `__all__` to make the public API (Application Programming Interface) explicit and keep `import *` honest.
+In a package's `__init__.py`, define `__all__` to make the public API explicit and keep `import *` honest.
 
 **Annotate every function** — every argument and the return value, on public and internal functions alike.
 Full signatures let pyright check call sites, document intent, and make refactors safe.

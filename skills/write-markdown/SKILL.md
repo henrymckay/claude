@@ -66,7 +66,7 @@ Separate paragraphs with a blank line; don't hard-wrap at a fixed column (it ref
 - **Be concrete.** A short example beats a paragraph describing one — this helps a human learn and gives a model a pattern to follow.
 - **Expand an acronym on first use.** Give the acronym with the full term in parentheses once — "MRO (Method-Resolution Order)", "EAFP (Easier to Ask Forgiveness than Permission)" — then use the short form.
 A reader, human or model, shouldn't have to decode it.
-Skip only acronyms more familiar than their expansion (`HTTP`, `URL`, `CLI`).
+Skip only acronyms more familiar than their expansion (`API`, `CLI`, `HTTP`, `URL`).
 - **Use British spelling, consistently** — `-ise`/`-our` (organise, capitalise, colour, behaviour), not the US `-ize`/`-or`.
 Code keeps its own spelling, though: a `serialize` method or a `SerializableMixin` class stays as the code names it.
 
