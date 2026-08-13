@@ -82,8 +82,7 @@ The non-obvious choices:
 Tests are held to the same standard — there is no `tests/` exemption.
 - The `[tool.pytest.ini_options]`, `pythonpath` and `src` settings serve the test layout (see `structure-python`).
 
-**TOML array style.** Keep an array on one line while it fits the line width, and wrap to one item per line (with a trailing comma) only once it overflows — the same collapse/expand rule `ruff` applies to Python.
-`ruff` formats Python only, not TOML, so `taplo` handles it (part of the toolchain below) — `taplo fmt` applies exactly this rule, collapsing the expanded arrays `uv add` leaves behind.
+**TOML formatting.** Run `taplo fmt` — it keeps arrays on one line until they overflow the line width, and collapses what `uv add` leaves expanded.
 
 ## Pick a layout
 
