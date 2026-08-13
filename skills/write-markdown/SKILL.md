@@ -13,7 +13,7 @@ description: >-
 
 # Write Markdown
 
-Markdown has two very different readers: **humans**, who skim and scan, and **Large Language Models (LLMs)**, which parse every token.
+Markdown has two very different readers: **humans**, who skim and scan, and **LLMs (Large Language Models)**, which parse every token.
 Most principles serve both, but some polish helps humans and wastes tokens on a model, and some density suits a model but loses a human.
 So **decide the audience first**, apply the universal rules, then add the audience-specific set.
 
@@ -64,7 +64,7 @@ Keep a nested or numbered item's continuations indented under its text, since a 
 A bold label isn't a sentence — keep it on the marker line with the first sentence; the *following* sentences break onto their own lines.
 Separate paragraphs with a blank line; don't hard-wrap at a fixed column (it reflows the whole paragraph and produces noisy diffs).
 - **Be concrete.** A short example beats a paragraph describing one — this helps a human learn and gives a model a pattern to follow.
-- **Expand an acronym on first use.** Give the full term with the acronym in parentheses once — "Method-Resolution Order (MRO)", "Easier to Ask Forgiveness than Permission (EAFP)" — then use the short form.
+- **Expand an acronym on first use.** Give the acronym with the full term in parentheses once — "MRO (Method-Resolution Order)", "EAFP (Easier to Ask Forgiveness than Permission)" — then use the short form.
 A reader, human or model, shouldn't have to decode it.
 Skip only acronyms more familiar than their expansion (`HTTP`, `URL`, `CLI`).
 - **Use British spelling, consistently** — `-ise`/`-our` (organise, capitalise, colour, behaviour), not the US `-ize`/`-or`.

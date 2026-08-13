@@ -74,7 +74,7 @@ In Python, small `Protocol`s.
 
 ## Design patterns — and their simpler forms
 
-Patterns are shared vocabulary, but many classic Gang of Four (GoF) patterns are workarounds for features Python already has.
+Patterns are shared vocabulary, but many classic GoF (Gang of Four) patterns are workarounds for features Python already has.
 Recognise the pattern, then reach for the **simplest form** that solves it — keep it simple and don't over-build (the KISS and YAGNI principles; see `write-python`); don't cargo-cult a Java-style class where a function does.
 
 Patterns that usually **collapse** in Python — each with what it is, then the simpler form:

@@ -155,9 +155,9 @@ The exact commands are in `references/python.md`.
 
 Reach beyond example-based unit tests when the problem fits.
 
-- **Test-Driven Development (TDD)** — write a failing test, make it pass, refactor (red-green-refactor).
+- **TDD (Test-Driven Development)** — write a failing test, make it pass, refactor (red-green-refactor).
 Drives design and guarantees every line exists to satisfy a stated intent.
-- **Behaviour-Driven Development (BDD)** — express tests as given-when-then behaviour in domain language, the structure above.
+- **BDD (Behaviour-Driven Development)** — express tests as given-when-then behaviour in domain language, the structure above.
 Keeps tests tied to requirements, not implementation.
 - **Property-based** — assert invariants over generated, shrinking inputs (Hypothesis, QuickCheck).
 For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
