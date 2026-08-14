@@ -2,8 +2,9 @@
 name: setup-python
 description: >-
   How to scaffold and configure a Python project — the src/ layout,
-  pyproject.toml, dependency and environment management with uv, standalone
-  scripts, pre-commit, and the ruff/taplo/pyright/pytest toolchain. Use whenever
+  pyproject.toml, dependency and environment management with uv, house-pick
+  libraries for common tasks, standalone scripts, pre-commit, and the
+  ruff/taplo/pyright/pytest toolchain. Use whenever
   starting a new Python project, package, script, or tool; adding packaging to
   existing code; setting up dependencies, virtual environments, or project
   config; or choosing a house-pick library for a task — even if the user just

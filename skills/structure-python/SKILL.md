@@ -1,12 +1,13 @@
 ---
 name: structure-python
 description: >-
-  How to structure a non-trivial Python application into clean layers — the
-  hexagonal (ports-and-adapters) shape: a pure core of domain types, logic,
-  and use cases behind ports; driven adapters for IO; and the drive layer of
-  entry-point drivers that wire a concrete adapter into an operation at a
-  composition root. Use when organising an app into layers, deciding where a
-  module, entry point, IO adapter, or data asset belongs, applying dependency
+  How to structure a non-trivial Python application — the hexagonal
+  (ports-and-adapters) layers of a pure core (domain types, logic, and use
+  cases behind ports) and an outer edge (driven adapters for IO, entry-point
+  drivers at a composition root), plus where runtime data assets and the test
+  suite sit alongside the code. Use when organising an app into layers,
+  deciding where a module, entry point, IO adapter, data asset, or test
+  belongs, packaging data through importlib.resources, applying dependency
   injection, or laying out the code/data/tests directories — even if the user
   just says "structure this app", "where does this go", or "clean/hexagonal
   architecture". Layers on write-python and be-functional; for building the
