@@ -32,7 +32,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Keep headings punchy and precise.** A heading is a label, not a sentence — use the fewest words that name the section exactly, and cut filler ("Toolchain", not "Toolchain summary"; "Data", not "Package data and assets").
 Prune articles and trailing nouns that add nothing.
 - **Headings use sentence case** — capitalise the first word, proper nouns, and code as it's really spelled; not Title Case.
-"Configure the project", "Reach-for libraries", "Naming `.pipe()` helpers" — never "Configure The Project".
+"Configure the project", "Pre-commit hooks", "Naming `.pipe()` helpers" — never "Configure The Project".
 It's the technical-docs standard, and it keeps identifiers in a heading (`polars`, `.pipe()`, `code/`) as the code reads them.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
@@ -66,7 +66,7 @@ Separate paragraphs with a blank line; don't hard-wrap at a fixed column (it ref
 - **Be concrete.** A short example beats a paragraph describing one — this helps a human learn and gives a model a pattern to follow.
 - **Expand an acronym on first use.** Give the acronym with the full term in parentheses once — "MRO (Method-Resolution Order)", "EAFP (Easier to Ask Forgiveness than Permission)" — then use the short form.
 A reader, human or model, shouldn't have to decode it.
-Skip only acronyms more familiar than their expansion (`API`, `CLI`, `HTTP`, `URL`).
+Skip only acronyms more familiar than their expansion (`API`, `CLI`, `GUI`, `HTTP`, `URL`).
 - **Use British spelling, consistently** — `-ise`/`-our` (organise, capitalise, colour, behaviour), not the US `-ize`/`-or`.
 Code keeps its own spelling, though: a `serialize` method or a `SerializableMixin` class stays as the code names it.
 

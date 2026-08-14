@@ -128,7 +128,7 @@ Functions, methods, and CLI commands are imperative verbs regardless.
 `structure-python`'s package layers are the worked example.
 
 **Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your Polars helpers, `typer_/` for a CLI's typer code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`.
-Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `structure-python`'s Entry points for the split.
+Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `write-entry-points` for the split.
 
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.

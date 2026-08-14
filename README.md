@@ -17,9 +17,10 @@ Verb-first skills that encode consistent working conventions.
 - [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
 - [`setup-python`](skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
-- [`structure-python`](skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers for [`typer`](https://typer.tiangolo.com/) CLIs, [`fastapi`](https://fastapi.tiangolo.com/) APIs, [`shiny`](https://shiny.posit.co/py/) GUIs and jobs.
+- [`structure-python`](skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers over a `code`/`data`/`tests` layout.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
+- [`write-entry-points`](skills/write-entry-points) builds an app's entry points as thin shells over the pure core, whether a [`typer`](https://typer.tiangolo.com/) CLI, [`fastapi`](https://fastapi.tiangolo.com/) API, [`shiny`](https://shiny.posit.co/py/) GUI or scheduled job.
 - [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
 - [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
