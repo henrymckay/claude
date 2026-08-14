@@ -84,7 +84,7 @@ Either way you import a *module* and reach its members qualified through it (see
 
 ## Data
 
-Non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — load through `importlib.resources`, never a path built from `__file__` or the repo root.
+Load the non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — through `importlib.resources`, never a path built from `__file__` or the repo root.
 
 Keep them all in one `data/` directory whose inside **mirrors the code layers**, so every asset's path names the layer that owns it — `data/` and `code/` are the two parallel trees under the package.
 One place to manage, with ownership still explicit:
@@ -118,7 +118,8 @@ mypackage/
 - `data/transform/` — static reference data the core computes over; an edge still *loads* it and passes it in, keeping the core pure (reading a file is IO).
 
 Where `data/` sits follows whether the assets ship — the one place its level does *not* follow `tests/`.
-Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources` — not a bare `src/data/`, since `src/` is only a source root: just the package beneath it ships, with the `src/` prefix stripped, so a sibling of the package is neither packaged nor reachable as `mypackage`'s data.
+Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources` — not a bare `src/data/`.
+`src/` is only a source root: just the package beneath it ships, with the `src/` prefix stripped, so a sibling of the package is neither packaged nor reachable as `mypackage`'s data.
 `tests/` can sit at the repo root precisely because it never ships.
 Reserve a repo-root `data/` (a sibling of `src/` and `tests/`, mirroring the package the same way) for data that deliberately stays out of the wheel — large datasets, dev seed data.
 
