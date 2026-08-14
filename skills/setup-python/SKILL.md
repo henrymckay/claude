@@ -142,8 +142,8 @@ A library published for others is the exception: keep a lower `requires-python` 
 
 ## Libraries
 
-Prefer the standard library by default; only when a task genuinely needs a dependency, reach for the house pick below (see `write-python` on preferring the simplest solution).
-Listed by task:
+For these common tasks the house pick is the default, not a dependency of last resort — reach for it over the standard-library alternative (`typer` over `argparse`, `pytest` over `unittest`, `rich` over bare `print`).
+Everywhere else the stdlib-first rule holds — don't add a dependency you don't actually need (see `write-python`).
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over Streamlit's whole-script rerun.
