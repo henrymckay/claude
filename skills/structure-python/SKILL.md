@@ -42,10 +42,18 @@ mypackage/
   data/
 ```
 
-### Layers
-
 Structure `code/` as two groups: a pure **core** that holds the logic, and an outer **edge** that does all the IO — the ports-and-adapters (hexagonal) shape.
-The standard packages are `transform`, `port` and `operate` in the core, and `adapt` and `drive` at the edge, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun).
+The five standard packages, each named for what it does (imperative verbs for the behavioural layers per `write-python`; `port`, a package of definitions, stays a noun):
+
+- **`transform`** (core) — the problem's types and rules, and the pure functions over them, depending on nothing outward.
+Model data so illegal states can't be built (see `be-functional`); the domain's dataclasses and enums live here too, splitting into a dedicated `domain/` package (a noun) once they multiply — never `port`.
+- **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
+A noun that names *what* the core needs, not *how*, and only defines; interfaces, not data, so the domain's own types stay in `transform`.
+- **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
+Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
+- **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
+Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled modules take trailing-underscore names.
+- **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter and injecting one into the other (`operate.report(stations, fetch=httpx_.fetch)`), built out under [Entry points](#entry-points) below.
 
 `mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
 
@@ -63,7 +71,7 @@ Dependency injection is what lets the import arrow point in while control flows 
 That injection is the essential idea (see `be-functional`).
 
 **The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`.
-Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say.
+Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say (where `load` means *persist to a store*, not the on-screen presentation a driver owns).
 Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
 
 **Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
@@ -73,96 +81,10 @@ Don't scaffold the full set for a script (KISS, YAGNI).
 A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
-### transform
-
-The types and rules of the problem, plus the pure functions over them, depending on nothing outward.
-Model data so illegal states can't be built (see `be-functional`).
-Reads as a phrase where it's called: `transform.averages(readings)`.
-
-```text
-transform/
-  __init__.py
-  average.py
-```
-
-The domain types that model the problem — dataclasses and enums like a `Reading` or a `Scale` — live here too for a small app; split them into a dedicated `domain/` package (a noun) once they multiply, leaving the pure functions in `transform`.
-They're the domain's data, so they sit in the core, never in `port`.
-
-### port
-
-The *behavioural* interfaces the core needs the outside world to satisfy — `typing.Protocol`s or callable type aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
-A port names *what* the core needs, not *how*: `operate` depends on it, `adapt` implements it.
-A noun, because it only defines.
-Ports are interfaces, not data — the domain's own dataclasses and enums are *not* ports; they belong with the domain (see `transform` above), though a port's signature may reference them.
-
-```text
-port/
-  __init__.py
-  fetch.py
-```
-
-### operate
-
-The functions that orchestrate a whole task (`operate.report(stations, fetch)`): call `transform` for logic and a `port` for I/O, staying IO-free because the adapter is injected.
-Imports `transform` and `port` only.
-
-```text
-operate/
-  __init__.py
-  report.py
-```
-
-Each use case is a module, re-exported in `operate/__init__.py` per the qualified-name rule above, so a driver calls `operate.report(...)`:
-
-```python
-from mypackage.code.operate.report import report
-
-__all__ = ["report"]
-```
-
-### adapt
-
-The IO layer: concrete implementations of the ports, each adapting an outside system to what the core expects — `adapt`'s `httpx_.fetch` calls the weather service over HTTP and adapts its JSON response to the `Fetch` port.
-Imports `transform`/`port` to conform to them; never imports `operate` or `drive`.
-Library-coupled modules take trailing-underscore names.
-
-```text
-adapt/
-  __init__.py
-  httpx_.py
-```
-
-When the IO splits into an `extract`/`load` pair above, `load` means *persist to a store* — not on-screen presentation, which is a driver's job and belongs in `drive`.
-
-### drive
-
-The driving side and composition root: the entry points (CLI, API, GUI, jobs) that start the program.
-A driver imports both an operation and a concrete adapter and injects one into the other:
-
-```python
-from mypackage.code import operate
-from mypackage.code.adapt import httpx_
-
-operate.report(stations, fetch=httpx_.fetch)
-```
-
-The role packages, framework packages, and presentation a driver holds are covered under [Entry points](#entry-points) below.
-
-```text
-drive/
-  __init__.py
-  cli/
-    __init__.py
-  rich_/
-    __init__.py
-  typer_/
-    __init__.py
-```
-
 ## Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
-These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Layers](#layers) above) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
+These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Code](#code) above) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
 Every driver lives under `code/drive/`.
 
 Split each shell into a **role package** and one or more **framework packages**:
