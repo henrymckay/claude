@@ -146,7 +146,7 @@ from mypackage.code.adapt import httpx_
 operate.report(stations, fetch=httpx_.fetch)
 ```
 
-The role packages, framework packages, and presentation a driver holds are covered under Entry points below.
+The role packages, framework packages, and presentation a driver holds are covered under [Entry points](#entry-points) below.
 
 ```text
 drive/
@@ -159,7 +159,7 @@ drive/
     __init__.py
 ```
 
-### Entry points
+## Entry points
 
 Every project is reached through one or more **entry points** — the ways it gets invoked.
 These are the **drivers**: each is a thin **shell** over the presentation-agnostic core (see [Layers](#layers) above) that calls an operation, injects the concrete adapter it needs, and owns its own presentation — so a second entry point can serve or render the same results its own way.
