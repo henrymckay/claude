@@ -140,7 +140,7 @@ That's usually the latest stable release, but a dependency without wheels for th
 Determine it when you create the project rather than hardcoding a number that ages — the `>=3.14` / `py314` above are just today's answer, not a fixed target.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
-## Reach-for libraries
+## Libraries
 
 Prefer the standard library by default; only when a task genuinely needs a dependency, reach for the house pick below (see `write-python` on preferring the simplest solution).
 Listed by task:
