@@ -50,12 +50,13 @@ The five standard packages, each named for what it does (imperative verbs for th
 - **`transform`** (core) — the problem's types and rules, and the pure functions over them, depending on nothing outward.
 Model data so illegal states can't be built (see `be-functional`); the domain's dataclasses and enums live here too, splitting into a dedicated `domain/` package (a noun) once they multiply — never `port`.
 - **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
-A noun that names *what* the core needs, not *how*, and only defines; interfaces, not data, so the domain's own types stay in `transform`.
+A noun that names *what* the core needs, not *how* — `operate` depends on it, `adapt` implements it.
+Interfaces, not data, so the domain's own types stay in `transform`.
 - **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
 Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
 - **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
 Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled modules take trailing-underscore names.
-- **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter and injecting one into the other (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
+- **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
 
 `mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
 
