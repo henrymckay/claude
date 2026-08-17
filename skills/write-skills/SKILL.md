@@ -34,6 +34,9 @@ Kebab-case, one or two words, the house prefix carrying the verb:
 
 `write-tests`, not `testing-guide`; `structure-python`, not `python-structure`.
 
+Each skill is a directory `skills/<name>/` holding `SKILL.md` (and any `references/`).
+Keep `skills/` **flat** — no category subdirectories, since the name already says what the skill is for and any structure belongs *inside* the skill (the file anatomy is the `skill-creator` plugin's).
+
 ## Write the description
 
 The description *is* the trigger, so optimise it for invocation (the `skill-creator` plugin has a loop for that).
