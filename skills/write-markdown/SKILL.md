@@ -8,7 +8,7 @@ description: >-
   "update the docs", "write a skill", or "tidy up this CLAUDE.md". Covers the
   universal principles that apply to both audiences, then the human-only polish
   and the LLM-only guidance — so decide the reader first, then apply the matching
-  rules.
+  rules. write-skills layers on this for authoring a skill.
 ---
 
 # Write Markdown
@@ -19,6 +19,8 @@ So **decide the audience first**, apply the universal rules, then add the audien
 
 - **Human-facing** — READMEs, documentation, guides, tutorials, changelogs, wikis, issue/PR descriptions.
 - **LLM-facing** — `SKILL.md`, `CLAUDE.md`, agent/tool instructions, prompts, anything a model consumes as context.
+
+`write-skills` layers on these mechanics for authoring a skill — its name, description, opening and structure.
 
 **In an existing project, ask first.** Where a repo already has an established house style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -32,7 +34,7 @@ So **decide the audience first**, apply the universal rules, then add the audien
 - **Keep headings punchy and precise.** A heading is a label, not a sentence — use the fewest words that name the section exactly, and cut filler ("Toolchain", not "Toolchain summary"; "Data", not "Package data and assets").
 Prune articles and trailing nouns that add nothing.
 - **Headings use sentence case** — capitalise the first word, proper nouns, and code as it's really spelled; not Title Case.
-"Configure the project", "Pre-commit hooks", "Naming `.pipe()` helpers" — never "Configure The Project".
+"Configure the project", "Pre-commit hooks", "Name `.pipe()` UDFs" — never "Configure The Project".
 It's the technical-docs standard, and it keeps identifiers in a heading (`polars`, `.pipe()`, `code/`) as the code reads them.
 - **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
@@ -47,7 +49,8 @@ Leave a sentence that states what something *is* declarative — "`CLAUDE.md` ho
 Monospace them whether or not they are also linked.
   - **Inside backticks, use the real code spelling, not the brand capitalisation.** Backticks mark a token as code, so write the import or command name: `polars` not `Polars`, `numpy` not `NumPy`, `fastapi` not `FastAPI`.
     Naming a library in *use* is a code reference too, so monospace it in prose, not only in imports — `fastapi` validates the body, reach for `pydantic` at a boundary.
-    Keep a capitalised, unmonospaced name only for a title, or a proper noun that *isn't* the package itself: a company (Posit), a service or platform (Redis, Kubernetes), or a formal product name (Shiny for Python). When unsure, monospace.
+    Keep a capitalised, unmonospaced name only for a title, or a proper noun that *isn't* the package itself: a company (Posit), a service or platform (Redis, Kubernetes), or a formal product name (Shiny for Python).
+    When unsure, monospace.
 - **Emphasise key terms with bold and italic.** Bold the word (or few words) a scanner must not miss — never a whole sentence, since emphasis on everything emphasises nothing.
 Use italics for lighter stress or for a term you are defining.
 Underline isn't native Markdown (it needs raw HTML and reads as a link), so avoid it.
