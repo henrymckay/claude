@@ -64,7 +64,7 @@ Extract a `when_<action>` helper too when the action is compound or reads better
 Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarize_by_region(sales)` then `then.conserves(...)`.
 Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
 
-## Test behaviour, not implementation
+## Behaviour, not implementation
 
 Test the observable contract — return values, raised errors, visible side effects — through the public surface, never private internals.
 Tests bound to implementation break on every refactor and stop being a safety net; tests bound to behaviour survive refactors and *are* the net.
@@ -77,7 +77,7 @@ Prefer real objects and dependency injection to mocks: a mock asserts on *how* c
 Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
 See the test-double taxonomy under Patterns below.
 
-## Isolate each test
+## Isolation
 
 - A test must pass **in any order and on its own** — no shared mutable state, no test depending on another having run.
 - Prefer **injected setup over globals**: shared data or context belongs in the runner's setup mechanism (a fixture), not a module-level constant, so each test gets its own fresh copy.
@@ -85,7 +85,7 @@ See the test-double taxonomy under Patterns below.
 Inject them (the default-argument seams from `be-functional`) and pass fixed values, or seed the generator, so a run is reproducible.
 - A flaky test is a broken test: fix or delete it, since one that cries wolf trains you to ignore the suite.
 
-## Where test data lives
+## Test data
 
 Since every *given* value arrives through the signature (above), the open question is where a fixture gets it — and, harder, where an *expected* value comes from.
 This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
@@ -117,7 +117,7 @@ Reach for it when you can state an **invariant**:
 - Postconditions: the result is always sorted, within bounds, or the same length.
 - Agreement with a slow, obviously-correct reference implementation.
 
-## Test the dependencies you rely on
+## Dependency tests
 
 Write tests against the third-party behaviour your code depends on, kept separate from tests of your own code.
 They are **not** exhaustive tests of the library — that's the maintainer's job — but a pinned record of the specific behaviour you rely on, doubling as executable documentation of *how* you use it and an early warning when an upgrade changes it.
