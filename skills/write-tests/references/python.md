@@ -29,7 +29,7 @@ A fixture sources each input, and — harder — each expected value:
 
 The *when* helpers name compound actions where they earn it; the *then* helpers are the custom assertions below.
 
-## Table-driven and property-based
+## Vectorised
 
 For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole under Assertions) — parametrize:
 
@@ -107,7 +107,7 @@ Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock`
 - `pytest-cov` reports coverage (`uv run pytest --cov`).
 - Mark slow or external tests with a custom marker (`@pytest.mark.slow`) so the default run stays quick.
 
-## Logging output
+## Logging
 
 To show logs from both the code under test and the tests during a run, Rich-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`.
 Nothing goes in the test files — `pytest` attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.

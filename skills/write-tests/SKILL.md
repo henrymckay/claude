@@ -53,7 +53,8 @@ Never a module-level global, and never data built inline in the body.
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
 ```python
-def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales):
+def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales: polars.DataFrame) -> None:
+    """Every kept row is positive."""
     kept = keep_valid(raw_sales)
     then_every_row_is_positive(kept)
 ```
@@ -98,9 +99,10 @@ Feed a function only the fields it reads.
 
 Feed a function only what it reads, and assert only what the behaviour promises.
 
-## Table-driven and property-based
+## Vectorised
 
-Both run one assertion over many inputs instead of copy-pasted tests — a table when you can enumerate the cases, a generator when you can only state the rule.
+Vectorise the test: run one assertion over many inputs instead of copy-pasted cases — the same instinct as preferring an expression over a loop.
+A table covers the cases you can enumerate; a generator covers a rule you can only state.
 
 **Table-driven** runs one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.
 Each case is reported and fails separately (a loop stops at the first failure), and adding one is a single line.
