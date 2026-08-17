@@ -124,7 +124,7 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 
 - Assert only what your code assumes: that a parser yields the type you expect, that an aggregation totals the way you rely on, that one call runs several operations together.
 - A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
-- Keep them a directory level apart from your own tests (see Layout).
+- Keep the dependency-behaviour tests a directory level apart from your own — the reference shows the tree.
 
 ## Coverage and speed
 
@@ -134,17 +134,7 @@ Chasing a number produces assertion-free tests that execute code without checkin
 Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
 Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
 
-## Layout
-
-Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **shared helpers** they import (fixtures, custom assertions).
-The concrete tree, import mode, and runner setup are language-specific — see `references/python.md`, `structure-python` (the `tests/` layout) and `setup-python` (the `pytest` config).
-
-## Running
-
-The **test runner is the entry point** — a test file never needs a `main`.
-Run the whole suite or a slice, selecting by directory, name, or tag; the exact commands are in `references/python.md`.
-
-## Paradigms — how to approach testing
+## Paradigms
 
 Reach beyond example-based unit tests when the problem fits.
 
@@ -167,7 +157,9 @@ On parsers and anything taking untrusted input.
 - **Mutation** — inject faults into the code and check the suite catches them.
 Run occasionally to measure whether tests actually assert, not merely execute.
 
-## Patterns — how to structure a test
+## Patterns
+
+Reach for a named pattern to structure a test or its suite.
 
 - **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form.
 The skeleton of every test.
@@ -184,6 +176,8 @@ For the same assertion over many inputs.
 - **Humble object** — push logic out of a hard-to-test boundary (UI, I/O) into a plain, testable object; the functional-core / imperative-shell split is this pattern.
 - **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup.
 Default to fresh.
+- **Suite layout** — separate the test cases (mirroring the source, dependency-behaviour tests kept apart), their data, and shared helpers; the concrete tree is language-specific.
+- **Runner as entry point** — a runner discovers and runs the tests, so no test file needs a `main`; run the whole suite or select a slice by directory, name or tag.
 
 ## Language specifics
 
