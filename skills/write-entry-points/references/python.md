@@ -24,27 +24,21 @@ The command points at whatever *starts* that entry point: a callable app object 
 `typer` for the CLI, `rich` for output (see Libraries in `setup-python`).
 Three packages under `code/drive/`:
 
-- **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.code.drive.cli:app`.
-- **`typer_/`** — the typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
-- **`rich_/`** — the rich-coupled rendering, building the table and colours from the core's plain results.
-
-`cli/__init__.py` is a one-line re-export, so the entry point never names the framework behind it:
-
-```python
-from mypackage.code.drive.typer_ import app
-
-__all__ = ["app"]
+```text
+cli/
+  __init__.py   role, hollow: re-exports app
+typer_/
+  __init__.py   re-exports app; imports command so its decorators register
+  app.py        app = typer.Typer()
+  argument.py   functions returning a configured typer.Argument
+  option.py     functions returning a configured typer.Option
+  command.py    the @app.command() functions — the composition root
+rich_/
+  __init__.py
+  render.py     builds the rich table from the core's plain results
 ```
 
-`typer_/__init__.py` creates the app, then imports `command` for the side effect of registering its `@app.command()` decorators — the import sits after `app` exists, hence the `noqa`:
-
-```python
-import typer
-
-app = typer.Typer()
-
-from mypackage.code.drive.typer_ import command  # noqa: E402, F401
-```
+Keep the `typer.Typer()` app in its own `app.py` so both `command.py` (to hang its commands on it) and `typer_/__init__.py` (to expose it) import it without a cycle.
 
 `command.py` is the **composition root**: the one place that imports an operation and a concrete adapter, injects the adapter into the operation, and hands the plain result to `rich_` to render:
 
@@ -54,13 +48,31 @@ import typing
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_
 from mypackage.code.drive.rich_ import render
-from mypackage.code.drive.typer_ import app, argument, option
+from mypackage.code.drive.typer_ import argument, option
+from mypackage.code.drive.typer_.app import app
 
 
 @app.command()
 def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     """Report the average temperature for each station."""
     render.table(operate.report(stations, fetch=httpx_.fetch))
+```
+
+`typer_/__init__.py` re-exports `app` and imports `command` for the side effect of registering its `@app.command()` decorators:
+
+```python
+from mypackage.code.drive.typer_ import command  # noqa: F401
+from mypackage.code.drive.typer_.app import app
+
+__all__ = ["app"]
+```
+
+`cli/__init__.py` re-exports that `app` as the stable entry point, so the console script never names the framework behind it:
+
+```python
+from mypackage.code.drive.typer_ import app
+
+__all__ = ["app"]
 ```
 
 A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.code.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
