@@ -14,33 +14,6 @@ They take the trailing-underscore name (per `write-python`), which both marks th
 
 Swap the library and only the framework package changes; the role name stays put.
 
-## Running
-
-Each entry point is launched by a `[project.scripts]` console command named `<project>-<role>` — a *global* command once installed (it lands on `PATH`), so namespace it to the project, never a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
-(If one interface is clearly primary you can give it the bare project name and suffix only the rest, but symmetric `<project>-<role>` reads better for peers.)
-The command points at whatever *starts* the entry point: a callable app where the framework gives one (a `typer` app is callable), or a thin `run()` launcher where it doesn't (`uvicorn.run(app)`, `shiny.run_app(app)`).
-
-```toml
-[project.scripts]
-mypackage-cli = "mypackage.code.drive.cli:app"
-mypackage-api = "mypackage.code.drive.api:run"
-mypackage-gui = "mypackage.code.drive.gui:run"
-mypackage-job = "mypackage.code.drive.job:run"
-```
-
-Run any with `uv run <command>`, or the bare command once installed:
-
-```bash
-uv run mypackage-cli report london tokyo
-uv run mypackage-api
-uv run mypackage-gui
-uv run mypackage-job
-```
-
-- The API and GUI also take a framework dev server — `uvicorn mypackage.code.drive.api:app`, `shiny run mypackage.code.drive.gui:app`.
-- The CLI adds `python -m mypackage.code.drive.cli` if you give it a `__main__.py` that calls `app()`.
-- A job carries no scheduler of its own; an external trigger (cron, a timer, a queue) invokes its command.
-
 ## CLI
 
 `typer` for the CLI, `rich` for output (see Libraries in `setup-python`).
@@ -98,7 +71,7 @@ from mypackage.code.drive.typer_ import app
 __all__ = ["app"]
 ```
 
-A `typer` app is callable, so its console script points straight at the app object (see Running).
+A `typer` app is callable, so its console script points straight at the app object (see Run).
 
 **Callbacks and command groups scale the same shape.** An `@app.callback()` runs before any command — the home for app-wide options and setup (a global `--verbose`, loading config); keep it as thin as a command.
 Sub-commands like `mypackage-cli users create` are command *groups*: each is its own `typer.Typer()`, mounted on the main app with `app.add_typer(users.app, name="users")`.
@@ -243,7 +216,7 @@ def run() -> None:
     uvicorn.run(app)
 ```
 
-An ASGI app isn't callable, so its console script points at `run()` (see Running).
+An ASGI app isn't callable, so its console script points at `run()` (see Run).
 Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — the fastapi-native seam, no patching.
 
 ## GUI
@@ -314,7 +287,7 @@ def run() -> None:
     shiny.run_app(app)
 ```
 
-A `shiny.App` isn't callable, so its console script points at `run()` (see Running).
+A `shiny.App` isn't callable, so its console script points at `run()` (see Run).
 A throwaway single-view dashboard can collapse the split into one Shiny Express module (`gui.py`) — the parallel of collapsing a one-command CLI into `cli.py` — but keep the work in the core either way.
 
 ## Jobs
@@ -336,7 +309,7 @@ def run() -> None:
     operate.refresh(fetch=httpx_.fetch, store=postgres_.save)
 ```
 
-Its console script points at `run()` (see Running), invoked by the external trigger.
+Its console script points at `run()` (see Run), invoked by the external trigger.
 Reach for a library only when the trigger must live *inside* the process (see Libraries in `setup-python`):
 
 - **In-process scheduling** (a long-running process firing work on a clock) → `apscheduler`, in an `apscheduler_/` package holding the scheduler.
@@ -344,3 +317,30 @@ Reach for a library only when the trigger must live *inside* the process (see Li
 - **Orchestration** (dependent steps, retries, backfills, observability) → `prefect` or `dagster`.
 
 Whichever it is, the scheduler or broker is the shell; the work stays an operation over the pure core.
+
+## Run
+
+Each entry point is launched by a `[project.scripts]` console command named `<project>-<role>` — a *global* command once installed (it lands on `PATH`), so namespace it to the project, never a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
+(If one interface is clearly primary you can give it the bare project name and suffix only the rest, but symmetric `<project>-<role>` reads better for peers.)
+The command points at whatever *starts* the entry point: a callable app where the framework gives one (a `typer` app is callable), or a thin `run()` launcher where it doesn't (`uvicorn.run(app)`, `shiny.run_app(app)`).
+
+```toml
+[project.scripts]
+mypackage-cli = "mypackage.code.drive.cli:app"
+mypackage-api = "mypackage.code.drive.api:run"
+mypackage-gui = "mypackage.code.drive.gui:run"
+mypackage-job = "mypackage.code.drive.job:run"
+```
+
+Run any with `uv run <command>`, or the bare command once installed:
+
+```bash
+uv run mypackage-cli report london tokyo
+uv run mypackage-api
+uv run mypackage-gui
+uv run mypackage-job
+```
+
+- The API and GUI also take a framework dev server — `uvicorn mypackage.code.drive.api:app`, `shiny run mypackage.code.drive.gui:app`.
+- The CLI adds `python -m mypackage.code.drive.cli` if you give it a `__main__.py` that calls `app()`.
+- A job carries no scheduler of its own; an external trigger (cron, a timer, a queue) invokes its command.
