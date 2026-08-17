@@ -16,7 +16,8 @@ description: >-
 
 OOP earns its place when a problem is about **things with identity, state, and behaviour** — objects that live over time, or a hierarchy meant to be *extended*.
 The house default is functions-first (see `write-python`, `be-functional`); this skill is for when OOP is genuinely the right tool and how to do it well.
-This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
+
+**Language-agnostic here.** The Python specifics live in `references/python.md`.
 
 **This is opt-in.** For pure data transformation and stateless logic, prefer functions.
 

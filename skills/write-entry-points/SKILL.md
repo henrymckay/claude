@@ -18,8 +18,9 @@ description: >-
 
 An **entry point** is a **driver**: a thin shell over the presentation-agnostic core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
 It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell).
+
+**Language-agnostic here.** The Python specifics live in `references/python.md`.
 
 **In an existing project, ask first.** Where a repo already has an established way of wiring its entry points, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

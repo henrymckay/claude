@@ -16,10 +16,12 @@ description: >-
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the Python specifics live in `references/python.md`.
+It ends with a catalogue of the wider testing paradigms and patterns.
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
+
+**Language-agnostic here.** The Python specifics live in `references/python.md`.
 
 **In an existing project, ask first.** Where a repo already has an established test style or layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

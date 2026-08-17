@@ -17,7 +17,8 @@ description: >-
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
-This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
+
+**Language-agnostic here.** The Python specifics live in `references/python.md`.
 
 **This is opt-in.** Apply it when a functional approach is asked for or clearly fits (data transformations, pipelines, pure logic).
 Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — there, apply it at the *edges* (see "Functional core, imperative shell", below).
