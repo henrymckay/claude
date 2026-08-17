@@ -28,19 +28,17 @@ Three packages under `code/drive/`:
 cli/
   __init__.py   role, hollow: re-exports app
 typer_/
-  __init__.py   re-exports app; imports command so its decorators register
-  app.py        app = typer.Typer()
+  __init__.py   builds the app and registers the commands on it
   argument.py   functions returning a configured typer.Argument
   option.py     functions returning a configured typer.Option
-  command.py    the @app.command() functions — the composition root
+  command.py    the command functions — the composition root
 rich_/
   __init__.py
   render.py     builds the rich table from the core's plain results
 ```
 
-Keep the `typer.Typer()` app in its own `app.py` so both `command.py` (to hang its commands on it) and `typer_/__init__.py` (to expose it) import it without a cycle.
-
-`command.py` is the **composition root**: the one place that imports an operation and a concrete adapter, injects the adapter into the operation, and hands the plain result to `rich_` to render:
+`command.py` holds the command functions and is the **composition root**: each imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
+It defines *plain* functions — no `@app.command()` decorator — so it never imports the app, which is what keeps the wiring free of a circular import:
 
 ```python
 import typing
@@ -48,21 +46,23 @@ import typing
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_
 from mypackage.code.drive.rich_ import render
-from mypackage.code.drive.typer_ import argument, option
-from mypackage.code.drive.typer_.app import app
+from mypackage.code.drive.typer_ import argument
 
 
-@app.command()
 def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     """Report the average temperature for each station."""
     render.table(operate.report(stations, fetch=httpx_.fetch))
 ```
 
-`typer_/__init__.py` re-exports `app` and imports `command` for the side effect of registering its `@app.command()` decorators:
+`typer_/__init__.py` builds the app and registers each command on it, mirroring how the API's `__init__` mounts its router:
 
 ```python
-from mypackage.code.drive.typer_ import command  # noqa: F401
-from mypackage.code.drive.typer_.app import app
+import typer
+
+from mypackage.code.drive.typer_ import command
+
+app = typer.Typer()
+app.command()(command.report)
 
 __all__ = ["app"]
 ```
