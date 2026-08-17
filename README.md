@@ -14,16 +14,16 @@ Personal [Claude Code](https://claude.com/claude-code) skills and global instruc
 
 Verb-first skills that encode consistent working conventions.
 
-- [`be-functional`](skills/be-functional) defines language-agnostic functional programming paradigms, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
-- [`be-oop`](skills/be-oop) defines language-agnostic object-oriented paradigms.
+- [`be-functional`](skills/be-functional) defines a language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
+- [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`setup-python`](skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
 - [`structure-python`](skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers over a `code`/`data`/`tests` layout.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs) from expressions to [`pandas`](https://pandas.pydata.org) migration.
 - [`write-entry-points`](skills/write-entry-points) builds an app's entry points as thin shells over the pure core, whether a [`typer`](https://typer.tiangolo.com/) CLI, [`fastapi`](https://fastapi.tiangolo.com/) API, [`shiny`](https://shiny.posit.co/py/) GUI or scheduled job.
-- [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
+- [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs (Large Language Models).
 - [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
-- [`write-skills`](skills/write-skills) defines the house conventions for authoring a skill — naming, description, structure, and the language-agnostic skill/reference split.
+- [`write-skills`](skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
 ## 🛠️ Set up
@@ -48,14 +48,14 @@ Symlink `agents/`, `commands/` and `rules/` the same way once added.
 
 - Pick the right [extension](https://code.claude.com/docs/en/features-overview) for a job, whether `CLAUDE.md`, a skill, a hook or a plugin.
 - A [skill](https://code.claude.com/docs/en/skills) loads only when relevant, so it's cheap on context.
-- [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads *every session*, so keep it to continuous rules under 200 lines.
+- [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads *every session*, so keep it to always-on rules under 200 lines.
 - Claude Code reads config from `~/.claude` and a project's [`.claude/`](https://code.claude.com/docs/en/claude-directory).
 - These skills follow the [Agent Skills](https://agentskills.io) open standard.
-- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from the [official marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
+- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from the [marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
 
 ## 🤝 Contribute
 
-**Only** include `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md` in the repo.
+From `~/.claude`, **only** `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md` belong in the repo.
 
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.
