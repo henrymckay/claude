@@ -17,7 +17,7 @@ description: >-
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
-This file is the *mindset and principles*; concrete idioms for a language live in `references/` (e.g. `references/python.md`).
+This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
 
 **This is opt-in.** Apply it when a functional approach is asked for or clearly fits (data transformations, pipelines, pure logic).
 Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — there, apply it at the *edges* (see "Functional core, imperative shell", below).
@@ -114,10 +114,10 @@ Stay true to the language: in Python that's usually `X | None` and early returns
 Recursion expresses self-similar and tree-shaped problems naturally, and in pure FP it stands in for mutation-driven loops.
 But **stay true to the language**: where there's no tail-call optimisation (Python included), deep recursion overflows the stack — so prefer iteration or comprehensions for linear passes and reserve recursion for genuinely recursive structures.
 
-## Language idioms
+## Language specifics
 
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (comprehensions, `functools`, `itertools`, frozen dataclasses, currying/composition with `toolz`, dependency injection).
 
-Add a new `references/<language>.md` when you start applying this in another language rather than stuffing idioms into this file.
+Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

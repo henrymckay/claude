@@ -16,7 +16,7 @@ description: >-
 
 OOP earns its place when a problem is about **things with identity, state, and behaviour** — objects that live over time, or a hierarchy meant to be *extended*.
 The house default is functions-first (see `write-python`, `be-functional`); this skill is for when OOP is genuinely the right tool and how to do it well.
-This file is the language-agnostic mindset; Python idioms live in `references/python.md`.
+This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
 
 **This is opt-in.** For pure data transformation and stateless logic, prefer functions.
 
@@ -99,10 +99,10 @@ Patterns that stay **genuinely useful** as classes:
 - **Mutable global singletons** — hard to test and reason about; inject instead.
 - **Premature abstraction** — no base class or interface until there's a second implementation (YAGNI; see `write-python`).
 
-## Language idioms
+## Language specifics
 
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (dataclasses, `Protocol` vs ABC, properties, class/staticmethods, dunders, and patterns in Python).
 
-Add a new `references/<language>.md` when you start applying this in another language rather than stuffing idioms into this file.
+Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

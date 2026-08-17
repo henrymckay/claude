@@ -16,7 +16,7 @@ description: >-
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the concrete runner idioms live in `references/python.md` (`pytest`).
+This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the Python specifics live in `references/python.md`.
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
@@ -182,10 +182,10 @@ For the same assertion over many inputs.
 - **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup.
 Default to fresh.
 
-## Language idioms
+## Language specifics
 
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (`pytest`: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
 
-Add a new `references/<language>.md` when you start testing in another language rather than stuffing idioms into this file.
+Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

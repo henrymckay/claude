@@ -18,7 +18,7 @@ description: >-
 
 An **entry point** is a **driver**: a thin shell over the presentation-agnostic core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-This file is the language-agnostic mindset; the Python build-outs (`typer`, `fastapi`, `shiny` and jobs) live in `references/python.md`.
+This file is the language-agnostic mindset; the Python specifics live in `references/python.md`.
 It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell).
 
 **In an existing project, ask first.** Where a repo already has an established way of wiring its entry points, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -59,9 +59,15 @@ Each kind is a driver over the same core, differing only in trigger and presenta
 - **GUI** — a reactive user interface whose inputs drive operations and whose outputs render their results.
 - **Jobs** — triggered by *time or events* rather than a person (a cron run, a queue worker, a webhook, a serverless function): the ETL (extract, transform, load) shape, with the transform in the core.
 
-Building each in a given language — the frameworks, package structure, and dependency-injection seams — is in the language references (`references/python.md` for Python).
-
 Two things look like entry points but aren't:
 
 - A **library** — if the project is imported by other code, its public API *is* its interface; there's no shell, only the public surface (see `write-python`).
 - A **data pipeline** — the transforms are core; the entry point is the *job* that runs them, not the pipeline itself.
+
+## Language specifics
+
+Read the file for the language you're working in:
+
+- **Python** → `references/python.md` (the role and framework packages, the `typer`, `fastapi` and `shiny` build-outs, jobs, and the dependency-injection seams).
+
+Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
