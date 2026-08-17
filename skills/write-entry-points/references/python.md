@@ -116,7 +116,7 @@ pydantic_/
   schema.py     the request/response models (BaseModel DTOs)
 ```
 
-`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s `fastapi` validates and serialises (a `Reading` with `station: str` and `average: float`).
+`schema.py` holds the boundary DTOs (Data Transfer Objects) — the `pydantic.BaseModel`s `fastapi` validates and serialises (a `Reading` with `station: str` and `average: float`).
 These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
 
 A DTO is **not** a domain type, even when their fields match.
