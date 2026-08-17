@@ -28,41 +28,41 @@ Three packages under `code/drive/`:
 cli/
   __init__.py   role, hollow: re-exports app
 typer_/
-  __init__.py   builds the app and registers the commands on it
+  __init__.py   re-exports app from command
   argument.py   functions returning a configured typer.Argument
   option.py     functions returning a configured typer.Option
-  command.py    the command functions — the composition root
+  command.py    the app and its @app.command() functions — the composition root
 rich_/
   __init__.py
   render.py     builds the rich table from the core's plain results
 ```
 
-`command.py` holds the command functions and is the **composition root**: each imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
-It defines *plain* functions — no `@app.command()` decorator — so it never imports the app, which is what keeps the wiring free of a circular import:
+`command.py` owns the app and its commands, and is the **composition root**: each command imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
+Defining `app` here lets the commands register with the idiomatic `@app.command()` decorator, and since `command.py` imports no other `drive` module there's no import cycle back to `__init__`:
 
 ```python
 import typing
+
+import typer
 
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_
 from mypackage.code.drive.rich_ import render
 from mypackage.code.drive.typer_ import argument
 
+app = typer.Typer()
 
+
+@app.command()
 def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     """Report the average temperature for each station."""
     render.table(operate.report(stations, fetch=httpx_.fetch))
 ```
 
-`typer_/__init__.py` builds the app and registers each command on it, mirroring how the API's `__init__` mounts its router:
+`typer_/__init__.py` re-exports that `app` — the framework package's single public object:
 
 ```python
-import typer
-
-from mypackage.code.drive.typer_ import command
-
-app = typer.Typer()
-app.command()(command.report)
+from mypackage.code.drive.typer_.command import app
 
 __all__ = ["app"]
 ```
@@ -77,6 +77,10 @@ __all__ = ["app"]
 
 A `typer` app is callable, so the console script points straight at it (`mypackage-cli = "mypackage.code.drive.cli:app"` under `[project.scripts]`); run it with `uv run mypackage-cli ...`, or `mypackage-cli` once installed.
 Add a thin `__main__.py` that imports `app` and calls `app()` only if you also want `python -m mypackage.code.drive.cli`.
+
+**Callbacks and command groups scale the same shape.** An `@app.callback()` runs before any command — the home for app-wide options and setup (a global `--verbose`, loading config); keep it as thin as a command.
+Sub-commands like `mypackage-cli users create` are command *groups*: each is its own `typer.Typer()`, mounted on the main app with `app.add_typer(users.app, name="users")`.
+Grow `command.py` into a `command/` package once a group exists — a module per group owning its sub-app and `@`-decorated commands, with `command/__init__.py` holding the main `app` and mounting each; a grouped command is still a thin composition root, the grouping only presentation.
 
 **Break each argument and option out into a function returning its config — at any size.**
 A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it — the same shared-helper idea as `given`/`when`/`then` in tests, config defined once and signatures kept readable:
