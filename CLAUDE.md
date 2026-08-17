@@ -17,7 +17,7 @@ Their trigger descriptions sit in a passive menu that is easy to skip on routine
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
 - **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
-- **`use-git`** for any `git` operation: committing, branching, PRs, history (Conventional Commits; no `Co-Authored-by` / "Generated with" footers).
+- **`use-git`** for any `git` operation: committing, branching, PRs, history (Conventional Commits; no `Co-authored-by` / "Generated with" footers).
 - **`use-polars`** when working with `polars`.
 - **`write-entry-points`** for building an app's entry points: a CLI, API, GUI or scheduled job; the driver shell and composition root.
 - **`write-markdown`** for any Markdown, for humans or LLMs: READMEs, docs, `SKILL.md`, `CLAUDE.md`, prompts.
