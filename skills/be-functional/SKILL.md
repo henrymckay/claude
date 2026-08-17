@@ -1,16 +1,15 @@
 ---
 name: be-functional
 description: >-
-  Write code in a functional style — pure functions, immutability, composition,
-  and explicit data flow — in any language. Use when the user asks for
-  functional code, a "functional approach", pipelines/transformations over
-  data, or wants to avoid mutation and side effects; and when refactoring
-  imperative or stateful code toward a cleaner functional shape. This is an
-  opt-in style skill: apply it when a functional approach is requested or
-  clearly fits, not to every piece of code. Principles here are
-  language-agnostic; language-specific idioms live in references/<language>.md
-  (start with references/python.md). In Python it layers on top of write-python
-  (the baseline conventions); be-oop is the object-oriented counterpart.
+  Functional programming done well — pure functions, immutability, composition,
+  and explicit data flow. Use when the user asks for functional code, a
+  "functional approach", pipelines or transformations over data, or wants to
+  avoid mutation and side effects; and when refactoring imperative or stateful
+  code toward a cleaner functional shape. This is an opt-in style skill: reach
+  for a functional style where it genuinely fits, not by default.
+  Language-agnostic principles here; Python idioms in references/python.md.
+  Layers on write-python (the in-code baseline); be-oop is the object-oriented
+  counterpart.
 ---
 
 # Be functional
