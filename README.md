@@ -55,7 +55,7 @@ Symlink `agents/`, `commands/` and `rules/` the same way once added.
 
 ## 🤝 Contribute
 
-From `~/.claude`, **only** `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md` belong in the repo.
+Contribute **only** `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md`.
 
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.
