@@ -43,8 +43,10 @@ The description *is* the trigger, so optimise it for invocation (the `skill-crea
 Write it in **plain prose, no backticks** (see `write-markdown`), in a fixed order so every description reads the same way and **mirrors the skill's own opening**:
 
 - **What it is** — a short phrase naming the skill and its key topics; counterpart skills use a **parallel** form ("Functional programming done well — …" / "Object-oriented design done well — …").
-- **When to use it** — "Use when/whenever …", then the contexts and phrases that should invoke it, ending with the casual ones ("even if the user just says '…'"). Cover the whole body and promise nothing it doesn't deliver.
-- **Opt-in-ness, in fixed words** — an opt-in style skill states, verbatim and matching its body line, "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default." A how-to that always applies when its task arises makes no opt-in claim.
+- **When to use it** — "Use when/whenever …", then the contexts and phrases that should invoke it, ending with the casual ones ("even if the user just says '…'").
+Cover the whole body and promise nothing it doesn't deliver.
+- **Opt-in-ness, in fixed words** — an opt-in style skill states, verbatim and matching its body line, "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
+A how-to that always applies when its task arises makes no opt-in claim.
 - **The reference pointer, in fixed words** — a language-agnostic skill with a language reference states "Language-agnostic principles here; Python <idioms/build-outs/…> in references/python.md.", matching its `Language specifics` section.
 - **What it builds on and to** — "Layers on <skill> …; <skill> is the <…> counterpart" — the same skills the opening names.
 
@@ -64,7 +66,7 @@ Every skill opens the same three-part way:
 ## Structure the body
 
 - **Sections of principles with punchy headings.** Terse, no wrapper words (`Test data`, not `Where test data lives`); imperative for an action (`Pick a layout`, `Run`), a noun for a catalogue (`Patterns`); sentence case; monospace packages.
-- **Order by dependency.** Nothing precedes what it builds on: abstract, depended-upon sections lead, and synthesising or invoking ones (`Pick a layout`, `Run`) trail.
+- **Order by dependency.** Nothing precedes what it builds on: in the skill body, abstract, depended-upon sections lead, and synthesising or invoking ones (`Pick a layout`, `Run`) trail; a reference orders its own way (below).
 - **No thin stubs, no repetition.** Fold a one-line point into a catalogue section rather than giving it its own; avoid grab-bag headings; state each principle exactly **once**.
 - **Explain the why, not just the rule** (see `write-markdown`), and keep examples obeying the language's own skill — annotated and documented per `write-python`.
 
@@ -75,5 +77,8 @@ Keep the pair consistent:
 
 - **The skill** closes with a `## Language specifics` section: the lead "Read the file for the language you're working in:", a `- **Python** → references/python.md (…)` bullet, and the closer "Add a new references/<language>.md when you work in another language rather than adding its specifics to this file."
 - **The reference** opens with the H1 `<skill H1> in Python` and the line "The language-agnostic principles are in `SKILL.md`; this is how they land in Python[ with `<framework>`]."
-- **Headings mirror** the skill wherever a topic appears in both; reference-only mechanics (framework wiring, assertions) take their own names. Lead the reference with its structural section and `Run`, again ordered by dependency.
+- **Headings mirror** the skill wherever a topic appears in both; reference-only mechanics (framework wiring, assertions) take their own names.
+- **Lead with the structural section** — the package or directory tree everything else hangs off — and **close with `Run`**, the sections between ordered by dependency.
 - **The skill states each principle; the reference shows the mechanics** for it — never restating the principle.
+
+A skill already tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks (`use-polars`'s `expressions.md`), each opening with its own H1 and scope line, and a closing `## Reference cookbooks` section in place of `Language specifics`.
