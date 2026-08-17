@@ -19,7 +19,7 @@ The house default is functions-first (see `write-python`, `be-functional`); this
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
-**This is opt-in.** For pure data transformation and stateless logic, prefer functions.
+**This is opt-in.** Reach for OOP where it genuinely fits (below), not by default.
 
 ## When to reach for OOP
 

@@ -20,8 +20,16 @@ When behaviour depends only on a function's inputs (not hidden state or order of
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
-**This is opt-in.** Apply it when a functional approach is asked for or clearly fits (data transformations, pipelines, pure logic).
-Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — there, apply it at the *edges* (see "Functional core, imperative shell", below).
+**This is opt-in.** Reach for a functional style where it genuinely fits (below), not by default.
+
+## When to reach for a functional style
+
+- **Data transformations and pipelines** — mapping, filtering and aggregating data through composable steps.
+- **Pure logic and calculations** — decisions that depend only on their inputs, cheap to test and safe to reuse.
+- **The core of a stateful program** — keep the decision-making core pure and push I/O and mutation to a thin shell (see "Functional core, imperative shell").
+- **Concurrent work** — immutability and no shared state remove whole classes of races.
+
+If the code is naturally stateful throughout — I/O, UIs, long-lived objects — keep it imperative and apply this only at its edges.
 
 ## Core principles
 
