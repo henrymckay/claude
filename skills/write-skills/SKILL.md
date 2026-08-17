@@ -47,7 +47,10 @@ The description *is* the trigger, so optimise it for invocation (the `skill-crea
 
 Every skill opens the same three-part way:
 
-- **One line** on what the skill is and what it layers on.
+- **A line or two placing the skill in the web** — what it is, then the skills it **builds on** and the skills it **builds to**.
+  - *Builds on* — the ones it layers on or assumes as a base: `write-entry-points` "layers on `structure-python` and `be-functional`"; `write-tests` "follows the same conventions as the code it covers — in Python that's `write-python`".
+  - *Builds to* — where it hands an adjacent concern off: "for scaffolding, see `setup-python`"; "the concrete wiring lives in `write-entry-points`".
+  - Bare backticked names, and name the same build-on and build-to skills the description does, so a reader can follow the thread in either direction.
 - **The language pointer**, only if it has a language reference — a standalone bold line: `**Language-agnostic here.** The Python specifics live in references/python.md.`
 - **The caveat**, one of two fixed sentences:
   - *Applied to existing code* → `**In an existing project, ask first.** Where a repo already has …, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.`
