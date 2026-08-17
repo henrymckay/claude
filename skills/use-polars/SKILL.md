@@ -13,13 +13,13 @@ description: >-
 
 # Use Polars
 
-Polars is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-Most mistakes come from writing pandas habits in Polars syntax.
+`polars` is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
+Most mistakes come from writing `pandas` habits in `polars` syntax.
 This file is the mental model; reach into `references/` for concrete recipes.
 
-**In an existing project, ask first.** Where a codebase already has an established Polars style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+**In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
-Targets **Polars 1.x**.
+Targets `polars` 1.x.
 Verify version-specific method names against the installed version if something doesn't resolve.
 
 Import convention (house style): `import polars` and qualify — `polars.col(...)` — not the conventional `import polars as pl`.
@@ -28,7 +28,7 @@ See the write-python skill.
 ## The mental model
 
 **Expressions** describe a computation on columns — `polars.col("a").add(polars.col("b"))`, `polars.col("x").sum()`.
-They're lazy descriptions, run in parallel by the engine, and are the heart of Polars.
+They're lazy descriptions, run in parallel by the engine, and are the heart of `polars`.
 You almost never loop over rows.
 
 **Contexts** are where expressions run:
@@ -87,9 +87,9 @@ Two more lazy-execution habits: run several independent queries together with `p
 
 ## Stay in the dataframe
 
-**If data is a dataframe, or you're doing dataframe-shaped work, do it *in* Polars — don't drop to Python lists and loops.**
+**If data is a dataframe, or you're doing dataframe-shaped work, do it *in* `polars` — don't drop to Python lists and loops.**
 When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it once with `polars.from_pandas` and keep going with expressions.
-Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimiser, and it's the most common way people accidentally leave Polars.
+Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimiser, and it's the most common way people accidentally leave `polars`.
 Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
 
 **Keep every group in one long-form frame — don't split it up.**
@@ -99,13 +99,13 @@ Reach for `.over(group)` only where an operation must respect group boundaries: 
 Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
 Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.
 
-## Key habits (and pandas traps)
+## Key habits (and `pandas` traps)
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
 - **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
 Assign the result.
 - **Don't use `.map_elements`/Python loops** for per-row work — express it with column expressions.
-Row-wise Python callbacks kill Polars' performance.
+Row-wise Python callbacks kill `polars`'s performance.
 - **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
 - **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
 - **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
@@ -113,7 +113,7 @@ Row-wise Python callbacks kill Polars' performance.
 ## Naming dataframes
 
 Name a frame by its **contents**, not its type: `customers`, `orders`, `trades` — not `df` or `df_customers`.
-The type hint (and the Polars API you're calling) already says it's a `DataFrame`/`LazyFrame`, so a `df_` prefix is redundant Hungarian notation.
+The type hint (and the `polars` API you're calling) already says it's a `DataFrame`/`LazyFrame`, so a `df_` prefix is redundant Hungarian notation.
 Reserve a bare `df` (or `frame`) for the cases where the contents genuinely aren't known: a generic placeholder in an example, or a **generic function** that operates on any frame — e.g. a `.pipe()` helper like `def map_round_2dp(df: polars.DataFrame) -> polars.DataFrame`.
 
 ## Naming `.pipe()` UDFs: map / amap / bind
@@ -128,7 +128,7 @@ On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **i
 E.g. attach FX rates by looking at which currencies are actually present and joining only those tables: `trades.pipe(bind_attach_fx, rate_tables)`.
 
 The line between `amap_` and `bind_` is exactly the one between applicative and monad: **an applicative step's behaviour is fixed regardless of the values inside; a bind step's behaviour depends on the materialised data.**
-That has teeth in Polars — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
+That has teeth in `polars` — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
 So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimisable.
 
 ## Passing extra data through `.pipe()`
@@ -150,4 +150,4 @@ Reserve a write-through state argument for pragmatic cases like collecting diagn
 Read the relevant file for detail and worked examples:
 
 - `references/expressions.md` — the expression API: selection, conditionals, aggregations, window functions (`.over`), joins, string/date ops.
-- `references/pandas-migration.md` — pandas → Polars translations and the gotchas that bite most often.
+- `references/pandas-migration.md` — `pandas` → `polars` translations and the gotchas that bite most often.

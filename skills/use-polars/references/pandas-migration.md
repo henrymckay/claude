@@ -1,12 +1,12 @@
 # pandas → Polars migration
 
-Translations and the traps that bite pandas users most.
-The recurring theme: Polars has **no index**, is **immutable**, and wants **expressions**, not row-wise Python.
+Translations and the traps that bite `pandas` users most.
+The recurring theme: `polars` has **no index**, is **immutable**, and wants **expressions**, not row-wise Python.
 (House style: `import polars`, qualified — no `as pl`.)
 
 ## Mindset shifts
 
-| pandas habit | Polars way |
+| `pandas` habit | `polars` way |
 |---|---|
 | implicit row index, `.loc`/`.iloc` | no index — `.filter()` / `.select()` with expressions |
 | `inplace=True`, column assignment mutates | every op returns a new frame; assign the result |
@@ -54,7 +54,7 @@ df.to_pandas()              # Polars -> pandas
 df.to_numpy()               # to numpy
 ```
 
-**Switching mid-chain.** When you need a pandas-only operation inside a Polars pipeline, drop to pandas and come straight back without breaking the chain — `.pipe(polars.from_pandas)` works because pandas' `.pipe()` hands the frame to `polars.from_pandas`:
+**Switching mid-chain.** When you need a `pandas`-only operation inside a `polars` pipeline, drop to `pandas` and come straight back without breaking the chain — `.pipe(polars.from_pandas)` works because `pandas`'s `.pipe()` hands the frame to `polars.from_pandas`:
 
 ```python
 result = (
@@ -66,7 +66,7 @@ result = (
 )
 ```
 
-This materialises the data (a `LazyFrame` must be `.collect()`-ed first) and costs a conversion each way, so reserve it for genuine pandas-only needs.
+This materialises the data (a `LazyFrame` must be `.collect()`-ed first) and costs a conversion each way, so reserve it for genuine `pandas`-only needs.
 
 Zero-copy where possible via Arrow, but converting back and forth in a hot loop defeats the purpose — convert once at the boundary.
 
@@ -81,7 +81,7 @@ df.write_parquet("out.pq")   # prefer parquet: typed, compressed, columnar
 
 Prefer `scan_*` + `.collect()` over `read_*` for anything nontrivial so the query optimiser can push work down and read only what's needed.
 
-## When pandas is still fine
+## When `pandas` is still fine
 
-Polars shines for larger data and pipeline-style transforms.
-For tiny interactive pokes, or when a required library only speaks pandas, converting at the boundary is reasonable — just don't scatter conversions through a pipeline.
+`polars` shines for larger data and pipeline-style transforms.
+For tiny interactive pokes, or when a required library only speaks `pandas`, converting at the boundary is reasonable — just don't scatter conversions through a pipeline.

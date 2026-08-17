@@ -1,7 +1,7 @@
 # Polars expression cookbook
 
 Worked recipes for the expression API.
-Assumes `import polars` (house style — no `as pl`) and Polars 1.x.
+Assumes `import polars` (house style — no `as pl`) and `polars` 1.x.
 Expressions run inside contexts (`select`, `with_columns`, `filter`, `group_by().agg()`).
 
 ## Selecting & referencing columns
@@ -55,7 +55,7 @@ Common reducers: `sum`, `mean`, `min`, `max`, `median`, `std`, `first`, `last`, 
 
 ## Window functions with `.over`
 
-Aggregate *without collapsing rows* — like a SQL window / pandas groupby-transform:
+Aggregate *without collapsing rows* — like a SQL window / `pandas` groupby-transform:
 
 ```python
 df.with_columns(
@@ -84,7 +84,7 @@ runs = (
 current = runs.group_by("group").tail(1)                   # the run active on each group's last row
 ```
 
-`.fill_null(True)` matters: `x != null` is null under Polars' three-valued logic, so without it the first row of each group is misclassified and the count comes out one short.
+`.fill_null(True)` matters: `x != null` is null under `polars`'s three-valued logic, so without it the first row of each group is misclassified and the count comes out one short.
 `state` is whatever you're measuring runs of — e.g. `polars.col("close").sub(polars.col("close").shift(4).over("group")).sign()` for a DeMark-style up/down/flat run.
 
 ## Joins
@@ -133,4 +133,4 @@ polars.col("x").fill_null(0)
 polars.col("x").fill_null(strategy="forward")
 df.drop_nulls(subset=["x"])
 ```
-Note: Polars separates null (missing) from `NaN` (float not-a-number) — they're not the same, unlike pandas.
+Note: `polars` separates null (missing) from `NaN` (float not-a-number) — they're not the same, unlike `pandas`.
