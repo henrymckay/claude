@@ -116,7 +116,7 @@ def make_client(env: str) -> Client:
 # Singleton → a module (imported once), or a cached factory
 @functools.cache
 def get_settings() -> Settings:
-    """The single, lazily-built settings object."""
+    """Return the single, lazily-built settings object."""
     return Settings.load()
 ```
 
