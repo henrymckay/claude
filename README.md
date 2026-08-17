@@ -23,6 +23,7 @@ Verb-first skills that encode consistent working conventions.
 - [`write-entry-points`](skills/write-entry-points) builds an app's entry points as thin shells over the pure core, whether a [`typer`](https://typer.tiangolo.com/) CLI, [`fastapi`](https://fastapi.tiangolo.com/) API, [`shiny`](https://shiny.posit.co/py/) GUI or scheduled job.
 - [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs.
 - [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
+- [`write-skills`](skills/write-skills) defines the house conventions for authoring a skill — naming, description, structure, and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
 ## 🛠️ Set up
