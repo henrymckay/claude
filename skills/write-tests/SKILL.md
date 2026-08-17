@@ -16,7 +16,7 @@ description: >-
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the concrete runner idioms live in `references/python.md` (pytest).
+This file is the language-agnostic mindset, ending with a catalogue of the wider testing paradigms and patterns; the concrete runner idioms live in `references/python.md` (`pytest`).
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
@@ -33,9 +33,15 @@ Factor shared construction into the runner's setup mechanism or small named help
 
 Structure every test as **given / when / then** — the behavioural form of the four-phase test (setup, exercise, verify).
 
-- **Given** — the starting state, *arranged and injected* into the test rather than reconstructed inline (in pytest, as fixture arguments; see `references/python.md`).
+- **Given** — the starting state, *arranged and injected* into the test rather than reconstructed inline (in `pytest`, as fixture arguments; see `references/python.md`).
 - **When** — the single action under test.
 - **Then** — the assertions on the outcome.
+
+Name every test `test_when_<action>_then_<outcome>`.
+The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
+`test_when_keep_valid_then_non_positive_rows_dropped`: the when is applying `keep_valid`, the then is that non-positive rows are dropped.
+The prescriptive split forces both halves to be explicit and makes a failure read as a falsified claim, which is most of the diagnosis.
+One when and one then per test — if either needs an "and", split the test.
 
 Make the three beats visible through **structure and names, not comments** — the code should not need a `# given` label:
 
@@ -56,21 +62,18 @@ Extract a `when_<action>` helper too when the action is compound or reads better
 Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarize_by_region(sales)` then `then.conserves(...)`.
 Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
 
-## Name the behaviour: when and then
-
-Name every test `test_when_<action>_then_<outcome>`.
-The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
-`test_when_keep_valid_then_non_positive_rows_dropped`: the when is applying `keep_valid`, the then is that non-positive rows are dropped.
-The prescriptive split forces both halves to be explicit and makes a failure read as a falsified claim, which is most of the diagnosis.
-One when and one then per test — if either needs an "and", split the test.
-
-## Assert on behaviour, not implementation
+## Test behaviour, not implementation
 
 Test the observable contract — return values, raised errors, visible side effects — through the public surface, never private internals.
 Tests bound to implementation break on every refactor and stop being a safety net; tests bound to behaviour survive refactors and *are* the net.
 
 Lean hardest on the **pure functional core** (see `be-functional`): it holds the logic and the bugs, and it is cheap to test because it is deterministic and needs no setup.
 Keep the imperative shell thin so little is left that needs slow integration tests — the **humble object** pattern.
+
+This is also why you **mock sparingly**.
+Prefer real objects and dependency injection to mocks: a mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
+Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
+See the test-double taxonomy under Patterns below.
 
 ## Isolate each test
 
@@ -94,18 +97,17 @@ Feed a function only the fields it reads.
 
 Feed a function only what it reads, and assert only what the behaviour promises.
 
-## Table-driven tests
+## Table-driven and property-based
 
-Run one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.
+Both run one assertion over many inputs instead of copy-pasted tests — a table when you can enumerate the cases, a generator when you can only state the rule.
+
+**Table-driven** runs one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.
 Each case is reported and fails separately (a loop stops at the first failure), and adding one is a single line.
-
 Reserve it for cases that are genuinely separate.
 Don't shred a single operation over a whole collection into a case per element: when a function transforms a list or dataframe, feed it the whole input and assert the whole output in **one** test — that exercises it the way it is actually called and reads far better than a row-at-a-time table.
 The runner's parametrization syntax is in `references/python.md`.
 
-## Property-based tests
-
-For a rule that should hold across a whole input space, let a generator produce inputs and shrink any failure to a minimal counterexample (Hypothesis in Python, QuickCheck elsewhere).
+**Property-based** lets a generator produce inputs across a whole input space and shrink any failure to a minimal counterexample (Hypothesis in Python, QuickCheck elsewhere).
 It is especially strong for numeric and algorithmic code, where example-based tests only spot-check.
 Reach for it when you can state an **invariant**:
 
@@ -121,35 +123,23 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 
 - Assert only what your code assumes: that a parser yields the type you expect, that an aggregation totals the way you rely on, that one call runs several operations together.
 - A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
-- Keep them a directory level apart from your own tests (see Layout).
+- Keep them a directory level apart from your own tests (see Layout and running).
 
-## Mock sparingly
-
-Prefer real objects and dependency injection to mocks.
-A mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
-Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
-See the test-double taxonomy under Patterns below.
-
-## Coverage is a guide, not a target
+## Coverage and speed
 
 Measure coverage to find untested paths, then read *which* branches are uncovered — an uncovered error path matters, a percentage does not.
 Chasing a number produces assertion-free tests that execute code without checking it.
 
-## Keep the suite fast
-
-A fast suite gets run on every change; a slow one gets skipped, which is when regressions land.
+Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
 Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
 
-## Layout
+## Layout and running
 
 Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **shared helpers** they import (fixtures, custom assertions).
-The concrete tree, import mode, and runner setup are language-specific — see `references/python.md`, `structure-python` (the `tests/` layout) and `setup-python` (the pytest config).
-
-## Running the suite
+The concrete tree, import mode, and runner setup are language-specific — see `references/python.md`, `structure-python` (the `tests/` layout) and `setup-python` (the `pytest` config).
 
 The **test runner is the entry point** — a test file never needs a `main`.
-Run the whole suite or a slice, selecting by directory, name, or tag.
-The exact commands are in `references/python.md`.
+Run the whole suite or a slice, selecting by directory, name, or tag; the exact commands are in `references/python.md`.
 
 ## Paradigms — how to approach testing
 
@@ -196,6 +186,6 @@ Default to fresh.
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (pytest: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
+- **Python** → `references/python.md` (`pytest`: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
 
 Add a new `references/<language>.md` when you start testing in another language rather than stuffing idioms into this file.

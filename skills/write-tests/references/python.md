@@ -1,7 +1,7 @@
-# Python testing idioms (pytest)
+# Python testing idioms (`pytest`)
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python with `pytest`.
-Installing pytest lives in `setup-python`; the `tests/` layout in `structure-python`.
+Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-python`.
 
 ## Tests are code
 
@@ -15,13 +15,21 @@ There is no `per-file-ignores` exemption for `tests/`.
 - Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"`.
 `-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`.
 They sit alongside the `when`/`then` modules.
-The zero-config alternative is a `conftest.py`, which pytest auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
+The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
-## Table-driven: parametrize
+Every input and expected value comes in through a fixture, never a literal in the body:
 
-For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole, below).
+- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
+- A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
+- A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
+- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then` assertion.
+Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
+
+## Table-driven and property-based
+
+For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole under Assertions) — parametrize:
 
 ```python
 @pytest.mark.parametrize(
@@ -37,25 +45,7 @@ def test_when_revenue_then_quantity_times_price(
 
 Give cases `ids` when the values don't read clearly in the output.
 
-## Whole-frame assertions
-
-Assert a dataframe transform on the whole frame in one test, with the `then` assertions above and the expected values from a fixture — never a literal.
-Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
-
-```python
-def test_when_add_revenue_then_revenue_is_quantity_times_price(
-    sales: polars.LazyFrame, expected_revenue: list[float]
-) -> None:
-    """Revenue is quantity times unit price for every row."""
-    priced = pipeline.map_add_revenue(sales).collect()
-    then.column_equals(priced, "revenue", expected_revenue)
-```
-
-Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
-
-For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
-
-## Property-based: Hypothesis
+For a property that should hold across an input space, let Hypothesis generate and shrink the inputs:
 
 ```python
 @hypothesis.given(xs=hypothesis.strategies.lists(hypothesis.strategies.integers()))
@@ -63,14 +53,6 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
     """Sorting an already-sorted list changes nothing."""
     assert sorted(sorted(xs)) == sorted(xs)
 ```
-
-## Where test data lives
-
-- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
-- A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
-- A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
-- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then` assertion.
-Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
 
 ## Assertions
 
@@ -95,9 +77,24 @@ A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "re
 
 - Keep the helpers in a `pytest_` package (`pytest_/__init__.py`) on `pythonpath = ["tests"]` so `from pytest_ import then` resolves.
 Set `src = ["src", "tests"]` so ruff treats `tests/` as a source root and files `pytest_` with your own code, not third-party deps.
-- Give each helper a failure message, since pytest only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
+- Give each helper a failure message, since `pytest` only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
+
+Assert a dataframe transform on the **whole frame** in one test, with the `then` assertions above and the expected values from a fixture — never a literal.
+Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
+
+```python
+def test_when_add_revenue_then_revenue_is_quantity_times_price(
+    sales: polars.LazyFrame, expected_revenue: list[float]
+) -> None:
+    """Revenue is quantity times unit price for every row."""
+    priced = pipeline.map_add_revenue(sales).collect()
+    then.column_equals(priced, "revenue", expected_revenue)
+```
+
+Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
+For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
 
 ## Mocking
 
@@ -112,10 +109,10 @@ Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you
 ## Logging output
 
 To show logs from both the code under test and the tests during a run, Rich-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`.
-Nothing goes in the test files — pytest attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
+Nothing goes in the test files — `pytest` attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
 
 Configure it in the `pytest_` package.
-A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam pytest's progress line, reset per test by an autouse fixture:
+A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam `pytest`'s progress line, reset per test by an autouse fixture:
 
 ```python
 # tests/pytest_/given.py
@@ -158,13 +155,13 @@ addopts = "... --capture tee-sys"
 ```
 
 - Use `--capture tee-sys`, not `--capture no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work.
-Never `log_cli` — pytest's live logging installs its own handler that bypasses the RichHandler.
+Never `log_cli` — `pytest`'s live logging installs its own handler that bypasses the RichHandler.
 - The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide.
 A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
-If you don't need Rich specifically, the zero-code alternative is pytest's native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in pytest's own format with capture left on.
+If you don't need Rich specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
 
-## Layout and import mode
+## Layout and running
 
 ```text
 tests/
@@ -181,15 +178,13 @@ tests/
       test_httpx.py
 ```
 
-- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests pytest collects).
+- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests `pytest` collects).
 Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
 - `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming.
 Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
 The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
 - Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
-- `pythonpath` only applies while pytest runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
-
-## Running
+- `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
 
 ```bash
 uv run pytest
@@ -203,4 +198,4 @@ uv run pytest -m slow
 - `uv run pytest -k revenue` runs tests whose name matches.
 - `uv run pytest -m slow` runs tests carrying a marker.
 
-There is no `if __name__ == "__main__"` in a test file — pytest is the entry point.
+There is no `if __name__ == "__main__"` in a test file — `pytest` is the entry point.
