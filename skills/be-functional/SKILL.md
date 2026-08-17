@@ -22,7 +22,7 @@ It builds on `write-python`'s in-code conventions, and `be-oop` is its object-or
 
 **This is opt-in.** Reach for a functional style where it genuinely fits (below), not by default.
 
-## When to reach for a functional style
+## When to use
 
 - **Data transformations and pipelines** — mapping, filtering and aggregating data through composable steps.
 - **Pure logic and calculations** — decisions that depend only on their inputs, cheap to test and safe to reuse.
@@ -95,7 +95,7 @@ Total functions compose without hidden landmines — the signature tells the cal
 Decompose data by its **shape** rather than a ladder of type checks and attribute access.
 Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
 
-## Choose your axis of change
+## Choose axis of change
 
 Closed sum types and exhaustive `match` trade one kind of extensibility for safety — the classic **expression problem**.
 Code grows along two axes: new **variants** (kinds of data) and new **operations** (things you do with them).

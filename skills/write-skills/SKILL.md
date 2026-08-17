@@ -56,7 +56,7 @@ Every skill opens the same three-part way:
 - **The language pointer**, only if it has a language reference — a standalone bold line: `**Language-agnostic here.** The Python specifics live in references/python.md.`
 - **The caveat**, one of two fixed sentences:
   - *Applied to existing code* → `**In an existing project, ask first.** Where a repo already has …, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.`
-  - *An opt-in style skill* → `**This is opt-in.** Reach for <X> where it genuinely fits (below), not by default.` — paired with a `## When to reach for <X>` section of bullets and a closing fallback line.
+  - *An opt-in style skill* → `**This is opt-in.** Reach for <X> where it genuinely fits (below), not by default.` — paired with a `## When to use` section of bullets and a closing fallback line.
 
 ## Structure the body
 

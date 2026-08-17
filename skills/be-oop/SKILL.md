@@ -22,11 +22,11 @@ The house default is functions-first (see `write-python`, `be-functional`); this
 
 **This is opt-in.** Reach for OOP where it genuinely fits (below), not by default.
 
-## When to reach for OOP
+## When to use
 
 - **Extending a framework** — the API expects a subclass or an overridden hook.
 - **Stateful, long-lived objects with identity** — a connection, a session, a simulation entity — where "the same object, changing over time" is the model.
-- **A hierarchy open to new variants** — when you expect new *kinds* of thing to be added (the OOP-friendly side of the expression problem; see `be-functional`, "Choose your axis of change").
+- **A hierarchy open to new variants** — when you expect new *kinds* of thing to be added (the OOP-friendly side of the expression problem; see `be-functional`, "Choose axis of change").
 - **Encapsulating an invariant** — a class can guard its state so it's never invalid.
 
 If none of these hold, a function (or a plain dataclass + functions) is simpler.
