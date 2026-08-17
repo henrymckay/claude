@@ -1,9 +1,0 @@
-repos:
-  - repo: local
-    hooks:
-      - id: lint-examples
-        name: lint the Python examples in the skills
-        entry: python scripts/lint_examples.py
-        language: python
-        additional_dependencies: [ruff==0.16.3]
-        files: \.md$

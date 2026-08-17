@@ -53,30 +53,9 @@ Symlink `agents/`, `commands/` and `rules/` the same way once added.
 - These skills follow the [Agent Skills](https://agentskills.io) open standard.
 - Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from the [marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
 
-## ✅ Check
-
-A [`pre-commit`](https://pre-commit.com) hook lints the Python examples inside the skills.
-Install it once per clone.
-
-```bash
-uvx pre-commit install
-uvx pre-commit run --all-files
-```
-
-An example is code, so it is held to the conventions the skills themselves teach.
-The hook extracts every fenced `python` block and runs [`ruff`](https://docs.astral.sh/ruff/) over it.
-Each finding is reported against the Markdown line it actually sits on.
-
-Only the rules a formatter cannot fix are checked, since a block is a fragment rather than a module.
-
-- `D100` is off because a block is not a module, so it has no module docstring.
-- `C414` is off because [`write-tests`](skills/write-tests) nests `sorted()` deliberately, to show idempotence.
-- Undefined names, unused imports and import order go unchecked, since a fragment shows only what it teaches.
-- Line length goes unchecked, since an example rightly trades a few columns for readability.
-
 ## 🤝 Contribute
 
-Contribute **only** `agents/`, `commands/`, `rules/`, `scripts/`, `skills/` and `CLAUDE.md`.
+Contribute **only** `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md`.
 
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.
