@@ -15,7 +15,7 @@ description: >-
 
 `polars` is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
 Most mistakes come from writing `pandas` habits in `polars` syntax.
-This file is the mental model; reach into `references/` for concrete recipes.
+This file is the mental model; reach into `references/` for concrete recipes, and `write-python`'s general conventions apply on top.
 
 **In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -23,7 +23,6 @@ Targets `polars` 1.x.
 Verify version-specific method names against the installed version if something doesn't resolve.
 
 Import convention (house style): `import polars` and qualify — `polars.col(...)` — not the conventional `import polars as pl`.
-See `write-python`.
 
 ## The mental model
 
@@ -64,7 +63,7 @@ Arithmetic and comparison operators all have method equivalents: `.add`, `.sub`,
 This also sidesteps the precedence trap — `polars.col("a").gt(0) & polars.col("b").gt(0)` needs no inner parentheses, where the operator form does.
 Keep the boolean combinators `&`, `|`, `~` as operators, though — their method spellings (`.and_`, `.or_`, `.not_`) read worse and they are near-universal for combining masks.
 
-## Eager vs lazy — prefer lazy for pipelines
+## Eager vs lazy
 
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
 Fine for small data and quick interactive work.
@@ -99,7 +98,7 @@ Reach for `.over(group)` only where an operation must respect group boundaries: 
 Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
 Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.
 
-## Key habits (and `pandas` traps)
+## Habits and `pandas` traps
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
 - **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
@@ -110,13 +109,13 @@ Row-wise Python callbacks kill `polars`'s performance.
 - **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
 - **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
 
-## Naming dataframes
+## Name dataframes
 
 Name a frame by its **contents**, not its type: `customers`, `orders`, `trades` — not `df` or `df_customers`.
 The type hint (and the `polars` API you're calling) already says it's a `DataFrame`/`LazyFrame`, so a `df_` prefix is redundant Hungarian notation.
 Reserve a bare `df` (or `frame`) for the cases where the contents genuinely aren't known: a generic placeholder in an example, or a **generic function** that operates on any frame — e.g. a `.pipe()` helper like `def map_round_2dp(df: polars.DataFrame) -> polars.DataFrame`.
 
-## Naming `.pipe()` UDFs: map / amap / bind
+## Name `.pipe()` UDFs
 
 When you factor pipeline steps into UDFs (user-defined functions) used with `.pipe()`, name them by their functional shape so a reader knows what each does at a glance.
 The map/bind vocabulary is `be-functional`'s — this is its composition and monad guidance applied to frames.
@@ -131,7 +130,7 @@ The line between `amap_` and `bind_` is exactly the one between applicative and 
 That has teeth in `polars` — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
 So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimisable.
 
-## Passing extra data through `.pipe()`
+## Pass extra data through `.pipe()`
 
 `.pipe(udf, *args, **kwargs)` hands the frame plus any extra arguments to the UDF, so you can thread additional data through a chain without breaking it — `frame.pipe(amap_attach_rates, rate_table)`.
 Supplying **read-only** inputs this way is exactly the `amap_` pattern above, and it's clean.

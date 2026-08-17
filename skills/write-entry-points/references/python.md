@@ -322,7 +322,8 @@ Whichever it is, the scheduler or broker is the shell; the work stays an operati
 
 Load configuration once, at the composition root, and pass its values into operations — the core never reads `os.environ` (see `structure-python`).
 
-A `pydantic-settings` model reads and validates the environment at the boundary. It's edge code, so it lives in a `config` module the driver imports:
+A `pydantic-settings` model reads and validates the environment at the boundary.
+It's edge code, so it lives in a `config` module the driver imports:
 
 ```python
 import pydantic_settings

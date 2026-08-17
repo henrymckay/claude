@@ -6,17 +6,16 @@ description: >-
   whenever committing, branching, writing commit messages, opening pull
   requests, or managing git history in any repository and any language, even if
   the user just says "commit this", "make a branch", or "clean up the history".
-  Language-agnostic. Mechanics of running commit/push/PR flows are provided by
-  the commit-commands plugin; this skill defines the conventions those flows
-  should follow.
+  Language-agnostic. The commit-commands plugin runs the commit, push and PR
+  flows; this skill defines the conventions those flows follow.
 ---
 
 # Use git
 
-Conventions for keeping history clean and reviewable.
-**In an existing project, ask first.** Where a repo already has an established workflow (commit style, branch model, PR process), check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+Conventions for keeping history clean and reviewable, in any repository and any language.
+The `commit-commands` plugin runs the commit, push and PR flows; these are the conventions those flows follow.
 
-Ordinary pushes of your own branch are fine (see [Push](#push)), but **force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) require explicit sign-off.
+**In an existing project, ask first.** Where a repo already has an established workflow (commit style, branch model, PR process), check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 ## Branches
 
@@ -53,7 +52,8 @@ Push freely — it backs work up and shows progress, with little downside.
 **Push after each atomic commit**, since each already leaves the branch in a coherent, working state; only batch when a commit is a deliberate mid-sequence step that would push the branch through a briefly-broken state.
 Always push before stepping away or opening/updating a PR.
 
-Pushing your own branch needs no sign-off; force-pushing, rebasing shared history, and destructive commands still do.
+Pushing your own branch needs no sign-off.
+**Force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) always do — ask before running one.
 
 ## Rebase or merge
 
@@ -69,6 +69,7 @@ If you must force-push your *own* branch, use `--force-with-lease`, never bare `
 - PR description covers the *why*, the approach, and how it was tested.
 Link related issues.
 - Push work-in-progress to back it up / open a draft PR; mark ready when it is.
+- Tag a release once merged, with [semantic versioning](https://semver.org) (`v1.4.0`): MAJOR breaking / MINOR feature / PATCH fix.
 
 ## Exclude from commits
 
@@ -79,6 +80,3 @@ If one lands in history, rotate it; removing the commit isn't enough.
 
 Keep a real `.gitignore` from the start so this never becomes a problem (`setup-python` has a starter list for Python projects).
 
-## Releases
-
-Tag releases with [semantic versioning](https://semver.org) (`v1.4.0`): MAJOR breaking / MINOR feature / PATCH fix.

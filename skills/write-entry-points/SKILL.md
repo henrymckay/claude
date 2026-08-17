@@ -51,7 +51,7 @@ The Python package mechanics — a hollow role package over trailing-underscore 
 Give each entry point a **named launch command**, namespaced to the project so it doesn't collide once installed (`myapp-cli`, `myapp-api`, never a bare `cli`).
 The command points at whatever *starts* that entry point: a callable app object where the framework provides one, or a thin launcher function where it doesn't.
 
-## Examples
+## Kinds
 
 Each kind is a driver over the same core, differing only in trigger and presentation:
 

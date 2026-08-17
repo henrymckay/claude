@@ -4,7 +4,7 @@ The language-agnostic principles are in `SKILL.md`; this is how they land in Pyt
 The theme: Python gives you a lot for free (dataclasses, protocols, generators, modules), so most "patterns" are lighter here than in Java/C++.
 Follow the `write-python` conventions in examples (qualified imports, annotate every function, docstrings).
 
-## State: dataclasses
+## Dataclasses
 
 Use `dataclasses` for objects that hold state — they generate `__init__`, `__repr__`, `__eq__`, and (with `order=True`) comparisons:
 
@@ -25,7 +25,7 @@ class Account:
 
 Use `frozen=True` for immutable value objects and `slots=True` to save memory and reject stray attributes.
 
-## Interfaces: Protocol vs ABC
+## `Protocol` vs ABC
 
 - **`typing.Protocol`** — *structural* typing: any class with the right methods satisfies it, no inheritance needed.
 Prefer this for interfaces (interface segregation and dependency inversion) — it's duck typing the type checker understands.
@@ -85,6 +85,7 @@ class AsDictMixin:
 
 class Widget(AsDictMixin):
     """A widget that can render itself as a dict."""
+
     ...
 ```
 
@@ -94,9 +95,9 @@ Keep a mixin behaviour-only and stateless (no `__init__`) so several combine cle
 
 `enum.Enum` for a closed set of named constants — a sum type (see `be-functional`, "Algebraic data types and pattern matching").
 
-## Patterns in Python
+## Design patterns
 
-Concrete versions of the simpler forms listed in SKILL.md:
+Concrete versions of the simpler forms listed in `SKILL.md`:
 
 ```python
 import functools

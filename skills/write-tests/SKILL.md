@@ -16,7 +16,6 @@ description: >-
 
 A test is production code that happens to assert.
 It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-It ends with a catalogue of the wider testing paradigms and patterns.
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
@@ -110,7 +109,7 @@ Reserve it for cases that are genuinely separate.
 Don't shred a single operation over a whole collection into a case per element: when a function transforms a list or dataframe, feed it the whole input and assert the whole output in **one** test — that exercises it the way it is actually called and reads far better than a row-at-a-time table.
 The runner's parametrization syntax is in `references/python.md`.
 
-**Property-based** lets a generator produce inputs across a whole input space and shrink any failure to a minimal counterexample (Hypothesis in Python, QuickCheck elsewhere).
+**Property-based** lets a generator produce inputs across a whole input space and shrink any failure to a minimal counterexample (`hypothesis` in Python, `QuickCheck` elsewhere).
 It is especially strong for numeric and algorithmic code, where example-based tests only spot-check.
 Reach for it when you can state an **invariant**:
 
@@ -144,7 +143,7 @@ Reach beyond example-based unit tests when the problem fits.
 Drives design and guarantees every line exists to satisfy a stated intent.
 - **BDD (Behaviour-Driven Development)** — express tests as given-when-then behaviour in domain language, the structure above.
 Keeps tests tied to requirements, not implementation.
-- **Property-based** — assert invariants over generated, shrinking inputs (Hypothesis, QuickCheck).
+- **Property-based** — assert invariants over generated, shrinking inputs (`hypothesis`, `QuickCheck`).
 For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
 - **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end.
 A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.

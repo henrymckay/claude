@@ -17,34 +17,19 @@ The recurring theme: `polars` has **no index**, is **immutable**, and wants **ex
 
 ## Direct translations
 
-```python
-# select columns
-df[["a", "b"]]                        -> df.select("a", "b")
+| `pandas` | `polars` |
+|---|---|
+| `df[["a", "b"]]` | `df.select("a", "b")` |
+| `df["c"] = df["a"] + df["b"]` | `df.with_columns(polars.col("a").add(polars.col("b")).alias("c"))` |
+| `df[df["a"] > 0]` | `df.filter(polars.col("a").gt(0))` |
+| `df.rename(columns={"a": "b"})` | `df.rename({"a": "b"})` |
+| `df.sort_values("a", ascending=False)` | `df.sort("a", descending=True)` |
+| `df.groupby("k")["v"].sum()` | `df.group_by("k").agg(polars.col("v").sum())` |
+| `df["k"].value_counts()` | `df["k"].value_counts()`, returning a `DataFrame` |
+| `df["x"].fillna(0)` | `polars.col("x").fill_null(0)` |
+| `df.apply(lambda r: r.a * r.b, axis=1)` | `polars.col("a").mul(polars.col("b"))` |
 
-# new column
-df["c"] = df["a"] + df["b"]           -> df.with_columns(polars.col("a").add(polars.col("b")).alias("c"))
-
-# filter rows
-df[df["a"] > 0]                       -> df.filter(polars.col("a").gt(0))
-
-# rename
-df.rename(columns={"a": "b"})         -> df.rename({"a": "b"})
-
-# sort
-df.sort_values("a", ascending=False)  -> df.sort("a", descending=True)
-
-# groupby aggregate
-df.groupby("k")["v"].sum()            -> df.group_by("k").agg(polars.col("v").sum())
-
-# value_counts
-df["k"].value_counts()                -> df["k"].value_counts()   # returns a DataFrame
-
-# fillna
-df["x"].fillna(0)                     -> polars.col("x").fill_null(0)
-
-# apply row-wise (AVOID) — express instead
-df.apply(lambda r: r.a * r.b, axis=1) -> polars.col("a").mul(polars.col("b"))
-```
+The row-wise `apply` is the one to unlearn — there is no `polars` equivalent because the column expression *is* the answer.
 
 ## Interop
 
@@ -70,13 +55,15 @@ This materialises the data (a `LazyFrame` must be `.collect()`-ed first) and cos
 
 Zero-copy where possible via Arrow, but converting back and forth in a hot loop defeats the purpose — convert once at the boundary.
 
-## Reading/writing
+## Reading and writing
 
 ```python
-polars.read_csv("f.csv")     / polars.scan_csv("f.csv")        # eager / lazy
-polars.read_parquet("f.pq")  / polars.scan_parquet("f.pq")
+polars.read_csv("f.csv")        # eager
+polars.scan_csv("f.csv")        # lazy
+polars.read_parquet("f.pq")
+polars.scan_parquet("f.pq")
 df.write_csv("out.csv")
-df.write_parquet("out.pq")   # prefer parquet: typed, compressed, columnar
+df.write_parquet("out.pq")      # prefer parquet: typed, compressed, columnar
 ```
 
 Prefer `scan_*` + `.collect()` over `read_*` for anything nontrivial so the query optimiser can push work down and read only what's needed.

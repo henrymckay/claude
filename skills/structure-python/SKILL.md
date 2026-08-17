@@ -81,49 +81,47 @@ Each new core package obeys the core's rules (no IO; imported, never importing o
 Don't scaffold the full set for a script (KISS, YAGNI).
 
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
-A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`.
+A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
 ## Configuration
 
 Configuration is **input crossing the boundary**, so it takes the same path as any other IO: read at the edge, validated there, injected inward.
 
-- **Read and validate at the edge.** An adapter reads the source — environment variables, a `.env` file, a settings file — and validates it into a typed object at the boundary, the way a DTO (Data Transfer Object) validates an API body. A `pydantic-settings` model is the usual tool.
-- **Inject inward; the core never reaches out.** An operation takes the values it needs as arguments (a `rate`, a `timeout`), never a global `Settings` object and never `os.environ` — reading ambient config is IO. This is `be-functional`'s "inject the environment as a default argument" applied to the whole app.
-- **Wire it at the composition root.** The driver loads the settings once at startup and injects them into operations beside the adapters — configuration and dependencies enter through the same seam. The concrete `pydantic-settings` loading lives in `write-entry-points`.
+- **Read and validate at the edge.** An adapter reads the source — environment variables, a `.env` file, a settings file — and validates it into a typed object at the boundary, the way a DTO (Data Transfer Object) validates an API body.
+A `pydantic-settings` model is the usual tool.
+- **Inject inward; the core never reaches out.** An operation takes the values it needs as arguments (a `rate`, a `timeout`), never a global `Settings` object and never `os.environ` — reading ambient config is IO.
+This is `be-functional`'s "inject the environment as a default argument" applied to the whole app.
+- **Wire it at the composition root.** The driver loads the settings once at startup and injects them into operations beside the adapters — configuration and dependencies enter through the same seam.
+The concrete `pydantic-settings` loading lives in `write-entry-points`.
 - **Secrets are configuration too** — the same path, from the environment or a secret store, validated at the boundary and never committed (see `use-git`).
 
 ## Logging
 
 Logging is **output**, so like all IO it's configured at the edge — but it's pervasive, so it's carried by convention rather than a port.
 
-- **Configure once, at the composition root.** The driver sets up the root logger and its handler at startup — level, format, a `RichHandler`; nothing else touches logging configuration. A library or core module that calls `logging.basicConfig` hijacks its host, so configuration lives *only* in the driver (see `write-entry-points`), exactly as the suite configures it once per session (see `write-tests`).
-- **Emit through a module logger.** Every module — the core included — logs through `logging.getLogger(__name__)`. A logger is inert until the root configuration decides what to do with a record, so module loggers don't cost the core its purity under test: with no handler installed, a `debug` line simply vanishes.
-- **The shell narrates; the core stays quiet.** The edge logs the IO and the boundaries it crosses — a request served, an adapter called, a job run, an error caught. The core logs sparingly if at all: it *returns* its results, and its behaviour is pinned by tests rather than narrated in logs.
-- **`rich`, and lazy.** Render through a `RichHandler` on the root logger, matching `write-tests`' session setup; write log lines with `logging`'s lazy `%` args, never f-strings (see `write-python`). The concrete driver wiring lives in `write-entry-points`.
+- **Configure once, at the composition root.** The driver sets up the root logger and its handler at startup — level, format, a `RichHandler`; nothing else touches logging configuration.
+A library or core module that calls `logging.basicConfig` hijacks its host, so configuration lives *only* in the driver (see `write-entry-points`), exactly as the suite configures it once per session (see `write-tests`).
+- **Emit through a module logger.** Every module — the core included — logs through `logging.getLogger(__name__)`.
+A logger is inert until the root configuration decides what to do with a record, so module loggers don't cost the core its purity under test: with no handler installed, a `debug` line simply vanishes.
+- **The shell narrates; the core stays quiet.** The edge logs the IO and the boundaries it crosses — a request served, an adapter called, a job run, an error caught.
+The core logs sparingly if at all: it *returns* its results, and its behaviour is pinned by tests rather than narrated in logs.
+- **`rich`, and lazy.** Render through a `RichHandler` on the root logger, matching `write-tests`' session setup; write log lines with `logging`'s lazy `%` args, never f-strings (see `write-python`).
+The concrete driver wiring lives in `write-entry-points`.
 
 ## Data
 
 Load the non-code assets an app needs at runtime — SQL query files, HTML templates, static reference data — through `importlib.resources`, never a path built from `__file__` or the repo root.
 
 Keep them all in one `data/` directory whose inside **mirrors the code layers**, so every asset's path names the layer that owns it — `data/` and `code/` are the two parallel trees under the package.
-One place to manage, with ownership still explicit:
+One place to manage, with ownership still explicit — only the layers that own assets need a directory:
 
 ```text
 mypackage/
-  __init__.py
   code/
-    __init__.py
     adapt/
-      __init__.py
     drive/
-      __init__.py
-    operate/
-      __init__.py
-    port/
-      __init__.py
     transform/
-      __init__.py
   data/
     adapt/
       orders.sql
@@ -173,13 +171,13 @@ tests/
 
 - **`data/`** — data files the tests load.
 - **`pytest_/`** — the imported helpers, as a package (`__init__.py`): fixtures in `given.py`, custom assertions in `then.py`, and action helpers in `when.py` where actions earn a name.
-It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
+It's named `pytest_` (per `write-python`'s underscore rule) because it's all `pytest`-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
 Tests import it as `from pytest_ import then`.
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
 Neither `suite/` nor its subdirectories is a package — `--import-mode importlib` (below) collects the test files by path with no `__init__.py`; only `pytest_/` needs one, because it's *imported* rather than collected.
-Keep the test dirs non-packages: it's pytest's recommendation for new projects, and path-based collection lets same-named test files in different directories coexist without clashing.
+Keep the test dirs non-packages: it's `pytest`'s recommendation for new projects, and path-based collection lets same-named test files in different directories coexist without clashing.
 
-The pytest settings in `setup-python`'s `pyproject.toml` serve this layout:
+The `pytest` settings in `setup-python`'s `pyproject.toml` serve this layout:
 
 - `testpaths = ["tests/suite"]` collects only the cases.
 - `--import-mode importlib` avoids `sys.path` clashes from the `src/` layout and nested folders.

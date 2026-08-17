@@ -35,11 +35,13 @@ import math
 @dataclasses.dataclass(frozen=True)
 class Circle:
     """A circle, by radius."""
+
     radius: float
 
 @dataclasses.dataclass(frozen=True)
 class Square:
     """A square, by side length."""
+
     side: float
 
 Shape = Circle | Square   # sum type: a shape is exactly one variant
@@ -71,10 +73,10 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   total = sum(x * x for x in numbers)
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
-- **For tabular or columnar data, the vectorised declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
+- **For tabular or columnar data, the vectorised declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for `polars` and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
 Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
 
-## functools and itertools
+## `functools` and `itertools`
 
 - **`functools.reduce`** for genuine folds, but reach for a comprehension or `sum`/`math.prod`/`any`/`all` first — they're clearer.
 - **`functools.partial`** to specialise a function without a wrapper.
@@ -128,7 +130,7 @@ def main() -> None:                           # shell — does the I/O
     print(render(summarise(rows)))
 ```
 
-## Injecting impure dependencies
+## Inject impure dependencies
 
 Take impure inputs — environment, clock, randomness, handles — as arguments whose default is the real thing.
 Deterministic and pure under test (pass explicit values), convenient in normal use (rely on the default):

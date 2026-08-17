@@ -21,7 +21,7 @@ It focuses on API design, typing intent, and idioms — the baseline that `be-fu
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
-## Formatting & linting
+## Formatting and linting
 
 `ruff` handles formatting, import sorting, line length, and lint rules; `pyright` handles type checking.
 Don't restate or fight those tools.

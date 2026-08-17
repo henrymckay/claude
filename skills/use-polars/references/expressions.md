@@ -4,7 +4,7 @@ Worked recipes for the expression API.
 Assumes `import polars` (house style — no `as pl`) and `polars` 1.x.
 Expressions run inside contexts (`select`, `with_columns`, `filter`, `group_by().agg()`).
 
-## Selecting & referencing columns
+## Column selection
 
 ```python
 polars.col("a")                      # one column
@@ -16,7 +16,7 @@ polars.col("^prefix_.*$")            # by regex
 df.select(polars.col("a").alias("x"))
 ```
 
-## Computed & conditional columns
+## Computed and conditional columns
 
 ```python
 df.with_columns(
@@ -30,7 +30,7 @@ df.with_columns(
 
 Chain multiple `when/then` before the final `otherwise` for multi-branch logic.
 
-## Filtering
+## Filters
 
 ```python
 df.filter(polars.col("amount").gt(0))
@@ -38,7 +38,7 @@ df.filter(polars.col("a").gt(0) & polars.col("b").is_not_null())  # combine mask
 df.filter(polars.col("cat").is_in(["x", "y"]))
 ```
 
-## Aggregation
+## Aggregations
 
 ```python
 df.group_by("category").agg(
@@ -65,7 +65,7 @@ df.with_columns(
 )
 ```
 
-## Consecutive-run length per group (gaps and islands)
+## Consecutive runs per group (gaps and islands)
 
 Sequential per-group logic — a consecutive-run length, a reset-on-change counter — stays one dataframe operation: number each run with a change flag + `cum_sum`, then count within it.
 No Python loop, and every group runs together under `.over`:
@@ -74,17 +74,18 @@ No Python loop, and every group runs together under `.over`:
 runs = (
     frame.sort("group", "order")
     .with_columns(
-        run_id=(polars.col("state") != polars.col("state").shift(1).over("group"))
-        .fill_null(True)                                   # first row per group starts a run
+        run_id=polars.col("state")
+        .ne(polars.col("state").shift(1).over("group"))
+        .fill_null(True)   # first row per group starts a run
         .cum_sum()
         .over("group")
     )
-    .with_columns(run_len=polars.int_range(1, polars.len() + 1).over("group", "run_id"))
+    .with_columns(run_len=polars.int_range(1, polars.len().add(1)).over("group", "run_id"))
 )
 current = runs.group_by("group").tail(1)                   # the run active on each group's last row
 ```
 
-`.fill_null(True)` matters: `x != null` is null under `polars`'s three-valued logic, so without it the first row of each group is misclassified and the count comes out one short.
+`.fill_null(True)` matters: comparing against a null yields null under `polars`'s three-valued logic, so without it the first row of each group is misclassified and the count comes out one short.
 `state` is whatever you're measuring runs of — e.g. `polars.col("close").sub(polars.col("close").shift(4).over("group")).sign()` for a DeMark-style up/down/flat run.
 
 ## Joins
@@ -95,7 +96,7 @@ a.join(b, left_on="uid", right_on="id", how="left")
 a.join_asof(b, on="ts", by="key")          # nearest-key temporal join
 ```
 
-## String & date namespaces
+## String and date namespaces
 
 ```python
 polars.col("name").str.to_uppercase()
@@ -108,16 +109,16 @@ polars.col("ts").dt.truncate("1d")              # floor to day
 polars.col("end").sub(polars.col("start")).dt.total_seconds()
 ```
 
-## List & struct namespaces
+## List and struct namespaces
 
 ```python
 polars.col("tags").list.len()
 polars.col("tags").list.contains("urgent")
-polars.col("values").list.eval(polars.element() * 2)   # map within each list
+polars.col("values").list.eval(polars.element().mul(2))   # map within each list
 df.group_by("k").agg(polars.col("v"))                  # -> a List column per group
 ```
 
-## Reshaping
+## Pivots and explodes
 
 ```python
 df.pivot(values="v", index="row", on="col", aggregate_function="sum")
@@ -133,4 +134,5 @@ polars.col("x").fill_null(0)
 polars.col("x").fill_null(strategy="forward")
 df.drop_nulls(subset=["x"])
 ```
-Note: `polars` separates null (missing) from `NaN` (float not-a-number) — they're not the same, unlike `pandas`.
+
+`polars` separates null (missing) from `NaN` (float not-a-number) — they're not the same, unlike `pandas`.
