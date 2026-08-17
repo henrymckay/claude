@@ -31,15 +31,14 @@ Long-running branches drift and cause painful merges.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
 - Commit locally often; tidy up before sharing.
-
-### Commit messages
-
-Every commit uses [Conventional Commits](https://www.conventionalcommits.org): a `type(scope): subject` header, where the type is required and the scope optional.
+- **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
-
 The subject is imperative, ≤ 50 chars, no trailing period.
-Then a blank line and a body wrapped at ~72 cols explaining **why**, not just what (the diff shows what):
+- **Message body:** after a blank line, wrapped at ~72 cols, explaining **why**, not just what (the diff shows what).
+Short, self-evident changes can be header-only.
+Reference issues/PRs here (`Closes #123`).
+- **No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`, or similar attribution/tool footers to commit messages.
 
 ```text
 feat(search): rank users by recent activity
@@ -47,11 +46,6 @@ feat(search): rank users by recent activity
 Sort results by last-active so the people you interact with most surface
 first. Falls back to alphabetical when activity data is missing.
 ```
-
-Short, self-evident changes can be header-only.
-Reference issues/PRs in the body (`Closes #123`).
-
-**No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`, or similar attribution/tool footers to commit messages.
 
 ## Push
 
