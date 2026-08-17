@@ -99,9 +99,9 @@ Feed a function only the fields it reads.
 
 Feed a function only what it reads, and assert only what the behaviour promises.
 
-## Vectorised
+## Many inputs
 
-Vectorise the test: run one assertion over many inputs instead of copy-pasted cases — the same instinct as preferring an expression over a loop.
+Run one assertion over many inputs instead of copy-pasted cases — the same instinct as preferring an expression over a loop.
 A table covers the cases you can enumerate; a generator covers a rule you can only state.
 
 **Table-driven** runs one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.

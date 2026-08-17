@@ -29,7 +29,7 @@ A fixture sources each input, and — harder — each expected value:
 
 The *when* helpers name compound actions where they earn it; the *then* helpers are the custom assertions below.
 
-## Vectorised
+## Many inputs
 
 For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole under Assertions) — parametrize:
 
