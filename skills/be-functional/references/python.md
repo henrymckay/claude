@@ -1,6 +1,6 @@
-# Functional Python idioms
+# Functional style in Python
 
-Concrete ways to apply the `be-functional` principles in Python.
+The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 Python isn't a pure functional language, so aim for *pragmatic* functional: pure logic, immutable data, and comprehensions/generators over manual loops — without fighting the language.
 
 ## Immutability

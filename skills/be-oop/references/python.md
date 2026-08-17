@@ -1,6 +1,6 @@
-# Object-oriented Python idioms
+# Object-oriented design in Python
 
-Concrete OOP tools in Python.
+The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 The theme: Python gives you a lot for free (dataclasses, protocols, generators, modules), so most "patterns" are lighter here than in Java/C++.
 Follow the `write-python` conventions in examples (qualified imports, annotate every function, docstrings).
 

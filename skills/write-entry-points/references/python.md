@@ -1,6 +1,6 @@
 # Entry points in Python
 
-Python build-outs for the drivers in `write-entry-points`.
+The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 Every driver lives under `code/drive/` (see `structure-python`); the house libraries are the picks in `setup-python`'s Libraries section.
 The running example is a weather-station app whose one operation, `operate.report`, averages readings fetched through a `port.Fetch`.
 
