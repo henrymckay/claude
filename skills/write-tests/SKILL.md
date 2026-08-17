@@ -87,9 +87,8 @@ Inject them (the default-argument seams from `be-functional`) and pass fixed val
 
 ## Where test data lives
 
-Every input **and expected value a test uses reaches it as an argument** — a fixture parameter that returns the data or loads it from a file — never a literal built in the body, a module global, or a bare constant.
+Since every *given* value arrives through the signature (above), the open question is where a fixture gets it — and, harder, where an *expected* value comes from.
 This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
-The test body should name only the *when* and the *then*; every *given* value comes in through the signature.
 
 - **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data).
 Feed a function only the fields it reads.
@@ -125,7 +124,7 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 
 - Assert only what your code assumes: that a parser yields the type you expect, that an aggregation totals the way you rely on, that one call runs several operations together.
 - A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
-- Keep them a directory level apart from your own tests (see Layout and running).
+- Keep them a directory level apart from your own tests (see Layout).
 
 ## Coverage and speed
 
@@ -135,10 +134,12 @@ Chasing a number produces assertion-free tests that execute code without checkin
 Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
 Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
 
-## Layout and running
+## Layout
 
 Separate the three kinds of thing under `tests/`: the **test cases** (mirroring the source, with the dependency-behaviour tests kept apart), the **data** they load, and the **shared helpers** they import (fixtures, custom assertions).
 The concrete tree, import mode, and runner setup are language-specific — see `references/python.md`, `structure-python` (the `tests/` layout) and `setup-python` (the `pytest` config).
+
+## Running
 
 The **test runner is the entry point** — a test file never needs a `main`.
 Run the whole suite or a slice, selecting by directory, name, or tag; the exact commands are in `references/python.md`.

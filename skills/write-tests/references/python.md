@@ -9,23 +9,25 @@ Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-p
 There is no `per-file-ignores` exemption for `tests/`.
 - Fixture docstrings are imperative too (ruff `D401`): "Load the sample dataset", not "The sample dataset".
 
-## Given via fixtures
+## Given, when, then
+
+The three beats become the `pytest_` package's `given`, `when` and `then` modules (see Layout): fixtures, action helpers, and custom assertions.
+Supply the *given* through fixtures:
 
 - Supply the *given* as `@pytest.fixture` arguments; the fixture names and builds the scenario so the body doesn't set it up inline.
 - Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"`.
 `-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`.
-They sit alongside the `when`/`then` modules.
 The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers — note the `pytest_plugins` variable works only there, never pyproject.
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 
-Every input and expected value comes in through a fixture, never a literal in the body:
+A fixture sources each input, and — harder — each expected value:
 
-- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`), not a literal in the test body.
+- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`).
 - A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
-- A whole-collection operation → one representative fixture asserted once, not a `parametrize` case per row.
-- Expected values → a fixture that derives them from the raw data in plain Python (independent of the pipeline), passed into a `then` assertion.
-Where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
+- Expected values → a fixture that derives them in plain Python (not by re-running the pipeline), passed into a `then` assertion; where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
+
+The *when* helpers name compound actions where they earn it; the *then* helpers are the custom assertions below.
 
 ## Table-driven and property-based
 
@@ -98,10 +100,9 @@ For an exact whole-frame match including dtypes, use `polars.testing.assert_fram
 
 ## Mocking
 
-Prefer real objects and dependency injection.
-Reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you can't inject.
+Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you can't inject.
 
-## Coverage and markers
+## Coverage and speed
 
 - `pytest-cov` reports coverage (`uv run pytest --cov`).
 - Mark slow or external tests with a custom marker (`@pytest.mark.slow`) so the default run stays quick.
@@ -161,7 +162,7 @@ A test that consumes its own output through `capsys` won't display its logs — 
 
 If you don't need Rich specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
 
-## Layout and running
+## Layout
 
 ```text
 tests/
@@ -186,6 +187,11 @@ The `suite/` folders are **not** packages, because `importlib` collects them by 
 - Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
 - `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
 
+## Running
+
+`pytest` is the entry point — a test file never has an `if __name__ == "__main__"`.
+Run the whole suite, or select a slice by directory, name, or marker:
+
 ```bash
 uv run pytest
 uv run pytest tests/suite/packages
@@ -197,5 +203,3 @@ uv run pytest -m slow
 - `uv run pytest tests/suite/packages` runs one directory.
 - `uv run pytest -k revenue` runs tests whose name matches.
 - `uv run pytest -m slow` runs tests carrying a marker.
-
-There is no `if __name__ == "__main__"` in a test file — `pytest` is the entry point.
