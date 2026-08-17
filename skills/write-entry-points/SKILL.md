@@ -50,7 +50,7 @@ The Python package mechanics — a hollow role package over trailing-underscore 
 Give each entry point a **named launch command**, namespaced to the project so it doesn't collide once installed (`myapp-cli`, `myapp-api`, never a bare `cli`).
 The command points at whatever *starts* that entry point: a callable app object where the framework provides one, or a thin launcher function where it doesn't.
 
-## Kinds of entry point
+## Examples
 
 Each kind is a driver over the same core, differing only in trigger and presentation:
 
@@ -60,8 +60,6 @@ Each kind is a driver over the same core, differing only in trigger and presenta
 - **Jobs** — triggered by *time or events* rather than a person (a cron run, a queue worker, a webhook, a serverless function): the ETL (extract, transform, load) shape, with the transform in the core.
 
 Building each in a given language — the frameworks, package structure, and dependency-injection seams — is in the language references (`references/python.md` for Python).
-
-## What isn't an entry point
 
 Two things look like entry points but aren't:
 
