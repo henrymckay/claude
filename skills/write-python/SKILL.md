@@ -46,7 +46,7 @@ Carve-outs: dunders and a script's entry point (e.g. `main`) may sit conventiona
 "Where possible" is doing real work here: `self`/`cls` come first, positional-only and required-before-default constraints win, and don't reorder where argument order itself carries meaning.
 It applies most cleanly to keyword arguments at the call site.
 
-Don't reorder purely to enforce this in a file that already uses another scheme — consistency within a file wins.
+Place a new definition in its alphabetical slot, but don't reshuffle an existing file just to enforce this — the diff noise and broken `git blame` outweigh the tidiness.
 
 ## Public API
 
