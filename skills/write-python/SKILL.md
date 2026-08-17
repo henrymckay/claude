@@ -68,7 +68,7 @@ Typing conventions (Python 3.11+):
 Reach for `dataclasses.dataclass` for plain data holders before hand-writing `__init__`.
 Use `typing.Protocol` for structural "duck typing" interfaces rather than forcing an ABC (Abstract Base Class) inheritance hierarchy.
 
-## Docstrings (reStructuredText / Sphinx style)
+## Docstrings
 
 **Every function gets a docstring** — public or internal — as do every module, class, and method.
 Use reST (Sphinx field-list) style:
@@ -155,10 +155,8 @@ Let exceptions propagate to where they can be handled meaningfully — don't cat
 When re-raising with context, use `raise NewError(...) from original` to preserve the chain.
 Reserve returning `None` for genuinely expected "not found" cases, and make it obvious in the type (`User | None`) and docstring.
 
-## Idioms & things to avoid
+## Idioms
 
-- **Mutable default arguments** are a classic trap: `def f(x=[])` shares one list across all calls.
-Use `def f(x: list | None = None)` and create inside.
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
 Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
@@ -170,19 +168,25 @@ Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
 Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the string isn't built when not logged.
 - **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
-- Avoid `from module import *` in code (fine only in a curated `__init__.py`).
-- Don't reach for a class when a function will do; don't add abstraction (factories, base classes, config layers) before there's a second case.
 - **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterise, or override the value without callers changing; a bare global has to be torn out to extend.
 (Genuinely fixed constants can stay globals.)
-- **Don't introduce a single-use local variable — inline the expression.** A name for a value used exactly once adds reading overhead without payoff.
-Keep the name only when it meaningfully documents an otherwise opaque expression.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
 When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
 - **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorised engine.
 Stack every group into one long-form frame rather than processing a group at a time.
 See the `use-polars` skill.
-- **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
+
+## Avoid
+
+- **Mutable default arguments** are a classic trap: `def f(x=[])` shares one list across all calls.
+Use `def f(x: list | None = None)` and create inside.
+- `from module import *` in code (fine only in a curated `__init__.py`).
+- Reaching for a class when a function will do, or adding abstraction (factories, base classes, config layers) before there's a second case.
+- **A single-use local variable** — inline the expression instead.
+A name for a value used exactly once adds reading overhead without payoff.
+Keep the name only when it meaningfully documents an otherwise opaque expression.
+- **Hand-placed blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
 The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead.
 (Blank lines *between* definitions are the formatter's job.)
-- **Don't repeat a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
+- **Repeating a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
 It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
