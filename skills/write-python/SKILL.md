@@ -17,7 +17,7 @@ description: >-
 # Write Python
 
 The judgment calls that make Python readable and maintainable — the decisions a formatter or linter can't make for you.
-It focuses on API design, typing intent, and idioms; project structure lives in `structure-python`, packaging and dependencies in `setup-python`.
+It focuses on API design, typing intent, and idioms — the baseline that `be-functional`, `be-oop` and `write-tests` layer on; project structure lives in `structure-python`, packaging and dependencies in `setup-python`.
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

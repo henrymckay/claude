@@ -23,7 +23,7 @@ Targets `polars` 1.x.
 Verify version-specific method names against the installed version if something doesn't resolve.
 
 Import convention (house style): `import polars` and qualify — `polars.col(...)` — not the conventional `import polars as pl`.
-See the write-python skill.
+See `write-python`.
 
 ## The mental model
 

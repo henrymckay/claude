@@ -6,10 +6,10 @@ description: >-
   isolation, table-driven and property-based testing, testing the dependency
   behaviour you rely on, and layout. Use whenever writing, editing, or reviewing
   tests, adding coverage, or setting up a suite, even if the user just says
-  "write a test", "add tests", "test this", or names a runner like pytest. Tests
-  are code: they follow the language's own conventions (Python → write-python).
+  "write a test", "add tests", "test this", or names a runner like pytest.
   Language-agnostic principles and the paradigm/pattern catalogue here; Python
-  and pytest idioms in references/python.md.
+  and pytest idioms in references/python.md. Tests are code: they follow the
+  language's own conventions (Python → write-python).
 ---
 
 # Write tests
