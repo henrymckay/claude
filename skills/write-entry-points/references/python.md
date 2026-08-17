@@ -25,8 +25,8 @@ The command points at whatever *starts* that entry point: a callable app object 
 Three packages under `code/drive/`:
 
 - **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.code.drive.cli:app`.
-- **`typer_/`** — the typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
-- **`rich_/`** — the rich-coupled rendering, building the table and colours from the core's plain results.
+- **`typer_/`** — the Typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
+- **`rich_/`** — the Rich-coupled rendering, building the table and colours from the core's plain results.
 
 `cli/__init__.py` is a one-line re-export, so the entry point never names the framework behind it:
 
@@ -101,7 +101,7 @@ pydantic_/
 ```
 
 `schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`).
-These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
+These are Pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
 
 A DTO is **not** a domain type, even when their fields match.
 The schema is the external **contract**; the domain model is the internal truth; keep them separate so they evolve independently (API versioning vs domain logic) and untrusted input is validated at the boundary.
@@ -109,11 +109,11 @@ Map between them in `route.py`, as `schema.Reading(...)` does below.
 Neither belongs in `port/`, which is protocols only; the domain types live in `transform`/`domain`.
 
 Pydantic is best used at exactly this kind of **trust boundary** — validating and (de)serialising data as it crosses in or out: API bodies here, `pydantic-settings` for config from the environment, or parsing an external response inside an adapter.
-It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for pydantic in the core only when you specifically want its validation or serialisation there.
-Enums are the one thing you never duplicate: pydantic accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
+It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for Pydantic in the core only when you specifically want its validation or serialisation there.
+Enums are the one thing you never duplicate: Pydantic accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
 
 **A model shared across layers moves inward, to the core.** `pydantic_` here holds *only* the API's own schemas.
-Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a pydantic model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (pydantic is fine there).
+Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a Pydantic model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (Pydantic is fine there).
 Each boundary DTO otherwise stays with its own edge — the API's schemas in `drive/pydantic_`, an external service's shape in the `adapt` module that parses it — never hoisted into one shared edge package.
 
 **FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata.

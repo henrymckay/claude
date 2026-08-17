@@ -18,18 +18,18 @@ description: >-
 
 An **entry point** is a **driver**: a thin shell over the presentation-agnostic core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-This file is the language-agnostic mindset; the Python build-outs (typer, fastapi, shiny, jobs) live in `references/python.md`.
+This file is the language-agnostic mindset; the Python build-outs (`typer`, `fastapi`, `shiny` and jobs) live in `references/python.md`.
 It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell).
 
 **In an existing project, ask first.** Where a repo already has an established way of wiring its entry points, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
-## The driver shell
+## Driver shell
 
 Each entry point is a thin **shell** over the core: it reads its trigger, calls an operation, injects the adapter that operation needs, and renders the result its own way.
 Keep it thin — the logic stays in the core, so a second entry point can serve or render the same results differently.
 Presentation belongs to the entry point, never the core: a CLI's table, an API's JSON, a dashboard's widgets are each one driver's concern.
 
-## The composition root
+## Composition root
 
 The driver is the one place that imports **both** an operation and a concrete adapter, and injects the adapter into the operation.
 This is the **composition root** — where the abstract core meets a concrete implementation.
@@ -50,7 +50,7 @@ The Python package mechanics — a hollow role package over trailing-underscore 
 Give each entry point a **named launch command**, namespaced to the project so it doesn't collide once installed (`myapp-cli`, `myapp-api`, never a bare `cli`).
 The command points at whatever *starts* that entry point: a callable app object where the framework provides one, or a thin launcher function where it doesn't.
 
-## The kinds
+## Kinds of entry point
 
 Each kind is a driver over the same core, differing only in trigger and presentation:
 
@@ -61,7 +61,7 @@ Each kind is a driver over the same core, differing only in trigger and presenta
 
 Building each in a given language — the frameworks, package structure, and dependency-injection seams — is in the language references (`references/python.md` for Python).
 
-## Not entry points
+## What isn't an entry point
 
 Two things look like entry points but aren't:
 
