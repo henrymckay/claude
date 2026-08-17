@@ -229,30 +229,35 @@ Because the adapter arrives through `Depends`, a test swaps it for a fake by ove
 `shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Libraries in `setup-python`) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than `streamlit`'s whole-script rerun.
 
 **Use Shiny Core, not Express, in a packaged app.** Express is easier — it intermingles the layout and the callbacks in one module, so a throwaway single-view dashboard is fewer lines.
-But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(app_ui, server)` object for the launcher.
+But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(page(), server)` object for the launcher.
 So `shiny_/` separates the way `typer_/` does:
 
 ```text
 gui/
   __init__.py   role, hollow: re-exports app and run
 shiny_/
-  __init__.py   app = shiny.App(app_ui, server); run() launcher
-  server.py     the server(input, output, session) callbacks
-  ui.py         the app_ui layout
+  __init__.py   app = shiny.App(page(), server); run() launcher
+  layout.py     functions returning shiny.ui objects; page() is the top-level
+  callbacks.py  the server(input, output, session) reactive callbacks
 ```
 
-`ui.py` is pure declarative layout:
+`layout.py` is a module of functions returning `shiny.ui` objects — `page()` is the top-level layout passed to `shiny.App`.
+A function beats a module-level constant (see `write-python`): layouts compose, so a reused panel or header is its own function that `page()` calls, and a variant builds on it instead of copying markup.
 
 ```python
+import htmltools
 import shiny
 
-app_ui = shiny.ui.page_fluid(
-    shiny.ui.input_text("stations", "Stations", "london tokyo"),
-    shiny.ui.output_text("report"),
-)
+
+def page() -> htmltools.Tag:
+    """The top-level layout."""
+    return shiny.ui.page_fluid(
+        shiny.ui.input_text("stations", "Stations", "london tokyo"),
+        shiny.ui.output_text("report"),
+    )
 ```
 
-`server.py` holds the reactive callbacks and is the **composition root**: each render binds an input to an operation with the injected adapter, exactly like the CLI's `command.py`:
+`callbacks.py` holds the reactive callbacks in shiny's `server` function and is the **composition root**: each render binds an input to an operation with the injected adapter, exactly like the CLI's `command.py`:
 
 ```python
 import shiny
@@ -277,10 +282,10 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
 ```python
 import shiny
 
-from mypackage.code.drive.shiny_.server import server
-from mypackage.code.drive.shiny_.ui import app_ui
+from mypackage.code.drive.shiny_.callbacks import server
+from mypackage.code.drive.shiny_.layout import page
 
-app = shiny.App(app_ui, server)
+app = shiny.App(page(), server)
 
 
 def run() -> None:
