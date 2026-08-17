@@ -3,6 +3,48 @@
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python with `pytest`.
 Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-python`.
 
+## Layout
+
+```text
+tests/
+  data/
+  pytest_/
+    __init__.py
+    given.py
+    then.py
+    when.py
+  suite/
+    mypackage/
+      test_core.py
+    packages/
+      test_httpx.py
+```
+
+- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests `pytest` collects).
+Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
+- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming.
+Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
+The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
+- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
+- `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
+
+## Running
+
+`pytest` is the entry point — a test file never has an `if __name__ == "__main__"`.
+Run the whole suite, or select a slice by directory, name, or marker:
+
+```bash
+uv run pytest
+uv run pytest tests/suite/packages
+uv run pytest -k revenue
+uv run pytest -m slow
+```
+
+- `uv run pytest` runs everything under `testpaths`.
+- `uv run pytest tests/suite/packages` runs one directory.
+- `uv run pytest -k revenue` runs tests whose name matches.
+- `uv run pytest -m slow` runs tests carrying a marker.
+
 ## Tests are code
 
 - Tests obey `write-python` in full: docstring and annotate every test — return `-> None`, and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`).
@@ -161,45 +203,3 @@ Never `log_cli` — `pytest`'s live logging installs its own handler that bypass
 A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
 If you don't need Rich specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
-
-## Layout
-
-```text
-tests/
-  data/
-  pytest_/
-    __init__.py
-    given.py
-    then.py
-    when.py
-  suite/
-    mypackage/
-      test_core.py
-    packages/
-      test_httpx.py
-```
-
-- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests `pytest` collects).
-Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
-- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming.
-Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
-The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
-- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
-- `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — pyright finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in pyproject).
-
-## Running
-
-`pytest` is the entry point — a test file never has an `if __name__ == "__main__"`.
-Run the whole suite, or select a slice by directory, name, or marker:
-
-```bash
-uv run pytest
-uv run pytest tests/suite/packages
-uv run pytest -k revenue
-uv run pytest -m slow
-```
-
-- `uv run pytest` runs everything under `testpaths`.
-- `uv run pytest tests/suite/packages` runs one directory.
-- `uv run pytest -k revenue` runs tests whose name matches.
-- `uv run pytest -m slow` runs tests carrying a marker.
