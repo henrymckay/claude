@@ -158,6 +158,7 @@ tests/
 It's named `pytest_` (per `write-python`'s underscore rule) because it's all pytest-coupled — fixtures, and assertions written as bare `assert`s rather than `unittest`'s methods.
 Tests import it as `from pytest_ import then`.
 - **`suite/`** — the test cases: your code mirrored in `suite/<package>/`, and dependency-behaviour tests in `suite/packages/`.
+Neither `suite/` nor its subdirectories is a package — `--import-mode importlib` (below) collects the test files by path with no `__init__.py`; only `pytest_/` needs one, because it's *imported* rather than collected.
 
 The pytest settings in `setup-python`'s `pyproject.toml` serve this layout:
 
