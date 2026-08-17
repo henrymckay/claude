@@ -56,7 +56,7 @@ out = (
 
 **Prefer one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
-Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelizes expressions within one context.
+Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelises expressions within one context.
 
 **Prefer expression methods to operator symbols.** Write `polars.col("a").mul(polars.col("b"))` and `polars.col("x").gt(0)`, not `*` and `>`.
 The method form chains without wrapping parentheses and reads consistently with the rest of the expression API (`.sum()`, `.alias()`, `.over()`).
@@ -77,13 +77,13 @@ result = (
     .filter(polars.col("ts").ge(start))
     .group_by("user_id")
     .agg(polars.len().alias("n"))
-    .collect()                                # execute the optimized plan
+    .collect()                                # execute the optimised plan
 )
 ```
 
 For data bigger than memory, use the streaming engine: `.collect(engine="streaming")` (the older `.collect(streaming=True)` is deprecated).
 
-Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materializing the whole frame.
+Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materialising the whole frame.
 
 ## Stay in the dataframe
 
