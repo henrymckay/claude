@@ -25,8 +25,8 @@ The command points at whatever *starts* that entry point: a callable app object 
 Three packages under `code/drive/`:
 
 - **`cli/`** — the hollow role package, re-exporting the app as the stable entry point `mypackage.code.drive.cli:app`.
-- **`typer_/`** — the Typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
-- **`rich_/`** — the Rich-coupled rendering, building the table and colours from the core's plain results.
+- **`typer_/`** — the typer-coupled code, in singular modules read as `category.member`: `argument.py` and `option.py` return a configured `typer.Argument`/`typer.Option`, and `command.py` holds the commands.
+- **`rich_/`** — the rich-coupled rendering, building the table and colours from the core's plain results.
 
 `cli/__init__.py` is a one-line re-export, so the entry point never names the framework behind it:
 
@@ -100,24 +100,24 @@ pydantic_/
   schema.py     the request/response models (BaseModel DTOs)
 ```
 
-`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s FastAPI validates and serialises (a `Reading` with `station: str` and `average: float`).
-These are Pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
+`schema.py` holds the boundary DTOs — the `pydantic.BaseModel`s `fastapi` validates and serialises (a `Reading` with `station: str` and `average: float`).
+These are pydantic-coupled, so they live in a `pydantic_` package, not `fastapi_` — the `fastapi_` (routing) / `pydantic_` (data schemas) split parallels the CLI's `typer_` (parsing) / `rich_` (presentation); the schema *is* the API's presentation.
 
 A DTO is **not** a domain type, even when their fields match.
 The schema is the external **contract**; the domain model is the internal truth; keep them separate so they evolve independently (API versioning vs domain logic) and untrusted input is validated at the boundary.
 Map between them in `route.py`, as `schema.Reading(...)` does below.
 Neither belongs in `port/`, which is protocols only; the domain types live in `transform`/`domain`.
 
-Pydantic is best used at exactly this kind of **trust boundary** — validating and (de)serialising data as it crosses in or out: API bodies here, `pydantic-settings` for config from the environment, or parsing an external response inside an adapter.
-It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for Pydantic in the core only when you specifically want its validation or serialisation there.
-Enums are the one thing you never duplicate: Pydantic accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
+`pydantic` is best used at exactly this kind of **trust boundary** — validating and (de)serialising data as it crosses in or out: API bodies here, `pydantic-settings` for config from the environment, or parsing an external response inside an adapter.
+It's a data library, not an IO framework, so it's *allowed* in the pure core too — but there the data is already validated, so a plain frozen `dataclasses.dataclass` is the lighter default; reach for `pydantic` in the core only when you specifically want its validation or serialisation there.
+Enums are the one thing you never duplicate: `pydantic` accepts a stdlib `enum.Enum`, so a domain `Scale` is imported and referenced straight in a schema field; only a genuinely API-only enum (a sort order) lives in the driver.
 
 **A model shared across layers moves inward, to the core.** `pydantic_` here holds *only* the API's own schemas.
-Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a Pydantic model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (Pydantic is fine there).
+Because `adapt` never imports `drive`, the two edges can't share a boundary model — so a `pydantic` model you find yourself wanting in *both* `adapt` and `drive` isn't a boundary DTO, it's a **domain model**: put it in `transform`/`domain`, which both edges import inward (`pydantic` is fine there).
 Each boundary DTO otherwise stays with its own edge — the API's schemas in `drive/pydantic_`, an external service's shape in the `adapt` module that parses it — never hoisted into one shared edge package.
 
-**FastAPI declares parameters exactly as Typer does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata.
-Typer's `Argument`/`Option` are FastAPI's `Query`, `Path`, `Body`, `Header` and `Depends`.
+**`fastapi` declares parameters exactly as `typer` does** — the same author built both, and both read `typing.Annotated[T, marker()]`, the marker carrying the framework metadata.
+`typer`'s `Argument`/`Option` are `fastapi`'s `Query`, `Path`, `Body`, `Header` and `Depends`.
 So `fastapi_` mirrors `typer_`'s structure: where `typer_` splits factory functions across `argument.py` and `option.py`, `fastapi_` has **a module per request marker** — `query.py`, plus `path.py`/`body.py`/`header.py` as those markers are used — each holding functions that return a configured marker, one per parameter (`query.stations()`, read as `category.member`).
 `fastapi.Query` alone takes many arguments (validation, docs, deprecation), and an app has many query parameters, so `query.py` earns its place exactly as `argument.py` does.
 
@@ -131,8 +131,8 @@ def stations() -> fastapi.params.Query:
 ```
 
 `Depends` is the exception — not request-parameter config but **dependency injection** — and it needs *two* functions, which split by coupling.
-`depend.py` holds the marker factory (FastAPI-coupled, like `query.py`); `provide.py` holds the **provider** it wraps — the function that names the concrete adapter.
-`Depends(fn)` **calls `fn` and injects its return value**, so the provider *returns* the adapter — the factory passes the provider, `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would make FastAPI call the adapter itself as a dependency and parse its arguments as request inputs:
+`depend.py` holds the marker factory (fastapi-coupled, like `query.py`); `provide.py` holds the **provider** it wraps — the function that names the concrete adapter.
+`Depends(fn)` **calls `fn` and injects its return value**, so the provider *returns* the adapter — the factory passes the provider, `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would make `fastapi` call the adapter itself as a dependency and parse its arguments as request inputs:
 
 ```python
 import fastapi
@@ -146,7 +146,7 @@ def fetch() -> fastapi.params.Depends:
 ```
 
 `provide.py` is the **injection seam** — the driver's place for naming a concrete adapter.
-It imports no FastAPI (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because FastAPI is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
+It imports no `fastapi` (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because `fastapi` is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
 
 ```python
 from mypackage.code import port
@@ -206,11 +206,11 @@ def run() -> None:
 ```
 
 Launch with `mypackage-api = "mypackage.code.drive.api:run"`, or serve directly with `uvicorn mypackage.code.drive.api:app`.
-Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — the FastAPI-native seam, no patching.
+Because the adapter arrives through `Depends`, a test swaps it for a fake by overriding the provider — `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — the fastapi-native seam, no patching.
 
 ## GUI
 
-`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Libraries in `setup-python`) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than Streamlit's whole-script rerun.
+`shiny` (Shiny for Python, from Posit) for a GUI or dashboard (see Libraries in `setup-python`) — its reactive model (only the outputs affected by a changed input re-render) and clean UI/server split fit shell-over-core far better than `streamlit`'s whole-script rerun.
 
 **Use Shiny Core, not Express, in a packaged app.** Express is easier — it intermingles the layout and the callbacks in one module, so a throwaway single-view dashboard is fewer lines.
 But Core keeps the **layout** and the **reactive/render callbacks** in separate expressions, which is exactly the shell split we want, is Posit's own recommendation for large or long-lived apps, and yields an explicit `app = shiny.App(app_ui, server)` object for the launcher.
@@ -298,7 +298,7 @@ def run() -> None:
 Reach for a library only when the trigger must live *inside* the process (see Libraries in `setup-python`):
 
 - **In-process scheduling** (a long-running process firing work on a clock) → `apscheduler`, in an `apscheduler_/` package holding the scheduler.
-- **A task queue** (events enqueue work, worker processes consume it) → `dramatiq` (a cleaner Celery) over a Redis/RabbitMQ broker, its actors in a `dramatiq_/` package.
+- **A task queue** (events enqueue work, worker processes consume it) → `dramatiq` (a cleaner `celery`) over a Redis/RabbitMQ broker, its actors in a `dramatiq_/` package.
 - **Orchestration** (dependent steps, retries, backfills, observability) → `prefect` or `dagster`.
 
 Whichever it is, the scheduler or broker is the shell; the work stays an operation over the pure core.
