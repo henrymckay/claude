@@ -70,6 +70,26 @@ class Circle:
 
 Implement the protocols the language uses: `__repr__` (dataclasses give you this), `__eq__`/`__hash__`, `__iter__`/`__next__` for iteration, `__enter__`/`__exit__` for context managers (or `contextlib.contextmanager`), `__call__` to make an instance callable.
 
+## Mixins
+
+A mixin is a plain class inherited for one focused capability, listed **left** of the base so its methods take precedence in the method-resolution order:
+
+```python
+class AsDictMixin:
+    """Add a dict view of an object's public attributes."""
+
+    def as_dict(self) -> dict[str, object]:
+        """Return the public attributes as a dict."""
+        return {k: v for k, v in vars(self).items() if not k.startswith("_")}
+
+
+class Widget(AsDictMixin):
+    """A widget that can render itself as a dict."""
+    ...
+```
+
+Keep a mixin behaviour-only and stateless (no `__init__`) so several combine cleanly.
+
 ## Enums
 
 `enum.Enum` for a closed set of named constants — a sum type (see `be-functional`, "Algebraic data types and pattern matching").
