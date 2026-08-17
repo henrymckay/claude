@@ -8,7 +8,7 @@ description: >-
   suite sit alongside the code. Use when organising an app into layers,
   deciding where a module, entry point, IO adapter, data asset, or test
   belongs, packaging data through importlib.resources, applying dependency
-  injection, or laying out the code/data/tests directories — even if the user
+  injection, wiring configuration and logging through the edge, or laying out the code/data/tests directories — even if the user
   just says "structure this app", "where does this go", or "clean/hexagonal
   architecture". Layers on write-python and be-functional; for building the
   entry points themselves, see write-entry-points; for scaffolding, packaging,
@@ -83,6 +83,24 @@ Don't scaffold the full set for a script (KISS, YAGNI).
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
 A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a typer module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
+
+## Configuration
+
+Configuration is **input crossing the boundary**, so it takes the same path as any other IO: read at the edge, validated there, injected inward.
+
+- **Read and validate at the edge.** An adapter reads the source — environment variables, a `.env` file, a settings file — and validates it into a typed object at the boundary, the way a DTO validates an API body. A `pydantic-settings` model is the usual tool.
+- **Inject inward; the core never reaches out.** An operation takes the values it needs as arguments (a `rate`, a `timeout`), never a global `Settings` object and never `os.environ` — reading ambient config is IO. This is `be-functional`'s "inject the environment as a default argument" applied to the whole app.
+- **Wire it at the composition root.** The driver loads the settings once at startup and injects them into operations beside the adapters — configuration and dependencies enter through the same seam. The concrete `pydantic-settings` loading lives in `write-entry-points`.
+- **Secrets are configuration too** — the same path, from the environment or a secret store, validated at the boundary and never committed (see `use-git`).
+
+## Logging
+
+Logging is **output**, so like all IO it's configured at the edge — but it's pervasive, so it's carried by convention rather than a port.
+
+- **Configure once, at the composition root.** The driver sets up the root logger and its handler at startup — level, format, a `RichHandler`; nothing else touches logging configuration. A library or core module that calls `logging.basicConfig` hijacks its host, so configuration lives *only* in the driver (see `write-entry-points`), exactly as the suite configures it once per session (see `write-tests`).
+- **Emit through a module logger.** Every module — the core included — logs through `logging.getLogger(__name__)`. A logger is inert until the root configuration decides what to do with a record, so module loggers don't cost the core its purity under test: with no handler installed, a `debug` line simply vanishes.
+- **The shell narrates; the core stays quiet.** The edge logs the IO and the boundaries it crosses — a request served, an adapter called, a job run, an error caught. The core logs sparingly if at all: it *returns* its results, and its behaviour is pinned by tests rather than narrated in logs.
+- **Rich, and lazy.** Render through a `RichHandler` on the root logger, matching `write-tests`' session setup; write log lines with `logging`'s lazy `%` args, never f-strings (see `write-python`). The concrete driver wiring lives in `write-entry-points`.
 
 ## Data
 
