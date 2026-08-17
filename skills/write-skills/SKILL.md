@@ -36,12 +36,14 @@ Kebab-case, one or two words, the house prefix carrying the verb:
 
 ## Write the description
 
-The description *is* the trigger, so optimise it for invocation (the `skill-creator` plugin has a loop for that) — these are the house style rules on top:
+The description *is* the trigger, so optimise it for invocation (the `skill-creator` plugin has a loop for that).
+Write it in **plain prose, no backticks** (see `write-markdown`), in a fixed order so every description reads the same way and **mirrors the skill's own opening**:
 
-- **Cover what's in the skill, precisely.** Every major section is discoverable from the description, and nothing is promised that the body doesn't deliver.
-- **Say what, then when.** What the skill does, followed by the phrases and contexts that should invoke it — including the casual ones a user actually types ("even if the user just says 'add a CLI'").
-- **State opt-in-ness consistently.** A style skill applied only where it fits says so in the same words each time ("This is an opt-in style skill…"); a how-to that always applies when its task arises makes no opt-in claim.
-- **Plain prose, no backticks** (see `write-markdown`), and name the skills it **layers on** and **defers to**.
+- **What it is** — a short phrase naming the skill and its key topics; counterpart skills use a **parallel** form ("Functional programming done well — …" / "Object-oriented design done well — …").
+- **When to use it** — "Use when/whenever …", then the contexts and phrases that should invoke it, ending with the casual ones ("even if the user just says '…'"). Cover the whole body and promise nothing it doesn't deliver.
+- **Opt-in-ness, in fixed words** — an opt-in style skill states, verbatim and matching its body line, "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default." A how-to that always applies when its task arises makes no opt-in claim.
+- **The reference pointer, in fixed words** — a language-agnostic skill with a language reference states "Language-agnostic principles here; Python <idioms/build-outs/…> in references/python.md.", matching its `Language specifics` section.
+- **What it builds on and to** — "Layers on <skill> …; <skill> is the <…> counterpart" — the same skills the opening names.
 
 ## Open consistently
 
