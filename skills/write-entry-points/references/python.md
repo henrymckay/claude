@@ -318,6 +318,70 @@ Reach for a library only when the trigger must live *inside* the process (see Li
 
 Whichever it is, the scheduler or broker is the shell; the work stays an operation over the pure core.
 
+## Configuration
+
+Load configuration once, at the composition root, and pass its values into operations — the core never reads `os.environ` (see `structure-python`).
+
+A `pydantic-settings` model reads and validates the environment at the boundary. It's edge code, so it lives in a `config` module the driver imports:
+
+```python
+import pydantic_settings
+
+
+class Settings(pydantic_settings.BaseSettings):
+    """Application configuration, read from the environment."""
+
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="MYPACKAGE_")
+
+    rate: float = 0.05
+    timeout: float = 30.0
+```
+
+The driver instantiates it at startup and passes the values an operation needs, beside the adapters and through the same seam:
+
+```python
+settings = config.Settings()
+render.table(operate.report(stations, fetch=httpx_.fetch, rate=settings.rate))
+```
+
+`config.Settings()` reads `MYPACKAGE_RATE` and validates it, failing fast on a bad value.
+A secret is a `pydantic.SecretStr` field and arrives the same way — from the environment or a mounted file, never a default baked into the code (see `use-git`).
+
+## Logging
+
+Configure logging once, at the composition root — the root logger and a `RichHandler` — then let every module emit through `logging.getLogger(__name__)` (see `structure-python`).
+It's the application-side mirror of the session logging the suite installs (see `write-tests`), so it lives in a `logging_` module (the trailing underscore keeps it clear of the stdlib `logging`, per `write-python`):
+
+```python
+import logging
+
+import rich.logging
+
+
+def configure() -> None:
+    """Route application logs through Rich on the root logger."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[rich.logging.RichHandler(rich_tracebacks=True)],
+    )
+```
+
+The driver calls `logging_.configure()` once at startup, before the operation runs — from a `typer` `@app.callback()`, a `fastapi` lifespan hook, or the top of a job's `run()`.
+Every other module then logs without touching configuration:
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+logger.info("fetched %s stations", len(stations))
+```
+
+Only the driver configures logging — a library or core module that calls `basicConfig` hijacks its host.
+Write log lines with `logging`'s lazy `%` args, never f-strings, so a suppressed record builds no string (see `write-python`).
+
 ## Run
 
 Each entry point is launched by a `[project.scripts]` console command named `<project>-<role>` — a *global* command once installed (it lands on `PATH`), so namespace it to the project, never a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.
