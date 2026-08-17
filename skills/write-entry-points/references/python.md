@@ -38,7 +38,8 @@ rich_/
 ```
 
 `command.py` owns the app and its commands, and is the **composition root**: each command imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
-Defining `app` here lets the commands register with the idiomatic `@app.command()` decorator, and since `command.py` imports no other `drive` module there's no import cycle back to `__init__`:
+Unlike FastAPI's `APIRouter`, Typer has no flat command *router* to decorate off a separate object — `add_typer` composes sub-apps only as command *groups* (below), not flat commands.
+So the app lives with its commands: defining it in `command.py`, which imports no other `drive` module, keeps the `@app.command()` decorator without a cycle back to `__init__`:
 
 ```python
 import typing
