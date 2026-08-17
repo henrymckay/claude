@@ -146,6 +146,7 @@ For a library or non-trivial app, define a small hierarchy rooted in one base so
 class AppError(Exception):
     """Base class for this application's errors."""
 
+
 class UserNotFoundError(AppError):
     """Raised when a user lookup fails."""
 ```
@@ -171,13 +172,13 @@ Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the strin
 - **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
 - Avoid `from module import *` in code (fine only in a curated `__init__.py`).
 - Don't reach for a class when a function will do; don't add abstraction (factories, base classes, config layers) before there's a second case.
-- **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterize, or override the value without callers changing; a bare global has to be torn out to extend.
+- **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterise, or override the value without callers changing; a bare global has to be torn out to extend.
 (Genuinely fixed constants can stay globals.)
 - **Don't introduce a single-use local variable — inline the expression.** A name for a value used exactly once adds reading overhead without payoff.
 Keep the name only when it meaningfully documents an otherwise opaque expression.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
 When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
-- **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorized engine.
+- **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a pandas result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorised engine.
 Stack every group into one long-form frame rather than processing a group at a time.
 See the `use-polars` skill.
 - **Don't hand-place blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
