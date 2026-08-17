@@ -33,7 +33,7 @@ rich_/
 ```
 
 `command.py` owns the app and its commands, and is the **composition root**: each command imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
-Unlike FastAPI's `APIRouter`, Typer has no flat command *router* to decorate off a separate object — `add_typer` composes sub-apps only as command *groups* (below), not flat commands.
+Unlike `fastapi`'s `APIRouter`, `typer` has no flat command *router* to decorate off a separate object — `add_typer` composes sub-apps only as command *groups* (below), not flat commands.
 So the app lives with its commands: defining it in `command.py`, which imports no other `drive` module, keeps the `@app.command()` decorator without a cycle back to `__init__`:
 
 ```python
@@ -199,7 +199,7 @@ def report(
     ]
 ```
 
-`fastapi_/__init__.py` builds the app, includes the router, and adds the launcher — an ASGI app isn't callable to start a server, so `run()` calls `uvicorn.run(app)`; `api/__init__.py` re-exports `app` and `run`:
+`fastapi_/__init__.py` builds the app, includes the router, and adds the launcher — an ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `run()` calls `uvicorn.run(app)`; `api/__init__.py` re-exports `app` and `run`:
 
 ```python
 import fastapi

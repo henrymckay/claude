@@ -47,7 +47,7 @@ def test_when_revenue_then_quantity_times_price(
 
 Give cases `ids` when the values don't read clearly in the output.
 
-For a property that should hold across an input space, let Hypothesis generate and shrink the inputs:
+For a property that should hold across an input space, let `hypothesis` generate and shrink the inputs:
 
 ```python
 @hypothesis.given(xs=hypothesis.strategies.lists(hypothesis.strategies.integers()))
@@ -109,7 +109,7 @@ Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock`
 
 ## Logging
 
-To show logs from both the code under test and the tests during a run, Rich-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`.
+To show logs from both the code under test and the tests during a run, `rich`-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`.
 Nothing goes in the test files — `pytest` attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
 
 Configure it in the `pytest_` package.
@@ -160,7 +160,7 @@ Never `log_cli` — `pytest`'s live logging installs its own handler that bypass
 - The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide.
 A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
 
-If you don't need Rich specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
+If you don't need `rich` specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
 
 ## Pick a layout
 

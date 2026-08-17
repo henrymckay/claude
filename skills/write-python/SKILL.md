@@ -53,7 +53,7 @@ Use `typing.Protocol` for structural "duck typing" interfaces rather than forcin
 ## Docstrings
 
 **Every function gets a docstring** — public or internal — as do every module, class, and method.
-Use reST (Sphinx field-list) style:
+Use reStructuredText (reST) in the Sphinx field-list style:
 
 ```python
 def fetch_user(user_id: int, *, include_archived: bool = False) -> User:

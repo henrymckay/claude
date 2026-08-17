@@ -185,6 +185,6 @@ Default to fresh.
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (`pytest`: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, Hypothesis, `pytest-cov`, the `tests/` layout and import mode, running).
+- **Python** → `references/python.md` (`pytest`: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, `hypothesis`, `pytest-cov`, the `tests/` layout and import mode, running).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
