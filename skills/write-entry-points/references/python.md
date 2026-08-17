@@ -82,9 +82,11 @@ A `typer` command's inline `Annotated[...]` bloats the signature fast, so define
 
 ```python
 def stations() -> typer.models.ArgumentInfo:
-    """The stations positional argument."""
+    """Return the stations positional argument."""
     return typer.Argument(help="Weather station IDs, e.g. london tokyo.")
 ```
+
+The factory names a noun, so a noun-phrase docstring is the instinct — but it is a function like any other, and `ruff`'s `D401` requires the imperative, so write `Return the …` (see `write-python`).
 
 **Keep help text terse — lean on defaults, not examples.**
 Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--days` defaulting to `7` is its own example), and `typer` shows defaults in `--help`.
@@ -137,7 +139,7 @@ import fastapi
 
 
 def stations() -> fastapi.params.Query:
-    """The stations query parameter."""
+    """Return the stations query parameter."""
     return fastapi.Query(description="Station IDs.")
 ```
 
@@ -245,7 +247,7 @@ import shiny
 
 
 def root() -> htmltools.Tag:
-    """The top-level layout."""
+    """Return the top-level layout."""
     return shiny.ui.page_fluid(
         shiny.ui.input_text("stations", "Stations", "london tokyo"),
         shiny.ui.output_text("report"),
