@@ -59,6 +59,8 @@ Put explanation in the surrounding prose instead.
 (Illustrative code examples that teach a pattern may still use teaching comments.)
   - Prefer a space to `=` before a flag's value — `--import-mode importlib`, not `--import-mode=importlib` — since it reads cleaner.
     Keep `=` only where a space would misparse: the value starts with `-`, or the option's argument is optional.
+- **Hold code in a block to its language's own conventions.** An example *is* code, so it obeys the same naming, typing, docstring and formatting rules as the codebase it teaches — in Python, `write-python`, down to what `ruff` would accept.
+A reader copies an example, so one that would fail the project's own linter teaches precisely the habit the project rejects.
 - **Prefer lists over tables.** If a table's later columns just describe the item in the first, it's a list in disguise, so write it as a bullet list with one item per line.
 Reserve tables for genuine comparison or translation, where every column holds a parallel value worth aligning (`pandas` → `polars`, or a feature across several options).
 - **One sentence per line** (semantic line breaks) — prose and bullets alike.

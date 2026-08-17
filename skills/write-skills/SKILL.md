@@ -68,7 +68,7 @@ Every skill opens the same three-part way:
 - **Sections of principles with punchy headings.** Terse, no wrapper words (`Test data`, not `Where test data lives`); imperative for an action (`Pick a layout`, `Run`), a noun for a catalogue (`Patterns`); sentence case; monospace packages.
 - **Order by dependency.** Nothing precedes what it builds on: in the skill body, abstract, depended-upon sections lead, and synthesising or invoking ones (`Pick a layout`, `Run`) trail; a reference orders its own way (below).
 - **No thin stubs, no repetition.** Fold a one-line point into a catalogue section rather than giving it its own; avoid grab-bag headings; state each principle exactly **once**.
-- **Explain the why, not just the rule** (see `write-markdown`), and keep examples obeying the language's own skill — annotated and documented per `write-python`.
+- **Explain the why, not just the rule** (see `write-markdown`).
 
 ## Split the principle from the language
 
