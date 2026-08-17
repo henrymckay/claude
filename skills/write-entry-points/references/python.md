@@ -1,4 +1,4 @@
-# Entry points in Python
+# Write entry points in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 Every driver lives under `code/drive/` (see `structure-python`); the house libraries are the picks in `setup-python`'s Libraries section.

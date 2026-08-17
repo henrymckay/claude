@@ -1,4 +1,4 @@
-# Testing in Python
+# Write tests in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python with `pytest`.
 Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-python`.

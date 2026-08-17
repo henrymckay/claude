@@ -1,4 +1,4 @@
-# Object-oriented design in Python
+# Be object-oriented in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 The theme: Python gives you a lot for free (dataclasses, protocols, generators, modules), so most "patterns" are lighter here than in Java/C++.
