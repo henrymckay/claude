@@ -24,31 +24,24 @@ Don't force it onto naturally stateful code (I/O, UIs, long-lived objects) — t
 
 ## Core principles
 
-1. **Pure functions & referential transparency.** A pure function gives the same output for the same inputs and has no observable **side effects** (it doesn't mutate arguments, globals, or files, or otherwise touch the outside world).
-   Such a call is *referentially transparent* — you could replace it with its result and nothing else would change — which is exactly what makes pure functions easy to test and safe to compose.
-   Return results explicitly; never signal work by mutating shared state.
-
-2. **Immutability.** Don't mutate data in place; produce new values and treat inputs as read-only.
-   Shared mutable state is the source of most order-dependent bugs.
-
-3. **Explicit inputs and outputs.** Take everything a function needs as **arguments** rather than reaching for local or global state, and return results rather than writing them somewhere.
-   The more of a function's behaviour its arguments determine, the more reusable and testable it is — so prefer adding a parameter over reading ambient state.
-
-4. **Express everything as a function.** Prefer a function returning a value over a bare constant — even a fixed value.
-   `def default_rate() -> float: return 0.05` can be passed around, composed, overridden, or later made to depend on inputs, where a module-level constant must be torn out to extend.
-   Functions are the unit of composition, so make everything one.
-
-5. **Composition & currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
-   Write **generic** functions and derive specific variants by **currying** (binding some arguments — a.k.a. partial application) or **composing** (chaining functions end to end) instead of writing each from scratch — e.g. define a general `get_many`, then get `get_one` by composing it with `take_one`.
-
-6. **Higher-order functions.** Treat functions as first-class values — pass them, return them, store them.
-   `map`/`filter`/`reduce` and friends express *what* you want done rather than spelling out *how* to loop.
-
-7. **Declarative over imperative.** Describe the transformation, not the step-by-step mechanics.
-   `[transform(x) for x in items if keep(x)]` states intent more directly than an accumulator loop.
-
-8. **Lazy evaluation.** Compute values only when needed.
-   Lazy sequences (generators/streams) let you work with large or infinite data and build pipelines that don't materialize intermediate collections — then force (materialize) the result at the boundary where you actually need it.
+- **Pure functions and referential transparency.** A pure function gives the same output for the same inputs and has no observable **side effects** (it doesn't mutate arguments, globals, or files, or otherwise touch the outside world).
+Such a call is *referentially transparent* — you could replace it with its result and nothing else would change — which is exactly what makes pure functions easy to test and safe to compose.
+Return results explicitly; never signal work by mutating shared state.
+- **Immutability.** Don't mutate data in place; produce new values and treat inputs as read-only.
+Shared mutable state is the source of most order-dependent bugs.
+- **Explicit inputs and outputs.** Take everything a function needs as **arguments** rather than reaching for local or global state, and return results rather than writing them somewhere.
+The more of a function's behaviour its arguments determine, the more reusable and testable it is — so prefer adding a parameter over reading ambient state.
+- **Express everything as a function.** Prefer a function returning a value over a bare constant — even a fixed value.
+`def default_rate() -> float: return 0.05` can be passed around, composed, overridden, or later made to depend on inputs, where a module-level constant must be torn out to extend.
+Functions are the unit of composition, so make everything one.
+- **Composition and currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
+Write **generic** functions and derive specific variants by **currying** (binding some arguments — a.k.a. partial application) or **composing** (chaining functions end to end) instead of writing each from scratch — e.g. define a general `get_many`, then get `get_one` by composing it with `take_one`.
+- **Higher-order functions.** Treat functions as first-class values — pass them, return them, store them.
+`map`/`filter`/`reduce` and friends express *what* you want done rather than spelling out *how* to loop.
+- **Declarative over imperative.** Describe the transformation, not the step-by-step mechanics.
+`[transform(x) for x in items if keep(x)]` states intent more directly than an accumulator loop.
+- **Lazy evaluation.** Compute values only when needed.
+Lazy sequences (generators/streams) let you work with large or infinite data and build pipelines that don't materialise intermediate collections — then force (materialise) the result at the boundary where you actually need it.
 
 ## Functional core, imperative shell
 
@@ -77,7 +70,7 @@ Reach for a **class only when extending an existing hierarchy** — subclassing 
 Otherwise a class holding a single method is just a function wearing a costume.
 When a class genuinely *is* the right call, `be-oop` covers doing it well.
 
-## Model data so illegal states are unrepresentable
+## Make illegal states unrepresentable
 
 Use **algebraic data types** — *product* types (an "AND": a record/dataclass holding field A **and** field B **and** …) and *sum* types (an "OR": a value that is exactly **one of** several variants — a union, enum, or tagged union).
 Design types so invalid combinations simply can't be constructed; then whole classes of validation and defensive checks disappear because the bad state has no representation.
@@ -93,7 +86,7 @@ Total functions compose without hidden landmines — the signature tells the cal
 Decompose data by its **shape** rather than a ladder of type checks and attribute access.
 Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
 
-## Extensibility: choose your axis of change
+## Choose your axis of change
 
 Closed sum types and exhaustive `match` trade one kind of extensibility for safety — the classic **expression problem**.
 Code grows along two axes: new **variants** (kinds of data) and new **operations** (things you do with them).
@@ -108,7 +101,7 @@ Open dispatch buys that extensibility by giving up exhaustiveness — nothing st
 
 Extending *behaviour* is never in tension: composition, higher-order functions, and dependency injection add and reconfigure behaviour without modifying existing code — the open/closed principle, done functionally.
 
-## Chain with monads where they fit — but stay idiomatic
+## Chain with monads
 
 These sit on a progression worth naming: a **functor** is a wrapper you can `map` a plain function over; an **applicative** also combines several independently-wrapped values in a fixed way; a **monad** goes further, letting the next step *depend on* the previous result (`bind`).
 (The `map`/`amap`/`bind` naming in `use-polars` for `.pipe()` steps follows exactly this functor/applicative/monad split.)
@@ -116,7 +109,7 @@ Monadic patterns thread optionality, errors, or effects through a chain of steps
 Use them where the language supports them well, but **don't force idioms a language doesn't have** — bolting Haskell-style monads onto a language without the syntax or types for them produces code nobody else can read.
 Stay true to the language: in Python that's usually `X | None` and early returns, reaching for `returns` only when it genuinely pays (see `references/python.md`).
 
-## Recursion, idiomatically
+## Recursion
 
 Recursion expresses self-similar and tree-shaped problems naturally, and in pure FP it stands in for mutation-driven loops.
 But **stay true to the language**: where there's no tail-call optimisation (Python included), deep recursion overflows the stack — so prefer iteration or comprehensions for linear passes and reserve recursion for genuinely recursive structures.

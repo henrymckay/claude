@@ -24,7 +24,7 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
 Return a new structure instead of editing in place (`sorted(xs)` not `xs.sort()`; comprehension not `for … .append()`).
 - **Immutable dict updates** with `toolz`: `assoc`/`dissoc` (add/remove a key), `update_in`/`get_in` (nested update/lookup), `valmap`/`keymap`/`valfilter` (map or filter a dict) — each returns a **new** dict instead of mutating.
 
-## Algebraic data types & pattern matching
+## Algebraic data types and pattern matching
 
 Model *product* types with frozen dataclasses (above) and *sum* types with a union of variant classes (or an `enum.Enum` for a simple closed set), then destructure with `match`:
 
@@ -66,24 +66,24 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   ```python
   names = [u.name for u in users if u.active]
   ```
-- **Generator expressions** for lazy pipelines over large/streamed data — they don't materialize the whole sequence:
+- **Generator expressions** for lazy pipelines over large/streamed data — they don't materialise the whole sequence:
   ```python
   total = sum(x * x for x in numbers)
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
-- **For tabular or columnar data, the vectorized declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
+- **For tabular or columnar data, the vectorised declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for Polars and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
 Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
 
-## functools & itertools
+## functools and itertools
 
 - **`functools.reduce`** for genuine folds, but reach for a comprehension or `sum`/`math.prod`/`any`/`all` first — they're clearer.
 - **`functools.partial`** to specialise a function without a wrapper.
-- **`functools.lru_cache` / `cache`** to memoize pure functions.
+- **`functools.lru_cache` / `cache`** to memoise pure functions.
 - **`functools.singledispatch`** for type-based dispatch instead of `if/elif`.
 - **`itertools`**: `chain`, `groupby`, `accumulate`, `takewhile`/`dropwhile`, `islice`, `product`, `starmap` — composable building blocks for iterators.
 - **`operator`** module (`operator.attrgetter`, `itemgetter`, `add`) gives named functions where you'd otherwise write a `lambda`.
 
-## Composition & currying
+## Composition and currying
 
 Write **generic** functions and derive specific variants by currying or composing them, rather than hand-writing each variant.
 `toolz` provides both cleanly — use it rather than rolling your own:
@@ -113,19 +113,19 @@ Keep compositions shallow enough to stay readable — the aim is expressive, reu
 
 Other high-value `toolz` helpers: **`groupby(key, seq)`** (group into a dict of lists — no pre-sorting, unlike `itertools.groupby`), **`juxt(f, g)(x)`** → `(f(x), g(x))`, and **`do(effect, x)`** to run a side-effect mid-pipeline and return `x` unchanged.
 
-## Pure core, effectful shell
+## Functional core, imperative shell
 
 Keep functions that compute/transform free of I/O; do the reading and writing at the call site:
 
 ```python
-def summarize(rows: list[Row]) -> Summary:   # pure — easy to test
+def summarise(rows: list[Row]) -> Summary:   # pure — easy to test
     """Reduce rows to a summary."""
     ...
 
 def main() -> None:                           # shell — does the I/O
-    """Load, summarize, and print the report."""
+    """Load, summarise, and print the report."""
     rows = load(path)
-    print(render(summarize(rows)))
+    print(render(summarise(rows)))
 ```
 
 ## Injecting impure dependencies
