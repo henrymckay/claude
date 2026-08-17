@@ -17,6 +17,7 @@ description: >-
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
+It builds on `write-python`'s in-code conventions, and `be-oop` is its object-oriented counterpart.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
