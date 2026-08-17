@@ -46,7 +46,8 @@ Leave a sentence that states what something *is* declarative — "`CLAUDE.md` ho
 - **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, identifiers, and tool, package, or library names.
 Monospace them whether or not they are also linked.
   - **Inside backticks, use the real code spelling, not the brand capitalisation.** Backticks mark a token as code, so write the import or command name: `polars` not `Polars`, `numpy` not `NumPy`, `fastapi` not `FastAPI`.
-    (An *unmonospaced* brand mention in prose or a title may keep its capitalisation — "Polars is fast".)
+    Naming a library in *use* is a code reference too, so monospace it in prose, not only in imports — `fastapi` validates the body, reach for `pydantic` at a boundary.
+    Keep a capitalised, unmonospaced name only for a title, or a proper noun that *isn't* the package itself: a company (Posit), a service or platform (Redis, Kubernetes), or a formal product name (Shiny for Python). When unsure, monospace.
 - **Emphasise key terms with bold and italic.** Bold the word (or few words) a scanner must not miss — never a whole sentence, since emphasis on everything emphasises nothing.
 Use italics for lighter stress or for a term you are defining.
 Underline isn't native Markdown (it needs raw HTML and reads as a link), so avoid it.
