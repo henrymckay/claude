@@ -28,7 +28,7 @@ Use `frozen=True` for immutable value objects and `slots=True` to save memory an
 ## Interfaces: Protocol vs ABC
 
 - **`typing.Protocol`** — *structural* typing: any class with the right methods satisfies it, no inheritance needed.
-Prefer this for interfaces (ISP/DIP) — it's duck typing the type checker understands.
+Prefer this for interfaces (interface segregation and dependency inversion) — it's duck typing the type checker understands.
   ```python
   import typing
 
@@ -40,9 +40,7 @@ Prefer this for interfaces (ISP/DIP) — it's duck typing the type checker under
 - **`abc.ABC` + `@abc.abstractmethod`** — *nominal* typing: subclasses must inherit and implement, enforced at instantiation.
 Use when you own a hierarchy and want shared base code plus enforcement.
 
-Default to `Protocol` for "what a collaborator must provide"; reach for ABC when you own the hierarchy and want shared code + enforcement.
-
-## Computed & validated attributes: `@property`
+## Properties
 
 Don't write Java-style getters/setters.
 Expose a plain attribute, and upgrade to a `@property` only when you need computation or validation:
@@ -63,7 +61,7 @@ class Circle:
         return math.pi * self.radius**2
 ```
 
-## Constructors & namespacing
+## Constructors and namespacing
 
 - **`@classmethod`** for alternative constructors (`Account.from_json(...)`).
 - **`@staticmethod`** for a function that lives in the class's namespace but needs no instance — though a module-level function is often simpler.
@@ -74,11 +72,11 @@ Implement the protocols the language uses: `__repr__` (dataclasses give you this
 
 ## Enums
 
-`enum.Enum` for a closed set of named constants — a sum type (see `be-functional`, "Algebraic data types & pattern matching").
+`enum.Enum` for a closed set of named constants — a sum type (see `be-functional`, "Algebraic data types and pattern matching").
 
 ## Patterns in Python
 
-Concrete forms of the "simpler form" table in SKILL.md:
+Concrete versions of the simpler forms listed in SKILL.md:
 
 ```python
 import functools

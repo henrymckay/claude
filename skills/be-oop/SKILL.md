@@ -18,34 +18,29 @@ OOP earns its place when a problem is about **things with identity, state, and b
 The house default is functions-first (see `write-python`, `be-functional`); this skill is for when OOP is genuinely the right tool and how to do it well.
 This file is the language-agnostic mindset; Python idioms live in `references/python.md`.
 
-**This is opt-in.** Reach for it when designing classes, working in an OOP framework (subclassing, overriding hooks), modelling stateful long-lived objects, or building a hierarchy others will extend.
-For pure data transformation and stateless logic, prefer functions.
+**This is opt-in.** For pure data transformation and stateless logic, prefer functions.
 
 ## When to reach for OOP
 
 - **Extending a framework** — the API expects a subclass or an overridden hook.
 - **Stateful, long-lived objects with identity** — a connection, a session, a simulation entity — where "the same object, changing over time" is the model.
-- **A hierarchy open to new variants** — when you expect new *kinds* of thing to be added (the OOP-friendly side of the expression problem; see `be-functional`, "Extensibility: choose your axis of change").
+- **A hierarchy open to new variants** — when you expect new *kinds* of thing to be added (the OOP-friendly side of the expression problem; see `be-functional`, "Choose your axis of change").
 - **Encapsulating an invariant** — a class can guard its state so it's never invalid.
 
 If none of these hold, a function (or a plain dataclass + functions) is simpler.
 
 ## Core principles
 
-1. **Composition over inheritance.** Prefer building objects from other objects (has-a) over deep inheritance (is-a).
-   Inheritance couples you to a base class's internals and is rigid; composition stays flexible.
-   Reserve inheritance for genuine subtype relationships, not code reuse.
-
-2. **Encapsulation.** Hide internal state behind a narrow public interface so the object controls its own invariants.
-   Expose intent (methods), not raw fields to be poked; a leading underscore marks internals (see `write-python`).
-
-3. **Program to an interface, not an implementation.** Depend on an abstraction so implementations are swappable.
-   In Python that's usually a `typing.Protocol` (structural), not a base class.
-
-4. **Keep hierarchies shallow.** One or two levels.
-   Deep trees are fragile and hard to follow; if you're reaching for a third level, reconsider with composition.
-
-5. **Immutable where you can.** Even in OOP, prefer immutable value objects (frozen dataclasses) for data; reserve mutability for things that genuinely model changing state.
+- **Composition over inheritance.** Prefer building objects from other objects (has-a) over deep inheritance (is-a).
+Inheritance couples you to a base class's internals and is rigid; composition stays flexible.
+Reserve inheritance for genuine subtype relationships, not code reuse.
+- **Encapsulation.** Hide internal state behind a narrow public interface so the object controls its own invariants.
+Expose intent (methods), not raw fields to be poked; a leading underscore marks internals (see `write-python`).
+- **Program to an interface, not an implementation.** Depend on an abstraction so implementations are swappable.
+In Python that's usually a `typing.Protocol` (structural), not a base class.
+- **Keep hierarchies shallow.** One or two levels.
+Deep trees are fragile and hard to follow; if you're reaching for a third level, reconsider with composition.
+- **Immutable where you can.** Even in OOP, prefer immutable value objects (frozen dataclasses) for data; reserve mutability for things that genuinely model changing state.
 
 ## Mixins
 
@@ -72,7 +67,7 @@ In Python, small `Protocol`s.
 - **D — Dependency Inversion.** Depend on abstractions, not concretions, and inject dependencies rather than hard-wiring them.
 (This *is* the dependency injection in `be-functional` — pass collaborators in.)
 
-## Design patterns — and their simpler forms
+## Design patterns
 
 Patterns are shared vocabulary, but many classic GoF (Gang of Four) patterns are workarounds for features Python already has.
 Recognise the pattern, then reach for the **simplest form** that solves it — keep it simple and don't over-build (the KISS and YAGNI principles; see `write-python`); don't cargo-cult a Java-style class where a function does.
@@ -96,7 +91,7 @@ Patterns that stay **genuinely useful** as classes:
 - **State** — behaviour changes with internal state (a state machine).
 - **Facade** — a simple interface over a complex subsystem.
 
-## Things to avoid
+## Avoid
 
 - **Inheritance for code reuse** — use composition; inherit only for true is-a.
 - **Deep hierarchies and god classes** — split responsibilities.
@@ -106,4 +101,8 @@ Patterns that stay **genuinely useful** as classes:
 
 ## Language idioms
 
+Read the file for the language you're working in:
+
 - **Python** → `references/python.md` (dataclasses, `Protocol` vs ABC, properties, class/staticmethods, dunders, and patterns in Python).
+
+Add a new `references/<language>.md` when you start applying this in another language rather than stuffing idioms into this file.
