@@ -48,7 +48,7 @@ Typing conventions (Python 3.11+):
 - **`import collections.abc` and qualify** (`collections.abc.Iterable`, `.Sequence`, `.Mapping`) for parameters — accept the most general type that works (take an `Iterable`, return a `list`).
 - **`typing.Any`** for a genuinely unspecified type, and **`typing.Callable`** for callable types (qualified, per the import rule above).
 
-Reach for `dataclasses.dataclass` for plain data holders before hand-writing `__init__`.
+Reach for `dataclasses.dataclass` before hand-writing `__init__` — but first check the data holder is warranted, since a record built at one call site and unpacked at the next is just that function's arguments (see `be-functional`).
 Use `typing.Protocol` for structural "duck typing" interfaces rather than forcing an ABC (Abstract Base Class) inheritance hierarchy.
 
 ## Docstrings
