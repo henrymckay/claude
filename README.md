@@ -31,7 +31,7 @@ Verb-first skills that encode consistent working conventions.
 Tests of how well the skills guide a build: each `brief.md` is a user request, each `answers.md` the design a build should reach by following the skills.
 Improve the skill responsible for any divergence.
 
-- [`demark`](evals/demark) exercises dataframe modelling, where to cut a pure core, what earns a named type, and composable entry points.
+- [`demark`](evals/demark) produces and displays DeMark counts for stock tickers across timeframes.
 
 ## 🛠️ Set up
 
