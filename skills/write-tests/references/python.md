@@ -11,6 +11,7 @@ tests/
   pytest_/
     __init__.py
     given.py
+    reference.py
     then.py
     when.py
   suite/
@@ -22,7 +23,7 @@ tests/
 
 - Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests `pytest` collects).
 Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
-- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, and a `when` where actions earn naming.
+- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, a `when` where actions earn naming, and a `reference` where a property test needs an oracle to agree with.
 Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
 The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
 - Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
@@ -82,6 +83,13 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
     assert sorted(sorted(xs)) == sorted(xs)
 ```
 
+Bind the strategy to a module-level name when several properties share it, rather than repeating the `@hypothesis.given` argument, and set `@hypothesis.settings(deadline=None)` for anything doing real work per example.
+
+Where the property only means something once the input reaches a particular state, **build the state into the strategy and then check it arrives**.
+Draw the increments and accumulate them (`itertools.accumulate` over a drifting step) so runs and trends actually occur, since independent draws almost never produce one.
+Then run a throwaway loop over a few hundred generated inputs counting how many land in each state you care about, and only keep the property once that count is high.
+A `hypothesis.event(...)` call in the test body records the same thing in the run statistics if you would rather keep the check.
+
 ## Assertions
 
 Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality.
@@ -122,7 +130,7 @@ def test_when_add_revenue_then_revenue_is_quantity_times_price(
 ```
 
 Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
-For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`.
+For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)` — which needs its own `import polars.testing`, since importing `polars` alone does not bind the submodule (see `write-python`).
 
 ## Coverage and speed
 

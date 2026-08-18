@@ -153,7 +153,7 @@ Everywhere else the stdlib-first rule holds — don't add a dependency you don't
 `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
-- **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a `pandas` result with `polars.from_pandas`.
+- **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a `pandas` result with `polars.from_pandas`, adding `pyarrow` alongside it, which that conversion needs for anything beyond plain numpy-backed columns.
 Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
 - **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.

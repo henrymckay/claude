@@ -119,6 +119,13 @@ Reach for it when you can state an **invariant**:
 - Postconditions: the result is always sorted, within bounds, or the same length.
 - Agreement with a slow, obviously-correct reference implementation.
 
+**Check that the generator actually reaches the states you are testing.** A property that passes is evidence only about the inputs that were generated, and a naive generator usually produces the quiet ones: uniformly random prices almost never contain a nine-candle run, so an agreement property over them can pass a hundred examples having never once exercised the logic it was written for.
+Bias the generator towards the interesting region — a walk with drift rather than independent draws — and then *measure* its reach before trusting it, by counting over a few hundred generated inputs how many arrive in each state that matters.
+The measurement is throwaway; leaving the unbiased generator in place is what costs you.
+
+**A reference implementation is neither a given, a when, nor a then** — it is an oracle, and it belongs in its own module beside them (`reference` alongside `given`/`when`/`then`), exposed to tests through a fixture like any other starting state.
+Write it from the specification in the most obvious style available, not by paraphrasing the implementation: the agreement is worth something only because the two share no mechanism.
+
 ## Dependency tests
 
 Write tests against the third-party behaviour your code depends on, kept separate from tests of your own code.

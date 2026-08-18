@@ -89,6 +89,10 @@ So settle the core's shapes first — `be-functional`'s "Derive functions from t
 A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
 
+**A re-exported member shadows the module it came from.** Re-exporting `count` out of `transform/count.py` binds the *function* to `transform.count`, so `from mypackage.transform import count` hands back the function and the module becomes unreachable by name — including from a test that wants to reach a private helper, and from a sibling module inside the same package.
+That is the trade the re-export makes and it is usually the right one, since callers want the function.
+Where it bites, name the module for the *shape* it holds rather than the one function it exports — `sequence.py` re-exporting `count`, `membership.py` re-exporting `symbols` — so the module name stays free.
+
 ## Configuration
 
 Configuration is **input crossing the boundary**, so it takes the same path as any other IO: read at the edge, validated there, injected inward.
