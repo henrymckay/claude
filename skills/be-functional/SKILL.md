@@ -84,6 +84,28 @@ When a class genuinely *is* the right call, `be-oop` covers doing it well.
 Use **algebraic data types** — *product* types (an "AND": a record/dataclass holding field A **and** field B **and** …) and *sum* types (an "OR": a value that is exactly **one of** several variants — a union, enum, or tagged union).
 Design types so invalid combinations simply can't be constructed; then whole classes of validation and defensive checks disappear because the bad state has no representation.
 
+## Derive functions from the data flow
+
+Before writing the core, write down the **sequence of shapes** the data passes through — the type going in, the type coming out, and the forms between.
+A new shape appears where the **entity** changes (what the data is about), where its **grain** changes (what one element represents), or where a **new independent input enters**.
+Those are the seams, and each span between two seams is one function — so the flow decides the decomposition and you read it off rather than choosing it.
+Endpoints alone constrain nothing: one function doing every step still satisfies "X in, Y out".
+
+**Intermediate workings are not shapes.** Detail derived at the same entity and grain, from the same input, belongs *inside* one function however many steps it takes.
+The tell is whether you can name the whole thing without an "and" — "counts from candles" is one transformation, where "resample and count and align to dates" is three wearing one name.
+Factor freely *below* that line — extract private helpers to keep a long function readable or to share logic — since the rule fixes that the **seam functions exist**, not that they are the only functions.
+
+Give each function **exactly the arguments its span needs.**
+Too many and it spans more than one seam, or depends on what it never uses: a value merely passed through, or restating what the input already carries, is not an argument.
+Too few is subtler and worse — a function handed something upstream of its own seam must **reconstruct** its real input internally, swallowing the step before it, which is exactly how two transformations fuse and the seam between them stops existing.
+
+**A value matched against the data element by element is input, not a parameter.** Joined, grouped by, or zipped against elements, it is an axis of the input and belongs in the input type; one genuinely fixed for the whole call (a threshold, a mode flag) stays a parameter.
+Ask whether it could need to differ *between elements of a single call* — if so, it is data.
+
+**Fix the shapes before implementing; let signatures settle as you go.** The sequence is a few lines to write, is where the design lives, and is costly to change once code is built on it.
+Full argument lists can't be known up front, and inventing them early only produces speculative parameters (YAGNI).
+But treat the urge to add a parameter that no shape accounts for as evidence the **flow itself is wrong**: revise the sequence rather than bolting the argument on.
+
 ## Prefer total functions
 
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).
