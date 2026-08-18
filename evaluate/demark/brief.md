@@ -28,15 +28,24 @@ Compare each candle's close to the **high or low two candles earlier**:
 Qualifying candles need not be consecutive.
 The countdown runs to 13.
 
+A countdown can also be cut short before it gets there, and I want all three ways it happens:
+
+- A setup completes in the opposite direction.
+- The same setup recycles, meaning another setup completes in the same direction — the new one replaces the countdown in progress.
+- The setup's own true range is broken, meaning a later candle trades beyond the extreme of the nine candles that made the setup, against the direction the countdown is pointing.
+
 ### Combo
 
 The same countdown rule, except counting begins with the setup rather than waiting for it to complete.
-Also runs to 13.
+Also runs to 13, and is cut short the same three ways.
 
 ## How a count is written
 
 Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
 A single number then carries both the direction and how far along the count is, and an ordinary numeric bound picks out either end: `>= 8` finds late sells, `<= -8` finds late buys.
+
+Zero sits in the middle and means nothing is running — no setup on that candle, or no countdown open.
+A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
 
 ## What I point it at
 
@@ -61,6 +70,9 @@ Plain options are right here — a pair of bounds per filterable column — rath
 Because counts are signed, one pair of bounds per column covers both directions, and I never have to say which direction I mean.
 
 The date is a filter like any other, and it is what decides which candles I am reported on: bound it and I get that day or that stretch of days; leave it alone and it **defaults to today**.
+
+I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
+On a day the market has not traded, today means the most recent day it did.
 
 ## Other ways I expect to use it
 
