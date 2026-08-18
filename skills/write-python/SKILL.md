@@ -18,6 +18,7 @@ description: >-
 
 The judgment calls that make Python readable and maintainable — the decisions a formatter or linter can't make for you.
 It focuses on API design, typing intent, and idioms — the baseline that `be-functional`, `be-oop` and `write-tests` layer on; project structure lives in `structure-python`, packaging and dependencies in `setup-python`.
+Three habits account for most of what goes wrong: importing names instead of modules, leaving a function unannotated or undocumented, and reaching for a class or an abstraction before a second case calls for one.
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -70,7 +71,9 @@ Types stay out of the docstring — the annotations already carry them, so don't
 
 Document the *why* and the non-obvious (units, side effects, what raises), not the mechanically obvious.
 A trivial function still gets a docstring, but keep it a single line that says something its signature doesn't — a bare restatement of the name is wasted space, so make it earn its line.
-Phrase the summary line in the **imperative mood** ("Return the top products", not "Returns the top products" or the noun phrase "The top products") — `ruff`'s `D401` flags anything else.
+
+**Phrase the summary line in the imperative mood.** "Return the top products", not "Returns the top products" or the noun phrase "The top products".
+`ruff`'s `D401` flags anything else, and a noun-phrase summary is the instinct precisely where it is wrong — a factory or a getter still describes what it *does*.
 
 Presence and basic hygiene are enforced by `ruff`'s pydocstyle (`D`) rules on pre-commit.
 Note `ruff` has no reST convention, so it's configured with `pep257` — it checks that docstrings *exist* but doesn't impose section formatting, leaving the field-list style to you.
@@ -78,7 +81,7 @@ See `setup-python`.
 
 ## Comments
 
-Prefer self-documenting code to `#` comments.
+Write self-documenting code instead of `#` comments.
 A descriptive name, a named constant, or a small well-named helper carries the same meaning as a comment and can't drift out of sync with the code the way a comment does — so lift the intent into a name (`invalid_rows = 3`, not a bare `3` with a comment).
 When a genuine *why* still needs stating — a non-obvious workaround or a subtle invariant — put it in the docstring, not a trailing comment.
 Reserve `#` for what has nowhere else to live: tooling directives (`# noqa`, `# type: ignore`) and the PEP 723 inline-script header.
@@ -131,7 +134,7 @@ Place a new definition in its alphabetical slot, but don't reshuffle an existing
 
 ## Simplicity
 
-**Prefer the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
+**Take the simplest solution.** Reach for built-in language and standard library features before writing custom code or pulling in a dependency — out-of-the-box beats bespoke, because there's less to maintain and fewer places for bugs to hide.
 Add complexity (another abstraction, a dependency, a clever trick) only when a concrete need forces it — and when a dependency is warranted, `setup-python` lists the house pick for common tasks.
 **Once a dependency is in play, use *its* built-in features rather than hand-rolling around them.** Before writing validation, grouping, parsing, retries, or serialisation yourself, check the library's own API — a CLI framework's callbacks and validation, a dataframe library's operations, an HTTP client's retry/auth.
 Reinventing what a dependency already offers is more code to maintain and usually a worse version.
@@ -164,7 +167,7 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
 Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
-- **Prefer a named method to an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
+- **Use a named method over an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
 A named method also reads in evaluation order and says what a symbol only implies — `polars`'s `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
 Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
 - **Context managers** (`with`) for anything with cleanup — files, locks, connections.
