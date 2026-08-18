@@ -80,6 +80,10 @@ Each new core package obeys the core's rules (no IO; imported, never importing o
 **Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
 Don't scaffold the full set for a script (KISS, YAGNI).
 
+**Design the core's shape before the edge's.** An entry point's interface — a CLI's flags, an API's schema — invites a design pass before it's built; the core's data shape rarely does, and it is the one that matters more.
+A driver is cheap to replace and serves one presentation, where the core's shape is what every adapter, operation and test is then built on, and a second entry point inherits it wholesale.
+So settle the core's shapes first — `be-functional`'s "Derive functions from the data flow" is how to arrive at them.
+
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
 A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
