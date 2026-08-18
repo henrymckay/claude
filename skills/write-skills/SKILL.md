@@ -69,6 +69,12 @@ Every skill opens the same three-part way:
 - **Order by dependency.** Nothing precedes what it builds on: in the skill body, abstract, depended-upon sections lead, and synthesising or invoking ones (`Pick a layout`, `Run`) trail; a reference orders its own way (below).
 - **No thin stubs, no repetition.** Fold a one-line point into a catalogue section rather than giving it its own; avoid grab-bag headings; state each principle exactly **once**.
 - **Explain the why, not just the rule** (see `write-markdown`).
+- **State a rule as a rule.** Where a convention is absolute, write it imperatively — "Write one fluent method chain", not "Prefer one fluent method chain".
+Keep *prefer* for a genuine trade-off, and state its exception in the same breath ("reserve mocks for genuine boundaries").
+If every rule hedges, nothing marks which ones bend, and a reader breaks the absolutes at the same rate as the defaults.
+- **Give a load-bearing rule its own line.** Folding trivia into a catalogue is right, but a rule the skill exists to enforce should never be the last sentence of a long paragraph — that is precisely where it gets read past.
+- **Name the failure modes in the opening.** Two or three mistakes that account for most of what goes wrong, so a reader knows what to watch for before reaching the detail.
+- **Show the anti-pattern for the rule most often broken.** A compact wrong/right pair lands what prose alone does not; one per skill is usually enough.
 
 ## Split the principle from the language
 
