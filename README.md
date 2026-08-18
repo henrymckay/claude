@@ -60,10 +60,10 @@ Skills and `CLAUDE.md` shape *how* Claude approaches a task.
 These per-session controls shape *which model* runs it, *how hard* it thinks and *how fast* it replies, independent of any skill.
 
 - **Model.** `/model` picks the model for the session.
+  - `haiku` for simple or high-volume tasks.
   - `sonnet` for daily work.
   - `opus` for complex reasoning.
   - `fable` for the hardest or longest tasks.
-  - `haiku` for simple or high-volume tasks.
   - `opusplan` to plan on Opus and execute on Sonnet.
 - **Effort.** `/effort` sets reasoning depth from `low` to `max`.
   Raise it for a hard bug or design decision, lower it for routine edits.
