@@ -16,6 +16,7 @@ description: >-
 Markdown has two very different readers: **humans**, who skim and scan, and **LLMs (Large Language Models)**, which parse every token.
 Most principles serve both, but some polish helps humans and wastes tokens on a model, and some density suits a model but loses a human.
 So **decide the audience first**, apply the universal rules, then add the audience-specific set.
+Three mistakes account for most weak Markdown: filler that restates what the context already fixes, prose where a heading or list would carry the structure, and polish aimed at the wrong reader.
 
 - **Human-facing** — READMEs, documentation, guides, tutorials, changelogs, wikis, issue/PR descriptions.
 - **LLM-facing** — `SKILL.md`, `CLAUDE.md`, agent/tool instructions, prompts, anything a model consumes as context.
@@ -36,12 +37,12 @@ Prune articles and trailing nouns that add nothing.
 - **Headings use sentence case** — capitalise the first word, proper nouns, and code as it's really spelled; not Title Case.
 "Configure the project", "Pre-commit hooks", "Name `.pipe()` UDFs" — never "Configure The Project".
 It's the technical-docs standard, and it keeps identifiers in a heading (`polars`, `.pipe()`, `code/`) as the code reads them.
-- **Prefer imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
+- **Write imperative, action-oriented headings** for how-to and task sections — "Add a skill", "Set up on a new machine", not "Adding a skill" or "New machine notes".
   - A verb tells the reader what they'll *do* in that section.
   - This applies to the document's `#` title too when the doc is a how-to — a skill or a guide — so "Write Python", not "Writing Python".
     A doc that *names* a thing keeps a noun title: a README's project name, a reference file's topic.
   - Reference or catalogue sections that don't describe an action (e.g. "Skills", "Requirements") can stay noun phrases.
-- **Prefer bullets, one clear statement each.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
+- **One clear statement per bullet.** If a bullet says two things, split it or add a sub-bullet; use sub-bullets to expand or clarify.
 - **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).
 - **Write action sentences imperatively too, not just headings.** Lead an instruction with a verb — "Install the CLI", not "The CLI can be installed".
 Leave a sentence that states what something *is* declarative — "`CLAUDE.md` holds the project's rules" — the same way reference-section headings stay noun phrases.
@@ -57,7 +58,7 @@ Underline isn't native Markdown (it needs raw HTML and reads as a link), so avoi
 - **Keep runnable code blocks real and copy-pasteable.** Write commands exactly as you would type them: a single space between arguments, no cosmetic column alignment, and no explanatory comments inside the block.
 Put explanation in the surrounding prose instead.
 (Illustrative code examples that teach a pattern may still use teaching comments.)
-  - Prefer a space to `=` before a flag's value — `--import-mode importlib`, not `--import-mode=importlib` — since it reads cleaner.
+  - Use a space, not `=`, before a flag's value — `--import-mode importlib`, not `--import-mode=importlib` — since it reads cleaner.
     Keep `=` only where a space would misparse: the value starts with `-`, or the option's argument is optional.
 - **Hold code in a block to its language's own conventions.** An example *is* code, so it obeys the same naming, typing, docstring and formatting rules as the codebase it teaches — in Python, `write-python`, down to what `ruff` would accept.
 A reader copies an example, so one that would fail the project's own linter teaches precisely the habit the project rejects.
@@ -118,7 +119,7 @@ Address the reader as "you" or write impersonally; "Personal coding conventions"
 - **Use richer render features when they serve the reader** — task lists, collapsible sections, badges and a table of contents for long docs.
 - **Reach for GitHub-flavoured alert callouts** to make an aside stand out, where the platform renders them (GitHub and most Markdown viewers):
   - Match the type to intent: `[!NOTE]` for info, `[!TIP]` for advice, `[!IMPORTANT]` for a key point, `[!WARNING]` or `[!CAUTION]` for hazards.
-  - Prefer a `[!WARNING]` or `[!CAUTION]` over burying a "don't do this" in prose.
+  - Use a `[!WARNING]` or `[!CAUTION]` rather than burying a "don't do this" in prose.
 - **Accessibility** — real heading hierarchy (screen readers navigate by it, don't fake headings with bold), image alt text, and don't rely on colour or emoji alone to carry meaning.
 
 ## For LLMs
