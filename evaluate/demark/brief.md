@@ -13,7 +13,7 @@ Resolve index names with `pytickersymbols`.
 For picking tickers I would rather learn one compact, glob-style syntax than memorise a separate flag for every case.
 Design something intelligent and elegant, and run your design past me before you build it.
 
-## Filtering and dates
+## What I filter on
 
 I filter on two things, the **date** and any **count** column.
 Each takes a lower bound, an upper bound or an exact value, and I expect to set several at once in a single run.
@@ -34,7 +34,7 @@ A `rich` table, with a column for each count on each timeframe.
 A row per ticker, and a row per date as well where I have asked for a range.
 Colour each cell to show whether it is a buy or a sell.
 
-## Other ways I expect to use it
+## Other ways I use it
 
 - Sometimes I only want an index's constituent symbols, and nothing else.
 - Sometimes I want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.
@@ -85,7 +85,7 @@ A single number then carries both the direction and how far along the count is, 
 Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
 A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
 
-## Data
+## The candles
 
 Fetch candles with `yfinance`, at each timeframe directly.
 It serves daily, weekly and monthly, so there is no need to derive one from another.
