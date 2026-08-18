@@ -15,6 +15,7 @@ description: >-
 
 `polars` is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
 Most mistakes come from writing `pandas` habits in `polars` syntax.
+Three account for nearly all of them: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` types or habits leak past the boundary — each has its own section below.
 This file is the mental model; reach into `references/` for concrete recipes, and `write-python`'s general conventions apply on top.
 
 **In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -28,7 +29,7 @@ Import convention (house style): `import polars` and qualify — `polars.col(...
 
 **Expressions** describe a computation on columns — `polars.col("a").add(polars.col("b"))`, `polars.col("x").sum()`.
 They're lazy descriptions, run in parallel by the engine, and are the heart of `polars`.
-You almost never loop over rows.
+You never loop over rows.
 
 **Contexts** are where expressions run:
 
@@ -53,11 +54,15 @@ out = (
 )
 ```
 
-**Prefer one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
+**Write one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelises expressions within one context.
 
-**Prefer expression methods to operator symbols.** Write `polars.col("a").mul(polars.col("b"))` and `polars.col("x").gt(0)`, not `*` and `>`.
+**Python control flow is what usually breaks a chain.** An `if` that inspects the frame and rebinds it, or an early return for an empty input, splits one transformation into branches that each need their own test.
+Keep the decision inside the chain — `when/then/otherwise` for a value, `.filter` for rows — or normalise the shape once where the data enters, so there is nothing left to branch on.
+An empty input rarely deserves its own path: the same chain over an empty frame returns an empty frame with the right schema, where a hand-written early return duplicates that schema somewhere it can drift out of step.
+
+**Use expression methods, not operator symbols.** Write `polars.col("a").mul(polars.col("b"))` and `polars.col("x").gt(0)`, not `*` and `>`.
 The method form chains without wrapping parentheses and reads consistently with the rest of the expression API (`.sum()`, `.alias()`, `.over()`).
 Arithmetic and comparison operators all have method equivalents: `.add`, `.sub`, `.mul`, `.truediv`, `.floordiv`, `.mod`, `.pow`, and `.gt`, `.ge`, `.lt`, `.le`, `.eq`, `.ne`.
 This also sidesteps the precedence trap — `polars.col("a").gt(0) & polars.col("b").gt(0)` needs no inner parentheses, where the operator form does.
@@ -87,21 +92,37 @@ Two more lazy-execution habits: run several independent queries together with `p
 ## Stay in the dataframe
 
 **If data is a dataframe, or you're doing dataframe-shaped work, do it *in* `polars` — don't drop to Python lists and loops.**
-When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it once with `polars.from_pandas` and keep going with expressions.
 Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimiser, and it's the most common way people accidentally leave `polars`.
 Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
+
+**Convert at the boundary, and never reach back.** When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it with `polars.from_pandas` at the first opportunity and keep going with expressions.
+Tidying in `pandas` first — resetting an index, renaming, reshaping — does the work in the weaker API and drags `pandas` types into your own signatures, while a `polars` chain that reaches back into the original frame for a column name or a shape has left the boundary open.
+Convert, then let every decision after that be an expression.
 
 **Keep every group in one long-form frame — don't split it up.**
 Stack all groups (all tickers, all users, all categories) into a single frame and compute across them together, rather than holding a frame per group and looping.
 Most work is plain column expressions that apply to every group in one pass — element-wise maths, filters, `when/then` — with **no `.over` at all**.
 Reach for `.over(group)` only where an operation must respect group boundaries: a `.shift`, a cumulative, a rank, or a per-group window.
 Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
-Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.
+
+**Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.**
 
 **A grouping key that arrives as an argument is still a group.** Whether an axis reaches you as rows already in the frame (a `ticker` column from a fetch) or as a caller-supplied list (a set of timeframes, regions, or scenarios to compute over), it is the same thing to the computation, and both belong in the frame.
 The tell is a `polars.concat([...])` wrapping a comprehension — that is the same per-group loop, wearing a parameter as a disguise.
 Put the values in their own small frame and `.join(other, how="cross")` where each applies to every row (a plain join where it's selective), then group by that axis alongside the rest: `.over(["ticker", "timeframe"])`.
 `be-functional`'s "Derive functions from the data flow" has the general test for whether a parameter is really data.
+
+```python
+# Wrong: a Python loop over groups, one frame per timeframe.
+counts = polars.concat([counted(prices, timeframe) for timeframe in timeframes])
+
+# Right: the axis is a column, so a single pass covers every group.
+counts = prices.join(
+    polars.DataFrame({"timeframe": timeframes}), how="cross"
+).with_columns(
+    polars.col("close").diff().over(["ticker", "timeframe"]).alias("move")
+)
+```
 
 ## Habits and `pandas` traps
 

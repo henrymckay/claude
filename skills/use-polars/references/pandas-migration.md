@@ -39,6 +39,8 @@ df.to_pandas()              # Polars -> pandas
 df.to_numpy()               # to numpy
 ```
 
+`polars.from_pandas(pdf, include_index=True)` brings the index across as a column, so a `pandas`-side `reset_index()` before converting is never needed.
+
 **Switching mid-chain.** When you need a `pandas`-only operation inside a `polars` pipeline, drop to `pandas` and come straight back without breaking the chain — `.pipe(polars.from_pandas)` works because `pandas`'s `.pipe()` hands the frame to `polars.from_pandas`:
 
 ```python
