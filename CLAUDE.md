@@ -6,6 +6,14 @@
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 
+## Answers
+
+- Lead with the answer. No preamble, no restating my question back at me.
+- Report a finding once, where it matters. Don't preview it, state it, then summarise it.
+- One example beats three; a table beats a table plus its prose restatement.
+- Cut the closing offer unless there is a real choice to make. If the next step is obvious, take it or name it in a clause.
+- Keep the reasoning that changes my decision, cut the reasoning that shows your work.
+
 ## Skills
 
 These skills encode my conventions and are mandatory, not advisory.
