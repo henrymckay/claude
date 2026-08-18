@@ -72,7 +72,9 @@ Every skill opens the same three-part way:
 
 - **Sections of principles with punchy headings.** Terse, no wrapper words (`Test data`, not `Where test data lives`); imperative for an action (`Pick a layout`, `Run`), a noun for a catalogue (`Patterns`); sentence case; monospace packages.
 - **Order by dependency.** Nothing precedes what it builds on: in the skill body, abstract, depended-upon sections lead, and synthesising or invoking ones (`Pick a layout`, `Run`) trail; a reference orders its own way (below).
+A reader who meets a term before its definition has to hold it unresolved or double back, so let earlier sections earn the vocabulary later ones spend.
 - **No thin stubs, no repetition.** Fold a one-line point into a catalogue section rather than giving it its own; avoid grab-bag headings; state each principle exactly **once**.
+A rule stated twice drifts the moment only one copy gets updated, and a reader who hits it twice starts wondering whether the two are actually saying the same thing.
 - **Explain the why, not just the rule** (see `write-markdown`).
 - **State a rule as a rule.** Where a convention is absolute, write it imperatively — "Write one fluent method chain", not "Prefer one fluent method chain".
 Keep *prefer* for a genuine trade-off, and state its exception in the same breath ("reserve mocks for genuine boundaries").
