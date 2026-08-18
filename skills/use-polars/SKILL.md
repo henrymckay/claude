@@ -139,7 +139,11 @@ Even sequential per-group logic stays in the one frame that way — a consecutiv
 
 **Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.**
 
-**A grouping key that arrives as an argument is still a group.** Whether an axis reaches you as rows already in the frame (a `ticker` column from a fetch) or as a caller-supplied list (a set of timeframes, regions, or scenarios to compute over), it is the same thing to the computation, and both belong in the frame.
+**A grouping key that arrives as an argument is still a group.** Whether an axis reaches you as rows already in the frame (a `ticker` column from a fetch), as a caller-supplied list (a set of timeframes, regions, or scenarios to compute over), or as a set the *problem itself* fixes (there are exactly three counts, four quartiles, two scenarios), it is the same thing to the computation, and all of them belong in the frame.
+
+That last one is the easiest to miss, because a closed set feels like structure rather than data — three counts become three columns and three expressions, and the axis never appears.
+The tell is a name repeated across columns (`daily_setup`, `weekly_setup`) or a function returning one column per member of a fixed set: those are a wide frame that should be long, and going long collapses the near-copies into one pass with the axis as a column.
+Widen at the end, once, for whatever has to display in columns.
 The tell is a `polars.concat([...])` wrapping a comprehension — that is the same per-group loop, wearing a parameter as a disguise.
 Put the values in their own small frame and `.join(other, how="cross")` where each applies to every row (a plain join where it's selective), then group by that axis alongside the rest: `.over(["ticker", "timeframe"])`.
 `be-functional`'s "Derive functions from the data flow" has the general test for whether a parameter is really data.

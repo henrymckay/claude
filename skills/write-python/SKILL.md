@@ -162,6 +162,10 @@ class UserNotFoundError(AppError):
     """Raised when a user lookup fails."""
 ```
 
+**Wait for the second error before there is a hierarchy.** A base class with exactly one subclass distinguishes nothing — every caller catching the base catches the subclass and vice versa — so it is the abstraction added before the second case, which the Avoid section rules out.
+Start with one class named for what actually goes wrong (`SelectorError`, not `AppError` plus `SelectorError`), and introduce the base when a second error arrives and callers need to choose between broad and narrow.
+The hierarchy above is what a library or an app with several failure modes grows into, not where it begins.
+
 Let exceptions propagate to where they can be handled meaningfully — don't catch-and-continue to hide failures.
 When re-raising with context, use `raise NewError(...) from original` to preserve the chain.
 Reserve returning `None` for genuinely expected "not found" cases, and make it obvious in the type (`User | None`) and docstring.

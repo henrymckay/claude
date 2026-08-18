@@ -46,6 +46,8 @@ The more of a function's behaviour its arguments determine, the more reusable an
 Functions are the unit of composition, so make everything one.
 - **Composition and currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
 Write **generic** functions and derive specific variants by **currying** (binding some arguments — a.k.a. partial application) or **composing** (chaining functions end to end) instead of writing each from scratch — e.g. define a general `get_many`, then get `get_one` by composing it with `take_one`.
+Two mechanisms performing the *same* operation on different fields — a date bounded by its own pair of parameters beside a generic bounds filter for every other column — is one function that has not been made generic yet, and it shows up as a special case in the caller, in the docs and in every test.
+The field being special to the *domain* is not the test; the test is whether the operation differs, and "keep rows between two values" does not become a different operation because the values are dates.
 - **Higher-order functions.** Treat functions as first-class values — pass them, return them, store them.
 `map`/`filter`/`reduce` and friends express *what* you want done rather than spelling out *how* to loop.
 - **Declarative over imperative.** Describe the transformation, not the step-by-step mechanics.

@@ -150,6 +150,9 @@ Package data must live **inside the package** (`src/mypackage/data/`, as above) 
 `tests/` can sit at the repo root precisely because it never ships.
 Reserve a repo-root `data/` (a sibling of `src/` and `tests/`, mirroring the package the same way) for data that deliberately stays out of the wheel — large datasets, dev seed data.
 
+**An app with no runtime assets has no `data/` at all.** The directory exists to hold files, so leave it out rather than committing an empty tree beside `code/` — a tool that computes over what it fetches and renders the result carries none.
+The `code/`/`data/` pair is what the package looks like once both halves have contents, not a shape to scaffold ahead of need.
+
 Reach a packaged asset by navigating from the package, not the filesystem:
 
 ```python

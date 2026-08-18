@@ -30,6 +30,10 @@ Each entry point is a thin **shell** over the core: it reads its trigger, calls 
 Keep it thin — the logic stays in the core, so a second entry point can serve or render the same results differently.
 Presentation belongs to the entry point, never the core: a CLI's table, an API's JSON, a dashboard's widgets are each one driver's concern.
 
+**Reshaping the data is not presentation, however much it looks like it.** Pivoting a long result into a column per key changes what one row *is*, and a change of grain is a seam in the core (see `be-functional`) — so it belongs to a transform even when the only reason you noticed you wanted it was a table.
+The line is whether the step still yields your own data: a frame in and a frame out is core, and presentation starts where the result stops being data and becomes a `Table`, a response model, a widget.
+Test it by asking what a second driver would do — an API serving the same report wants the same pivot and a completely different renderer, which places the pivot on the core's side of the line.
+
 ## Expose the stages
 
 Where the core is a sequence of transforms, give each stage that is independently useful its own entry point over a shared interchange format, so they compose — commands in a pipeline, endpoints that take one another's output.
@@ -38,11 +42,25 @@ Then add a convenience path that runs the whole sequence in one call, for when c
 **One entry point carrying an option per stage hides the structure.** It forces the whole pipeline on someone who wants one step of it, leaves each stage reachable only through the others, and turns every new capability into another flag on an already-crowded signature.
 The stages are already separate in the core (see `be-functional`, "Derive functions from the data flow"); the entry point should not weld them back together.
 
+**A flag that swaps where a stage's input comes from is not an option per stage.** `--load` reading the interchange format instead of fetching it is the pipeline's *seam being used*, not hidden — the stage boundary has to already exist for the file to be writable at all.
+What the rule forbids is a flag that decides whether a stage *runs*.
+So the test is whether someone can get at each stage's output on its own; a `--save`/`--load` pair passes it, while a `--skip-fetch` or a `--with-filtering` does not.
+Where a user asks for the pair rather than separate commands, take it — it costs one option and duplicates no option set, which a second command carrying the same thirty filters would.
+
 ## Composition root
 
 The driver is the one place that imports **both** an operation and a concrete adapter, and injects the adapter into the operation.
 This is the **composition root** — where the abstract core meets a concrete implementation.
 Everywhere else the core depends only on its **ports** (the interfaces it defines); dependency injection is what lets the import arrow point inward while the driver alone names the real adapter (see `be-functional` and `structure-python`).
+
+**One input can enter the program twice, and the driver is what derives the second use.** A bound the core filters on at the end often also decides how much the adapter has to fetch at the start — a date range selecting rows, and the same range sizing the request.
+Miss that and you either fetch everything, which is correct but slow and grows with the data, or fetch exactly the range asked for, which is fast and **wrong**.
+
+Wrong, because a windowed computation needs history *before* the earliest row it reports on: a running count, a moving average, a state that carries forward all read candles the user never asked to see.
+So the driver derives the fetch window as the requested range **plus a warm-up margin**, and only the driver knows to do that — the filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
+
+Size the margin from evidence rather than instinct: measure how far back the state actually reaches over real data, and take a multiple of the observed worst case.
+Where no bound is available at all, say so in the docs rather than guessing — an unbounded fetch is the honest default, and a margin that is too small fails silently, which is the worst of the three outcomes.
 
 ## Role and framework split
 
