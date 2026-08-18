@@ -102,6 +102,9 @@ import collections.abc  # def f(xs: collections.abc.Iterable[int]): ...
 
 For a deep internal path, bind the nearest useful module — `from mypackage import db` then `db.session` (still qualified) — rather than importing `session` bare.
 
+**Import a submodule explicitly — importing its parent does not bind it.** `import polars` alone leaves `polars.testing` an `AttributeError`, because a package only exposes the submodules it imports itself; add `import polars.testing` beside it (both lines, since you use both names).
+`import collections.abc` above is the same rule, and it is easy to miss on a library whose top level *does* re-export most of what you reach for.
+
 Use **absolute imports** within a package; they survive moving files.
 Relative imports (`from . import db`) are fine for tight intra-package references but get confusing across several levels.
 
@@ -177,7 +180,8 @@ Write your own with `contextlib.contextmanager` when useful.
 Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the string isn't built when not logged.
 - **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
 - **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterise, or override the value without callers changing; a bare global has to be torn out to extend.
-(Genuinely fixed constants can stay globals.)
+This holds for a value that looks permanently fixed too — "it will never change" is what every constant is believed to be right up until it has to be parameterised, and by then the callers are written against the global.
+The exceptions are names a tool or framework *requires* at module level — `__all__`, a `logging.getLogger(__name__)` module logger, a framework's app object, a test module's shared strategy or fixture data.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
 When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
 - **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a `pandas` result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorised engine.
