@@ -14,6 +14,10 @@ They take the trailing-underscore name (per `write-python`), which both marks th
 
 Swap the library and only the framework package changes; the role name stays put.
 
+**A framework package may hold a module that imports nothing from that framework**, where the framework is its only caller — `fastapi_/provide.py` naming the concrete adapter, `typer_/bound.py` turning the CLI's own options into the shape the core filters with.
+Both are driver work rather than library work, so the trailing-underscore name slightly overstates the coupling; it earns its place there because keeping it beside its one caller beats a package of one loose module.
+Lift it to a shared `drive/` module the moment a second driver needs it.
+
 ## CLI
 
 `typer` for the CLI, `rich` for output (see Libraries in `setup-python`).
@@ -87,6 +91,32 @@ def stations() -> typer.models.ArgumentInfo:
 ```
 
 The factory names a noun, so a noun-phrase docstring is the instinct — but it is a function like any other, and `ruff`'s `D401` requires the imperative, so write `Return the …` (see `write-python`).
+
+**Where the options are systematic, parameterise the factory and pass the whole option set on.**
+A command whose surface is one option per column of a report — a bound per count on each timeframe, a threshold per metric — reaches twenty or thirty options, and writing a factory each is as much duplication as inlining them.
+Take the axes as arguments instead, so one factory serves the lot and the help panels fall out of it:
+
+```python
+def minimum(count: domain.Count, timeframe: domain.Timeframe) -> typer.models.OptionInfo:
+    """Return the option bounding one count on one timeframe from below."""
+    return typer.Option(
+        help=f"Keep rows whose {timeframe} {count} count is at least this.",
+        rich_help_panel=f"{str(timeframe).capitalize()} counts",
+        show_default=False,
+    )
+```
+
+The signature still has to name every option — `typer` reads the real parameters, so there is no generating them — but the *body* must not restate them.
+Hand the whole option set to the function that shapes it and let that pick out what it needs by name:
+
+```python
+def count(daily_setup_min: ..., weekly_setup_min: ..., ...) -> None:
+    """Report the counts, keeping only the rows within the bounds given."""
+    bounds = bound.frame(**locals())
+```
+
+`locals()` at the top of a command body is exactly its arguments, and the alternative — repeating all thirty names in a call — is a second list to keep in step with the first, which drifts the moment an option is added.
+Say in the docstring that the parameter names are the keys, and have the receiving function ignore anything it does not recognise so the paths and dates passing through cost nothing.
 
 **Keep help text terse — lean on defaults, not examples.**
 Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--days` defaulting to `7` is its own example), and `typer` shows defaults in `--help`.
