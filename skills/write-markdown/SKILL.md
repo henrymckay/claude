@@ -31,6 +31,10 @@ Three mistakes account for most weak Markdown: filler that restates what the con
   - Filler and lead-ins: "in order to" → "to"; drop "It covers:" before a list that plainly elaborates the sentence above it.
   - Words the context already fixes: in a Claude Code repo, "reinstall any Claude Code plugins" → "reinstall any plugins", and "Anthropic's marketplace" → "the marketplace".
   - Parallel phrasing tightens a list: "When to commit and push, and when to hold off" beats a comma-spliced clause.
+- **Match the density of what sits around it.** "Every word earns its place" judges words, not proportion, so you can pass it sentence by sentence and still write a section three times its neighbours.
+Read the comparable sections first and write to their scale.
+  - Push depth somewhere it can be long — the file that runs the procedure, the skill, a linked page — and leave the section naming the thing.
+  - Re-read it **in place** before calling it done; length is obvious at a glance in context and invisible while writing.
 - **Structure with sections and headings.** Use a clear hierarchy (one `#` title, then `##`/`###`) with descriptive heading text; don't skip levels.
 - **Keep headings punchy and precise.** A heading is a label, not a sentence — use the fewest words that name the section exactly, and cut filler ("Toolchain", not "Toolchain summary"; "Data", not "Package data and assets").
 Prune articles and trailing nouns that add nothing.
@@ -46,6 +50,8 @@ It's the technical-docs standard, and it keeps identifiers in a heading (`polars
 - **Order generic lists alphabetically.** When a list has no inherent order, alphabetise it so every item has a predictable place; keep a meaningful order where one exists (steps, priority, chronology).
 - **Write action sentences imperatively too, not just headings.** Lead an instruction with a verb — "Install the CLI", not "The CLI can be installed".
 Leave a sentence that states what something *is* declarative — "`CLAUDE.md` holds the project's rules" — the same way reference-section headings stay noun phrases.
+  - **Once a passage gives instructions, every sentence in it is one.** A step that slips into narration — "Claude builds from a `brief.md`" between a "Test…" and a "Fix…" — breaks the parallelism that makes a sequence scannable.
+    The carve-out covers what a thing *is*, never a step in a process, so check each sentence against its neighbours rather than alone.
 - **Fenced code blocks with a language tag** (` ```bash `, ` ```python `), and inline `code` for filenames, commands, flags, identifiers, and tool, package, or library names.
 Monospace them whether or not they are also linked.
   - **Inside backticks, use the real code spelling, not the brand capitalisation.** Backticks mark a token as code, so write the import or command name: `polars` not `Polars`, `numpy` not `NumPy`, `fastapi` not `FastAPI`.
