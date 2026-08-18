@@ -28,11 +28,10 @@ Verb-first skills that encode consistent working conventions.
 
 ## 🎯 Evals
 
-Realistic build briefs paired with the design a skilled build should reach, for testing whether the skills actually lead somewhere good.
+A `brief.md` states what a user would ask for.
+An `answers.md` gives the design a skilled build should reach and the wrong turns to watch for — each a real failure from a previous run.
+Grade a fresh session's build against the answers, and fix the skill that let it go wrong, not the transcript.
 
-- `brief.md` — what a user would ask for, withholding every design decision the skills are meant to supply.
-- `answers.md` — the design a good build arrives at, and the wrong turns to watch for, each a real failure from a previous run.
-- Grade a fresh session's build against `answers.md`, asking **which skill let it** go wrong rather than what went wrong, and fix the skill, not the transcript.
 - [`demark`](evals/demark) exercises dataframe modelling, where to cut a pure core, what earns a named type, and composable entry points.
 
 ## 🛠️ Set up
