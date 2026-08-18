@@ -3,7 +3,7 @@
 Build me a command-line tool that reports DeMark counts for stock tickers across daily, weekly and monthly timeframes.
 I use it to scan a watchlist, or a whole index, for the names that are late in a count.
 
-## What I point it at
+## Tickers
 
 - Tickers, given directly as a list.
 - A stock index, named rather than enumerated, and expanded to its constituents.
@@ -13,7 +13,7 @@ Resolve index names with `pytickersymbols`.
 For picking tickers I would rather learn one compact, glob-style syntax than memorise a separate flag for every case.
 Design something intelligent and elegant, and run your design past me before you build it.
 
-## What I filter on
+## Filters
 
 I filter on two things, the **date** and any **count** column.
 Each takes a lower bound, an upper bound or an exact value, and I expect to set several at once in a single run.
@@ -28,18 +28,18 @@ Leave it alone and it **defaults to today**.
 I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
 On a day the market has not traded, today means the most recent day it did.
 
-## What I want to see
+## Table
 
 A `rich` table, with a column for each count on each timeframe.
 A row per ticker, and a row per date as well where I have asked for a range.
 Colour each cell to show whether it is a buy or a sell.
 
-## Other ways I use it
+## Other uses
 
 - Sometimes I only want an index's constituent symbols, and nothing else.
 - Sometimes I want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.
 
-## The counts
+## Counts
 
 Three counts for every candle, on every timeframe.
 
@@ -76,7 +76,7 @@ A countdown can also be cut short before it gets there, and I want all three way
 The same countdown rule, except counting begins with the setup rather than waiting for it to complete.
 Also runs to 13, and is cut short the same three ways.
 
-## How a count is written
+## Notation
 
 Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
 A single number then carries both the direction and how far along the count is, so an ordinary numeric bound picks out either end.
@@ -85,7 +85,7 @@ A single number then carries both the direction and how far along the count is, 
 Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
 A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
 
-## The candles
+## Candles
 
 Fetch candles with `yfinance`, at each timeframe directly.
 It serves daily, weekly and monthly, so there is no need to derive one from another.
@@ -98,7 +98,7 @@ Every past week and month is a **completed** candle, and only the most recent on
 So a date in the past reports the count of the completed candle covering it.
 I never want a week rebuilt as it stood partway through.
 
-## How I want the work done
+## Working style
 
 Create it as its own new git repository, at a path I will give you.
 
