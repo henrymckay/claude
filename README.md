@@ -53,17 +53,22 @@ Symlink `agents/`, `commands/` and `rules/` the same way once added.
 > They live outside the repo under `~/.claude/plugins`.
 > From the [marketplace](https://github.com/anthropics/claude-plugins-official), `skill-creator`, `pyright-lsp` and `commit-commands` pair well with these skills.
 
-## 🎚️ Model, effort and speed
+## 🎛️ Configure
 
 Skills and `CLAUDE.md` shape *how* Claude approaches a task.
 These per-session controls shape *which model* runs it, *how hard* it thinks and *how fast* it replies, independent of any skill.
 
-- **Model** — `/model` switches the model: `sonnet` for daily work, `opus` for complex reasoning, `fable` for the hardest or longest tasks, `haiku` for simple or high-volume ones, or `opusplan` to plan on Opus and execute on Sonnet.
-- **Effort** — `/effort` sets reasoning depth from `low` to `max` (`high` is the default).
+- **Model.** `/model` picks the model for the session.
+  - `sonnet` for daily work.
+  - `opus` for complex reasoning.
+  - `fable` for the hardest or longest tasks.
+  - `haiku` for simple or high-volume tasks.
+  - `opusplan` to plan on Opus and execute on Sonnet.
+- **Effort.** `/effort` sets reasoning depth from `low` to `max` (`high` is the default).
   Raise it for a hard bug or design decision, lower it for routine edits.
-- **Speed** — `/fast` toggles faster output on Opus at a higher per-token cost.
-- **Output style** — `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
-- **Permissions** — `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`), controlling how much Claude does before checking in.
+- **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
+- **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
+- **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`), controlling how much Claude does before checking in.
 
 ## 📚 Learn more
 
