@@ -68,6 +68,7 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 Test how well the skills guide a build.
 Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
+Order every brief the same way, from the app's input and output through its uses and the rules its output must satisfy, to the style the work is done in.
 
 - [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
 
