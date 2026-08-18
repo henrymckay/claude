@@ -84,6 +84,8 @@ When a class genuinely *is* the right call, `be-oop` covers doing it well.
 
 Use **algebraic data types** — *product* types (an "AND": a record/dataclass holding field A **and** field B **and** …) and *sum* types (an "OR": a value that is exactly **one of** several variants — a union, enum, or tagged union).
 Design types so invalid combinations simply can't be constructed; then whole classes of validation and defensive checks disappear because the bad state has no representation.
+Apply this to the values the core computes over, not to the syntax an input arrived in.
+A variant per accepted phrasing models the grammar rather than the problem — parse each phrasing straight to the value the core needs, and the variants disappear with it.
 
 ## Derive functions from the data flow
 
@@ -106,6 +108,10 @@ Ask whether it could need to differ *between elements of a single call* — if s
 **Fix the shapes before implementing; let signatures settle as you go.** The sequence is a few lines to write, is where the design lives, and is costly to change once code is built on it.
 Full argument lists can't be known up front, and inventing them early only produces speculative parameters (YAGNI).
 But treat the urge to add a parameter that no shape accounts for as evidence the **flow itself is wrong**: revise the sequence rather than bolting the argument on.
+
+**A type earns its place by crossing a seam.** Define a record for a shape the data actually takes between functions — one that survives more than one seam unchanged, holds an invariant its fields must satisfy together, or is a variant you genuinely `match` on.
+A value assembled at one site and destructured at the next is not a type; it is that function's arguments wearing a name.
+The symptoms are quick to check: one field is just the field, no fields at all is a sentinel rather than a type, and a record whose fields are all optional with defaults is an options bag that hides which ones a caller actually set.
 
 ## Make functions total
 
