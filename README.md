@@ -26,12 +26,12 @@ Verb-first skills that encode consistent working conventions.
 - [`write-skills`](skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
-## 🎯 Evals
+## 🎯 Evaluate
 
 Tests of how well the skills guide a build: each `brief.md` is a user request, each `answers.md` the design a build should reach by following the skills.
 Improve the skill responsible for any divergence.
 
-- [`demark`](evals/demark) produces and displays DeMark counts for stock tickers across timeframes.
+- [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
 
 ## 🛠️ Set up
 
