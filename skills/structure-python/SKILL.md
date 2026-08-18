@@ -49,6 +49,7 @@ The five standard packages, each named for what it does (imperative verbs for th
 
 - **`transform`** (core) — the problem's types and rules, and the pure functions over them, depending on nothing outward.
 Model data so illegal states can't be built (see `be-functional`); the domain's dataclasses and enums live here too, splitting into a dedicated `domain/` package (a noun) once they multiply — never `port`.
+Multiplying types are a prompt to check each still earns its place, not grounds for a package: a set of one-parser-to-one-consumer records is the input grammar modelled as types rather than a domain.
 - **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A noun that names *what* the core needs, not *how* — `operate` depends on it, `adapt` implements it.
 Interfaces, not data, so the domain's own types stay in `transform`.
