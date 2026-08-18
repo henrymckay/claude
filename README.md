@@ -27,15 +27,6 @@ Verb-first skills that encode consistent working conventions.
 - [`write-skills`](skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
-## 🎯 Evaluate
-
-Tests of how well the skills guide a build.
-A `brief.md` is a user request.
-An `answers.md` is the design a build should reach by following the skills.
-Improve the skill responsible for any divergence.
-
-- [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
-
 ## 🛠️ Set up
 
 Clone the repo.
@@ -71,6 +62,32 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 - **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
 - **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`).
   It controls how much Claude does before checking in.
+
+## 🎯 Evaluate
+
+Test how the skills guide a build, then fix whatever let a bad one through.
+
+Each evaluation holds two files.
+A `brief.md` states what the user wants and withholds how to build it.
+An `answers.md` records the design a good build reaches, plus the wrong turns real runs have taken.
+
+Run the loop.
+
+1. Point Claude at the brief and tell it to build, working only from the skills and never from memory.
+2. Have it flag every place a skill goes silent, reads ambiguously or steers it wrong.
+3. Keep `answers.md` shut until it reports the build finished.
+4. Have it grade the build against `answers.md`, naming the skill behind each divergence.
+5. Fix those skills so the next build reaches the design on its own.
+6. Fix the brief wherever a requirement was missing rather than deliberately withheld.
+
+Splitting steps 5 and 6 is the whole loop.
+A design the build should have reached is the skill's fault.
+A requirement it could never have known is the brief's.
+Fix the cause, never the transcript.
+
+Available evaluations.
+
+- [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
 
 ## 📚 Learn more
 
