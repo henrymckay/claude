@@ -19,15 +19,6 @@ A `rich` table, with a column for each count on each timeframe.
 A row per ticker, and a row per date as well where I have asked for a range.
 Colour each cell to show whether it is a buy or a sell.
 
-### How a count is written
-
-Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
-A single number then carries both the direction and how far along the count is, so an ordinary numeric bound picks out either end.
-`>= 8` finds late sells and `<= -8` finds late buys.
-
-Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
-A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
-
 ## Filtering and dates
 
 I filter on two things, the **date** and any **count** column.
@@ -84,6 +75,15 @@ A countdown can also be cut short before it gets there, and I want all three way
 
 The same countdown rule, except counting begins with the setup rather than waiting for it to complete.
 Also runs to 13, and is cut short the same three ways.
+
+## How a count is written
+
+Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
+A single number then carries both the direction and how far along the count is, so an ordinary numeric bound picks out either end.
+`>= 8` finds late sells and `<= -8` finds late buys.
+
+Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
+A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
 
 ## Data
 
