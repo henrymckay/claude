@@ -98,6 +98,11 @@ Reach for `.over(group)` only where an operation must respect group boundaries: 
 Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
 Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.
 
+**A grouping key that arrives as an argument is still a group.** Whether an axis reaches you as rows already in the frame (a `ticker` column from a fetch) or as a caller-supplied list (a set of timeframes, regions, or scenarios to compute over), it is the same thing to the computation, and both belong in the frame.
+The tell is a `polars.concat([...])` wrapping a comprehension — that is the same per-group loop, wearing a parameter as a disguise.
+Put the values in their own small frame and `.join(other, how="cross")` where each applies to every row (a plain join where it's selective), then group by that axis alongside the rest: `.over(["ticker", "timeframe"])`.
+`be-functional`'s "Derive functions from the data flow" has the general test for whether a parameter is really data.
+
 ## Habits and `pandas` traps
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
