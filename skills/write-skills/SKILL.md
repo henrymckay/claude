@@ -40,6 +40,11 @@ Keep `skills/` **flat** — no category subdirectories, since the name already s
 ## Write the description
 
 The description *is* the trigger, so optimise it for invocation (the `skill-creator` plugin has a loop for that).
+
+**Draft it twice: once to fix the goal, once to match what shipped.** Write a first version before the body exists, so the skill gets built toward a clearly stated goal rather than assembled first and named after the fact.
+Then, once the body is done, reread the description against it and rewrite: drop what the skill ended up not covering, add what it grew to cover that the first draft didn't anticipate, and correct any triggering phrase that turned out to fire on the wrong task.
+A description that still exactly matches its first draft after the body is finished almost always means the second pass didn't happen.
+
 Write it in **plain prose, no backticks** (see `write-markdown`), in a fixed order so every description reads the same way and **mirrors the skill's own opening**:
 
 - **What it is** — a short phrase naming the skill and its key topics; counterpart skills use a **parallel** form ("Functional programming done well — …" / "Object-oriented design done well — …").
