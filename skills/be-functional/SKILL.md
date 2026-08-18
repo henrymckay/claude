@@ -16,6 +16,7 @@ description: >-
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
+Three mistakes account for most of what goes wrong: reaching for ambient state instead of an argument, mutating a value rather than returning a new one, and letting a function's boundaries accrete instead of deriving them from the data flow.
 It builds on `write-python`'s in-code conventions, and `be-oop` is its object-oriented counterpart.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
@@ -39,8 +40,8 @@ Return results explicitly; never signal work by mutating shared state.
 - **Immutability.** Don't mutate data in place; produce new values and treat inputs as read-only.
 Shared mutable state is the source of most order-dependent bugs.
 - **Explicit inputs and outputs.** Take everything a function needs as **arguments** rather than reaching for local or global state, and return results rather than writing them somewhere.
-The more of a function's behaviour its arguments determine, the more reusable and testable it is — so prefer adding a parameter over reading ambient state.
-- **Express everything as a function.** Prefer a function returning a value over a bare constant — even a fixed value.
+The more of a function's behaviour its arguments determine, the more reusable and testable it is — so add a parameter rather than read ambient state.
+- **Express everything as a function.** Return a value from a function rather than declaring a bare constant — even a fixed value.
 `def default_rate() -> float: return 0.05` can be passed around, composed, overridden, or later made to depend on inputs, where a module-level constant must be torn out to extend.
 Functions are the unit of composition, so make everything one.
 - **Composition and currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
@@ -106,7 +107,7 @@ Ask whether it could need to differ *between elements of a single call* — if s
 Full argument lists can't be known up front, and inventing them early only produces speculative parameters (YAGNI).
 But treat the urge to add a parameter that no shape accounts for as evidence the **flow itself is wrong**: revise the sequence rather than bolting the argument on.
 
-## Prefer total functions
+## Make functions total
 
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).
 Make functions total by **narrowing the input** so every value is valid (accept a sum type/enum, not an arbitrary string) or by **widening the output** to represent the awkward cases (`X | None`, a `Result`) instead of raising.
