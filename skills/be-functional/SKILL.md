@@ -96,6 +96,9 @@ A new shape appears where the **entity** changes (what the data is about), where
 Those are the seams, and each span between two seams is one function — so the flow decides the decomposition and you read it off rather than choosing it.
 Endpoints alone constrain nothing: one function doing every step still satisfies "X in, Y out".
 
+**The seams set the functions that must exist, not the only ones allowed.** A step that changes nothing about the shape can still earn its own function by being independently useful — filtering drops rows without changing what a row is, so it is not a seam, yet it is worth naming because callers want it on its own and want to vary it.
+Keep the distinction straight in both directions: a seam you skipped is a design error, where an extra well-chosen function is not.
+
 **Intermediate workings are not shapes.** Detail derived at the same entity and grain, from the same input, belongs *inside* one function however many steps it takes.
 The tell is whether you can name the whole thing without an "and" — "counts from candles" is one transformation, where "resample and count and align to dates" is three wearing one name.
 Factor freely *below* that line — extract private helpers to keep a long function readable or to share logic — since the rule fixes that the **seam functions exist**, not that they are the only functions.

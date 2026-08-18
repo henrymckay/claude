@@ -57,6 +57,9 @@ Interfaces, not data, so the domain's own types stay in `transform`.
 Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
 - **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
 Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled modules take trailing-underscore names.
+**An adapter declares its own output shape and always returns it** — the same columns and types on a full response, an empty one, and a failure alike.
+That is what stops the upstream library's own shape leaking inward: a client that answers `None` on a bad symbol, or a frame whose columns depend on how many rows came back, is normalised *once* at the boundary into the declared empty shape, so nothing downstream ever branches on which of those happened.
+Normalising that absence is the one Python-level branch that belongs in an adapter; a branch on the upstream's shape anywhere past it means the adapter did not finish its job.
 - **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
 
 `mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
