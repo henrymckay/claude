@@ -1,4 +1,4 @@
-# demark — the answers
+# Demark answers
 
 What a build working from the brief should arrive at, and the wrong turns to watch for.
 Nothing here is stated in the brief: each item is something the skills should produce.

@@ -1,4 +1,4 @@
-# demark
+# Demark brief
 
 Build me a command-line tool that reports DeMark counts for stock tickers across daily, weekly and monthly timeframes.
 
