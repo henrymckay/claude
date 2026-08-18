@@ -65,27 +65,10 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 
 ## 🎯 Evaluate
 
-Test how the skills guide a build, then fix whatever let a bad one through.
-
-Each evaluation holds two files.
-A `brief.md` states what the user wants and withholds how to build it.
-An `answers.md` records the design a good build reaches, plus the wrong turns real runs have taken.
-
-Run the loop.
-
-1. Point Claude at the brief and tell it to build, working only from the skills and never from memory.
-2. Have it flag every place a skill goes silent, reads ambiguously or steers it wrong.
-3. Keep `answers.md` shut until it reports the build finished.
-4. Have it grade the build against `answers.md`, naming the skill behind each divergence.
-5. Fix those skills so the next build reaches the design on its own.
-6. Fix the brief wherever a requirement was missing rather than deliberately withheld.
-
-Splitting steps 5 and 6 is the whole loop.
-A design the build should have reached is the skill's fault.
+Test how the skills guide a build, then fix what let a bad one through.
+Point Claude at a `brief.md` and have it build from the skills alone, grade itself against `answers.md`, then fix every divergence at source.
+A design it should have reached is the skill's fault.
 A requirement it could never have known is the brief's.
-Fix the cause, never the transcript.
-
-Available evaluations.
 
 - [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
 
