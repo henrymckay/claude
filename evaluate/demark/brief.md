@@ -19,7 +19,7 @@ A `rich` table, with a column for each count on each timeframe.
 A row per ticker, and a row per date as well where I have asked for a range.
 Colour each cell to show whether it is a buy or a sell.
 
-## How a count is written
+### How a count is written
 
 Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
 A single number then carries both the direction and how far along the count is, so an ordinary numeric bound picks out either end.
