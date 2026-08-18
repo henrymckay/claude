@@ -30,6 +30,14 @@ Each entry point is a thin **shell** over the core: it reads its trigger, calls 
 Keep it thin — the logic stays in the core, so a second entry point can serve or render the same results differently.
 Presentation belongs to the entry point, never the core: a CLI's table, an API's JSON, a dashboard's widgets are each one driver's concern.
 
+## Expose the stages
+
+Where the core is a sequence of transforms, give each stage that is independently useful its own entry point over a shared interchange format, so they compose — commands in a pipeline, endpoints that take one another's output.
+Then add a convenience path that runs the whole sequence in one call, for when composing is more ceremony than it is worth.
+
+**One entry point carrying an option per stage hides the structure.** It forces the whole pipeline on someone who wants one step of it, leaves each stage reachable only through the others, and turns every new capability into another flag on an already-crowded signature.
+The stages are already separate in the core (see `be-functional`, "Derive functions from the data flow"); the entry point should not weld them back together.
+
 ## Composition root
 
 The driver is the one place that imports **both** an operation and a concrete adapter, and injects the adapter into the operation.
