@@ -17,6 +17,7 @@ description: >-
 
 OOP (object-oriented programming) earns its place when a problem is about **things with identity, state, and behaviour** — objects that live over time, or a hierarchy meant to be *extended*.
 The house default is functions-first (see `write-python`, `be-functional`); this skill is for when OOP is genuinely the right tool and how to do it well.
+Three mistakes account for most bad OOP: reaching for inheritance where composition fits, wrapping a single function in a class, and exposing state the object should be guarding.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
