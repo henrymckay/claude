@@ -26,6 +26,13 @@ Verb-first skills that encode consistent working conventions.
 - [`write-skills`](skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
+## 🎯 Evals
+
+Build briefs for testing whether the skills lead somewhere good, each paired
+with the design it should produce and the wrong turns seen in practice.
+
+- [`demark`](evals/demark) exercises dataframe modelling, where to cut a pure core, what earns a named type, and composable entry points.
+
 ## 🛠️ Set up
 
 Clone the repo.
