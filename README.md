@@ -28,7 +28,9 @@ Verb-first skills that encode consistent working conventions.
 
 ## 🎯 Evaluate
 
-Tests of how well the skills guide a build: each `brief.md` is a user request, each `answers.md` the design a build should reach by following the skills.
+Tests of how well the skills guide a build.
+A `brief.md` is a user request.
+An `answers.md` is the design a build should reach by following the skills.
 Improve the skill responsible for any divergence.
 
 - [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
