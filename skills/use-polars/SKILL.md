@@ -124,6 +124,10 @@ counts = prices.join(
 )
 ```
 
+**Long is the computational form; wide is a display form.** Compute in long form, then `pivot` to wide once, at the boundary where something actually needs columns — a rendered table, a spreadsheet, a wire format that expects them.
+`unpivot` is the way back, so a wide frame arriving from outside gets unpivoted on entry and the computation only ever sees one shape.
+Spreading a key across columns with a chain of joins is `pivot` hand-rolled, and stacking per-column selects with a `concat` is `unpivot` hand-rolled — reach for the named operation instead.
+
 ## Habits and `pandas` traps
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
