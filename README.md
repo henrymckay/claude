@@ -8,6 +8,7 @@ Personal [Claude Code](https://claude.com/claude-code) skills and global instruc
 [`CLAUDE.md`](CLAUDE.md) holds the cross-project instructions loaded into *every repo*.
 
 - When to commit, push or hold off.
+- How to answer concisely and directly.
 - Which skill to invoke and when.
 
 ## 📦 Skills
@@ -68,7 +69,8 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
   Raise it for a hard bug or design decision, lower it for routine edits.
 - **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
 - **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
-- **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`), controlling how much Claude does before checking in.
+- **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`).
+  It controls how much Claude does before checking in.
 
 ## 📚 Learn more
 
