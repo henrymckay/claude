@@ -96,6 +96,19 @@ a.join(b, left_on="uid", right_on="id", how="left")
 a.join_asof(b, on="ts", by="key")          # nearest-key temporal join
 ```
 
+`join_asof` needs both frames sorted on the `on` key, and `strategy="backward"` is what answers "the last row at or before this one" — the shape of attaching a coarse series (a weekly candle, a rate that changes on effective dates) to finer rows.
+
+Passing `by=` makes it warn `Sortedness of columns cannot be checked when 'by' groups provided`, **every time**, whether or not the data is sorted.
+Nothing you can do to the frames silences it — not sorting by the `by` columns first, not `set_sorted` — so sort correctly and then suppress that one message where the join happens:
+
+```python
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Sortedness of columns")
+    aligned = dates.sort("date").join_asof(
+        counts.sort("date"), by=["ticker", "timeframe"], on="date", strategy="backward"
+    )
+```
+
 ## String and date namespaces
 
 ```python

@@ -62,9 +62,33 @@ out = (
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelises expressions within one context.
 
+**Give a windowed step its own column before the next step windows it.** `.over()` does **not** compose: chaining a second `.over()` onto an expression that has already been windowed silently discards the inner partition and evaluates the whole expression inside the outer one.
+There is no error and the result looks plausible — it is simply wrong, which makes this the most expensive trap in the API.
+So materialise each windowed result into a column in its own `with_columns`, then window *that* column:
+
+```python
+# Wrong: the .over("run") is discarded and the cum_sum runs within the segment.
+frame.with_columns(
+    opened=polars.col("qualifies").cum_sum().over("run").first().over("segment")
+)
+
+# Right: one .over() per expression, each result carried in a column.
+frame.with_columns(counted=polars.col("qualifies").cum_sum().over("run")).with_columns(
+    opened=polars.col("counted").first().over("segment")
+)
+```
+
+This is the one place the single-chain rule gives way, and only that far: the chain carries on, each window just gets its own `with_columns`.
+
+A *single* `.over()` is the normal idiom and stays correct however much precedes it — `polars.col("close").shift(1).over("ticker")` and `polars.col("high").rolling_max(window_size=9).over("ticker")` are both right.
+The trap is the **second** `.over()`, which throws away whatever partition the first one named — so `.rolling_max(9).over("ticker").first().over("segment")` is broken in exactly the same way.
+
 **Python control flow is what usually breaks a chain.** An `if` that inspects the frame and rebinds it, or an early return for an empty input, splits one transformation into branches that each need their own test.
 Keep the decision inside the chain — `when/then/otherwise` for a value, `.filter` for rows — or normalise the shape once where the data enters, so there is nothing left to branch on.
 An empty input rarely deserves its own path: the same chain over an empty frame returns an empty frame with the right schema, where a hand-written early return duplicates that schema somewhere it can drift out of step.
+
+**`pivot` is the exception that breaks that promise.** With no rows there are no values to spread into columns, so it returns the index columns alone and every column downstream code selects has vanished — a `ColumnNotFoundError` that only ever fires once a filter empties the frame.
+Restore the shape without branching by concatenating the empty frame's schema back in: `polars.concat([pivoted, empty], how="diagonal")` fills the missing columns with nulls, where `empty` is a zero-row frame declaring the full schema.
 
 **Use expression methods, not operator symbols.** Write `polars.col("a").mul(polars.col("b"))` and `polars.col("x").gt(0)`, not `*` and `>`.
 The method form chains without wrapping parentheses and reads consistently with the rest of the expression API (`.sum()`, `.alias()`, `.over()`).
@@ -103,6 +127,10 @@ Comparing a column to an earlier row, running a count, grouping by a key — tha
 Tidying in `pandas` first — resetting an index, renaming, reshaping — does the work in the weaker API and drags `pandas` types into your own signatures, while a `polars` chain that reaches back into the original frame for a column name or a shape has left the boundary open.
 Convert, then let every decision after that be an expression.
 
+**The one thing you must do in `pandas` is dissolve an index that `polars` cannot represent.** A `MultiIndex` has no `polars` equivalent, so a frame carrying one on either axis has to be flattened *before* it converts, or the levels arrive as tuple column names you then unpick by hand.
+Allow exactly the calls that turn indices into columns — a `.stack(level=..., future_stack=True)` and a `.reset_index()` — and nothing else; the renaming, casting, selecting and filtering all belong on the `polars` side.
+`polars.from_pandas` also needs `pyarrow` installed for anything beyond plain numpy-backed columns, so add it as a dependency when you convert.
+
 **Keep every group in one long-form frame — don't split it up.**
 Stack all groups (all tickers, all users, all categories) into a single frame and compute across them together, rather than holding a frame per group and looping.
 Most work is plain column expressions that apply to every group in one pass — element-wise maths, filters, `when/then` — with **no `.over` at all**.
@@ -115,6 +143,9 @@ Even sequential per-group logic stays in the one frame that way — a consecutiv
 The tell is a `polars.concat([...])` wrapping a comprehension — that is the same per-group loop, wearing a parameter as a disguise.
 Put the values in their own small frame and `.join(other, how="cross")` where each applies to every row (a plain join where it's selective), then group by that axis alongside the rest: `.over(["ticker", "timeframe"])`.
 `be-functional`'s "Derive functions from the data flow" has the general test for whether a parameter is really data.
+
+**The tell is about computation, not IO.** A `concat` over a comprehension that makes *one call per group to the outside world* — a request per timeframe because the API serves one interval at a time, a read per partition file — is not this mistake, and there is no in-frame form of it because the rows do not exist yet.
+Keep that concat inside the adapter, have it return a single long frame with the axis as a column, and the rule then holds for everything downstream.
 
 ```python
 # Wrong: a Python loop over groups, one frame per timeframe.
