@@ -113,6 +113,10 @@ But treat the urge to add a parameter that no shape accounts for as evidence the
 A value assembled at one site and destructured at the next is not a type; it is that function's arguments wearing a name.
 The symptoms are quick to check: one field is just the field, no fields at all is a sentinel rather than a type, and a record whose fields are all optional with defaults is an options bag that hides which ones a caller actually set.
 
+**An options bag is usually a table that has not been recognised yet.** When the fields repeat one small shape across an axis — a bound per column, a rate per region, a threshold per metric — the record is a wide row, and the fix is to turn it the long way round: one row per value of that axis, joined onto the data where it applies.
+Thirty optional fields become a frame of ten rows and three columns, the consumer stops naming any of them, and adding to the axis stops touching the type at all.
+This is the same test as "a value matched against the data element by element is input, not a parameter", applied to a record instead of an argument.
+
 ## Make functions total
 
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).

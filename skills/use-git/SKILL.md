@@ -23,6 +23,8 @@ The `commit-commands` plugin runs the commit, push and PR flows; these are the c
 Long-running branches drift and cause painful merges.
 - Name branches `type/short-description`, kebab-cased: `feat/user-search`, `fix/null-login`, `chore/bump-deps`, `docs/readme`.
 - Keep a branch focused on one piece of work.
+- **A brand-new repository has nothing to branch off yet**, so put the scaffolding — the ignore file, the project config, the empty package — straight on `main` as the first commit, then branch for the work itself.
+Branching before there is a `main` to merge back into is ceremony, not history.
 
 ## Commit
 
@@ -30,6 +32,8 @@ Long-running branches drift and cause painful merges.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
 - Commit locally often; tidy up before sharing.
+Noticing that a commit landed out of order — tests committed ahead of the fix they need, so that commit does not pass on its own — is exactly what the tidy-up is for: `git reset --soft` back to before them and re-commit in the right order.
+That touches no file and no shared history, so it needs no sign-off, unlike the `--hard` and force-push cases below.
 - **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
