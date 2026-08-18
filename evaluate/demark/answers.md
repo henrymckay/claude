@@ -15,29 +15,23 @@ Each seam is a change of entity or grain, or a point where a new independent inp
 | aligned | a ticker, day, timeframe and count | map each candle's counts onto the days it covers |
 | wide | a ticker on a day | `pivot` timeframe and count kind out together |
 
-**There is no resample step.** `yfinance` serves daily, weekly and monthly directly, so the adapter returns one long frame already carrying a timeframe column.
-Yahoo's own week and month alignment is used rather than a reinvented one.
-Deriving coarser candles from dailies is a transform the problem does not need.
-Inventing it adds a seam that then has to be threaded through everything downstream.
+**There is no resample step.** `yfinance` serves daily, weekly and monthly directly, so the adapter returns one long frame already carrying a timeframe column, and Yahoo's own week and month alignment is used rather than a reinvented one.
+Deriving coarser candles from dailies is a transform the problem does not need, and inventing it adds a seam that then has to be threaded through everything downstream.
 
 Filtering is **not** a fifth seam: it drops rows without changing what a row is.
-It earns its own function because it is independently useful, not because the flow demands one.
-It comes last, since bounds are set on count columns that only exist once the frame is wide.
+It earns its own function because it is independently useful, not because the flow demands one — and it comes last, since bounds are set on count columns that only exist once the frame is wide.
 
 **The middle function is the heart of it.** Given a long frame of candles — one row per candle, covering every ticker and every timeframe at once — return a long frame of counts, one per candle.
-It is expressible entirely in column and window functions.
-It needs nothing but its input.
+It is expressible entirely in column and window functions, and it needs nothing but its input.
 
 There are **three** axes — ticker, timeframe and which count (setup, sequential, combo) — and all three are **columns**, never arguments.
-Where each arrived from (a fetch, a flag, the problem statement) is irrelevant to how it is modelled.
-A loop over any of them is the same mistake.
+Where each arrived from (a fetch, a flag, the problem statement) is irrelevant to how it is modelled, and a loop over any of them is the same mistake.
 
 Setup and the two countdowns share a shape: a condition per candle, then a run or a tally over it.
 Write one counting function parameterised by the condition column rather than three near-copies.
 
 **Signed counts remove the direction column.** Sell positive, buy negative on one continuum, so the sign carries the direction and the magnitude carries the position in the count.
-The filter then needs no notion of direction.
-`Direction` survives only as a rendering concern — if it survives at all.
+The filter then needs no notion of direction, and `Direction` survives only as a rendering concern — if it survives at all.
 
 ## The units
 
@@ -51,9 +45,8 @@ Timeframe is a column of the frame it returns, not something the caller stitches
 
 - Count: candles to counts, as above.
 - Widen: `pivot` the timeframe column out to one column per timeframe, giving one row per ticker and date.
-- Filter: keep rows where a named column meets a lower bound, an upper bound or an equality.
-Generic over columns — it knows nothing about setups.
-The date is just another column it bounds.
+- Filter: keep rows where a named column meets a lower bound, an upper bound, or an equality.
+Generic over columns — it knows nothing about setups, and the date is just another column it bounds.
 
 **Commands** — one per independently useful stage, over a shared tabular format so they compose in a pipeline, plus a path that runs the lot in one call for the common case.
 
@@ -64,16 +57,12 @@ Plus one error class.
 Direction is the sign of a count, not a type.
 
 Nothing else.
-A record built by the parser at one site and destructured by one consumer at the next is that function's arguments wearing a name.
-Parse each input phrasing straight to the value the core needs (a tuple of symbols, a pair of bounds, a predicate).
-The types disappear with it.
+A record built by the parser at one site and destructured by one consumer at the next is that function's arguments wearing a name — parse each input phrasing straight to the value the core needs (a tuple of symbols, a pair of bounds, a predicate) and the types disappear with it.
 
 ## Candles as a chart shows them
 
-Chart semantics: every past candle is complete.
-Only the newest is in progress.
-Fetching each timeframe directly gives exactly this — Yahoo's latest weekly bar *is* the in-progress one.
-Every earlier bar is closed.
+Chart semantics: every past candle is complete, and only the newest is in progress.
+Fetching each timeframe directly gives exactly this — Yahoo's latest weekly bar *is* the in-progress one, and every earlier bar is closed.
 
 **Nothing is reconstructed as of a past date.** There is no "the weekly candle as it stood last Wednesday", so there is no per-date rebuild, and none of the machinery that would be needed to make one fast.
 A previous run of this brief spent its whole core design on that machinery, for a requirement nobody wanted: worth checking what a stated requirement is actually for before building around it.
@@ -83,8 +72,7 @@ That is a containment join, nothing more.
 
 ## The date bound does double duty
 
-The date is a filter on the final frame, but it also decides how much history to fetch.
-The count needs a warm-up run of candles before the earliest date asked about, or the first counts come out wrong.
+The date is a filter on the final frame, but it also decides how much history to fetch — and the count needs a warm-up run of candles before the earliest date asked about, or the first counts come out wrong.
 So the edge derives a fetch window from the same bounds the core later filters on.
 Deriving that window is the driver's job, not the filter's: the filter stays generic over columns and knows nothing about warm-up.
 
@@ -102,15 +90,13 @@ Fixing the endpoints does not constrain the middle.
 - **Dates as their own type hierarchy.** A latest/on/span sum type, when a date is a column like any other and "latest" is a default bound of today.
 - **Modelling the input grammar as types.** A dataclass per accepted phrasing of a target, a date and a filter — "make illegal states unrepresentable" aimed at CLI syntax rather than at core values.
 - **One command with an option per stage**, so the index expansion and the filter are reachable only by running the whole pipeline.
-- **Filtering the dates before counting.** Cutting to the requested days early starves the run counter of the history it needs.
-The bound selects rows at the end and sizes the fetch at the start, and does nothing in between.
-- **A direction column beside the count.** It doubles the columns to pivot and forces the filter to understand setups.
-The sign of a signed count already says it.
+- **Filtering the dates before counting.** Cutting to the requested days early starves the run counter of the history it needs; the bound selects rows at the end and sizes the fetch at the start, and does nothing in between.
+- **A direction column beside the count.** It doubles the columns to pivot and forces the filter to understand setups; the sign of a signed count already says it.
 - **Three counting functions.** Setup, sequential and combo differ in their per-candle condition, not in how a run is counted.
 - **Resampling dailies into weeks and months.** A transform invented for a problem the data source already solves, which then has to be threaded through every function downstream.
-- **A leaky adapter.** Tidying in `pandas` before converting, reaching back into the original frame for a column name mid-chain, typing the incoming frame as `object` with a `# type: ignore` and branching in Python on the shape the upstream library happened to return.
+- **A leaky adapter.** Tidying in `pandas` before converting, reaching back into the original frame for a column name mid-chain, typing the incoming frame as `object` with a `# type: ignore`, and branching in Python on the shape the upstream library happened to return.
 
 ## Verification
 
-The count is fiddly and easy to get subtly wrong, so pin it against a brute-force reference that rebuilds each series from scratch per date — slow, obviously correct and used only in the tests.
+The count is fiddly and easy to get subtly wrong, so pin it against a brute-force reference that rebuilds each series from scratch per date — slow, obviously correct, and used only in the tests.
 Property tests over the invariants (a run only ever increments or resets; buy and sell are never both active) are worth more here than more examples.
