@@ -64,7 +64,7 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
   - `fable` for the hardest or longest tasks.
   - `haiku` for simple or high-volume tasks.
   - `opusplan` to plan on Opus and execute on Sonnet.
-- **Effort.** `/effort` sets reasoning depth from `low` to `max` (`high` is the default).
+- **Effort.** `/effort` sets reasoning depth from `low` to `max`.
   Raise it for a hard bug or design decision, lower it for routine edits.
 - **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
 - **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
