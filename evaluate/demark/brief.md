@@ -13,12 +13,6 @@ Resolve index names with `pytickersymbols`.
 For picking tickers I would rather learn one compact, glob-style syntax than memorise a separate flag for every case.
 Design something intelligent and elegant, and run your design past me before you build it.
 
-## What I want to see
-
-A `rich` table, with a column for each count on each timeframe.
-A row per ticker, and a row per date as well where I have asked for a range.
-Colour each cell to show whether it is a buy or a sell.
-
 ## Filtering and dates
 
 I filter on two things, the **date** and any **count** column.
@@ -33,6 +27,12 @@ Leave it alone and it **defaults to today**.
 
 I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
 On a day the market has not traded, today means the most recent day it did.
+
+## What I want to see
+
+A `rich` table, with a column for each count on each timeframe.
+A row per ticker, and a row per date as well where I have asked for a range.
+Colour each cell to show whether it is a buy or a sell.
 
 ## Other ways I expect to use it
 
