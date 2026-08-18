@@ -38,6 +38,10 @@ You never loop over rows.
 - `.filter(...)` — keep rows matching a boolean expression.
 - `.group_by(...).agg(...)` — aggregate per group.
 
+The first three compute **within** the frame's current shape; `.group_by(...).agg(...)` also changes it, coarsening what one row represents.
+Reshaping has its own vocabulary alongside them: `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows, and `.explode` splits a list column into rows.
+Choosing the shape is most of the work — the expression API is the easy half.
+
 ```python
 import polars
 
@@ -124,8 +128,9 @@ counts = prices.join(
 )
 ```
 
-**Long is the computational form; wide is a display form.** Compute in long form, then `pivot` to wide once, at the boundary where something actually needs columns — a rendered table, a spreadsheet, a wire format that expects them.
-`unpivot` is the way back, so a wide frame arriving from outside gets unpivoted on entry and the computation only ever sees one shape.
+**Reshape so the values you are comparing sit on one row.** `pivot` and `unpivot` change what a row represents, which decides what counts as an element-wise comparison: values in *different rows* need a window, a self-join or a shift, where the same values in *different columns* are a plain expression.
+So pivot mid-computation when a comparison spans a key — one timeframe against another, this month against last — and unpivot back to long form for anything that must apply uniformly across every series.
+Long form is the default because most work applies to every series alike; wide is what you reach for when the key itself is what you are comparing across, and what you pivot to once at the boundary where something needs columns to display.
 Spreading a key across columns with a chain of joins is `pivot` hand-rolled, and stacking per-column selects with a `concat` is `unpivot` hand-rolled — reach for the named operation instead.
 
 ## Habits and `pandas` traps
