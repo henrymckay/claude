@@ -66,7 +66,7 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 ## 🎯 Evaluate
 
 Test how well the skills guide a build.
-Claude builds from a `brief.md` using the skills alone, then grades itself against `answers.md`.
+Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
 
 - [`demark`](evaluate/demark) produces and displays DeMark counts for stock tickers across timeframes.
