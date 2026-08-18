@@ -28,9 +28,8 @@ Verb-first skills that encode consistent working conventions.
 
 ## 🎯 Evals
 
-A `brief.md` states what a user would ask for.
-An `answers.md` gives the design a skilled build should reach and the wrong turns to watch for — each a real failure from a previous run.
-Grade a fresh session's build against the answers, and fix the skill that let it go wrong, not the transcript.
+Tests of how well the skills guide a build: each `brief.md` is a user request, each `answers.md` the design a build should reach by following the skills.
+Improve the skill responsible for any divergence.
 
 - [`demark`](evals/demark) exercises dataframe modelling, where to cut a pure core, what earns a named type, and composable entry points.
 
