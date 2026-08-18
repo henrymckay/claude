@@ -19,6 +19,7 @@ It follows the same conventions as the code it covers — in Python that's `writ
 
 Good tests buy two things: confidence to change code, and a precise signal when it breaks.
 Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
+Three mistakes account for most weak suites: asserting on internals instead of the public contract, building the *given* inline instead of injecting it, and reaching an expected value with the very code under test.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
@@ -80,7 +81,7 @@ See the test-double taxonomy under Patterns below.
 ## Isolation
 
 - A test must pass **in any order and on its own** — no shared mutable state, no test depending on another having run.
-- Prefer **injected setup over globals**: shared data or context belongs in the runner's setup mechanism (a fixture), not a module-level constant, so each test gets its own fresh copy.
+- **Inject setup; never share through a global.** Shared data or context belongs in the runner's setup mechanism (a fixture), not a module-level constant, so each test gets its own fresh copy.
 - Never touch the real clock, randomness, or network.
 Inject them (the default-argument seams from `be-functional`) and pass fixed values, or seed the generator, so a run is reproducible.
 - A flaky test is a broken test: fix or delete it, since one that cries wolf trains you to ignore the suite.
