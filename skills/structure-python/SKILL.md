@@ -53,6 +53,14 @@ Multiplying types are a prompt to check each still earns its place, not grounds 
 - **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A noun that names *what* the core needs, not *how* — `operate` depends on it, `adapt` implements it.
 Interfaces, not data, so the domain's own types stay in `transform`.
+**A record whose every field is a port is still a port.**
+Where the core needs several calls that have to come from the *same* outside thing — a source that lists what it offers and then expands one of them, a store that reads and writes — bundle them in a frozen dataclass here rather than passing loose callables a caller could mix between two implementations.
+The record holds no domain value and carries no logic; it names which calls travel together, which is an interface.
+"Data stays in `transform`" is about the values the core computes over, not the shape its dependencies arrive in.
+**Route on a name the source states, not a position it was given.**
+Where the core picks between several adapters at runtime, the key belongs to the adapter — put it in the record and carry it in the data.
+A position in whatever sequence the driver happened to build is meaningless away from that one call, so the frame carrying it cannot be logged, cached or tested on its own; and indexing back into the sequence is a lookup no type checker can check, where a missing key at least fails loudly.
+It also removes a step: with the name in the record, collecting the catalogue and routing a name back to its source read the same way, and neither has to know how many sources there are.
 - **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
 Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
 - **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
@@ -60,6 +68,23 @@ Imports `transform`/`port` to conform to them, never `operate` or `drive`; libra
 **An adapter declares its own output shape and always returns it** — the same columns and types on a full response, an empty one, and a failure alike.
 That is what stops the upstream library's own shape leaking inward: a client that answers `None` on a bad symbol, or a frame whose columns depend on how many rows came back, is normalised *once* at the boundary into the declared empty shape, so nothing downstream ever branches on which of those happened.
 Normalising that absence is the one Python-level branch that belongs in an adapter; a branch on the upstream's shape anywhere past it means the adapter did not finish its job.
+**The declared shape covers an absent value, not an absent answer.**
+A row the upstream had nothing for, a field it left off, a response with no matches — all normalise into the declared shape, because the caller asked a question and got an answer meaning "none".
+A source that did not answer at all is a different event: the request failed, the document would not parse, the table was not where it is published.
+An adapter **raises** there rather than returning its empty shape, because an empty frame says "there are none" and the caller has no way to tell that apart from "nobody told me" — which is the silent partial result the whole design is meant to prevent.
+A core rule that rejects a source's stray matter as well as its unwanted rows is doing its job, not overreaching — say so in its docstring, so the next reader does not add a filter upstream that duplicates it.
+
+**An adapter's boundary is every library it uses, not just the remote one.**
+The adapter exists so nothing inward depends on `httpx` — and the parser, the client library and the driver behind it are no different.
+A response that arrives and will not parse is the same event to the caller as one that never arrived, so wrap both: catch the parser's exception at the same seam as the client's and raise your own.
+The tell is easy to miss because the request is what you thought about.
+Ask what escapes when the service answers 200 with the wrong content — a login page, an error document, yesterday's format — and if the answer names a third-party exception type, the seam is not closed.
+
+**An adapter calling a service you do not own states a deadline and identifies itself.**
+A request with no timeout hangs the whole program on somebody else's outage, and there is no upper bound on how long that lasts.
+A client sending its library's default user agent gets refused by whatever sits in front of the service — and refused *unevenly*, on the host behind a CDN and not the one serving from object storage, so the same code works against two publishers and 403s the third.
+Both are one argument.
+Neither shows up in a passing test, because the failure is somebody else's configuration on a day you were not looking.
 - **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
 
 `mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
@@ -146,6 +171,12 @@ mypackage/
 - `data/adapt/` — SQL and other files a driven adapter runs.
 - `data/drive/` — templates and static web files a driver renders.
 - `data/transform/` — static reference data the core computes over; an edge still *loads* it and passes it in, keeping the core pure (reading a file is IO).
+
+**Reference data goes in `data/` however small it is.**
+A table of a URL per publisher, a suffix per exchange code or a rate per band is six rows today and thirty next year, and the size is never what decided it: a table is a table, it is read rather than executed, and a file is where someone can see the whole of it, diff a change to one row, and correct it without opening a module.
+So take the CSV by default and reach for a function returning a literal frame only where there are no rows at all — a single threshold, a lone base URL.
+Which layer owns the knowledge decides which `data/` directory it sits in, and outside knowledge is the edge's.
+Where each publisher serves its file is `data/adapt/`, read by the adapter that fetches them — not `data/transform/`, which would point the core at the outside world to keep the tables together.
 
 Where `data/` sits follows whether the assets ship — the one place its level does *not* follow `tests/`.
 Package data must live **inside the package** (`src/mypackage/data/`, as above) to be installed and reachable via `importlib.resources` — not a bare `src/data/`.
