@@ -132,6 +132,25 @@ def test_when_add_revenue_then_revenue_is_quantity_times_price(
 Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
 For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)` — which needs its own `import polars.testing`, since importing `polars` alone does not bind the submodule (see `write-python`).
 
+## Dependency tests
+
+Pin a network-backed dependency through `httpx.MockTransport`, which answers from a handler you supply while leaving status handling, decoding and redirects to `httpx` itself:
+
+```python
+def test_when_raise_for_status_then_a_not_found_raises() -> None:
+    """A 404 raises rather than handing back an empty body."""
+    def refuse(request: httpx.Request) -> httpx.Response:
+        """Answer every request the way a missing document does."""
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(refuse))
+    with pytest.raises(httpx.HTTPStatusError):
+        client.get("https://example.test/holdings.csv").raise_for_status()
+```
+
+Keep the recorded response in `tests/data/` and load it through a fixture, the same as any other given.
+`respx` is the alternative where you want to assert on the request as well, but the transport is enough to pin behaviour and carries no extra dependency.
+
 ## Coverage and speed
 
 - `pytest-cov` reports coverage (`uv run pytest --cov`).

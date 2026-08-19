@@ -135,6 +135,11 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 - A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
 - Keep the dependency-behaviour tests a directory level apart from your own — the reference shows the tree.
 
+**A network-backed dependency is pinned without a network.**
+"Never touch the network" and "pin the behaviour you rely on" only look opposed: what you rely on is how the client turns a response into what your code reads — the status it raises on, the encoding it picks, how it follows a redirect — and none of that needs a socket.
+Use the client's **own** in-process transport rather than patching it, so every layer above the wire is still the library's real code, and feed it a response you recorded from the real service once and kept beside the test.
+Patching the client out entirely tests neither the dependency nor your code, and reaching the real service makes the suite fail on someone else's outage; the transport seam is what gets you both.
+
 ## Coverage and speed
 
 Measure coverage to find untested paths, then read *which* branches are uncovered — an uncovered error path matters, a percentage does not.
