@@ -32,10 +32,10 @@ By default write them to standard output, one per line, so I can pipe them on or
 
 ## Options
 
-Two, and I want them spelled the way the tools I already use spell them.
+Two, each with a short form, spelled the way the tools I already use spell them.
 
 - `-o`, `--output PATH` writes the symbols to that file instead of standard output.
-- `--source local|remote` forces one source and skips looking in the other.
+- `-s`, `--source local|remote` forces one source and skips looking in the other.
 
 ## Using it
 
@@ -44,7 +44,7 @@ symbols dow-jones
 symbols vanguard-ftse-100
 symbols dow-jones > dow-jones.txt
 symbols dow-jones -o dow-jones.txt
-symbols dow-jones --source remote
+symbols dow-jones -s remote
 symbols ftse-100 | grep '\.L$'
 ```
 
