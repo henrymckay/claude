@@ -1,4 +1,4 @@
-# Candles brief
+# Price candles brief
 
 Carry on from the symbols tool.
 Now I want the price candles behind those symbols, so I can start computing on them.

@@ -69,8 +69,11 @@ Test how well the skills guide a build.
 Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
 Order every brief the same way, from the app's input and output through its uses and the rules its output must satisfy, to the style the work is done in.
+Each build below carries on from the last, which is what makes structure scaffolded too early a visible failure rather than a defensible one.
 
-- [`demark`](evaluate/demark) climbs from expanding a stock index to reporting DeMark counts across timeframes, a rung at a time.
+- [`index-symbols`](evaluate/index-symbols) expands the name of a stock index into the symbols it holds.
+- [`price-candles`](evaluate/price-candles) fetches candles for those symbols, on three timeframes.
+- [`demark-counts`](evaluate/demark-counts) counts DeMark setups and countdowns, and reports them as a filtered table.
 
 ## 📚 Learn more
 
