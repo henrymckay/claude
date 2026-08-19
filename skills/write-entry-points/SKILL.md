@@ -52,6 +52,15 @@ Where a user asks for the pair rather than separate commands, take it — it cos
 A command-line tool is one process in a pipeline, so its input and output are interfaces rather than decoration.
 Build it to be driven by a person at a terminal *and* by the shell around it, since a tool that can only be read by eye has to be rewritten the first time someone wants to script it.
 
+The shell's own plumbing is the specification, so treat every one of these as a requirement:
+
+```bash
+myapp report AAPL | jq '.[0]'    # | pipes the data on to another tool
+myapp report AAPL > counts.csv   # > redirects it to a file
+myapp report - < counts.csv      # < feeds it back in on standard input
+myapp report AAPL 2> run.log     # 2> diverts diagnostics, leaving the data
+```
+
 **Vary the form with the destination, never the content.** Render for a person when output is a terminal, and emit the plain machine-readable form when it is redirected to a file or a pipe — the same data, shaped for whoever is reading.
 Offer the choice explicitly as well, through a format option and a destination option, because a person sometimes wants the raw form on screen and a script sometimes wants the rendered one captured.
 
