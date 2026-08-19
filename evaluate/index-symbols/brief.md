@@ -17,7 +17,16 @@ Look locally first, since that is free and instant, and go out to the network on
 
 ## Funds
 
-<!-- The collections to expand over HTTPS, and where each publishes its holdings, go here. -->
+Three families, each publishing its holdings daily as a CSV linked from the fund's own page.
+
+- **ARK Invest** — `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`, from [ark-funds.com](https://www.ark-funds.com/download-fund-materials).
+- **Fundstrat Granny Shots** — `GRNY`, `GRNJ` and `GRNI`, from [grannyshots.com](https://grannyshots.com).
+- **Wedbush** — `IVES`, from [wedbushfunds.com](https://wedbushfunds.com/funds/ives/).
+
+I name these by fund rather than by ticker, so `symbols expand arkk` and `symbols expand granny-shots-large-cap` should both work.
+
+Some of these issuers refuse a request that does not look like a browser.
+Send a real user agent, and treat a refusal as an error naming the fund rather than as a fund with no holdings.
 
 ## Symbols
 

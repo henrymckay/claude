@@ -41,6 +41,7 @@ A build that reaches for a port here has not misunderstood ports so much as miss
 ## The boundary
 
 - `httpx` is the pick over `requests`.
+- Send a browser-like user agent. At least one issuer answers a default client with a 403, so a build that never sets one works against some funds and not others, which is worse than failing on all of them.
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.
@@ -75,6 +76,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 ## Wrong turns
 
 - **A `port` or an `operate` layer**, covered above.
+- **Treating a 403 as an empty fund.** A refused request and a fund with no holdings are different outcomes and only one of them is the caller's problem.
 - **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
 - **Two shapes out of two adapters**, leaving the driver or the transform to reconcile them.
 - **Making the caller say where to look.** The tool knows which names it ships and which it fetches, so a command or a required flag per source asks the user to hold knowledge the program already has.
