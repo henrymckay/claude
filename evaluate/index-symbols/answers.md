@@ -1,4 +1,4 @@
-# Index symbols answers
+# Symbols answers
 
 The design a good build reaches, and the wrong turns that miss it.
 None of it appears in the brief — each line is something the skills alone should produce.
@@ -61,13 +61,13 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 - Two renders, not one styled two ways. `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
 - **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.
 - `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table. A path does not silently override the flag.
-- One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect. It stops being right the moment a second column appears, which is why the option names a format rather than toggling a plain flag — the next build needs a third value, not a second boolean.
+- One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect. A boolean `--table` covers the two forms this build has; the moment a second column arrives it will want naming a format instead, which is the next build's problem to notice.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
-- A non-zero exit when a name resolves to nothing, so `&&` and `set -e` behave.
+- A non-zero exit on any failure, an unknown name or a fetch that would not come, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
-- `list` writing one name per line, so `symbols list | grep ftse` answers "what can I expand that looks like this".
+- `list` writing one name per line, so `symbols list | grep ARK` answers "what can I expand that looks like this".
 
 **Where a good build should push back.** Two things, and both should end in the brief being followed.
 

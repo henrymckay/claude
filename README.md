@@ -72,7 +72,7 @@ Order every brief and every answers file the same way, the brief by input, outpu
 
 Each build below carries on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
-- [`index-symbols`](evaluate/index-symbols) expands the name of a stock index into the symbols it holds.
+- [`index-symbols`](evaluate/index-symbols) expands the name of an index or a fund into the symbols it holds.
 - [`price-candles`](evaluate/price-candles) fetches candles for those symbols, on three timeframes.
 - [`demark-counts`](evaluate/demark-counts) counts DeMark setups and countdowns, and reports them as a filtered table.
 

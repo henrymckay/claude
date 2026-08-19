@@ -1,4 +1,4 @@
-# Index symbols brief
+# Symbols brief
 
 Build me a command-line tool called `symbols` that turns the name of a collection of stocks into the symbols it holds.
 This is the first piece of a bigger tool for scanning stocks, so I will keep adding to the same repository.
@@ -15,20 +15,25 @@ Those collections come from two places, and I should not have to remember which.
 
 Every name belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
 A name belonging to neither is an error.
-When I name several and one of them fails, whether it is unknown or its holdings will not come, fail the whole run rather than hand me a short list I might not notice.
+
+When I name several, one failure fails the whole run, whether that name was unknown or its holdings would not come.
+A short list I might not notice is worse than no list at all.
 
 ## Funds
 
 Ten collections across three families, none of them in the packaged dataset, all publishing their holdings online.
 
-- **ARK Invest** — `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
-- **Fundstrat Granny Shots** — `GRNY`, `GRNJ` and `GRNI`.
-- **Wedbush** — `IVES`.
+- **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
+- **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
+- **Wedbush.** `IVES`.
 
 Work out where each of them publishes.
 
-Each one answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not, and `list` shows all ten beside the packaged ones.
-I will not be careful about case when I type one, though I want them written back to me the way they are properly spelled — a ticker in capitals, an index as its usual name.
+Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
+All ten appear in `list` beside the packaged ones.
+
+I will not be careful about case when I type a name.
+I do want them written back the way they are properly spelled, a ticker in capitals and an index under its usual name.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
@@ -42,7 +47,7 @@ A published holdings file carries rows that are not stocks at all, and I do not 
 
 A stock lists on several exchanges and carries a symbol for each, so give me the one for its home listing.
 
-Give me them as a `polars` frame that is ready to show, rather than something assembled a line at a time on the way out.
+Hold them in a `polars` frame, ready to show, rather than assembling the output a line at a time on the way out.
 
 One symbol per line and nothing else, always, so `grep`, `sort` and `xargs` all work on them without my thinking about it.
 Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
@@ -56,8 +61,8 @@ Two, because finding out what I can expand is a different question from expandin
 - `expand NAME...` gives me the symbols those collections hold.
 - `list` gives me the names I can expand.
 
-`list` is how I find out which names work, since an unknown one is only an error.
-It writes one name per line and sorted, the same as the symbols do, so I can grep it.
+Since an unknown name gets me nothing but an error, `list` is how I find out which names work.
+It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
 ## Options
 
@@ -66,7 +71,7 @@ Two, spelled the way the tools I already use spell them, and both work on both c
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-t`, `--table` shows a `rich` table instead of the one-per-line default.
 
-## Using it
+## Examples
 
 ```bash
 symbols expand dow-jones
