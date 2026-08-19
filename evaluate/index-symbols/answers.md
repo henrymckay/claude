@@ -47,12 +47,16 @@ A build that reaches for a port here has not misunderstood ports so much as miss
 
 ## The surface
 
-One command taking one argument, because resolution is the tool's job rather than the caller's, and the shape supports that without help.
+Two commands, split by what they do rather than by where the symbols come from.
+Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `list` is its own command rather than a flag that switches what `expand` does.
+
+`list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
 - Symbols to standard output by default, one per line, so it pipes with no flag at all.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit when a name resolves to nothing, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
+- `list` writing one name per line, so `symbols list | grep ftse` answers "what can I expand that looks like this".
 
 **Where a good build should push back.** `-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
 Saying so and building it anyway is the right answer; refusing it is not, and neither is building it without noticing.

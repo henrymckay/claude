@@ -5,7 +5,7 @@ This is the first piece of a bigger tool for scanning stocks, so I will keep add
 
 ## Names
 
-One name per run, given as the only argument.
+One name per run, given as the only argument to `expand`.
 It might name an index, a fund, an ETF or anything else standing for a collection of symbols.
 
 Those collections come from two places, and I should not have to remember which.
@@ -14,7 +14,6 @@ Those collections come from two places, and I should not have to remember which.
 - Others publish their holdings over HTTPS, so expanding one is a request and a parse.
 
 Look locally first, since that is free and instant, and go out to the network only when the name is not there.
-A name that matches neither is an error.
 
 ## Funds
 
@@ -30,22 +29,33 @@ Give me them as a `polars` frame that is ready to show, rather than something as
 
 By default write them to standard output, one per line, so I can pipe them on or redirect them.
 
+## Commands
+
+Two, because finding out what I can expand is a different question from expanding one.
+
+- `expand NAME` gives me the symbols that collection holds.
+- `list` gives me the names I can expand.
+
+A name matching neither source is an error, and `list` is how I find out which names do match.
+
 ## Options
 
-Two, each with a short form, spelled the way the tools I already use spell them.
+Both commands take both, spelled the way the tools I already use spell them.
 
-- `-o`, `--output PATH` writes the symbols to that file instead of standard output.
-- `-s`, `--source local|remote` forces one source and skips looking in the other.
+- `-o`, `--output PATH` writes to that file instead of standard output.
+- `-s`, `--source local|remote` forces one source on `expand`, and narrows `list` to that source's names.
 
 ## Using it
 
 ```bash
-symbols dow-jones
-symbols vanguard-ftse-100
-symbols dow-jones > dow-jones.txt
-symbols dow-jones -o dow-jones.txt
-symbols dow-jones -s remote
-symbols ftse-100 | grep '\.L$'
+symbols expand dow-jones
+symbols expand vanguard-ftse-100
+symbols expand dow-jones > dow-jones.txt
+symbols expand dow-jones -o dow-jones.txt
+symbols expand dow-jones -s remote
+symbols list
+symbols list -s remote | grep ftse
+symbols expand ftse-100 | grep '\.L$'
 ```
 
 ## Working style
