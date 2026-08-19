@@ -66,7 +66,7 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 ## 🎯 Evaluate
 
 Test how well the skills guide a build.
-Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`.
+Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`, driven by [`prompt.md`](evaluate/prompt.md) with the evaluation and repository filled in.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
 Order every brief and every answers file the same way, the brief by input, output, uses, rules and working style, the answers by shape, structure, boundary, surface, tests and wrong turns.
 
