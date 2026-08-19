@@ -1,6 +1,10 @@
 # Evaluation prompt
 
-Fill in `<EVALUATION>` and `<REPOSITORY>`, then give the result to a fresh session.
+Fill in the three placeholders, then give the result to a fresh session.
+
+- `<CLAUDE>` — where this repository is checked out.
+- `<EVALUATION>` — the folder under `evaluate/` to run.
+- `<REPOSITORY>` — where the build should live.
 
 ---
 
@@ -9,7 +13,7 @@ Finish each phase and report before starting the next.
 
 ## 1. Build
 
-Read the brief at `~/Library/Mobile Documents/com~apple~CloudDocs/Git/claude/evaluate/<EVALUATION>/brief.md` and build exactly what it asks for, into the repository at `<REPOSITORY>`.
+Read the brief at `<CLAUDE>/evaluate/<EVALUATION>/brief.md` and build exactly what it asks for, into the repository at `<REPOSITORY>`.
 The brief says whether that repository is new or one you are continuing.
 
 Work only from your skills.
@@ -22,11 +26,11 @@ Do that before you build rather than after, and build what I asked for unless I 
 As you go, note explicitly anywhere a skill is silent, ambiguous or steers you wrong, rather than quietly working around it.
 These notes are half the output, so record them when you hit them rather than reconstructing them at the end.
 
-Read nothing else under `evaluate/` — not this evaluation's `answers.md`, not another evaluation's anything — until you have told me the build is finished.
+Read nothing else under `<CLAUDE>/evaluate/` — not this evaluation's `answers.md`, not another evaluation's anything — until you have told me the build is finished.
 
 ## 2. Grade
 
-Open `evaluate/<EVALUATION>/answers.md` and grade the build against it.
+Open `<CLAUDE>/evaluate/<EVALUATION>/answers.md` and grade the build against it.
 
 Report every divergence.
 For each, name the skill that should have caught it and quote the wording that failed to, or say plainly that no skill covers it.
@@ -43,13 +47,13 @@ Two kinds of gap, fixed in two different places.
 - A design the build should have reached but didn't is a **skill** gap.
   Change the skill so the next build reaches it unaided, stating the rule and the reason it exists rather than describing this build.
 - A requirement the build could not have known is a **brief** gap.
-  Add it to `brief.md` as a requirement, never as design — the brief withholds the shape a good build reaches on purpose, and putting design there destroys the evaluation.
-- Leave `answers.md` alone unless it is actually wrong.
+  Add it to the brief as a requirement, never as design — the brief withholds the shape a good build reaches on purpose, and putting design there destroys the evaluation.
+- Leave the answers file alone unless it is actually wrong.
 
 Cover both the gaps you logged while building and the divergences the grading turned up.
 They are different sets and both need closing.
 
-The skills are at `~/Library/Mobile Documents/com~apple~CloudDocs/Git/claude/skills`.
+The skills are at `<CLAUDE>/skills`.
 Commit each change straight to `main` with a `docs(<skill-name>): ` scope, and push.
 
 ## 4. Realign
