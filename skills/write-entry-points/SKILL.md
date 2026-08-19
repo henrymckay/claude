@@ -34,6 +34,23 @@ Presentation belongs to the entry point, never the core: a CLI's table, an API's
 The line is whether the step still yields your own data: a frame in and a frame out is core, and presentation starts where the result stops being data and becomes a `Table`, a response model, a widget.
 Test it by asking what a second driver would do — an API serving the same report wants the same pivot and a completely different renderer, which places the pivot on the core's side of the line.
 
+## Design the surface
+
+An entry point is a public API — people script against it, so a renamed flag is a broken caller and a missing capability is a fork.
+Design it deliberately, against three demands at once.
+
+- **Comprehensive.** Everything the core can do is reachable from it, and reachable on its own.
+A capability that needs a code change, or that only arrives as a side effect of asking for something else, is not exposed.
+- **Expressive.** The common request is short and the unusual one is still sayable, rather than a surface that serves the demo and nothing past it.
+- **Brief.** The least typing that stays unambiguous, with defaults carrying the common case so the everyday invocation is close to bare.
+
+They pull against each other, and that tension is the design work: comprehensiveness invites a flag per capability, and brevity is what stops that reaching thirty of them.
+Resolve it by making options **combine rather than multiply** — orthogonal options a caller mixes freely beat a named flag per combination, and one option taking a value beats three that are variations of it.
+
+Two more follow from the surface being public.
+**Spell the same idea the same way everywhere**, so learning one command predicts the next.
+And **treat `--help` as the documentation**: a surface that can only be understood by reading a README is a surface that needs redesigning, not a README.
+
 ## Expose the stages
 
 Where the core is a sequence of transforms, give each stage that is independently useful its own entry point over a shared interchange format, so they compose — commands in a pipeline, endpoints that take one another's output.
@@ -51,6 +68,9 @@ Where a user asks for the pair rather than separate commands, take it — it cos
 
 A command-line tool is one process in a pipeline, so its input and output are interfaces rather than decoration.
 Build it to be driven by a person at a terminal *and* by the shell around it, since a tool that can only be read by eye has to be rewritten the first time someone wants to script it.
+
+**Aim to be indistinguishable from the tools it sits beside.** Someone who knows `grep`, `sort` and `jq` should be able to use yours without reading anything, because it takes input, gives output, signals failure and names its flags the way those do.
+Every convention you invent instead is one the caller has to learn and remember, so inherit rather than design wherever a convention already exists.
 
 The shell's own plumbing is the specification, so treat every one of these as a requirement:
 
