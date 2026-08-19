@@ -72,7 +72,7 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 **Where a good build should push back.** Two things, and both should end in the brief being followed.
 
-`write-entry-points` says to vary the form with the destination, the way `ls` and `grep --color=auto` do, and the brief asks for the opposite — one form always, a flag to change it.
+`write-entry-points` says to vary the form with the destination, the way `ls` prints columns at a terminal and one entry per line into a pipe, and the brief asks for the opposite — one form always, a flag to change it.
 The brief is right for this tool and the build should say why rather than either detecting quietly or arguing the point: output that changes with context is output a script cannot rely on, and the pretty form here is the rare case rather than the common one.
 
 `-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.

@@ -82,6 +82,8 @@ myapp report AAPL 2> run.log     # 2> diverts diagnostics, leaving the data
 ```
 
 **Vary the form with the destination, never the content.** Render for a person when output is a terminal, and emit the plain machine-readable form when it is redirected to a file or a pipe — the same data, shaped for whoever is reading.
+`ls` is the worked example: multi-column at a terminal, one entry per line into a pipe.
+Note what this is not — `grep --color=auto` merely drops colour off a tty, leaving the structure identical, which is the weaker thing a rendering library already does for you.
 Offer the choice explicitly as well, through a format option and a destination option, because a person sometimes wants the raw form on screen and a script sometimes wants the rendered one captured.
 
 **Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
