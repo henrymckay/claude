@@ -65,4 +65,4 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **String-wrangling the holdings file** into lists and dicts before it reaches a frame.
 - **Letting a request failure surface as `httpx`'s own exception**, which makes the calling code depend on the library the adapter exists to hide.
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
-- **Silently dropping an unmatched name**, which turns a typo into an empty report much later.
+- **Silently dropping an unmatched name**, which turns a typo into an empty report much later. The brief asks for an error, and an empty frame written to standard output is not one.

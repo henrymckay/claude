@@ -105,10 +105,17 @@ Ask about a Wednesday and the weekly column gives me that whole week as it finis
 
 ## Working style
 
-Keep going in the same repository, and let its structure change as this build earns it.
+Keep going in the repository the candles tool left, and let its structure change as this build earns it.
+Build what this brief asks for and no more.
 
-Invoke and follow your skills throughout, for setting the project up, writing the code and testing it.
-**Don't draw on anything in your saved memory; work only from your skills.**
+This is the interface I think I want.
+Where your skills say a different shape would serve me better, say so and why before you build it, rather than following me over a cliff or quietly doing something else.
+
+Invoke and follow your skills throughout, for setting the project up, structuring it, writing the code and testing it.
+**Work only from your skills.**
+Don't draw on anything in your saved memory, and don't open the answers file sitting beside this brief — each would hand you what a good build looks like, which is the thing I am trying to find out.
+
 Where a skill is silent, ambiguous or steers you wrong, note it as you go rather than quietly working around it.
+Tell me when the build is finished.
 
 Write it in a functional style.
