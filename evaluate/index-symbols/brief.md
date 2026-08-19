@@ -1,4 +1,4 @@
-# Symbols brief
+# Index symbols brief
 
 Build me a command-line tool called `symbols` that turns the name of a collection of stocks into the symbols it holds.
 This is the first piece of a bigger tool for scanning stocks, so I will keep adding to the same repository.

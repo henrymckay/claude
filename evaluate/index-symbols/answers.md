@@ -1,4 +1,4 @@
-# Symbols answers
+# Index symbols answers
 
 The design a good build reaches, and the wrong turns that miss it.
 None of it appears in the brief — each line is something the skills alone should produce.
