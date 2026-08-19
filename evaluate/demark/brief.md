@@ -15,14 +15,22 @@ An index name stands in for its constituents, resolved with `pytickersymbols`.
 
 ## Filters
 
-The **date**, and any **count** column.
-Each takes a lower bound, an upper bound or an exact value, and I expect to set several at once in a single run.
-Plain options are right here, a pair of bounds per filterable column, rather than a syntax I have to learn.
+Every column but the symbol, so the date and each count on each timeframe.
 
-Because counts are signed, one pair of bounds per column covers both directions and I never have to say which direction I mean.
+One option per filterable column, and the value says whether it is an equality or a bound.
+
+- `-9` is exactly minus nine.
+- `8..` is at least eight.
+- `..-11` is at most minus eleven.
+- `2026-01-01..2026-03-01` is between the two, inclusive.
+
+So `--date 2026-01-01..2026-03-01 --daily-setup=-9` reads as itself, and `--help` lists everything I can filter on.
+A value starting with a minus needs the `=` form, or the shell hands it over as another option.
+
+I expect to set several at once in a single run, and every one of them has to hold.
+Because counts are signed, one option per column covers both directions and I never have to say which direction I mean.
 
 The date is a filter like any other, and it decides which candles I am reported on.
-Bound it and I get that day, or that stretch of days.
 Leave it alone and it **defaults to today**.
 
 I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
