@@ -40,8 +40,10 @@ A build that reaches for a port here has not misunderstood ports so much as miss
 
 ## The boundary
 
+The brief names the funds and leaves finding them to the build, so the first work is research: each issuer publishes a daily holdings file, and the three do not agree on where it sits or what it is called.
+
 - `httpx` is the pick over `requests`.
-- Send a browser-like user agent. At least one issuer answers a default client with a 403, so a build that never sets one works against some funds and not others, which is worse than failing on all of them.
+- Send a browser-like user agent. `ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.

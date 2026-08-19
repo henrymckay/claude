@@ -17,16 +17,17 @@ Look locally first, since that is free and instant, and go out to the network on
 
 ## Funds
 
-Three families, each publishing its holdings daily as a CSV linked from the fund's own page.
+Ten collections across three families, none of them in the packaged dataset, all publishing their holdings online.
 
-- **ARK Invest** — `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`, from [ark-funds.com](https://www.ark-funds.com/download-fund-materials).
-- **Fundstrat Granny Shots** — `GRNY`, `GRNJ` and `GRNI`, from [grannyshots.com](https://grannyshots.com).
-- **Wedbush** — `IVES`, from [wedbushfunds.com](https://wedbushfunds.com/funds/ives/).
+- **ARK Invest** — `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
+- **Fundstrat Granny Shots** — `GRNY`, `GRNJ` and `GRNI`.
+- **Wedbush** — `IVES`.
 
-I name these by fund rather than by ticker, so `symbols expand arkk` and `symbols expand granny-shots-large-cap` should both work.
+Work out where each of them publishes.
 
-Some of these issuers refuse a request that does not look like a browser.
-Send a real user agent, and treat a refusal as an error naming the fund rather than as a fund with no holdings.
+I name them by fund rather than by family, so `symbols expand arkk` works and `symbols expand ark` does not, and `list` shows all ten beside the packaged ones.
+
+A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
 ## Symbols
 
