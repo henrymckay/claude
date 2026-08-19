@@ -198,6 +198,11 @@ See the `use-polars` skill.
 Use `def f(x: list | None = None)` and create inside.
 - `from module import *` in code (fine only in a curated `__init__.py`).
 - Reaching for a class when a function will do, or adding abstraction (factories, base classes, config layers) before there's a second case.
+- **A fixed, known set is a lookup, not a mechanism.**
+Several implementations of one interface look like the second case that justifies an abstraction, but the test is whether the set is *open*.
+Something you ship, can enumerate today, and change only by editing your own code is **data** — and the code that reaches it is a lookup.
+Build the registration machinery — a record per implementation, a sequence they are collected into, a key routing between them — when something outside your control has to join the set.
+Four sources you wrote yourself are four calls behind one lookup, and the machinery only moves the four names from a place the type checker reads to a place it does not.
 - **A single-use local variable** — inline the expression instead.
 A name for a value used exactly once adds reading overhead without payoff.
 Keep the name only when it meaningfully documents an otherwise opaque expression.
