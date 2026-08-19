@@ -409,29 +409,47 @@ A secret is a `pydantic.SecretStr` field and arrives the same way — from the e
 
 ## Logging
 
-Configure logging once, at the composition root — the root logger and a `RichHandler` — then let every module emit through `logging.getLogger(__name__)` (see `structure-python`).
+Configure logging once, at the composition root — the root logger and one handler — then let every module emit through `logging.getLogger(__name__)` (see `structure-python`).
+Expose the destination and the level as options, defaulting to standard error so logs never land in piped data (see Compose with other tools in `SKILL.md`).
 It's the application-side mirror of the session logging the suite installs (see `write-tests`), so it lives in a `logging_` module (the trailing underscore keeps it clear of the stdlib `logging`, per `write-python`):
 
 ```python
 import logging
+import pathlib
 
 import rich.console
 import rich.logging
 
 
-def configure() -> None:
-    """Route application logs through Rich on standard error."""
+def configure(
+    *, level: int = logging.WARNING, path: pathlib.Path | None = None
+) -> None:
+    """Route application logs to a file, or to standard error through Rich."""
     logging.basicConfig(
-        level=logging.INFO,
+        force=True,
         format="%(message)s",
-        datefmt="[%X]",
-        handlers=[
-            rich.logging.RichHandler(
-                console=rich.console.Console(stderr=True), rich_tracebacks=True
-            )
-        ],
+        handlers=[_file(path) if path else _stderr()],
+        level=level,
+    )
+
+
+def _file(path: pathlib.Path) -> logging.Handler:
+    """Return a handler writing plain, timestamped records to a file."""
+    handler = logging.FileHandler(path)
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    return handler
+
+
+def _stderr() -> logging.Handler:
+    """Return a handler rendering records on standard error."""
+    return rich.logging.RichHandler(
+        console=rich.console.Console(stderr=True), rich_tracebacks=True
     )
 ```
+
+`basicConfig` only applies its `format` to a handler that has none, so the file handler keeps its own timestamped one while `RichHandler` gets the bare message it expects — leave `format` out and Rich prints the level twice.
 
 The driver calls `logging_.configure()` once at startup, before the operation runs — from a `typer` `@app.callback()`, a `fastapi` lifespan hook, or the top of a job's `run()`.
 Every other module then logs without touching configuration:

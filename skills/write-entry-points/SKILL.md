@@ -60,6 +60,9 @@ Offer the choice explicitly as well, through a format option and a destination o
 **Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.
 Exit non-zero on failure, so `&&` and `set -e` behave.
 
+**Make the log destination and level configurable.** Standard error is the right default, but a long run someone wants to keep belongs in a file, so offer an option that diverts it there and another that sets the level.
+Standard output is a valid destination only for a process that emits no data on it — the platform convention for a service or a scheduled job, and never for a tool in a pipeline.
+
 **Never let a prompt be the only way in.** Anything the tool can ask for interactively must also be settable by option, file or standard input, or it cannot be scripted at all.
 
 ## Composition root
