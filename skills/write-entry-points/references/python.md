@@ -121,6 +121,33 @@ Say in the docstring that the parameter names are the keys, and have the receivi
 **Keep help text terse — lean on defaults, not examples.**
 Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--days` defaulting to `7` is its own example), and `typer` shows defaults in `--help`.
 
+**Serve the terminal and the pipeline from one command** (see Compose with other tools in `SKILL.md`).
+`rich` drops colour by itself when standard output is not a terminal, which is *not* enough — a boxed table is still unparseable — so the machine form has to be a second render rather than the same one unstyled.
+Keep both in `rich_`, choosing on `Console().is_terminal`, and let a `--format` option override the guess:
+
+```python
+def write(report: polars.DataFrame, console: rich.console.Console) -> None:
+    """Render the report for a terminal, or emit it as CSV for anything else."""
+    if console.is_terminal:
+        console.print(table(report))
+    else:
+        console.file.write(report.write_csv())
+```
+
+The command stays a one-liner over it, and `--output PATH` just swaps the console's `file`.
+Read input the same way: type the argument `pathlib.Path` and treat `-` as standard input, so `demark count - --daily-setup 9` works mid-pipeline.
+
+**Send logs to standard error, or they corrupt the data stream.**
+`rich.logging.RichHandler()` builds its own `Console()`, which writes to standard output — so the default wiring puts log lines in the middle of piped output.
+Pass it a stderr console explicitly:
+
+```python
+handlers=[rich.logging.RichHandler(console=rich.console.Console(stderr=True))]
+```
+
+The same applies to any error or prompt the driver prints: `typer.echo(message, err=True)`, or a second `Console(stderr=True)` held for the purpose.
+Fail with `raise typer.Exit(code=1)` so the shell sees it.
+
 Presentation config obeys the function-over-constant rule — a `_colour(direction)` function in `rich_`, not a module-level `dict` (see `be-functional`).
 A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cli.py` (KISS) — but keep it out of the core.
 
@@ -388,16 +415,21 @@ It's the application-side mirror of the session logging the suite installs (see 
 ```python
 import logging
 
+import rich.console
 import rich.logging
 
 
 def configure() -> None:
-    """Route application logs through Rich on the root logger."""
+    """Route application logs through Rich on standard error."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[rich.logging.RichHandler(rich_tracebacks=True)],
+        handlers=[
+            rich.logging.RichHandler(
+                console=rich.console.Console(stderr=True), rich_tracebacks=True
+            )
+        ],
     )
 ```
 

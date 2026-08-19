@@ -47,6 +47,21 @@ What the rule forbids is a flag that decides whether a stage *runs*.
 So the test is whether someone can get at each stage's output on its own; a `--save`/`--load` pair passes it, while a `--skip-fetch` or a `--with-filtering` does not.
 Where a user asks for the pair rather than separate commands, take it — it costs one option and duplicates no option set, which a second command carrying the same thirty filters would.
 
+## Compose with other tools
+
+A command-line tool is one process in a pipeline, so its input and output are interfaces rather than decoration.
+Build it to be driven by a person at a terminal *and* by the shell around it, since a tool that can only be read by eye has to be rewritten the first time someone wants to script it.
+
+**Vary the form with the destination, never the content.** Render for a person when output is a terminal, and emit the plain machine-readable form when it is redirected to a file or a pipe — the same data, shaped for whoever is reading.
+Offer the choice explicitly as well, through a format option and a destination option, because a person sometimes wants the raw form on screen and a script sometimes wants the rendered one captured.
+
+**Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
+
+**Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.
+Exit non-zero on failure, so `&&` and `set -e` behave.
+
+**Never let a prompt be the only way in.** Anything the tool can ask for interactively must also be settable by option, file or standard input, or it cannot be scripted at all.
+
 ## Composition root
 
 The driver is the one place that imports **both** an operation and a concrete adapter, and injects the adapter into the operation.
