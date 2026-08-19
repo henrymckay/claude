@@ -50,6 +50,7 @@ The brief names the funds and leaves finding them to the build, so the first wor
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.
+- A holdings file is not a list of shares. Cash lines, a fund's own placeholder rows and a trailing disclaimer all appear in them, so the adapter drops what is not a tradeable holding rather than emitting a symbol column with blanks and prose in it.
 
 ## The surface
 
@@ -60,6 +61,7 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 - Symbols to standard output by default, one per line, so it pipes with no flag at all.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
+- One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit when a name resolves to nothing, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
@@ -82,6 +84,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 ## Wrong turns
 
 - **A `port` or an `operate` layer**, covered above.
+- **Emitting whatever the holdings file had in its symbol column**, cash rows and disclaimer text included, because the parse trusted the file to hold only shares.
 - **Treating a 403 as an empty fund.** A refused request and a fund with no holdings are different outcomes and only one of them is the caller's problem.
 - **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
 - **Two shapes out of two adapters**, leaving the driver or the transform to reconcile them.

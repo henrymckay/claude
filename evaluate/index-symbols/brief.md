@@ -15,6 +15,7 @@ Those collections come from two places, and I should not have to remember which.
 
 Every name belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
 A name belonging to neither is an error.
+When I name several and one of them fails, whether it is unknown or its holdings will not come, fail the whole run rather than hand me a short list I might not notice.
 
 ## Funds
 
@@ -36,6 +37,9 @@ A fund whose holdings I cannot retrieve is an error saying so, not a fund that c
 The Yahoo Finance symbol for each constituent, sorted with duplicates dropped.
 Name several collections and I want one list back, so two funds holding the same stock give it to me once.
 
+I only want symbols I could go and trade.
+A published holdings file carries rows that are not stocks at all, and I do not want those reaching me.
+
 A stock lists on several exchanges and carries a symbol for each, so give me the one for its home listing.
 
 Give me them as a `polars` frame that is ready to show, rather than something assembled a line at a time on the way out.
@@ -50,10 +54,11 @@ Two, because finding out what I can expand is a different question from expandin
 - `list` gives me the names I can expand.
 
 `list` is how I find out which names work, since an unknown one is only an error.
+It writes one name per line and sorted, the same as the symbols do, so I can grep it.
 
 ## Options
 
-One, spelled the way the tools I already use spell it.
+One, spelled the way the tools I already use spell it, and it works on both commands.
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
 
