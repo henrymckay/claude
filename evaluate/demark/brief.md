@@ -17,16 +17,14 @@ An index name stands in for its constituents, resolved with `pytickersymbols`.
 
 Every column but the symbol, so the date and each count on each timeframe.
 
-One option per filterable column, given once for an equality and twice for a pair of bounds.
-Lower bound first, and both ends inclusive.
+One option per filterable column, taking a lower bound and an upper bound, both inclusive.
+Give the same value twice to ask for exactly that one.
 
 ```bash
-demark counts AAPL --daily-setup -9
-demark counts AAPL --daily-setup -13 --daily-setup -8
-demark counts AAPL --date 2026-01-01 --date 2026-03-01
+demark counts AAPL --daily-setup -13 -8
+demark counts AAPL --daily-setup -9 -9
+demark counts AAPL --date 2026-01-01 2026-03-01
 ```
-
-Give the same option a third time and I want to be told, not have one of them quietly dropped.
 
 I expect to set several at once in a single run, and every one of them has to hold.
 Because counts are signed, one option per column covers both directions and I never have to say which direction I mean.
@@ -100,7 +98,7 @@ Also runs to 13, and is cut short the same three ways.
 
 Buy counts are positive and sell counts negative, on one continuum that wraps buy to sell to buy.
 A single number then carries both the direction and how far along the count is, so one pair of bounds picks out either end.
-`8` and `9` finds late buys, `-9` and `-8` finds late sells, and neither needs a flag saying which I meant.
+`8 9` finds late buys and `-9 -8` finds late sells, neither needing a flag to say which I meant.
 
 Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
 A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
