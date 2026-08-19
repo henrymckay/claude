@@ -5,10 +5,13 @@ I use it to scan a watchlist, or a whole index, for the names that are late in a
 
 ## Tickers
 
-- Given directly as a list.
-- Or a stock index, named rather than enumerated, and expanded to its constituents.
+Any number of them, given whichever way suits what I am doing at the time.
 
-Resolve index names with `pytickersymbols`.
+- Written out as arguments.
+- Read from a file I name.
+- Piped or redirected in on standard input.
+
+An index name stands in for its constituents, resolved with `pytickersymbols`.
 
 I would rather learn one compact, glob-style syntax than memorise a separate flag for every case.
 Design something intelligent and elegant, and run your design past me before you build it.
@@ -30,14 +33,25 @@ On a day the market has not traded, today means the most recent day it did.
 
 ## Table
 
-A `rich` table, with a column for each count on each timeframe.
-A row per ticker, and a row per date as well where I have asked for a range.
-Colour each cell to show whether it is a buy or a sell.
+A column for the date and a column for the symbol, then one for each count on each timeframe.
+A row per symbol, and a row per date as well where I have asked for a range.
 
-## Other uses
+The same table has to go three ways.
 
-- An index's constituent symbols, and nothing else.
-- Re-filtering or re-rendering a table I have already produced, without paying to fetch the prices again.
+- Rendered prettily at the terminal with `rich`.
+- Written to a file I name.
+- Written plainly to standard output, so I can pipe it into another command or redirect it.
+
+The pretty one differs in more than styling.
+Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
+
+## Commands
+
+- Expand an index name to its constituent symbols, and nothing else.
+- Report all three counts together.
+- Report one count on its own, with a command each for setup, sequential and combo.
+
+I also want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.
 
 ## Counts
 
@@ -78,12 +92,14 @@ Also runs to 13, and is cut short the same three ways.
 
 ## Notation
 
-Sell counts are positive and buy counts negative, on one continuum that wraps sell to buy to sell.
+Buy counts are positive and sell counts negative, on one continuum that wraps buy to sell to buy.
 A single number then carries both the direction and how far along the count is, so an ordinary numeric bound picks out either end.
-`>= 8` finds late sells and `<= -8` finds late buys.
+`>= 8` finds late buys and `<= -8` finds late sells.
 
 Zero sits in the middle and means nothing is running, whether that is no setup on the candle or no countdown open.
 A countdown that reaches 13 is finished, so the candles after it read zero until the next one opens.
+
+The `rich` table is the one exception, showing every count positive and leaving the colour to carry the direction.
 
 ## Candles
 
