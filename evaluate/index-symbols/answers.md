@@ -44,8 +44,15 @@ An unknown index name is an error the user can act on, not a silent empty result
 
 ## Verification
 
-The dataset is a dependency whose shape the adapter relies on, so pin what it actually returns in a dependency test kept apart from your own.
+This is where the test suite is founded, and the next two builds inherit whatever shape it takes, so it carries more weight than the amount of code under test suggests.
+
+- The suite lives apart from the source, with its own directory for the cases, its shared helpers and any data files it loads.
+- Tests of the dataset's own behaviour sit a level apart from tests of your code, because they fail for a different reason and on somebody else's schedule.
+- Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
+- The dataset is a dependency whose shape the adapter relies on, so pin what it actually returns: that an index name maps to records, and that each record carries several exchange listings.
+
 The home-listing rule is worth its own cases: a US stock whose bare symbol appears among its listings, and a foreign one where it does not.
+An unknown index name is a case too, since the brief asks for it to be reported rather than swallowed.
 
 ## Wrong turns
 

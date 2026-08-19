@@ -1,6 +1,8 @@
 # DeMark counts brief
 
-Carry on from the candles tool.
+Carry on from the candles tool, the one that fetches daily, weekly and monthly candles for a list of tickers.
+If you are starting without it, build that much first, since the counts have nothing to run over otherwise.
+
 Now I want DeMark counts over those candles, and a table I can scan a whole index with.
 
 Tickers reach it the way the candles tool already takes them, as arguments, from a file I name, or on standard input.

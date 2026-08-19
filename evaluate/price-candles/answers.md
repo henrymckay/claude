@@ -21,8 +21,8 @@ A `concat` over a comprehension is only the per-group-loop mistake when the grou
 ## What should not exist yet
 
 - **Still no `operate/`.** Two adapters and a driver do not make a use case; the driver wiring a fetch to a writer is the whole of it.
-- **A `port/` is arguable and not yet earned.** Nothing pure is calling outward — the driver calls the adapter directly and passes plain data on.
-Introducing it now is defensible; introducing it *and* an `operate` layer is scaffolding ahead of need.
+- **No `port/` either, despite there now being two adapters.** A port exists so a pure core can call outward without importing the adapter, and there is still no pure core doing any calling — the driver invokes both adapters itself and passes plain data between them.
+Two adapters is not the trigger; a core that must not know about them is.
 - **No date range, no filtering, no counts.** The brief asks for candles.
 
 ## The adapter boundary

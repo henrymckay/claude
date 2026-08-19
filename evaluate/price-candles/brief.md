@@ -1,6 +1,8 @@
 # Price candles brief
 
-Carry on from the symbols tool.
+Carry on from the symbols tool, the one that expands an index name into the symbols it holds.
+If you are starting without it, build that much first, since I still want to name an index rather than list it out.
+
 Now I want the price candles behind those symbols, so I can start computing on them.
 
 ## Tickers
