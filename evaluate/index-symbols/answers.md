@@ -22,8 +22,10 @@ An adapter that returns the dataset's records from one source and parsed rows fr
 
 **Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list` prints, a ticker in capitals and an index under its usual name.
 
-**A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field matches the home one where that listing exists.
-Prefer the match, fall back to the first, and keep the rule in the adapter — it is a fact about the data source, not about the domain.
+**A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field *is* the home one — right even where it does not appear among the listings, as it does not for 12 of the FTSE 100.
+So take it, and fall back to the first listing only where it is absent, which is the handful of constituents that would otherwise be lost.
+Checking it against the listings first changes no value and costs a pass; falling back while it exists returns a Frankfurt or US line for Barratt Redrow, ICG and Rio Tinto.
+Keep the rule in the adapter — it is a fact about the data source, not about the domain.
 
 What counts as *tradeable* is the core's call rather than the adapter's, so cash lines and their like are dropped by one rule in one place instead of once per source.
 The adapter is answerable for reading its file correctly; the core is answerable for what deserves to come back.
@@ -35,9 +37,12 @@ The payoff is that the whole expansion becomes testable against a fake source wi
 
 Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
 
+**An `operate` layer.** There are two use cases here, not one: expanding names and listing them.
+Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
+The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.
+
 ## What should not exist yet
 
-- **No `operate` package.** The operation is a function, and a package holding one module holding one use case is a shape borrowed from a later build.
 - **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — ten collections across two sources is a lookup, not a plugin system.
 
 ## The boundary
@@ -48,8 +53,8 @@ The brief names the funds and leaves finding them to the build, so the first wor
 - Send a browser-like user agent. `ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
-- Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.
-- A holdings file is not a list of shares. Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter drops what is not a **row** at all — blank lines, prose — and hands the rest on. Whether a genuine holding is *tradeable* is the core's call, made once for both sources rather than twice.
+- Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled. Where the source hands back records or markup and one field is wanted, pulling that field out and building a one-column frame is both simpler and cheaper: routing the whole record through the frame materialises every nested column you did not ask for, at a cost of two orders of magnitude here.
+- A holdings file is not a list of shares. Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter hands on what the file gave it and the core decides what deserves to come back. One rule covering cash lines, options and a trailing disclaimer alike beats a row filter in every adapter plus a tradeability rule after it — the second filter is the same judgement written four more times.
 
 ## The surface
 
@@ -90,7 +95,6 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 
 ## Wrong turns
 
-- **An `operate` package for one use case**, covered above.
 - **Detecting the terminal anyway**, because the skill says to, leaving output that differs between a terminal and a pipe when the brief asked for neither.
 - **Rendering once and letting `rich` decide.** Unstyled output is not machine output; the box drawing survives the colour being dropped.
 - **Emitting whatever the holdings file had in its symbol column**, cash rows and disclaimer text included, because the parse trusted the file to hold only shares.

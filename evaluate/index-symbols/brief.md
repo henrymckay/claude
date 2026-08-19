@@ -46,6 +46,8 @@ I only want symbols I could go and trade.
 A published holdings file carries rows that are not stocks at all, and I do not want those reaching me.
 
 A stock lists on several exchanges and carries a symbol for each, so give me the one for its home listing.
+Not every publisher says which exchange a holding trades on.
+Where a file leaves it out and there is nothing to work it out from, I would rather have nothing than a symbol that could name a different company — a gap I can see beats a holding I cannot tell apart from a real one.
 
 Hold them in a `polars` frame, ready to show, rather than assembling the output a line at a time on the way out.
 
