@@ -1,7 +1,7 @@
 # DeMark counts answers
 
-What a build working from the brief should arrive at, and the wrong turns to watch for.
-Nothing here is stated in the brief: each item is something the skills should produce.
+The design a good build reaches, and the wrong turns that miss it.
+None of it appears in the brief — each line is something the skills alone should produce.
 
 ## The shape
 

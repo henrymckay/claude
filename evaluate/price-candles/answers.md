@@ -1,7 +1,7 @@
 # Price candles answers
 
-What a build working from the brief should arrive at, and the wrong turns to watch for.
-Nothing here is stated in the brief: each item is something the skills should produce.
+The design a good build reaches, and the wrong turns that miss it.
+None of it appears in the brief — each line is something the skills alone should produce.
 
 ## The shape
 
@@ -18,12 +18,15 @@ Deriving coarser candles from dailies is a transform the problem does not need, 
 **Timeframe is a column, not something the caller stitches together.** The adapter makes one call per interval because the API has no other shape, concatenates them itself, and hands back a single frame.
 A `concat` over a comprehension is only the per-group-loop mistake when the groups are computation; here each group is its own network call.
 
+## What the build earns
+
+**A second port, and with it an `operate` package.** The symbols build already defines a port for holdings; fetching candles is a second thing the core needs from outside, so it gets its own rather than being bent through the first.
+Two use cases is also where the operations stop being loose functions, so the package the last build did not earn is earned here.
+
 ## What should not exist yet
 
-- **Still no `operate/`.** Two adapters and a driver do not make a use case; the driver wiring a fetch to a writer is the whole of it.
-- **No `port/` either, despite there now being two adapters.** A port exists so a pure core can call outward without importing the adapter, and there is still no pure core doing any calling — the driver invokes both adapters itself and passes plain data between them.
-Two adapters is not the trigger; a core that must not know about them is.
-- **No date range, no filtering, no counts.** The brief asks for candles.
+- **No date range, no filtering, no counts.** The brief asks for candles, and a `--from`/`--to` pair added now is a guess at the next build rather than a requirement of this one.
+- **No caching.** Candles change daily and the brief says nothing about storing them, so a build that adds a cache has invented a requirement and a cache invalidation problem with it.
 
 ## The boundary
 

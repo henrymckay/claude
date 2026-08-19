@@ -1,45 +1,44 @@
 # Index symbols answers
 
-What a build working from the brief should arrive at, and the wrong turns to watch for.
-Nothing here is stated in the brief: each item is something the skills should produce.
+The design a good build reaches, and the wrong turns that miss it.
+None of it appears in the brief — each line is something the skills alone should produce.
 
 ## The shape
 
-Two sources, one shape out.
+Two sources, one pipeline, and the join between them happens before anything is reduced.
 
 | shape | one row is | how it is reached |
 |---|---|---|
-| holdings | a constituent as its source describes it | read the packaged dataset, or fetch and parse the published file |
-| symbols | one symbol | keep the home listing, sort, drop duplicates |
+| holdings | one constituent of one collection | read the packaged dataset, or fetch and parse the published file |
+| symbols | one symbol | concatenate every collection's holdings, keep what is tradeable, sort, drop duplicates |
 
-**The two adapters differ entirely inside and agree exactly at their edge.** Each returns the same frame of symbols, so nothing past the driver ever asks which one ran, and the second source costs the rest of the program nothing.
+**Concatenate first, reduce once.** Every named collection produces holdings, those frames stack into one, and only then does it become a sorted list of distinct symbols.
+Reducing each collection to symbols and merging the results afterwards deduplicates twice and sorts twice, and it puts the join in the driver where the loop over names lives rather than in the core where the data does.
 
-**Resolution is a lookup, not a fallback.** Every name belongs to exactly one source, so the driver maps a name to the adapter that holds it and calls that one — no trying, no failing over, and no option asking the caller to decide.
-The transform never learns that two sources exist.
-An adapter that returns the dataset's records from one command and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
+**The adapters differ entirely inside and agree exactly at their edge.** Each returns holdings in the same frame, whatever its source published, so the concatenation is a stack rather than a reconciliation.
+An adapter that returns the dataset's records from one source and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
+
+**Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
 **Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list` prints, a ticker in capitals and an index under its usual name.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field matches the home one where that listing exists.
 Prefer the match, fall back to the first, and keep the rule in the adapter — it is a fact about the data source, not about the domain.
 
-Sorting and dropping duplicates happens **in the frame**, not by routing the symbols through a Python `set` and back.
-A set loses the order the brief asks for, so it has to be re-sorted anyway, and the frame does both in one pass.
+What counts as *tradeable* is the core's call rather than the adapter's, so cash lines and their like are dropped by one rule in one place instead of once per source.
+The adapter is answerable for reading its file correctly; the core is answerable for what deserves to come back.
+
+## What the build earns
+
+**A `port`.** Expanding several names, stacking their holdings and failing the run if any one of them fails is an operation, and it calls outward for holdings while staying pure — which is what a port is for.
+The payoff is that the whole expansion becomes testable against a fake source with no network, rather than only through the driver.
+
+Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
 
 ## What should not exist yet
 
-Two external services is a real boundary, so naming an adapter layer is earned here.
-Two things still are not.
-
-- **No `port/`.** This is the close call, and it is the one worth grading.
-One command reaches either source, so something *does* pick between two adapters that share a signature — which looks exactly like the case a port exists for.
-It is not, because the chooser is the driver, and a driver naming its adapters is the composition root doing its job.
-A port earns its place when a **pure** function must call outward without importing what it calls, and nothing here is pure and calling outward.
-- **No `operate/`.** A use case that orchestrates a single transform is that transform.
-
-Also absent unless the brief asked: caching, a retry policy, a configuration layer, an abstraction over "sources" that both adapters register with.
-
-A build that reaches for a port here has not misunderstood ports so much as missed which layer is doing the choosing, so grade the reasoning rather than the file list.
+- **No `operate` package.** The operation is a function, and a package holding one module holding one use case is a shape borrowed from a later build.
+- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — ten collections across two sources is a lookup, not a plugin system.
 
 ## The boundary
 
@@ -50,7 +49,7 @@ The brief names the funds and leaves finding them to the build, so the first wor
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.
-- A holdings file is not a list of shares. Cash lines, a fund's own placeholder rows and a trailing disclaimer all appear in them, so the adapter drops what is not a tradeable holding rather than emitting a symbol column with blanks and prose in it.
+- A holdings file is not a list of shares. Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter drops what is not a **row** at all — blank lines, prose — and hands the rest on. Whether a genuine holding is *tradeable* is the core's call, made once for both sources rather than twice.
 
 ## The surface
 
@@ -91,7 +90,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 
 ## Wrong turns
 
-- **A `port` or an `operate` layer**, covered above.
+- **An `operate` package for one use case**, covered above.
 - **Detecting the terminal anyway**, because the skill says to, leaving output that differs between a terminal and a pipe when the brief asked for neither.
 - **Rendering once and letting `rich` decide.** Unstyled output is not machine output; the box drawing survives the colour being dropped.
 - **Emitting whatever the holdings file had in its symbol column**, cash rows and disclaimer text included, because the parse trusted the file to hold only shares.
