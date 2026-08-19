@@ -1,25 +1,46 @@
 # Index symbols brief
 
-Build me a command-line tool that expands the name of a stock index into the symbols it holds.
+Build me a command-line tool that turns the name of an index or a fund into the symbols it holds.
 This is the first piece of a bigger tool for scanning stocks, so I will keep adding to the same repository.
 
-## Indices
+## Names
 
-One or more index names, given as arguments.
+One name per run, given as the only argument.
 
-Resolve them with `pytickersymbols`, which ships its own dataset, so this should cost no network call.
+I get symbols from two places, and I want a command for each, so what I type says where to look rather than a flag on a shared command.
+
+- **Indices** come from `pytickersymbols`, which ships its own dataset, so expanding one should cost no network call.
+- **Funds** publish their holdings over HTTPS, so expanding one is a request and a parse.
+
 Tell me plainly when a name matches nothing, rather than handing back an empty list.
+
+## Funds
+
+<!-- The funds to expand over HTTPS, and where each publishes its holdings, go here. -->
 
 ## Symbols
 
-The Yahoo Finance symbol for each constituent, one per line, sorted with duplicates removed.
+The Yahoo Finance symbol for each constituent, sorted with duplicates dropped.
 
 A stock lists on several exchanges and carries a symbol for each, so give me the one for its home listing.
 
-I want the symbols to go two ways.
+Give me them as a `polars` frame that is ready to show, rather than something assembled a line at a time on the way out.
+
+I want them to go two ways.
 
 - To standard output, so I can pipe them into another command or redirect them to a file.
 - To a file I name.
+
+## Commands
+
+One per source, and the tool has to sit in a pipeline like anything else.
+
+```bash
+demark index dow-jones
+demark index dow-jones > dow-jones.txt
+demark index dow-jones --output dow-jones.txt
+demark fund vanguard-ftse-100 | demark candles
+```
 
 ## Working style
 
