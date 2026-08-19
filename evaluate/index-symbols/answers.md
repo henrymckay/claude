@@ -59,9 +59,9 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 `list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
-- Two renders, not one styled two ways. `rich` drops colour by itself when standard output is not a terminal, and a build that leans on that ships a grid of columns into the pipe — still unparseable, just monochrome. The plain form is a separate render emitting one symbol and nothing else per line.
-- Writing to a file counts as 'anything else reading them', so `-o` gets the plain form too. A boxed grid saved to a file is nobody's idea of a saved list.
-- One symbol per line is right here because there is one column. It stops being right the moment a second appears, which is the next build's problem and not this one's.
+- Two renders, not one styled two ways. `rich` drops colour by itself when standard output is not a terminal, and a build that leans on that ships a bordered table into the pipe — still unparseable, just monochrome. The `lines` form is a separate render emitting one symbol and nothing else.
+- Writing to a file counts as 'anything else reading them', so `-o` gets `lines` unless told otherwise. A bordered table saved to a file is nobody's idea of a saved list.
+- One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect. It stops being right the moment a second column appears, which is why the option names a format rather than toggling a plain flag — the next build needs a third value, not a second boolean.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
