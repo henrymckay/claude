@@ -5,15 +5,16 @@ This is the first piece of a bigger tool for scanning stocks, so I will keep add
 
 ## Names
 
-One name per run, given as the only argument to `expand`.
-It might name an index, a fund, an ETF or anything else standing for a collection of symbols.
+One or more names, given as arguments to `expand`.
+Each might name an index, a fund, an ETF or anything else standing for a collection of symbols.
 
 Those collections come from two places, and I should not have to remember which.
 
 - Some ship with `pytickersymbols`, whose dataset comes with the package, so expanding one costs no network call.
-- Others publish their holdings over HTTPS, so expanding one is a request and a parse.
+- Others publish their holdings online, so expanding one is a request and a parse.
 
-Look locally first, since that is free and instant, and go out to the network only when the name is not there.
+Every name belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
+A name belonging to neither is an error.
 
 ## Funds
 
@@ -33,6 +34,7 @@ A fund whose holdings I cannot retrieve is an error saying so, not a fund that c
 ## Symbols
 
 The Yahoo Finance symbol for each constituent, sorted with duplicates dropped.
+Name several collections and I want one list back, so two funds holding the same stock give it to me once.
 
 A stock lists on several exchanges and carries a symbol for each, so give me the one for its home listing.
 
@@ -44,28 +46,27 @@ By default write them to standard output, one per line, so I can pipe them on or
 
 Two, because finding out what I can expand is a different question from expanding one.
 
-- `expand NAME` gives me the symbols that collection holds.
+- `expand NAME...` gives me the symbols those collections hold.
 - `list` gives me the names I can expand.
 
-A name matching neither source is an error, and `list` is how I find out which names do match.
+`list` is how I find out which names work, since an unknown one is only an error.
 
 ## Options
 
-Both commands take both, spelled the way the tools I already use spell them.
+One, spelled the way the tools I already use spell it.
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-s`, `--source local|remote` forces one source on `expand`, and narrows `list` to that source's names.
 
 ## Using it
 
 ```bash
 symbols expand dow-jones
 symbols expand ARKK
+symbols expand ARKK ARKW ARKG
 symbols expand dow-jones > dow-jones.txt
-symbols expand dow-jones -o dow-jones.txt
-symbols expand dow-jones -s remote
+symbols expand ARKK -o ark.txt
 symbols list
-symbols list -s remote | grep ARK
+symbols list | grep ARK
 symbols expand ftse-100 | grep '\.L$'
 ```
 

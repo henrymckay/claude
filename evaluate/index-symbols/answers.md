@@ -14,7 +14,8 @@ Two sources, one shape out.
 
 **The two adapters differ entirely inside and agree exactly at their edge.** Each returns the same frame of symbols, so nothing past the driver ever asks which one ran, and the second source costs the rest of the program nothing.
 
-**Resolution is a driver decision, not a core one.** Local first, remote second, and an override that forces either -- so the fallback lives where the adapters are named, and the transform never learns that two sources exist.
+**Resolution is a lookup, not a fallback.** Every name belongs to exactly one source, so the driver maps a name to the adapter that holds it and calls that one — no trying, no failing over, and no option asking the caller to decide.
+The transform never learns that two sources exist.
 An adapter that returns the dataset's records from one command and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
 
 **Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list` prints, a ticker in capitals and an index under its usual name.
@@ -31,7 +32,7 @@ Two external services is a real boundary, so naming an adapter layer is earned h
 Two things still are not.
 
 - **No `port/`.** This is the close call, and it is the one worth grading.
-One command resolves a name against either source, so something *does* choose between two adapters that share a signature — which looks exactly like the case a port exists for.
+One command reaches either source, so something *does* pick between two adapters that share a signature — which looks exactly like the case a port exists for.
 It is not, because the chooser is the driver, and a driver naming its adapters is the composition root doing its job.
 A port earns its place when a **pure** function must call outward without importing what it calls, and nothing here is pure and calling outward.
 - **No `operate/`.** A use case that orchestrates a single transform is that transform.
@@ -58,6 +59,7 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 `list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
 - Symbols to standard output by default, one per line, so it pipes with no flag at all.
+- Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit when a name resolves to nothing, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
