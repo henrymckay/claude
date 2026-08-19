@@ -59,8 +59,9 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 `list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
-- Two renders, not one styled two ways. `rich` drops colour by itself when standard output is not a terminal, and a build that leans on that ships a bordered table into the pipe — still unparseable, just monochrome. The `lines` form is a separate render emitting one symbol and nothing else.
-- Writing to a file counts as 'anything else reading them', so `-o` gets `lines` unless told otherwise. A bordered table saved to a file is nobody's idea of a saved list.
+- Two renders, not one styled two ways. `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
+- **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.
+- `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table. A path does not silently override the flag.
 - One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect. It stops being right the moment a second column appears, which is why the option names a format rather than toggling a plain flag — the next build needs a third value, not a second boolean.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
@@ -69,7 +70,12 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 - A `--help` that explains the tool without recourse to a README.
 - `list` writing one name per line, so `symbols list | grep ftse` answers "what can I expand that looks like this".
 
-**Where a good build should push back.** `-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
+**Where a good build should push back.** Two things, and both should end in the brief being followed.
+
+`write-entry-points` says to vary the form with the destination, the way `ls` and `grep --color=auto` do, and the brief asks for the opposite — one form always, a flag to change it.
+The brief is right for this tool and the build should say why rather than either detecting quietly or arguing the point: output that changes with context is output a script cannot rely on, and the pretty form here is the rare case rather than the common one.
+
+`-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
 Saying so and building it anyway is the right answer; refusing it is not, and neither is building it without noticing.
 
 ## Verification
@@ -86,7 +92,8 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 ## Wrong turns
 
 - **A `port` or an `operate` layer**, covered above.
-- **Rendering once and letting `rich` decide.** Unstyled output is not machine output; the box drawing and the column layout survive the colour being dropped.
+- **Detecting the terminal anyway**, because the skill says to, leaving output that differs between a terminal and a pipe when the brief asked for neither.
+- **Rendering once and letting `rich` decide.** Unstyled output is not machine output; the box drawing survives the colour being dropped.
 - **Emitting whatever the holdings file had in its symbol column**, cash rows and disclaimer text included, because the parse trusted the file to hold only shares.
 - **Treating a 403 as an empty fund.** A refused request and a fund with no holdings are different outcomes and only one of them is the caller's problem.
 - **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.

@@ -44,10 +44,10 @@ A stock lists on several exchanges and carries a symbol for each, so give me the
 
 Give me them as a `polars` frame that is ready to show, rather than something assembled a line at a time on the way out.
 
-When I am reading them myself, show them in a `rich` table down the page, with a heading and a count at the end so I know how many came back.
+One symbol per line and nothing else, always, so `grep`, `sort` and `xargs` all work on them without my thinking about it.
+Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
 
-When anything else is reading them, write one symbol per line and nothing else, so `grep`, `sort` and `xargs` all work on them.
-Work out which of the two I am doing rather than making me say, and let me name the one I want when I would rather choose.
+When I do want to read them myself, a flag gives me a `rich` table down the page instead, with a heading and a count at the end so I know how many came back.
 
 ## Commands
 
@@ -64,7 +64,7 @@ It writes one name per line and sorted, the same as the symbols do, so I can gre
 Two, spelled the way the tools I already use spell them, and both work on both commands.
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-f`, `--format table|lines` names the form I want, instead of leaving it to be worked out.
+- `-t`, `--table` shows a `rich` table instead of the one-per-line default.
 
 ## Using it
 
@@ -76,7 +76,7 @@ symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
 symbols list
 symbols list | grep ARK
-symbols expand ARKK -f lines
+symbols expand ARKK -t
 symbols expand ftse-100 | grep '\.L$'
 ```
 
