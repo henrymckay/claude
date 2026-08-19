@@ -1,18 +1,22 @@
 # Index symbols brief
 
-Build me a command-line tool that turns the name of an index or a fund into the symbols it holds.
+Build me a command-line tool called `symbols` that turns the name of an index or a fund into the symbols it holds.
 This is the first piece of a bigger tool for scanning stocks, so I will keep adding to the same repository.
 
 ## Names
 
 One name per run, given as the only argument.
 
-I get symbols from two places, and I want a command for each, so what I type says where to look rather than a flag on a shared command.
+The symbols come from two places, and I should not have to remember which.
 
-- **Indices** come from `pytickersymbols`, which ships its own dataset, so expanding one should cost no network call.
-- **Funds** publish their holdings over HTTPS, so expanding one is a request and a parse.
+- Some names ship with `pytickersymbols`, whose dataset comes with the package, so expanding one costs no network call.
+- Others publish their holdings over HTTPS, so expanding one is a request and a parse.
 
-Tell me plainly when a name matches nothing, rather than handing back an empty list.
+Look locally first, since that is free and instant, and go out to the network only when the name is not there.
+Tell me plainly when a name matches neither, and say what close matches you did find.
+
+I do want to be able to override that.
+The packaged dataset is a snapshot and goes stale, where a fund's published holdings are authoritative, so let me force either source when I know better.
 
 ## Funds
 
@@ -31,21 +35,24 @@ I want them to go two ways.
 - To standard output, so I can pipe them into another command or redirect them to a file.
 - To a file I name.
 
-## Commands
-
-One per source, and the tool has to sit in a pipeline like anything else.
+## Using it
 
 ```bash
-demark index dow-jones
-demark index dow-jones > dow-jones.txt
-demark index dow-jones --output dow-jones.txt
-demark fund vanguard-ftse-100 | demark candles
+symbols dow-jones
+symbols vanguard-ftse-100
+symbols dow-jones > dow-jones.txt
+symbols dow-jones --output dow-jones.txt
+symbols dow-jones --source remote
+symbols ftse-100 | grep '\.L$'
 ```
 
 ## Working style
 
 Create it as its own new git repository, at a path I will give you.
 Build what this brief asks for and no more.
+
+This is the interface I think I want.
+Where your skills say a different shape would serve me better, say so and why before you build it, rather than either following me over a cliff or quietly doing something else.
 
 Invoke and follow your skills throughout, for setting the project up, writing the code and testing it.
 **Don't draw on anything in your saved memory; work only from your skills.**

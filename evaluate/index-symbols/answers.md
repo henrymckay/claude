@@ -12,7 +12,9 @@ Two sources, one shape out.
 | holdings | a constituent as its source describes it | read the packaged dataset, or fetch and parse the published file |
 | symbols | one symbol | keep the home listing, sort, drop duplicates |
 
-**The two adapters differ entirely inside and agree exactly at their edge.** Each returns the same frame of symbols, so nothing downstream ever asks which one ran, and the second source costs the rest of the program nothing.
+**The two adapters differ entirely inside and agree exactly at their edge.** Each returns the same frame of symbols, so nothing past the driver ever asks which one ran, and the second source costs the rest of the program nothing.
+
+**Resolution is a driver decision, not a core one.** Local first, remote second, and an override that forces either -- so the fallback lives where the adapters are named, and the transform never learns that two sources exist.
 An adapter that returns the dataset's records from one command and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field matches the home one where that listing exists.
@@ -26,13 +28,15 @@ A set loses the order the brief asks for, so it has to be re-sorted anyway, and 
 Two external services is a real boundary, so naming an adapter layer is earned here.
 Two things still are not.
 
-- **No `port/`.** A port exists so a pure core can call outward without importing the adapter, and here each command calls its own adapter directly.
-The trigger is a core that must not know which source ran, and nothing in this build needs that — the two adapters are peers reached from different commands, not two implementations something chooses between.
+- **No `port/`.** This is the close call, and it is the one worth grading.
+One command resolves a name against either source, so something *does* choose between two adapters that share a signature — which looks exactly like the case a port exists for.
+It is not, because the chooser is the driver, and a driver naming its adapters is the composition root doing its job.
+A port earns its place when a **pure** function must call outward without importing what it calls, and nothing here is pure and calling outward.
 - **No `operate/`.** A use case that orchestrates a single transform is that transform.
 
 Also absent unless the brief asked: caching, a retry policy, a configuration layer, an abstraction over "sources" that both adapters register with.
 
-Introducing a port here is the plausible mistake rather than the obvious one, which is what makes it worth grading: the two adapters *do* share a signature, and that resemblance is not the same as a caller who needs the choice hidden.
+A build that reaches for a port here has not misunderstood ports so much as missed which layer is doing the choosing, so grade the reasoning rather than the file list.
 
 ## The HTTP adapter
 
@@ -55,8 +59,9 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 ## Wrong turns
 
 - **A `port` or an `operate` layer**, covered above.
-- **A network call for the index source.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
+- **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
 - **Two shapes out of two adapters**, leaving the driver or the transform to reconcile them.
+- **Making the caller say where to look.** The tool knows which names it ships and which it fetches, so a command or a required flag per source asks the user to hold knowledge the program already has.
 - **String-wrangling the holdings file** into lists and dicts before it reaches a frame.
 - **Letting a request failure surface as `httpx`'s own exception**, which makes the calling code depend on the library the adapter exists to hide.
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
