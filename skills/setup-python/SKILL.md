@@ -148,6 +148,8 @@ Everywhere else the stdlib-first rule holds — don't add a dependency you don't
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
+- **HTML parsing** → `lxml` for pulling data out of a page, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
+Take `pandas.read_html` only where `pandas` is already a dependency, converting its result with `polars.from_pandas` — a whole table for one column is not worth `pandas`, `pyarrow` and a parser arriving together.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API.
 `rich` formats output but isn't itself a logging framework.
