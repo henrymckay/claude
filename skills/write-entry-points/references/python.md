@@ -27,18 +27,24 @@ Three packages under `code/drive/`:
 cli/
   __init__.py   role, hollow: re-exports app
 typer_/
-  __init__.py   re-exports app from command
-  argument.py   functions returning a configured typer.Argument
-  option.py     functions returning a configured typer.Option
-  command.py    the app and its @app.command() functions — the composition root
+  __init__.py     re-exports app; imports callback and command
+  application.py  the typer.Typer() instance — imports no drive module
+  argument.py     functions returning a configured typer.Argument
+  callback.py     the @app.callback() run before any command
+  command.py      the @app.command() functions — the composition root
+  option.py       functions returning a configured typer.Option
 rich_/
   __init__.py
   render.py     builds the rich table from the core's plain results
 ```
 
-`command.py` owns the app and its commands, and is the **composition root**: each command imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
+`command.py` holds the commands and is the **composition root**: each imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
 Unlike `fastapi`'s `APIRouter`, `typer` has no flat command *router* to decorate off a separate object — `add_typer` composes sub-apps only as command *groups* (below), not flat commands.
-So the app lives with its commands: defining it in `command.py`, which imports no other `drive` module, keeps the `@app.command()` decorator without a cycle back to `__init__`:
+
+**Give the app object its own module.**
+A framework anchor has to be defined before anything decorates it, so leaving it at the top of `command.py` fixes the order of that file and pushes the callback ahead of the commands — and the commands are what a reader came for.
+Put it in `application.py` and `command.py` is a flat alphabetical list of commands, `write-python`'s ordering intact.
+Name the module and the instance apart — `application.app`, reached like `argument.stations()` — so neither shadows the other; `application.py` imports no other `drive` module, so nothing cycles.
 
 ```python
 import typing
@@ -48,23 +54,22 @@ import typer
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_
 from mypackage.code.drive.rich_ import render
-from mypackage.code.drive.typer_ import argument
-
-app = typer.Typer()
+from mypackage.code.drive.typer_ import application, argument
 
 
-@app.command()
+@application.app.command()
 def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     """Report the average temperature for each station."""
     render.table(operate.report(stations, fetch=httpx_.fetch))
 ```
 
-`typer_/__init__.py` re-exports that `app` — the framework package's single public object:
+`typer_/__init__.py` re-exports the app and names the modules whose import registers the decorators — without those two imports the app carries no commands, because a decorator only runs when its module is imported:
 
 ```python
-from mypackage.code.drive.typer_.command import app
+from mypackage.code.drive.typer_ import callback, command
+from mypackage.code.drive.typer_.application import app
 
-__all__ = ["app"]
+__all__ = ["app", "callback", "command"]
 ```
 
 `cli/__init__.py` re-exports that `app` as the stable entry point, so the console script never names the framework behind it:
@@ -120,16 +125,19 @@ Say in the docstring that the parameter names are the keys, and have the receivi
 
 **Keep help text terse — lean on defaults, not examples.**
 Don't stuff usage examples into a help string; a well-chosen **default** documents both the format and a sensible value at once (a `--days` defaulting to `7` is its own example), and `typer` shows defaults in `--help`.
+A **required** argument is the one place an example earns its line, because a default is exactly what would make it optional — `typer`, `click` and `argparse` all read "has a default" as "not required", so there is no default to lean on without changing what the argument is.
+Even then, only where the name leaves the format open: `NAME...` does not say whether a name is typed as a ticker or a phrase, so one example settles it, where `PATH` says everything already.
+Keep it to a bare value or two rather than a sentence, since the value itself is the documentation.
 
 **Serve the terminal and the pipeline from one command** (see Compose with other tools in `SKILL.md`).
 `rich` drops colour by itself when standard output is not a terminal, which is *not* enough — a boxed table is still unparseable — so the machine form has to be a second render rather than the same one unstyled.
-Keep both in `rich_`, choosing on `Console().is_terminal`, and let a `--format` option override the guess:
+Keep both in `rich_` and let the option decide, never `Console().is_terminal`:
 
 ```python
-def write(report: polars.DataFrame, console: rich.console.Console) -> None:
-    """Render the report for a terminal, or emit it as CSV for anything else."""
-    if console.is_terminal:
-        console.print(table(report))
+def write(report: polars.DataFrame, console: rich.console.Console, table: bool) -> None:
+    """Draw the report as a table, or emit it as CSV."""
+    if table:
+        console.print(_table(report))
     else:
         console.file.write(report.write_csv())
 ```

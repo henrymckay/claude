@@ -47,6 +47,11 @@ A capability that needs a code change, or that only arrives as a side effect of 
 They pull against each other, and that tension is the design work: comprehensiveness invites a flag per capability, and brevity is what stops that reaching thirty of them.
 Resolve it by making options **combine rather than multiply** — orthogonal options a caller mixes freely beat a named flag per combination, and one option taking a value beats three that are variations of it.
 
+**An option the shell already provides earns its place on convention, so notice before you add it.**
+`--output PATH` does nothing `> PATH` does not, and `--quiet` does nothing `2>/dev/null` does not.
+That is not a reason to refuse them — callers reach for the flags the tools beside yours carry, and `curl` and `sort` both take `-o` — but it is a reason to say which you are doing and why.
+The failure is adding it without the thought: an option nobody decided to include is one nobody will decide to remove, and a surface grown that way is where the flag count comes from.
+
 Two more follow from the surface being public.
 **Spell the same idea the same way everywhere**, so learning one command predicts the next.
 And **treat `--help` as the documentation**: a surface that can only be understood by reading a README is a surface that needs redesigning, not a README.
@@ -81,10 +86,11 @@ myapp report - < counts.csv      # < feeds it back in on standard input
 myapp report AAPL 2> run.log     # 2> diverts diagnostics, leaving the data
 ```
 
-**Vary the form with the destination, never the content.** Render for a person when output is a terminal, and emit the plain machine-readable form when it is redirected to a file or a pipe — the same data, shaped for whoever is reading.
-`ls` is the worked example: multi-column at a terminal, one entry per line into a pipe.
-Note what this is not — `grep --color=auto` merely drops colour off a tty, leaving the structure identical, which is the weaker thing a rendering library already does for you.
-Offer the choice explicitly as well, through a format option and a destination option, because a person sometimes wants the raw form on screen and a script sometimes wants the rendered one captured.
+**Fix the form and let an option change it, never the destination.** Emit the plain machine-readable form always, and render for a person only when asked.
+A tool that senses a terminal behaves one way under a person's hands and another inside a script, so the form that gets tested is never the form that runs unattended — and the caller finds out in production.
+`ls` gets away with it because both its forms are parseable; a bordered table is not, and guessing wrong there hands a script something it cannot read.
+So offer the choice through a format option and a destination option, and answer both the same way: same bytes at a terminal, down a pipe and into a file.
+Dropping *colour* off a tty is not this — the structure is identical either way, and a rendering library already does it for you.
 
 **Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
 
