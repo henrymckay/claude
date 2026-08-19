@@ -44,7 +44,10 @@ A stock lists on several exchanges and carries a symbol for each, so give me the
 
 Give me them as a `polars` frame that is ready to show, rather than something assembled a line at a time on the way out.
 
-By default write them to standard output, one per line, so I can pipe them on or redirect them.
+When I am reading them myself, show them nicely with `rich` — gridded across the terminal with a count, rather than five hundred lines scrolling past.
+
+When anything else is reading them, write one symbol per line and nothing else, so `grep`, `sort` and `xargs` all work on them.
+Work out which of the two I am doing rather than making me say, and let me force the plain form when I want to see exactly what a pipe would get.
 
 ## Commands
 
@@ -58,9 +61,10 @@ It writes one name per line and sorted, the same as the symbols do, so I can gre
 
 ## Options
 
-One, spelled the way the tools I already use spell it, and it works on both commands.
+Two, spelled the way the tools I already use spell them, and both work on both commands.
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
+- `-p`, `--plain` writes the one-per-line form even when I am at a terminal.
 
 ## Using it
 
@@ -72,6 +76,7 @@ symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
 symbols list
 symbols list | grep ARK
+symbols expand ARKK --plain
 symbols expand ftse-100 | grep '\.L$'
 ```
 

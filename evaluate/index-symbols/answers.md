@@ -59,7 +59,9 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 `list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
-- Symbols to standard output by default, one per line, so it pipes with no flag at all.
+- Two renders, not one styled two ways. `rich` drops colour by itself when standard output is not a terminal, and a build that leans on that ships a grid of columns into the pipe — still unparseable, just monochrome. The plain form is a separate render emitting one symbol and nothing else per line.
+- Writing to a file counts as 'anything else reading them', so `-o` gets the plain form too. A boxed grid saved to a file is nobody's idea of a saved list.
+- One symbol per line is right here because there is one column. It stops being right the moment a second appears, which is the next build's problem and not this one's.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
@@ -84,6 +86,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 ## Wrong turns
 
 - **A `port` or an `operate` layer**, covered above.
+- **Rendering once and letting `rich` decide.** Unstyled output is not machine output; the box drawing and the column layout survive the colour being dropped.
 - **Emitting whatever the holdings file had in its symbol column**, cash rows and disclaimer text included, because the parse trusted the file to hold only shares.
 - **Treating a 403 as an empty fund.** A refused request and a fund with no holdings are different outcomes and only one of them is the caller's problem.
 - **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
