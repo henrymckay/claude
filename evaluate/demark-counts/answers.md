@@ -35,7 +35,7 @@ A previous run spent its whole core design on that machinery, for a requirement 
 **Filtering is not a seam.** It drops rows without changing what a row is.
 It earns its own function by being independently useful, not because the flow demands one, and it comes last, since the bounds are set on columns that only exist once the frame is wide.
 
-## What this build finally earns
+## What should not exist yet
 
 The hexagon becomes worth its keep here, and not before.
 
@@ -44,6 +44,31 @@ The hexagon becomes worth its keep here, and not before.
 - **An `operate`**, because fetching and counting is a task worth naming, and four commands share it.
 
 Introducing all three *now* is right; having introduced them while the tool only expanded an index was not.
+
+Still absent unless asked for: a caching layer, a configuration system, a plugin or registry mechanism for counts, and any abstraction over "indicators" of which DeMark is imagined to be the first.
+Three counts named in a brief are three counts, not a family to build a framework around.
+
+## The boundary
+
+The date filters the final frame, but it also decides how much history to fetch, and the count needs a warm-up run of candles before the earliest date asked about or the first counts come out wrong.
+So the edge derives a fetch window from the same bounds the core later filters on, plus a margin.
+
+Deriving that window is the driver's job.
+The filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
+Size the margin from evidence — measure how far back a pending countdown actually reaches over real data — rather than guessing, and prefer an unbounded fetch to a margin that is too small, because too small fails silently.
+
+## The surface
+
+`rich` drops colour by itself when standard output is not a terminal, which is not enough: a boxed table is still unparseable, so the plain form is a second render rather than the same one unstyled.
+Logs go to standard error, or they land in the middle of piped data — `RichHandler` builds its own stdout console unless told otherwise.
+
+The counts, the three per-count commands and the index expansion each reach their own stage, so a caller can take any one of them without running the rest.
+Every command spells a shared idea the same way — the file it writes to, the way tickers arrive — because a tool whose second command renames its first command's options is one nobody can use from memory.
+
+Filters are one option per column taking a bound pair, so the surface grows by a column rather than by three flags a column.
+Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity, and the pair is what keeps both.
+
+**Where a good build should push back.** Nine filter options is still a lot of signature, and a build that finds a way to keep the surface while shrinking the declaration — rather than restating all nine in the body — has understood the constraint properly.
 
 ## The window trap
 
@@ -61,20 +86,6 @@ Two mechanisms for the same operation, a date bounded by its own parameters besi
 
 The option surface is the driver's problem, not the filter's: parse each bound pair straight to the value the core needs.
 A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
-
-## The date bound does double duty
-
-The date filters the final frame, but it also decides how much history to fetch, and the count needs a warm-up run of candles before the earliest date asked about or the first counts come out wrong.
-So the edge derives a fetch window from the same bounds the core later filters on, plus a margin.
-
-Deriving that window is the driver's job.
-The filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
-Size the margin from evidence — measure how far back a pending countdown actually reaches over real data — rather than guessing, and prefer an unbounded fetch to a margin that is too small, because too small fails silently.
-
-## Two readers, one command
-
-`rich` drops colour by itself when standard output is not a terminal, which is not enough: a boxed table is still unparseable, so the plain form is a second render rather than the same one unstyled.
-Logs go to standard error, or they land in the middle of piped data — `RichHandler` builds its own stdout console unless told otherwise.
 
 ## Verification
 

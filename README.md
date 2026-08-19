@@ -68,8 +68,9 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 Test how well the skills guide a build.
 Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
-Order every brief the same way, from the app's input and output through its uses and the rules its output must satisfy, to the style the work is done in.
-Each build below carries on from the last, which is what makes structure scaffolded too early a visible failure rather than a defensible one.
+Order every brief and every answers file the same way, the brief by input, output, uses, rules and working style, the answers by shape, structure, boundary, surface, tests and wrong turns.
+
+Each build below carries on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
 - [`index-symbols`](evaluate/index-symbols) expands the name of a stock index into the symbols it holds.
 - [`price-candles`](evaluate/price-candles) fetches candles for those symbols, on three timeframes.

@@ -25,7 +25,7 @@ A `concat` over a comprehension is only the per-group-loop mistake when the grou
 Two adapters is not the trigger; a core that must not know about them is.
 - **No date range, no filtering, no counts.** The brief asks for candles.
 
-## The adapter boundary
+## The boundary
 
 This is where `pandas` meets `polars` and the rung is mostly judged on it.
 
@@ -34,6 +34,19 @@ This is where `pandas` meets `polars` and the rung is mostly judged on it.
 - `polars.from_pandas` needs `pyarrow` for anything beyond plain numpy-backed columns.
 - The adapter declares its own output shape and returns it whatever happens, including when the download comes back empty or `None`, so no later code branches on what the library felt like returning.
 - `auto_adjust=False` keeps the close split-adjusted but not dividend-adjusted, which is the brief's requirement; `Adj Close` is the dividend-adjusted one and is not what a chart shows.
+
+## The surface
+
+Tickers arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
+That last one is the whole point of the build — it is what makes `symbols dow-jones | candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
+
+Read standard input when no tickers are named, rather than behind a flag that says to.
+A flag would mean the pipeline only composes for someone who already knows the flag exists.
+
+Candles go out the same two ways the symbols already do, and the option that names a file is spelled the same as it was.
+Spelling the same idea differently between two commands of one tool is the cheapest possible thing to get wrong and the most irritating to live with.
+
+**Where a good build should push back.** A named input file does nothing that `< file` does not, exactly as `-o` mirrors `>` in the previous build — worth saying, worth building anyway.
 
 ## Verification
 

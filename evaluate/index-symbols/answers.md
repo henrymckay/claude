@@ -38,12 +38,24 @@ Also absent unless the brief asked: caching, a retry policy, a configuration lay
 
 A build that reaches for a port here has not misunderstood ports so much as missed which layer is doing the choosing, so grade the reasoning rather than the file list.
 
-## The HTTP adapter
+## The boundary
 
 - `httpx` is the pick over `requests`.
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Parse the response **into the frame**, rather than splitting strings into lists and building a frame from them afterwards.
+
+## The surface
+
+One command taking one argument, because resolution is the tool's job rather than the caller's, and the shape supports that without help.
+
+- Symbols to standard output by default, one per line, so it pipes with no flag at all.
+- Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
+- A non-zero exit when a name resolves to nothing, so `&&` and `set -e` behave.
+- A `--help` that explains the tool without recourse to a README.
+
+**Where a good build should push back.** `-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
+Saying so and building it anyway is the right answer; refusing it is not, and neither is building it without noticing.
 
 ## Verification
 
