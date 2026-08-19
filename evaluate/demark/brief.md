@@ -24,8 +24,7 @@ One option per filterable column, and the value says whether it is an equality o
 - `..-11` is at most minus eleven.
 - `2026-01-01..2026-03-01` is between the two, inclusive.
 
-So `--date 2026-01-01..2026-03-01 --daily-setup=-9` reads as itself, and `--help` lists everything I can filter on.
-A value starting with a minus needs the `=` form, or the shell hands it over as another option.
+So `--date 2026-01-01..2026-03-01 --daily-setup -9` reads as itself, and `--help` lists everything I can filter on.
 
 I expect to set several at once in a single run, and every one of them has to hold.
 Because counts are signed, one option per column covers both directions and I never have to say which direction I mean.
