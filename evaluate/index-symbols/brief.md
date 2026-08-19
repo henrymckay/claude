@@ -25,7 +25,8 @@ Ten collections across three families, none of them in the packaged dataset, all
 
 Work out where each of them publishes.
 
-I name them by fund rather than by family, so `symbols expand arkk` works and `symbols expand ark` does not, and `list` shows all ten beside the packaged ones.
+Each one answers to its own ticker, so `symbols expand arkk` and `symbols expand ives` work where `symbols expand ark` does not, and `list` shows all ten beside the packaged ones.
+I will not be careful about case, for these or for an index name.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
@@ -59,12 +60,12 @@ Both commands take both, spelled the way the tools I already use spell them.
 
 ```bash
 symbols expand dow-jones
-symbols expand vanguard-ftse-100
+symbols expand arkk
 symbols expand dow-jones > dow-jones.txt
 symbols expand dow-jones -o dow-jones.txt
 symbols expand dow-jones -s remote
 symbols list
-symbols list -s remote | grep ftse
+symbols list -s remote | grep -i ark
 symbols expand ftse-100 | grep '\.L$'
 ```
 
