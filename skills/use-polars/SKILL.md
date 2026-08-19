@@ -196,6 +196,12 @@ On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **i
 - **`bind_`** (monadic bind) — the operation **chosen depends on the frame's own data**: you inspect the contents and branch.
 E.g. attach FX rates by looking at which currencies are actually present and joining only those tables: `trades.pipe(bind_attach_fx, rate_tables)`.
 
+**The prefix covers everything `.pipe()` reaches, a core transform included.**
+A domain name says what a step is *about*; the prefix says what it does to the frame, which is the half a reader of the chain cannot see.
+So a transform written to sit in a chain is `map_keep_tradeable` from the start, and the domain name stays in the rest of it — the prefix is added to the name, not swapped for it.
+And reach for `.pipe()` rather than nesting the calls.
+Three transforms wrapped around one another read inside-out and put the last step first; the same three piped read in the order they run, and the prefixes let you see which of them can branch on the data before you open any of them.
+
 The line between `amap_` and `bind_` is exactly the one between applicative and monad: **an applicative step's behaviour is fixed regardless of the values inside; a bind step's behaviour depends on the materialised data.**
 That has teeth in `polars` — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
 So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimisable.
