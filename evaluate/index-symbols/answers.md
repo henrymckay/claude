@@ -17,7 +17,7 @@ Two sources, one shape out.
 **Resolution is a driver decision, not a core one.** Local first, remote second, and an override that forces either -- so the fallback lives where the adapters are named, and the transform never learns that two sources exist.
 An adapter that returns the dataset's records from one command and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
 
-**Names are matched case-insensitively, and a fund is matched by ticker.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers both rather than each source inventing its own.
+**Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list` prints, a ticker in capitals and an index under its usual name.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field matches the home one where that listing exists.
 Prefer the match, fall back to the first, and keep the rule in the adapter — it is a fact about the data source, not about the domain.
