@@ -13,9 +13,6 @@ Any number of them, given whichever way suits what I am doing at the time.
 
 An index name stands in for its constituents, resolved with `pytickersymbols`.
 
-I would rather learn one compact, glob-style syntax than memorise a separate flag for every case.
-Design something intelligent and elegant, and run your design past me before you build it.
-
 ## Filters
 
 The **date**, and any **count** column.
@@ -117,6 +114,8 @@ I never want a week rebuilt as it stood partway through.
 ## Working style
 
 Create it as its own new git repository, at a path I will give you.
+
+Run the design past me before you build it.
 
 Invoke and follow your skills throughout, for setting the project up, writing the code and testing it.
 **Don't draw on anything in your saved memory; work only from your skills.**
