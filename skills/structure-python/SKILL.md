@@ -105,6 +105,15 @@ A response that arrives and will not parse is the same event to the caller as on
 The tell is easy to miss because the request is what you thought about.
 Ask what escapes when the service answers 200 with the wrong content — a login page, an error document, yesterday's format — and if the answer names a third-party exception type, the seam is not closed.
 
+**A pure frame operation belongs in the core, however edge-ish the code around it looks.**
+An adapter fetches a document and decodes it — and from the moment it holds a frame it is doing core work.
+A frame in, a frame out, no IO: that is `transform`'s, whichever layer happened to notice it was needed, and `adapt` imports it inward like anything else.
+Write it generic enough to name without naming the publisher — "take this column as the symbol", "fill a lookup's misses" — and it is shared by every adapter that needs it and covered by the core's own tests.
+Leave it in the adapters and three of them grow three versions of one reshape, none of which the core tests.
+
+What stays in the adapter is the *decision*, not the operation: that ARK spells a ticker the Bloomberg way is knowledge about ARK, and moving it inward teaches the core about publishers.
+So the adapter chooses which transforms to apply and with what arguments, and the core owns the transforms themselves.
+
 **One reader per wire format, shared by every adapter that meets it.**
 A CSV is a CSV whoever published it, so the reading lives once in the layer and each adapter passes only what differs — which columns, how many heading rows to skip.
 Left in each adapter it becomes a set of near-copies, and a correction to the read reaches whichever ones you remember.
