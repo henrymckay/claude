@@ -33,12 +33,11 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-**`__all__` goes in an `__init__.py` that re-exports, and nowhere else.**
-There it does something: it marks the re-export as deliberate rather than a stray import, which is also how `ruff` tells the two apart — an `__init__.py` importing a submodule only to register its decorators is an unused import until `__all__` says otherwise.
-Everywhere else it is inert, so leave it out:
-- An `__init__.py` that *defines* its own names needs none. The house style imports modules and qualifies, so nothing is ever `import *`-ed and nothing consumes the list; the leading underscore has already marked what is private.
-- A plain module needs none for the same reason, and an `__init__.py` holding only a docstring has nothing to list.
-- Where it does appear, list the names alphabetically.
+**Mark a re-export with a redundant alias — `from .membership import resolve as resolve` — not with `__all__`.**
+A name imported into an `__init__.py` for callers to reach is never used in that file, so it is indistinguishable from a leftover; something has to say it is deliberate.
+The alias is the smallest thing that does, and it is what the typing spec defines an explicit re-export to be, so `pyright` and `mypy` read it the same way `ruff` does.
+`__all__` says the same thing at the cost of a second list beside the imports, which is the drift the same section warns about for plain modules; a blanket `per-file-ignores` for `__init__.py` says it by silencing the check, and then never tells you about a genuinely stale import either.
+So skip `__all__` entirely: an `__init__.py` that only *defines* its own names needs no marker at all, and neither does a plain module.
 
 ## Typing
 
@@ -137,6 +136,7 @@ Use **absolute imports** within a package; they survive moving files.
 Relative imports (`from . import db`) are fine for tight intra-package references but get confusing across several levels.
 
 **Avoid `as` renames** unless genuinely unavoidable (a real name clash) — that includes the popular ones: prefer `import polars` / `polars.col(...)` over the conventional `import polars as pl`.
+A **redundant** alias is the exception and is not a rename at all: `from .membership import resolve as resolve` renames nothing and exists to mark a deliberate re-export (see Public API).
 When a rename truly is forced, derive it from the *true* name with an underscore prefix or suffix (`import numpy as numpy_`), never an arbitrary short alias like `np`.
 
 **Name a package for what it does or holds.** A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
