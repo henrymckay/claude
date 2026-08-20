@@ -20,7 +20,10 @@ An adapter that returns the dataset's records from one source and parsed rows fr
 
 **Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
-**Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `catalogue` prints, a ticker in capitals and an index under its usual name.
+**Names are matched loosely but written back canonically.**
+Case, spacing and punctuation are all things a caller gets wrong and none of them tell one collection from another, so `sp-500`, `SP500` and `S&P 500` all reach the same index.
+An ETF ticker and an index name are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own.
+The canonical spelling is what `catalogue` prints, a ticker in capitals and an index under its usual name.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field *is* the home one — right even where it does not appear among the listings, as it does not for 12 of the FTSE 100.
 So take it, and fall back to the first listing only where it is absent, which is the handful of constituents that would otherwise be lost.
@@ -118,7 +121,7 @@ This is where the test suite is founded, and the next two builds inherit whateve
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.
 
-Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, an unknown name from each source, and a fund whose request fails.
+Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, a name typed with the wrong case, spacing and punctuation, an unknown name from each source, and a fund whose request fails.
 
 ## Wrong turns
 
