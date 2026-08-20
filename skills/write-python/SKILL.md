@@ -199,6 +199,11 @@ The prefix says how the step behaves in a chain, which is a different question f
 A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
 It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
 
+**A decorator and a context manager are functions, so they are imperative too** — `@handle(...)` and `with report():`, never `@handled` or `with reported():`.
+The past participle is tempting because it describes what happens to the thing decorated rather than what the call does, and third-party decorators encourage it.
+But it makes the one kind of function whose body you cannot see at the call site the one kind whose name has stopped saying what it does.
+Functions, methods and CLI commands are imperative regardless of what wraps them.
+
 **Name a package for what it does or holds.**
 A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
 `structure-python`'s package layers are the worked example.
@@ -253,21 +258,21 @@ class UserNotFoundError(AppError):
 Start with one class named for what actually goes wrong (`SelectorError`, not `AppError` plus `SelectorError`), and introduce the base when a second error arrives and callers need to choose between broad and narrow.
 The hierarchy above is what a library or an app with several failure modes grows into, not where it begins.
 
-**Translate a library's exceptions with a decorator, not a `try` in every function.**
+**Handle a library's exceptions with a decorator, not a `try` in every function.**
 Where several functions convert the same library failures into the same error of yours, the `try`/`except`/`raise ... from` is identical in each and only the message differs.
 Lift it once.
 Format the message against the decorated function's **own parameters**, so it can name what the caller asked for without the function taking an argument its work never touches:
 
 ```python
-def translated[**P, T](
-    *kinds: type[Exception], to: type[Exception], message: str
+def handle[**P, T](
+    *kinds: type[Exception], report: type[Exception], message: str
 ) -> collections.abc.Callable[
     [collections.abc.Callable[P, T]], collections.abc.Callable[P, T]
 ]:
     """Return a decorator raising one of your errors in place of a library's.
 
-    :param kinds: The exception types to translate.
-    :param to: The exception type to raise instead.
+    :param kinds: The exception types to handle.
+    :param report: The exception type to raise instead.
     :param message: A format string over the decorated function's parameters.
     :returns: The decorator.
     """
@@ -275,28 +280,30 @@ def translated[**P, T](
     def decorate(
         work: collections.abc.Callable[P, T],
     ) -> collections.abc.Callable[P, T]:
-        """Return the function with its library failures translated."""
+        """Return the function with its library failures reported as ours."""
         signature = inspect.signature(work)
 
         @functools.wraps(work)
-        def translating(*a: P.args, **k: P.kwargs) -> T:
+        def run(*a: P.args, **k: P.kwargs) -> T:
             """Do the work, and say whose fault it is in your own terms."""
             try:
                 return work(*a, **k)
             except kinds as failure:
                 bound = signature.bind(*a, **k)
                 bound.apply_defaults()
-                raise to(f"{message.format(**bound.arguments)}: {failure}") from failure
+                raise report(
+                    f"{message.format(**bound.arguments)}: {failure}"
+                ) from failure
 
-        return translating
+        return run
 
     return decorate
 ```
 
 ```python
-@translated(
+@handle(
     polars.exceptions.PolarsError,
-    to=HoldingsError,
+    report=HoldingsError,
     message="Could not read the holdings {name} published",
 )
 def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
