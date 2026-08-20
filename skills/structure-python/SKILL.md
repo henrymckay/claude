@@ -53,10 +53,16 @@ Multiplying types are a prompt to check each still earns its place, not grounds 
 - **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A noun that names *what* the core needs, not *how* — `operate` depends on it, `adapt` implements it.
 Interfaces, not data, so the domain's own types stay in `transform`.
-**A record whose every field is a port is still a port.**
-Where the core needs several calls that have to come from the *same* outside thing — a source that lists what it offers and then expands one of them, a store that reads and writes — bundle them in a frozen dataclass here rather than passing loose callables a caller could mix between two implementations.
-The record holds no domain value and carries no logic; it names which calls travel together, which is an interface.
-"Data stays in `transform`" is about the values the core computes over, not the shape its dependencies arrive in.
+**Where the core needs several calls from the *same* outside thing, make the port a `Protocol` and let the adapter module satisfy it.**
+A source that lists what it offers and then expands one of them, a store that reads and writes — declare the pair as a `typing.Protocol` and pass the adapter **module** where one is wanted: `{"ark": ark}`, not `Source(holdings=ark.fetch, names=ark.read)`.
+A module satisfies a structural protocol in `pyright` exactly as an instance does, extra keyword-only parameters and all, so nothing has to be a class — the `Protocol` is a type declaration and no adapter inherits from it.
+
+Prefer it to a record of callables, which lets a caller build a chimera: `Source(holdings=ark.fetch, names=wedbush.read)` type-checks, and a module cannot be mixed with itself.
+Prefer it to an abstract base class too, which buys the contract being checked in the adapter's own file at the price of a stateless class per adapter and a subclass per test fake.
+
+The trade to know: a protocol's method name **is** the contract, so every adapter spells it the same.
+That rules out naming implementations for what distinguishes them — no `fetch_holdings` beside `read_holdings` to mark which costs a network call — and it should: callers reach the port precisely because they do not care which one answers, and a contract whose name changes per implementation is not a contract.
+Put the distinction in the module name, where `pytickersymbols_` already says the data ships with the package.
 **Route on a name the source states, not a position it was given.**
 Where the core picks between several adapters at runtime, the key belongs to the adapter — put it in the record and carry it in the data.
 A position in whatever sequence the driver happened to build is meaningless away from that one call, so the frame carrying it cannot be logged, cached or tested on its own; and indexing back into the sequence is a lookup no type checker can check, where a missing key at least fails loudly.
