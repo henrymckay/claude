@@ -94,6 +94,11 @@ A `typer` app is callable, so its console script points straight at the app obje
 Sub-commands like `mypackage-cli users create` are command *groups*: each is its own `typer.Typer()`, mounted on the main app with `app.add_typer(users.app, name="users")`.
 Grow `command.py` into a `command/` package once a group exists — a module per group owning its sub-app and `@`-decorated commands, with `command/__init__.py` holding the main `app` and mounting each; a grouped command is still a thin composition root, the grouping only presentation.
 
+**A command's name is its function's name.** `typer` turns `list_names` into `list-names`, so let it and never pass `name=`.
+An override makes the CLI and the code disagree, so someone grepping for the command a user typed finds nothing, and the decorator becomes a second place the name lives.
+Where the natural name collides with a builtin — `list`, `type`, `filter`, `id` — that is the *surface's* problem to solve rather than the code's to paper over.
+Pick a command name that is not the collision: `list-names` says what `list` left to inference anyway.
+
 **Break each argument and option out into a function returning its config — at any size.**
 A `typer` command's inline `Annotated[...]` bloats the signature fast, so define the argument or option once and reference it — the same shared-helper idea as `given`/`when`/`then` in tests, config defined once and signatures kept readable:
 
@@ -234,6 +239,14 @@ def fetch() -> fastapi.params.Depends:
 
 `provide.py` is the **injection seam** — the driver's place for naming a concrete adapter.
 It imports no `fastapi` (its signature is `-> port.Fetch`, its body returns `httpx_.fetch`); it lives inside `fastapi_` only because `fastapi` is the sole caller — lift it to a shared `drive/provide.py` if a second driver ever needs the same wiring.
+
+**A `provide` module earns its place only where the framework needs a callable to resolve a dependency**, as `Depends(provide.fetch)` does.
+Naming an adapter is not on its own a reason for one.
+
+**A package of interchangeable adapters names its own members.**
+Where the core picks between several adapters at runtime, which ones exist is a fact about what `adapt` ships, so `adapt/__init__.py` returns the mapping and every driver reads the same one.
+Enumerate them in a driver instead and the next driver copies the list, so adding an adapter edits every entry point rather than the package that gained it.
+That is not the composition root moving: the driver still chooses whether to use that set, and still injects it into the operation.
 
 ```python
 from mypackage.code import port

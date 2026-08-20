@@ -20,7 +20,7 @@ An adapter that returns the dataset's records from one source and parsed rows fr
 
 **Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
-**Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list` prints, a ticker in capitals and an index under its usual name.
+**Names are matched case-insensitively but written back canonically.** An ETF ticker and an index slug are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own — and the canonical spelling is what `list-names` prints, a ticker in capitals and an index under its usual name.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field *is* the home one — right even where it does not appear among the listings, as it does not for 12 of the FTSE 100.
 So take it, and fall back to the first listing only where it is absent, which is the handful of constituents that would otherwise be lost.
@@ -59,9 +59,9 @@ The brief names the funds and leaves finding them to the build, so the first wor
 ## The surface
 
 Two commands, split by what they do rather than by where the symbols come from.
-Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `list` is its own command rather than a flag that switches what `expand` does.
+Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `list-names` is its own command rather than a flag that switches what `expand` does.
 
-`list` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
+`list-names` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
 - Two renders, not one styled two ways. `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
 - **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.
@@ -72,7 +72,7 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit on any failure, an unknown name or a fetch that would not come, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
-- `list` writing one name per line, so `symbols list | grep ARK` answers "what can I expand that looks like this".
+- `list-names` writing one name per line, so `symbols list-names | grep ARK` answers "what can I expand that looks like this".
 
 **Where a good build should push back.** Two things, and both should end in the brief being followed.
 
