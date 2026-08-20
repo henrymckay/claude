@@ -57,18 +57,25 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
   - `fable` for the hardest or longest tasks.
   - `opusplan` to plan on Opus and execute on Sonnet.
 - **Effort.** `/effort` sets reasoning depth from `low` to `max`.
-  Raise it for a hard bug or design decision, lower it for routine edits.
+Raise it for a hard bug or design decision.
+Lower it for routine edits.
 - **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
 - **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
 - **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`).
-  It controls how much Claude does before checking in.
+It controls how much Claude does before checking in.
 
 ## 🎯 Evaluate
 
 Test how well the skills guide a build.
-Have Claude build from a `brief.md` using the skills alone, then grade itself against `answers.md`, driven by [`prompt.md`](evaluate/prompt.md) with the evaluation and repository filled in.
+Have Claude build from a `brief.md` using the skills alone.
+Then have it grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
-Order every brief and every answers file the same way, the brief by input, output, uses, rules and working style, the answers by shape, structure, boundary, surface, tests and wrong turns.
+Drive the whole run from [`prompt.md`](evaluate/prompt.md), with the evaluation and repository filled in.
+
+Order every brief and every answers file the same way.
+
+- Briefs by input, output, uses, rules and working style.
+- Answers files by shape, structure, boundary, surface, tests and wrong turns.
 
 Each build below carries on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
