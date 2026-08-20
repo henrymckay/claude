@@ -139,10 +139,6 @@ Relative imports (`from . import db`) are fine for tight intra-package reference
 A **redundant** alias is the exception and is not a rename at all: `from .membership import resolve as resolve` renames nothing and exists to mark a deliberate re-export (see Public API).
 When a rename truly is forced, derive it from the *true* name with an underscore prefix or suffix (`import numpy as numpy_`), never an arbitrary short alias like `np`.
 
-**Name a package for what it does or holds.** A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
-Functions, methods, and CLI commands are imperative verbs regardless.
-`structure-python`'s package layers are the worked example.
-
 **Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your `polars` helpers, `typer_/` for a CLI's `typer` code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`.
 **Make it a package even when one module would do** — `httpx_/__init__.py` rather than `httpx_.py`.
 The coupled code is the part that grows when the library is swapped or its surface is used harder, so the directory that will be wanted is worth having from the start, and a name that reads as a package everywhere it appears does not change shape the day a second module arrives.
@@ -151,6 +147,55 @@ Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app;
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.
 (Dependency management lives in `setup-python`.)
+
+## Naming
+
+**Name a function `verb_noun`**, and let the verb decide which side the noun refers to.
+`fetch_holdings` returns holdings; `parse_csv` consumes one.
+Choose the verb that puts the noun you need to say in the role you need it to play:
+
+- **Transfer** — `read`, `write`, `fetch`, `load`, `get`, `send`.
+The noun is the thing moved, and it exists on both sides of the call, so there is nothing to disambiguate: `fetch_holdings` has them at the publisher and arriving here.
+- **Transformation** — `parse`, `convert`, `render`, `serialise`.
+The noun is the source representation, since that is the half that varies; the target is the return annotation.
+- **Derivation** — `find`, `pick`, `build`, `gather`, `derive`.
+The noun is the result, since the input is usually a generic container the parameter names.
+
+**A preposition overrides the verb's default and names the other side.**
+`derive_from_documentation` names the source precisely because bare `derive` would have named the result; `parse_into_frame`, `find_in_catalogue` and `fetch_from_website` do the same for their families.
+Reach for it where the half the verb would name is the obvious one and the other half is what varies — `derive_from_documentation` beside `derive_from_api` — and not otherwise, since a preposition on a noun nobody was going to misread is three syllables of noise.
+
+**The qualifier need not be a noun.** Where the verb selects a subset, an adjective is what distinguishes it and the noun is left to the parameter: `keep_tradeable(holdings)`, `drop_empty(rows)`.
+Read it as the elided noun it is — "keep the tradeable ones" — and the rule holds.
+
+**Never say in the noun what the parameter names and annotations already say.**
+`parse_csv(document: str)` cannot be `parse_document` — the parameter said that — so the noun earns its place by naming the format instead.
+Where both sides are already explained, drop the noun: `transform.resolve(names, catalogue)` needs nothing more, and `httpx_.get(url)` needs no `get_document` when the module is the client and the parameter is the URL.
+
+**Judge redundancy against the siblings, not just the signature.**
+`parse_holdings` reads well until you notice `fetch_holdings` and `read_holdings` beside it in the same module, at which point the shared half says nothing and the format half says everything.
+Line a module's functions up and name each for what distinguishes it from the others — which is also why `polars` has `read_csv` beside `read_parquet` where an adapter has `read_funds` beside `read_exchanges`, both naming the input, one by format and one by payload.
+
+**A bare noun promises a value, not work.**
+`_funds()` reads like an attribute, so callers reach for it wherever convenient; `_read_funds()` puts the cost at every call site.
+Keep noun-only names for something cheap and effect-free — a fixed `_timeout()`, a `_headers()` dict, a test fixture naming the state it hands over — and give a verb to anything touching the network, the disk, the clock or a cache.
+The tell that this has gone wrong is one file being read four times in a run because nothing in the name suggested it would be.
+
+**A type stays a noun even when the thing it names does work.**
+A port is `Holdings` — what the core needs, not how it is got (see `structure-python`) — while the function satisfying it is `fetch_holdings`.
+Two adapters behind one port then say which is expensive: `ark.fetch_holdings` beside `pytickersymbols_.read_holdings`.
+
+**A domain prefix goes in front of the finished name, and never replaces the verb.**
+`use-polars` marks a `.pipe()` step's functional shape with `map_`/`amap_`/`bind_`; form the name by the rules above first, then prefix it — `map_keep_tradeable`, `amap_join_orders`.
+The prefix says how the step behaves in a chain, which is a different question from what the function does.
+
+**Don't repeat a namespace in the name it qualifies.**
+A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
+It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.
+
+**Name a package for what it does or holds.**
+A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
+`structure-python`'s package layers are the worked example.
 
 ## Ordering
 
@@ -246,5 +291,3 @@ Keep the name only when it meaningfully documents an otherwise opaque expression
 - **Hand-placed blank lines inside a function body** to group statements — keep the body contiguous and leave vertical spacing to the formatter.
 The urge to separate chunks with whitespace usually means the function is doing too much, so extract a helper instead.
 (Blank lines *between* definitions are the formatter's job.)
-- **Repeating a namespace in the name it qualifies.** A module or class already supplies the context, so drop the redundant prefix — `then.equals`, not `then.then_equals`; `user.name`, not `user.user_name`.
-It's the payoff of importing and qualifying: the qualifier carries the meaning, so the member name stays short.

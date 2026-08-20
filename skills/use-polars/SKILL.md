@@ -196,6 +196,7 @@ Reserve a bare `df` (or `frame`) for the cases where the contents genuinely aren
 When you factor pipeline steps into UDFs (user-defined functions) used with `.pipe()`, name them by their functional shape so a reader knows what each does at a glance.
 The map/bind vocabulary is `be-functional`'s — this is its composition and monad guidance applied to frames.
 On the surface all three are `DataFrame -> DataFrame`, so the prefix signals **intent**, not the type signature.
+Name the function by `write-python`'s rules first and *then* prefix it — `map_keep_tradeable`, not `map_tradeable` — since the prefix says how the step behaves in a chain and the verb still has to say what it does.
 
 - **`map_`** (functor map) — a pure transform of the frame alone, behaviour fixed: `frame.pipe(map_round_2dp)`.
 - **`amap_`** (applicative map) — combines the frame with one or more **independently provided** inputs in a **fixed** way; the operation does *not* branch on the data: `customers.pipe(amap_join_orders, orders)`.
