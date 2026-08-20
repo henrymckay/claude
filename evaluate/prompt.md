@@ -45,10 +45,11 @@ Fix the causes, not the transcript.
 Two kinds of gap, fixed in two different places.
 
 - A design the build should have reached but didn't is a **skill** gap.
-  Change the skill so the next build reaches it unaided, stating the rule and the reason it exists rather than describing this build.
+Change the skill so the next build reaches it unaided, stating the rule and the reason it exists rather than describing this build.
 - A requirement the build could not have known is a **brief** gap.
-  Add it to the brief as a requirement, never as design — the brief withholds the shape a good build reaches on purpose, and putting design there destroys the evaluation.
-- Leave the answers file alone unless it is actually wrong.
+Add it to the brief as a requirement, never as design — the brief withholds the shape a good build reaches on purpose, and putting design there destroys the evaluation.
+
+Leave the answers file alone unless it is actually wrong.
 
 Cover both the gaps you logged while building and the divergences the grading turned up.
 They are different sets and both need closing.
