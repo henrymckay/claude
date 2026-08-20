@@ -54,6 +54,7 @@ Cover the whole body and promise nothing it doesn't deliver.
 - **Opt-in-ness, in fixed words** — an opt-in style skill states, verbatim and matching its body line, "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 A how-to that always applies when its task arises makes no opt-in claim.
 - **The reference pointer, in fixed words** — a language-agnostic skill with a language reference states "Language-agnostic principles here; Python <idioms/build-outs/…> in references/python.md.", matching its `Language specifics` section.
+A topic-split skill states "Detailed cookbooks live in references/." instead, matching its `Reference cookbooks` section.
 - **What it builds on and to** — "Layers on <skill> …; <skill> is the <…> counterpart" — the same skills the opening names.
 
 ## Open consistently
@@ -100,4 +101,4 @@ Keep the pair consistent:
 - **Lead with the structural section** — the package or directory tree everything else hangs off — and **close with `Run`**, the sections between ordered by dependency.
 - **The skill states each principle; the reference shows the mechanics** for it — never restating the principle.
 
-A skill already tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks (`use-polars`'s `expressions.md`), each opening with its own H1 and scope line, and a closing `## Reference cookbooks` section in place of `Language specifics`.
+A skill already tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks (`use-polars`'s `expressions.md`), each opening with its own H1 and scope line, a closing `## Reference cookbooks` section in place of `Language specifics`, and the cookbook description pointer above in place of the language one.
