@@ -64,7 +64,7 @@ It also removes a step: with the name in the record, collecting the catalogue an
 - **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
 Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
 - **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
-Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled modules take trailing-underscore names.
+Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled code takes a trailing-underscore package name (`httpx_/`), per `write-python`.
 **An adapter declares its own output shape and always returns it** — the same columns and types on a full response, an empty one, and a failure alike.
 That is what stops the upstream library's own shape leaking inward: a client that answers `None` on a bad symbol, or a frame whose columns depend on how many rows came back, is normalised *once* at the boundary into the declared empty shape, so nothing downstream ever branches on which of those happened.
 Normalising that absence is the one Python-level branch that belongs in an adapter; a branch on the upstream's shape anywhere past it means the adapter did not finish its job.

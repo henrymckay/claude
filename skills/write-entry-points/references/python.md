@@ -419,7 +419,7 @@ A secret is a `pydantic.SecretStr` field and arrives the same way — from the e
 
 Configure logging once, at the composition root — the root logger and one handler — then let every module emit through `logging.getLogger(__name__)` (see `structure-python`).
 Expose the destination and the level as options, defaulting to standard error so logs never land in piped data (see Compose with other tools in `SKILL.md`).
-It's the application-side mirror of the session logging the suite installs (see `write-tests`), so it lives in a `logging_` module (the trailing underscore keeps it clear of the stdlib `logging`, per `write-python`):
+It's the application-side mirror of the session logging the suite installs (see `write-tests`), so it lives in a `logging_/` package (the trailing underscore keeps it clear of the stdlib `logging`, per `write-python`):
 
 ```python
 import logging

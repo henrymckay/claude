@@ -33,7 +33,11 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-In a package's `__init__.py`, define `__all__` to make the public API explicit and keep `import *` honest.
+**`__all__` goes in an `__init__.py` that re-exports, and nowhere else.**
+That is the one place the public surface is a *choice* rather than a consequence — the package is deciding which of its modules' names it presents, so it says so, and `import *` stays honest.
+- An `__init__.py` that re-exports nothing needs no `__all__`; an empty list states nothing a reader could not see.
+- A plain module needs none either, since the leading underscore already marks every private name and `__all__` would be a second list to keep in step with the first.
+- List the names alphabetically, and let it be the file's own record of what it promises.
 
 ## Typing
 
@@ -76,9 +80,13 @@ A trivial function still gets a docstring, but keep it a single line that says s
 The default is the summary line alone.
 Add prose only for what a reader cannot get from the signature and the body, and stop at two or three sentences — past that, the docstring has stopped documenting the function and started arguing for it.
 
+**A module docstring is one line.** It says what the module is for, and a reader who opens the file is already looking at the answer to anything longer.
+Two or three sentences are the ceiling, and only for a fact the code cannot state itself — the shape an outside system publishes in, a constraint every function in the file works around.
+
 Long docstrings come from putting the *design* in them: why this approach beat another, what the data looked like, which cases were weighed.
-That reasoning is real and worth keeping, but it belongs where someone would look for it — the commit message for why the code changed, the module docstring for a fact about the whole file, the README for behaviour a user meets.
-A caller reading `holdings()` wants to know what comes back and what raises, and every paragraph before that is between them and it.
+That reasoning is real and worth keeping, but neither docstring is where it goes.
+Put why the code changed in the commit message, and behaviour a user meets in the README — both are where someone would go looking, and neither is in the way of a caller who just wants to know what comes back.
+Pushing it up into the module docstring only moves the wall of text from one place a reader has to scroll past to another.
 
 ```python
 def holdings(name: str, *, get: Get = get) -> polars.DataFrame:
@@ -135,6 +143,8 @@ Functions, methods, and CLI commands are imperative verbs regardless.
 `structure-python`'s package layers are the worked example.
 
 **Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your `polars` helpers, `typer_/` for a CLI's `typer` code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`.
+**Make it a package even when one module would do** — `httpx_/__init__.py` rather than `httpx_.py`.
+The coupled code is the part that grows when the library is swapped or its surface is used harder, so the directory that will be wanted is worth having from the start, and a name that reads as a package everywhere it appears does not change shape the day a second module arrives.
 Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app; see `write-entry-points` for the split.
 
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
@@ -145,9 +155,13 @@ Restructure rather than papering over it with function-local imports.
 
 Order things alphabetically so every name has *one predictable location* — you never scan a whole file to find something, and diffs stay stable as code grows.
 
-- **Module-level definitions** (functions, classes, constants) alphabetically where possible.
-Carve-outs: dunders and a script's entry point (e.g. `main`) may sit conventionally, and grouped constants/`__all__` can stay at the top.
-- **Class methods** alphabetically, with dunders (`__init__`, `__repr__`, …) first in conventional order.
+Sort on **visibility first, then name**: dunders, then the underscore-prefixed names alphabetically, then the public ones alphabetically.
+That is the dunder convention extended rather than a second rule — `__init__` comes first because it is the most internal thing in the class, and a `_helper` is the next most internal.
+It also means a definition is met before it is used, since the public functions are the ones calling the helpers, and nothing is lost from the public surface: `__all__` and the module docstring have already named it above the first definition.
+
+- **Module-level definitions** (functions, classes, constants) in that order — private alphabetically, then public alphabetically.
+Carve-outs: a script's entry point (e.g. `main`) may sit conventionally, and grouped constants and `__all__` stay at the top.
+- **Class members** the same way: dunders (`__init__`, `__repr__`, …) first in conventional order, then private methods alphabetically, then public methods alphabetically.
 - **Function arguments** alphabetically where possible, both when defining and when calling.
 "Where possible" is doing real work here: `self`/`cls` come first, positional-only and required-before-default constraints win, and don't reorder where argument order itself carries meaning.
 It applies most cleanly to keyword arguments at the call site.
