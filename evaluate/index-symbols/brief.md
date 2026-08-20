@@ -99,7 +99,7 @@ Invoke and follow your skills throughout, for setting the project up, structurin
 **Work only from your skills.**
 Don't draw on anything in your saved memory, and don't open the answers file sitting beside this brief — each would hand you what a good build looks like, which is the thing I am trying to find out.
 
+Write it in a functional style.
+
 Where a skill is silent, ambiguous or steers you wrong, note it as you go rather than quietly working around it.
 Tell me when the build is finished.
-
-Write it in a functional style.

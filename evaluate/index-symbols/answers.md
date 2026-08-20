@@ -63,13 +63,21 @@ That is not the composition root moving: the driver still chooses to use the set
 The brief names the funds and leaves finding them to the build, so the first work is research: each issuer publishes a daily holdings file, and the three do not agree on where it sits or what it is called.
 
 - `httpx` is the pick over `requests`.
-- Send a browser-like user agent. `ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
-- Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
+- Send a browser-like user agent.
+`ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
+- Set a timeout.
+A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
-- Split getting the document from making sense of it. Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them. Apart, a saved response tests the parse with no stub for the fetch.
-- Where each publisher serves its file is **data**, not a literal in code — a table of one row per fund, with the host held once rather than repeated down the rows. It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
-- Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled. Where the source hands back records or markup and one field is wanted, pulling that field out and building a one-column frame is both simpler and cheaper: routing the whole record through the frame materialises every nested column you did not ask for, at a cost of two orders of magnitude here.
-- A holdings file is not a list of shares. Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter hands on what the file gave it and the core decides what deserves to come back. One rule covering cash lines, options and a trailing disclaimer alike beats a row filter in every adapter plus a tradeability rule after it — the second filter is the same judgement written four more times.
+- Split getting the document from making sense of it.
+Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
+Apart, a saved response tests the parse with no stub for the fetch.
+- Where each publisher serves its file is **data**, not a literal in code — one entry per fund, with the host held once rather than repeated against each of them.
+It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
+- Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled.
+Where the source hands back records or markup and one field is wanted, pulling that field out and building a one-column frame is both simpler and cheaper: routing the whole record through the frame materialises every nested column you did not ask for, at a cost of two orders of magnitude here.
+- A holdings file is not a list of shares.
+Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter hands on what the file gave it and the core decides what deserves to come back.
+One rule covering cash lines, options and a trailing disclaimer alike beats a row filter in every adapter plus a tradeability rule after it — the second filter is the same judgement written four more times.
 
 ## The surface
 
@@ -78,12 +86,16 @@ Resolving a name is the tool's job, so `expand` takes the name alone; finding ou
 
 `catalogue` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
 
-- Two renders, not one styled two ways. `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
+- Two renders, not one styled two ways.
+`rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
 - **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.
-- `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table. A path does not silently override the flag.
-- One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect. A boolean `--table` covers the two forms this build has; the moment a second column arrives it will want naming a format instead, which is the next build's problem to notice.
+- `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table.
+A path does not silently override the flag.
+- One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect.
+A boolean `--table` covers the two forms this build has; the moment a second column arrives it will want naming a format instead, which is the next build's problem to notice.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
-- One name failing the whole run. A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
+- One name failing the whole run.
+A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit on any failure, an unknown name or a fetch that would not come, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
@@ -120,4 +132,5 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **String-wrangling the holdings file** into lists and dicts before it reaches a frame.
 - **Letting a request failure surface as `httpx`'s own exception**, which makes the calling code depend on the library the adapter exists to hide.
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
-- **Silently dropping an unmatched name**, which turns a typo into an empty report much later. The brief asks for an error, and an empty frame written to standard output is not one.
+- **Silently dropping an unmatched name**, which turns a typo into an empty report much later.
+The brief asks for an error, and an empty frame written to standard output is not one.
