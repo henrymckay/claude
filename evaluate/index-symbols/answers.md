@@ -27,6 +27,15 @@ So take it, and fall back to the first listing only where it is absent, which is
 Checking it against the listings first changes no value and costs a pass; falling back while it exists returns a Frankfurt or US line for Barratt Redrow, ICG and Rio Tinto.
 Keep the rule in the adapter — it is a fact about the data source, not about the domain.
 
+**The port is a protocol the adapter modules satisfy, not a record of callables.**
+Two calls have to come from the *same* source — what a place offers, and what one of its collections holds — and a record bundling two functions lets a caller build a chimera out of two adapters, which type-checks.
+A module cannot be mixed with itself, and a module satisfies a structural protocol exactly as an instance does, so nothing has to become a class and the composition root hands over the adapter modules themselves.
+The cost to accept is that a protocol's method name *is* the contract, so every adapter spells it the same — which is right, since a caller reaches a port precisely because it does not care which one answers.
+
+**Pure frame work belongs to the core even when the adapter noticed it was needed.**
+A frame in, a frame out, no IO: that is a transform, and three adapters left to their own devices grow three versions of one reshape, none of them under the core's tests.
+The adapter owns the *decision* and the core owns the *operation* — that ARK spells a ticker the Bloomberg way is knowledge about ARK, and moving it inward teaches the core about publishers.
+
 What counts as *tradeable* is the core's call rather than the adapter's, so cash lines and their like are dropped by one rule in one place instead of once per source.
 The adapter is answerable for reading its file correctly; the core is answerable for what deserves to come back.
 
@@ -41,6 +50,10 @@ Two adapters sharing a signature is *not* what earns it, and a build that says s
 Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
 The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.
 
+**`adapt` naming its own members.** Which sources exist is a fact about what the adapter layer ships, so it returns the mapping and every driver reads the same one.
+Enumerate them in a driver instead and the next driver copies the list, so adding a source edits every entry point rather than the package that gained it.
+That is not the composition root moving: the driver still chooses to use the set and still injects it into the operation.
+
 ## What should not exist yet
 
 - **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — ten collections across two sources is a lookup, not a plugin system.
@@ -53,6 +66,8 @@ The brief names the funds and leaves finding them to the build, so the first wor
 - Send a browser-like user agent. `ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
 - Set a timeout. A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
+- Split getting the document from making sense of it. Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them. Apart, a saved response tests the parse with no stub for the fetch.
+- Where each publisher serves its file is **data**, not a literal in code — a table of one row per fund, with the host held once rather than repeated down the rows. It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
 - Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled. Where the source hands back records or markup and one field is wanted, pulling that field out and building a one-column frame is both simpler and cheaper: routing the whole record through the frame materialises every nested column you did not ask for, at a cost of two orders of magnitude here.
 - A holdings file is not a list of shares. Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter hands on what the file gave it and the core decides what deserves to come back. One rule covering cash lines, options and a trailing disclaimer alike beats a row filter in every adapter plus a tradeability rule after it — the second filter is the same judgement written four more times.
 
