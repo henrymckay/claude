@@ -30,7 +30,7 @@ Ten collections across three families, none of them in the packaged dataset, all
 Work out where each of them publishes.
 
 Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
-All ten appear in `list-names` beside the packaged ones.
+All ten appear in `catalogue` beside the packaged ones.
 
 I will not be careful about case when I type a name.
 I do want them written back the way they are properly spelled, a ticker in capitals and an index under its usual name.
@@ -61,9 +61,9 @@ When I do want to read them myself, a flag gives me a `rich` table down the page
 Two, because finding out what I can expand is a different question from expanding one.
 
 - `expand NAME...` gives me the symbols those collections hold.
-- `list-names` gives me the names I can expand.
+- `catalogue` gives me the names I can expand.
 
-Since an unknown name gets me nothing but an error, `list-names` is how I find out which names work.
+Since an unknown name gets me nothing but an error, `catalogue` is how I find out which names work.
 It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
 ## Options
@@ -81,8 +81,8 @@ symbols expand ARKK
 symbols expand ARKK ARKW ARKG
 symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
-symbols list-names
-symbols list-names | grep ARK
+symbols catalogue
+symbols catalogue | grep ARK
 symbols expand ARKK -t
 symbols expand ftse-100 | grep '\.L$'
 ```
