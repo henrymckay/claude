@@ -62,7 +62,8 @@ Where the core picks between several adapters at runtime, the key belongs to the
 A position in whatever sequence the driver happened to build is meaningless away from that one call, so the frame carrying it cannot be logged, cached or tested on its own; and indexing back into the sequence is a lookup no type checker can check, where a missing key at least fails loudly.
 It also removes a step: with the name in the record, collecting the catalogue and routing a name back to its source read the same way, and neither has to know how many sources there are.
 - **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
-Imports `transform` and `port` only, one use case per module, each re-exported so a driver calls `operate.report(...)`.
+Imports `transform` and `port` only, and holds **at most** one module per use case — two commands means at most two modules — each re-exported so a driver calls `operate.report(...)`.
+That is a ceiling rather than a quota: a helper two use cases share lives in whichever module it most belongs to, not in a third one of its own.
 - **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
 Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled code takes a trailing-underscore package name (`httpx_/`), per `write-python`.
 **An adapter declares its own output shape and always returns it** — the same columns and types on a full response, an empty one, and a failure alike.
@@ -129,6 +130,11 @@ Don't scaffold the full set for a script (KISS, YAGNI).
 A driver is cheap to replace and serves one presentation, where the core's shape is what every adapter, operation and test is then built on, and a second entry point inherits it wholesale.
 So settle the core's shapes first — `be-functional`'s "Derive functions from the data flow" is how to arrive at them.
 
+**A module separates what is read separately — never one module per function.**
+A layer's modules exist so a reader can open the part they care about without the rest; where the whole layer is one sitting's reading, that is one module and the package holds nothing else.
+The tell is following a single call and opening three files to do it, each holding a dozen lines — the split cost more than it saved, and the `__init__.py` re-exporting them exists only to undo it.
+Split when a module would be worth reading on its own, and not before.
+
 **Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
 A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
 Either way you import a *module* and reach its members qualified through it (see `write-python`).
@@ -136,6 +142,7 @@ Either way you import a *module* and reach its members qualified through it (see
 **A re-exported member shadows the module it came from.** Re-exporting `count` out of `transform/count.py` binds the *function* to `transform.count`, so `from mypackage.transform import count` hands back the function and the module becomes unreachable by name — including from a test that wants to reach a private helper, and from a sibling module inside the same package.
 That is the trade the re-export makes and it is usually the right one, since callers want the function.
 Where it bites, name the module for the *shape* it holds rather than the one function it exports — `sequence.py` re-exporting `count`, `membership.py` re-exporting `symbols` — so the module name stays free.
+Those are naming examples, not a target shape: each of those modules holds everything of its kind, and a module that genuinely exports one function is the split the rule above warns against.
 
 ## Configuration
 

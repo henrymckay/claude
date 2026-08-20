@@ -250,6 +250,11 @@ class UserNotFoundError(AppError):
 Start with one class named for what actually goes wrong (`SelectorError`, not `AppError` plus `SelectorError`), and introduce the base when a second error arrives and callers need to choose between broad and narrow.
 The hierarchy above is what a library or an app with several failure modes grows into, not where it begins.
 
+**Attach the context where the context already lives.**
+A helper taking an identifier only to name it in an error message has an argument its work never touches — it cannot be called or tested without inventing one, and the parameter cannot be removed without editing every caller.
+Let it raise plainly, and catch at the boundary that already holds the name: `fetch_holdings(name)` knows which fund it asked for, so `parse_csv(document)` does not need telling.
+That also keeps one place deciding how a failure reads, rather than a message spelled slightly differently at each depth.
+
 Let exceptions propagate to where they can be handled meaningfully — don't catch-and-continue to hide failures.
 When re-raising with context, use `raise NewError(...) from original` to preserve the chain.
 Reserve returning `None` for genuinely expected "not found" cases, and make it obvious in the type (`User | None`) and docstring.
