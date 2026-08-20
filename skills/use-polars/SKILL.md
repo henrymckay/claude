@@ -96,6 +96,12 @@ Arithmetic and comparison operators all have method equivalents: `.add`, `.sub`,
 This also sidesteps the precedence trap — `polars.col("a").gt(0) & polars.col("b").gt(0)` needs no inner parentheses, where the operator form does.
 Keep the boolean combinators `&`, `|`, `~` as operators, though — their method spellings (`.and_`, `.or_`, `.not_`) read worse and they are near-universal for combining masks.
 
+**Name a column with `.alias("x")`, not a `x=` keyword.** Write `.with_columns(polars.col("close").diff().alias("move"))`, not `.with_columns(move=polars.col("close").diff())`.
+The keyword form is a feature of the *context*, so the name lives outside the expression and is lost the moment the expression moves — lifted into a variable, passed to a helper, put in a list built elsewhere, or reused in a second context.
+`.alias()` travels with the expression, which is what lets expressions be composed at all.
+It is also the only form that can name a column Python cannot spell, like `total (£)` or `2024`, so the keyword form quietly stops working on real data rather than at the point you chose it.
+The rest of the API only knows `.alias()` — `.over()`, `.pipe()`, a bare `polars.col(...)` in a `sort` — so one spelling everywhere reads more consistently than two.
+
 ## Eager vs lazy
 
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
