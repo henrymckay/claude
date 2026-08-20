@@ -253,6 +253,61 @@ class UserNotFoundError(AppError):
 Start with one class named for what actually goes wrong (`SelectorError`, not `AppError` plus `SelectorError`), and introduce the base when a second error arrives and callers need to choose between broad and narrow.
 The hierarchy above is what a library or an app with several failure modes grows into, not where it begins.
 
+**Translate a library's exceptions with a decorator, not a `try` in every function.**
+Where several functions convert the same library failures into the same error of yours, the `try`/`except`/`raise ... from` is identical in each and only the message differs.
+Lift it once.
+Format the message against the decorated function's **own parameters**, so it can name what the caller asked for without the function taking an argument its work never touches:
+
+```python
+def translated[**P, T](
+    *kinds: type[Exception], to: type[Exception], message: str
+) -> collections.abc.Callable[
+    [collections.abc.Callable[P, T]], collections.abc.Callable[P, T]
+]:
+    """Return a decorator raising one of your errors in place of a library's.
+
+    :param kinds: The exception types to translate.
+    :param to: The exception type to raise instead.
+    :param message: A format string over the decorated function's parameters.
+    :returns: The decorator.
+    """
+
+    def decorate(
+        work: collections.abc.Callable[P, T],
+    ) -> collections.abc.Callable[P, T]:
+        """Return the function with its library failures translated."""
+        signature = inspect.signature(work)
+
+        @functools.wraps(work)
+        def translating(*a: P.args, **k: P.kwargs) -> T:
+            """Do the work, and say whose fault it is in your own terms."""
+            try:
+                return work(*a, **k)
+            except kinds as failure:
+                bound = signature.bind(*a, **k)
+                bound.apply_defaults()
+                raise to(f"{message.format(**bound.arguments)}: {failure}") from failure
+
+        return translating
+
+    return decorate
+```
+
+```python
+@translated(
+    polars.exceptions.PolarsError,
+    to=HoldingsError,
+    message="Could not read the holdings {name} published",
+)
+def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
+```
+
+`typing.Concatenate` is not needed: `P` carries the whole signature, so the wrapped function keeps its own and the message reads any parameter by name.
+Take the signature once at decoration time — binding it per call is the only cost, and it is what lets the message name an argument the body never mentions.
+
+**Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
+`tenacity`'s `retry_error_cls` does translate on exhaustion, but the message it raises is a `repr` of a `Future`, and fixing that means subclassing `tenacity.RetryError` — coupling your domain error to the library the adapter exists to hide.
+
 **Attach the context where the context already lives.**
 A helper taking an identifier only to name it in an error message has an argument its work never touches — it cannot be called or tested without inventing one, and the parameter cannot be removed without editing every caller.
 Let it raise plainly, and catch at the boundary that already holds the name: `fetch_holdings(name)` knows which fund it asked for, so `parse_csv(document)` does not need telling.
