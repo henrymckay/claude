@@ -61,34 +61,6 @@ Use `typing.Protocol` for structural "duck typing" interfaces rather than forcin
 Use reStructuredText (reST) in the Sphinx field-list style:
 
 ```python
-def fetch_user(user_id: int, *, include_archived: bool = False) -> User:
-    """Fetch a user by ID.
-
-    :param user_id: Primary key of the user.
-    :param include_archived: If True, also return soft-deleted users.
-    :returns: The matching user.
-    :raises UserNotFoundError: If no user has that ID.
-    """
-```
-
-Types stay out of the docstring — the annotations already carry them, so don't add `:type:`/`:rtype:` fields.
-
-Document the *why* and the non-obvious (units, side effects, what raises), not the mechanically obvious.
-A trivial function still gets a docstring, but keep it a single line that says something its signature doesn't — a bare restatement of the name is wasted space, so make it earn its line.
-
-**Keep it short: a summary line, the fields, and at most a couple of sentences between them.**
-The default is the summary line alone.
-Add prose only for what a reader cannot get from the signature and the body, and stop at two or three sentences — past that, the docstring has stopped documenting the function and started arguing for it.
-
-**A module docstring is one line.** It says what the module is for, and a reader who opens the file is already looking at the answer to anything longer.
-Two or three sentences are the ceiling, and only for a fact the code cannot state itself — the shape an outside system publishes in, a constraint every function in the file works around.
-
-Long docstrings come from putting the *design* in them: why this approach beat another, what the data looked like, which cases were weighed.
-That reasoning is real and worth keeping, but neither docstring is where it goes.
-Put why the code changed in the commit message, and behaviour a user meets in the README — both are where someone would go looking, and neither is in the way of a caller who just wants to know what comes back.
-Pushing it up into the module docstring only moves the wall of text from one place a reader has to scroll past to another.
-
-```python
 def holdings(name: str, *, get: Get = get) -> polars.DataFrame:
     """Return the symbol published against each of a fund's holdings.
 
@@ -98,6 +70,21 @@ def holdings(name: str, *, get: Get = get) -> polars.DataFrame:
     :raises HoldingsError: If the fund publishes nothing this can be read from.
     """
 ```
+
+Types stay out of the docstring — the annotations already carry them, so don't add `:type:`/`:rtype:` fields.
+
+**A docstring is a summary line and its fields, and that is the whole of it.**
+A sentence of prose between them is the exception rather than the default, earned by a fact neither the signature nor the body can state — a unit, a side effect, an invariant the caller has to respect.
+One such sentence needs a reason, a second needs a better one, and by the third it has stopped documenting the function and started arguing for it.
+
+**A module docstring is one line.** It says what the module is for, and a reader who opens the file is already looking at the answer to anything longer.
+
+Document the *why* and the non-obvious, never the mechanically obvious.
+A trivial function still gets a docstring, but a bare restatement of the name is wasted space, so make the line say something the signature doesn't.
+
+Length comes from putting the *design* in them — why this approach beat another, what the data looked like, which cases were weighed.
+That reasoning is worth keeping, but neither docstring is where it goes: why the code changed belongs in the commit message and behaviour a user meets belongs in the README, both of which are where someone would go looking and neither of which is in the way of a caller who just wants to know what comes back.
+Pushing it up into the module docstring only moves the wall of text from one place a reader scrolls past to another.
 
 **Phrase the summary line in the imperative mood.** "Return the top products", not "Returns the top products" or the noun phrase "The top products".
 `ruff`'s `D401` flags anything else, and a noun-phrase summary is the instinct precisely where it is wrong — a factory or a getter still describes what it *does*.
