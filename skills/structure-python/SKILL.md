@@ -2,25 +2,26 @@
 name: structure-python
 description: >-
   How to structure a non-trivial Python application — the hexagonal
-  (ports-and-adapters) layers of a pure core (domain types, logic, and use
-  cases behind ports) and an outer edge (driven adapters for IO, entry-point
-  drivers at a composition root), plus where runtime data assets and the test
-  suite sit alongside the code. Use when organising an app into layers,
-  deciding where a module, entry point, IO adapter, data asset, or test
-  belongs, packaging data through importlib.resources, applying dependency
-  injection, wiring configuration and logging through the edge, or laying out the code/data/tests directories — even if the user
-  just says "structure this app", "where does this go", or "clean/hexagonal
-  architecture". Layers on write-python and be-functional; for building the
-  entry points themselves, see write-entry-points; for scaffolding, packaging,
-  and tooling, see setup-python.
+  (ports-and-adapters) layers of a pure core (domain types, logic, and use cases
+  behind ports) and an outer edge (driven adapters for IO, entry-point drivers at
+  a composition root), plus where runtime data assets and the test suite sit
+  alongside the code. Use when organising an app into layers, deciding where a
+  module, entry point, IO adapter, data asset, or test belongs, choosing whether
+  a data file should be CSV or YAML, packaging data through importlib.resources,
+  applying dependency injection, wiring configuration and logging through the
+  edge, or laying out the code/data/tests directories — even if the user just
+  says "structure this app", "where does this go", or "clean/hexagonal
+  architecture". Layers on write-python and be-functional; for building the entry
+  points themselves, see write-entry-points; for scaffolding, packaging, and
+  tooling, see setup-python.
 ---
 
 # Structure a Python application
 
 How to organise a non-trivial application's code — the layers, the boundaries between them, and where each module, entry point, and asset belongs.
 This is the macro structure that sits above `write-python`'s in-code conventions and `be-functional`'s core/shell split; for building the entry-point drivers, see `write-entry-points`; for scaffolding, packaging, and tooling, see `setup-python`.
-
 Three mistakes account for most of what goes wrong: an import that points from the core outward, an adapter that hands on the outside library's own type instead of yours, and reference data left in code because it looked too small to be worth a file.
+
 **In an existing project, ask first.** Where a repo already has an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 ## Code
@@ -227,9 +228,28 @@ mypackage/
 
 **Reference data goes in `data/` however small it is.**
 A table of a URL per publisher, a suffix per exchange code or a rate per band is six rows today and thirty next year, and the size is never what decided it: a table is a table, it is read rather than executed, and a file is where someone can see the whole of it, diff a change to one row, and correct it without opening a module.
-So take the CSV by default and reach for a function returning a literal frame only where there are no rows at all — a single threshold, a lone base URL.
+So put it in a file whether it is thirty rows or one value.
 Normalise it as you would a table anywhere else: a prefix every row repeats — a base URL, a shared directory — is one value, so hold it once and keep the rows to what differs.
 Six rows carrying the same sixty characters is six places to edit when the host moves, and the diff hides which part actually changed.
+
+**Choose the format by the data's shape: CSV only where it is naturally a table, YAML everywhere else.**
+A table means every row carries the same fields and there are enough rows for a header to pay for itself — a suffix per exchange code, a rate per band.
+Configuration is not that.
+It sets a scalar beside a collection, it nests, and it lets one entry carry what another doesn't, none of which CSV has anywhere to put.
+
+The tell that the format was wrong is a value that belongs with the data ending up in code instead.
+Factor a shared base URL out of a CSV of paths, as above, and there is now nowhere in the file to put it, so it becomes a function and one publisher's settings are split across two places — where YAML holds both in the single file a reader opens to change either:
+
+```yaml
+base-url: https://assets.example.com/fund-documents/
+funds:
+  ARKF: ARK_FINTECH_INNOVATION_ETF_ARKF_HOLDINGS.csv
+  ARKK: ARK_INNOVATION_ETF_ARKK_HOLDINGS.csv
+```
+
+A one-row CSV is the same mistake with the header still attached.
+YAML also takes comments where CSV cannot, so the reason a row is there survives beside it.
+Load with `yaml.safe_load` and build whatever frame the code wants from the result — the file's shape serves the person editing it, not the parser.
 
 Which layer owns the knowledge decides which `data/` directory it sits in, and outside knowledge is the edge's.
 Where each publisher serves its file is `data/adapt/`, read by the adapter that fetches them — not `data/transform/`, which would point the core at the outside world to keep the tables together.

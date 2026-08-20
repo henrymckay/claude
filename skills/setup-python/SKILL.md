@@ -148,6 +148,8 @@ For these common tasks the house pick is the default, not a dependency of last r
 Everywhere else the stdlib-first rule holds — don't add a dependency you don't actually need (see `write-python`).
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) or `fire` (reflects an object straight into a CLI) in preference to stdlib `argparse`; reach for `argparse` only as a zero-dependency fallback for a trivial one-or-two-flag script.
+- **Configuration and reference data files** → `pyyaml` (always `yaml.safe_load`, never `yaml.load`) for anything that isn't naturally a table, and `polars.read_csv` where it is; `structure-python` has the rule for choosing between them.
+`tomllib` reads TOML from the stdlib but cannot write it, so leave TOML to the files a tool already owns.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
 - **HTML parsing** → `lxml` for pulling data out of a page, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
 Take `pandas.read_html` only where `pandas` is already a dependency, converting its result with `polars.from_pandas` — a whole table for one column is not worth `pandas`, `pyarrow` and a parser arriving together.
