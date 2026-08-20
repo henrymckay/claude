@@ -72,6 +72,25 @@ Types stay out of the docstring — the annotations already carry them, so don't
 Document the *why* and the non-obvious (units, side effects, what raises), not the mechanically obvious.
 A trivial function still gets a docstring, but keep it a single line that says something its signature doesn't — a bare restatement of the name is wasted space, so make it earn its line.
 
+**Keep it short: a summary line, the fields, and at most a couple of sentences between them.**
+The default is the summary line alone.
+Add prose only for what a reader cannot get from the signature and the body, and stop at two or three sentences — past that, the docstring has stopped documenting the function and started arguing for it.
+
+Long docstrings come from putting the *design* in them: why this approach beat another, what the data looked like, which cases were weighed.
+That reasoning is real and worth keeping, but it belongs where someone would look for it — the commit message for why the code changed, the module docstring for a fact about the whole file, the README for behaviour a user meets.
+A caller reading `holdings()` wants to know what comes back and what raises, and every paragraph before that is between them and it.
+
+```python
+def holdings(name: str, *, get: Get = get) -> polars.DataFrame:
+    """Return the symbol published against each of a fund's holdings.
+
+    :param name: The fund's ticker, as ``names`` spells it.
+    :param get: How to retrieve a published document.
+    :returns: A one-column ``symbol`` frame, a row per published holding.
+    :raises HoldingsError: If the fund publishes nothing this can be read from.
+    """
+```
+
 **Phrase the summary line in the imperative mood.** "Return the top products", not "Returns the top products" or the noun phrase "The top products".
 `ruff`'s `D401` flags anything else, and a noun-phrase summary is the instinct precisely where it is wrong — a factory or a getter still describes what it *does*.
 
