@@ -85,7 +85,9 @@ Code keeps its own spelling, though: a `serialize` method or a `SerializableMixi
 
 ## For humans
 
-Humans skim, jump to headings, and copy code — optimise for the scan:
+Humans skim, jump to headings, and copy code — optimise for the scan.
+Some of what follows has a consequence you can observe — a buried point does not get read, a link nobody can see does not get followed — and some is **house preference**, where nothing turns on the choice beyond every document making the same one: the emoji anchors, the full stops, the dropped Oxford comma, the British spelling.
+Both are worth following, but only the first kind is worth arguing from.
 
 - **Front-load.** The first lines say what this is and whether the reader is in the right place.
 A README opens with a one-line description of the project, not its history.

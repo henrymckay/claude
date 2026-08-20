@@ -211,6 +211,7 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 - **Comprehensions** for simple transforms/filters; a plain loop once it needs multiple statements or gets hard to read.
 Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
+A string path only looks simple: joining it means guessing at separators, and every question you then ask it — suffix, parent, does it exist — is a different `os.path` function, where `Path` carries them all as methods and handles the separator itself.
 - **Use a named method over an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
 A named method also reads in evaluation order and says what a symbol only implies — `polars`'s `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
 Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.

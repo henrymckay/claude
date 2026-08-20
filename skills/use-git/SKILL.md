@@ -42,6 +42,8 @@ The subject is imperative, ≤ 50 chars, no trailing period.
 Short, self-evident changes can be header-only.
 Reference issues/PRs here (`Closes #123`).
 - **No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`, or similar attribution/tool footers to commit messages.
+A footer is permanent and unfilterable — it rides along in every `git log`, `git blame` and release note for the life of the repo, and the tool that put it there is stale within a year.
+Nothing reads it: authorship is already in the commit metadata, and what a change was for belongs in the body.
 
 ```text
 feat(search): rank users by recent activity

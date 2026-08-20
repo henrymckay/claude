@@ -76,6 +76,11 @@ A reader who meets a term before its definition has to hold it unresolved or dou
 - **No thin stubs, no repetition.** Fold a one-line point into a catalogue section rather than giving it its own; avoid grab-bag headings; state each principle exactly **once**.
 A rule stated twice drifts the moment only one copy gets updated, and a reader who hits it twice starts wondering whether the two are actually saying the same thing.
 - **Explain the why, not just the rule** (see `write-markdown`).
+- **Make the why an observable consequence, not a purpose.**
+"Define `__all__` to make the public API explicit" states what the rule is *for* and nothing a reader could go and check; "mark a re-export with a redundant alias, or the linter reads it as a leftover import" states what *happens*, and they can watch it happen.
+A purpose sounds like a reason while leaving the rule unfalsifiable, so it gets applied by feel, drifts between files, and — when someone finally questions it — there is nothing to settle the argument with except more reasoning.
+Write the rule so that following it and breaking it look different, and say how they differ.
+Where nothing observable turns on it, the rule is a preference: label it one, so a reader knows which rules bend and which have teeth.
 - **State a rule as a rule.** Where a convention is absolute, write it imperatively — "Write one fluent method chain", not "Prefer one fluent method chain".
 Keep *prefer* for a genuine trade-off, and state its exception in the same breath ("reserve mocks for genuine boundaries").
 If every rule hedges, nothing marks which ones bend, and a reader breaks the absolutes at the same rate as the defaults.
