@@ -33,10 +33,11 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-**`__all__` goes in an `__init__.py` that re-exports, and nowhere else.**
-That is the one place the public surface is a *choice* rather than a consequence — the package is deciding which of its modules' names it presents, so it says so, and `import *` stays honest.
-- An `__init__.py` that re-exports nothing needs no `__all__`; an empty list states nothing a reader could not see.
-- A plain module needs none either, since the leading underscore already marks every private name and `__all__` would be a second list to keep in step with the first.
+**`__all__` goes in every `__init__.py` that binds a public name, and nowhere else.**
+An `__init__.py` *is* the package's surface, so it says what that surface is — and whether it defines the names or re-exports them from submodules makes no difference to a caller.
+- It matters most where the file defines them, because that is where `import *` would otherwise leak the imports and the module logger sitting beside them.
+- An `__init__.py` holding only a docstring needs none; an empty list states nothing a reader could not see.
+- A plain module needs none either. The house style imports modules and qualifies, so nothing is ever `import *`-ed from one, and the leading underscore already marks every private name — `__all__` would be a second list to keep in step with the first.
 - List the names alphabetically, and let it be the file's own record of what it promises.
 
 ## Typing
