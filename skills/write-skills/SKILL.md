@@ -19,6 +19,7 @@ description: >-
 House conventions for authoring a skill — the decisions that keep this library's skills consistent.
 They sit on top of `write-markdown` (how to write the prose) and the `skill-creator` plugin (the draft-eval-iterate loop, the file anatomy, progressive disclosure, packaging, and triggering optimisation).
 Cover only what those don't: naming, description style, the standard opening, body structure, and the split between a language-agnostic skill and its language reference.
+Three mistakes account for most weak skills: a description drafted before the body and never reconciled with what shipped, a rule stated in two places that then drift apart, and a why that gives the rule's purpose rather than something a reader could go and watch happen.
 
 **In an existing project, ask first.** Where a skill or repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

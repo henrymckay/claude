@@ -20,6 +20,7 @@ description: >-
 How to organise a non-trivial application's code — the layers, the boundaries between them, and where each module, entry point, and asset belongs.
 This is the macro structure that sits above `write-python`'s in-code conventions and `be-functional`'s core/shell split; for building the entry-point drivers, see `write-entry-points`; for scaffolding, packaging, and tooling, see `setup-python`.
 
+Three mistakes account for most of what goes wrong: an import that points from the core outward, an adapter that hands on the outside library's own type instead of yours, and reference data left in code because it looked too small to be worth a file.
 **In an existing project, ask first.** Where a repo already has an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 ## Code

@@ -14,6 +14,7 @@ description: >-
 
 Conventions for keeping history clean and reviewable, in any repository and any language.
 The `commit-commands` plugin runs the commit, push and PR flows; these are the conventions those flows follow.
+Three mistakes account for most unreviewable history: a commit that bundles unrelated changes, a message restating what the diff already shows instead of why, and a rewrite of history somebody else has already pulled.
 
 **In an existing project, ask first.** Where a repo already has an established workflow (commit style, branch model, PR process), check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

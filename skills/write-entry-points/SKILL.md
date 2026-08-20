@@ -19,6 +19,7 @@ description: >-
 An **entry point** is a **driver**: a thin shell over the presentation-agnostic core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
 It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell).
+Three mistakes account for most of what goes wrong: logic that settles in the shell instead of the core, output shaped for a person while something is piping it, and a capability reachable only as a side effect of asking for something else.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
