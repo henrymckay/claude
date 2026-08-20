@@ -33,12 +33,12 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 
 Be deliberate about what's public.
 A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-**`__all__` goes in every `__init__.py` that binds a public name, and nowhere else.**
-An `__init__.py` *is* the package's surface, so it says what that surface is — and whether it defines the names or re-exports them from submodules makes no difference to a caller.
-- It matters most where the file defines them, because that is where `import *` would otherwise leak the imports and the module logger sitting beside them.
-- An `__init__.py` holding only a docstring needs none; an empty list states nothing a reader could not see.
-- A plain module needs none either. The house style imports modules and qualifies, so nothing is ever `import *`-ed from one, and the leading underscore already marks every private name — `__all__` would be a second list to keep in step with the first.
-- List the names alphabetically, and let it be the file's own record of what it promises.
+**`__all__` goes in an `__init__.py` that re-exports, and nowhere else.**
+There it does something: it marks the re-export as deliberate rather than a stray import, which is also how `ruff` tells the two apart — an `__init__.py` importing a submodule only to register its decorators is an unused import until `__all__` says otherwise.
+Everywhere else it is inert, so leave it out:
+- An `__init__.py` that *defines* its own names needs none. The house style imports modules and qualifies, so nothing is ever `import *`-ed and nothing consumes the list; the leading underscore has already marked what is private.
+- A plain module needs none for the same reason, and an `__init__.py` holding only a docstring has nothing to list.
+- Where it does appear, list the names alphabetically.
 
 ## Typing
 
@@ -160,9 +160,7 @@ Sort on **visibility first, then name**: dunders, then the underscore-prefixed n
 That is the dunder convention extended rather than a second rule — `__init__` comes first because it is the most internal thing in the class, and a `_helper` is the next most internal.
 It also means a definition is met before it is used, since the public functions are the ones calling the helpers, and nothing is lost from the public surface: `__all__` and the module docstring have already named it above the first definition.
 
-**What Python evaluates at definition time outranks the sort.**
-A base class, a decorator, a default argument's value and a module-level constant are all read as the file executes, so they must sit above whatever names them — `class HoldingsError(SymbolsError)` cannot precede `SymbolsError` however the alphabet falls.
-Order the rest around that fixed skeleton rather than trying to sort through it: an exception hierarchy reads base-first and then alphabetically within each level.
+Anything Python reads as the file executes outranks the sort, so a base class sits above its subclasses and an exception hierarchy stays base-first.
 
 - **Module-level definitions** (functions, classes, constants) in that order — private alphabetically, then public alphabetically.
 Carve-outs: a script's entry point (e.g. `main`) may sit conventionally, and grouped constants and `__all__` stay at the top.
