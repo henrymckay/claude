@@ -88,7 +88,13 @@ The retrieval is a few lines that never change; the parse is where the source's 
 It is also what makes the parse testable on its own.
 A saved response goes straight into `_parse` with no stub for the fetch, so the test that pins how a disclaimer row is handled says so directly instead of arriving through an injected client.
 
+**Declare the shape from the source, not from today's caller.**
+Which *columns* an adapter returns is a decision made once per source and inherited by every use case after it, so carry the fields the source publishes that the domain has a name for — not the projection the first caller happened to need.
+The costs are asymmetric: dropping a column later is one line in the core, where widening means revisiting every adapter and every test that pins their shape.
+This is not licence to carry everything: a field the domain cannot name is noise, and the point is to decide against the source rather than against one caller.
+
 **Return the narrowest thing the callers actually use, not the richest thing the library handed you.**
+That is about the *type*, not the columns — the two rules do not fight.
 An adapter that returns `httpx.Response` has made that library's surface into your internal API: every caller can now reach for `.status_code`, `.headers` or `.json()`, and swapping the library touches all of them instead of the one function that was supposed to contain it.
 Return the text, the rows, the values — whatever the callers read — and keep the library's own objects inside the module.
 It is also what keeps the test seam cheap: a fake that returns a string is a function, where a fake that returns a `Response` is a mock of somebody else's class.
@@ -99,11 +105,19 @@ A response that arrives and will not parse is the same event to the caller as on
 The tell is easy to miss because the request is what you thought about.
 Ask what escapes when the service answers 200 with the wrong content — a login page, an error document, yesterday's format — and if the answer names a third-party exception type, the seam is not closed.
 
+**One reader per wire format, shared by every adapter that meets it.**
+A CSV is a CSV whoever published it, so the reading lives once in the layer and each adapter passes only what differs — which columns, how many heading rows to skip.
+Left in each adapter it becomes a set of near-copies, and a correction to the read reaches whichever ones you remember.
+What is emphatically *not* shared is the shaping: how a ticker becomes a symbol is that publisher's own knowledge and stays put.
+Wait for the second caller before extracting, and count what is actually shared — where the library reads the format natively, two adapters may have only the wrapper line in common, and a package holding one three-line function costs more than the duplication.
+
 **An adapter calling a service you do not own states a deadline and identifies itself.**
 A request with no timeout hangs the whole program on somebody else's outage, and there is no upper bound on how long that lasts.
 A client sending its library's default user agent gets refused by whatever sits in front of the service — and refused *unevenly*, on the host behind a CDN and not the one serving from object storage, so the same code works against two publishers and 403s the third.
 Both are one argument.
 Neither shows up in a passing test, because the failure is somebody else's configuration on a day you were not looking.
+Say who you are by default — a tool name and version is honest and is what a publisher checking its logs wants to see — but know that some services front-ended by a CDN refuse anything that is not a browser string.
+That is a fact about one service, found by trying it, not a default to adopt everywhere.
 - **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
 
 `mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
@@ -204,6 +218,9 @@ mypackage/
 **Reference data goes in `data/` however small it is.**
 A table of a URL per publisher, a suffix per exchange code or a rate per band is six rows today and thirty next year, and the size is never what decided it: a table is a table, it is read rather than executed, and a file is where someone can see the whole of it, diff a change to one row, and correct it without opening a module.
 So take the CSV by default and reach for a function returning a literal frame only where there are no rows at all — a single threshold, a lone base URL.
+Normalise it as you would a table anywhere else: a prefix every row repeats — a base URL, a shared directory — is one value, so hold it once and keep the rows to what differs.
+Six rows carrying the same sixty characters is six places to edit when the host moves, and the diff hides which part actually changed.
+
 Which layer owns the knowledge decides which `data/` directory it sits in, and outside knowledge is the edge's.
 Where each publisher serves its file is `data/adapt/`, read by the adapter that fetches them — not `data/transform/`, which would point the core at the outside world to keep the tables together.
 

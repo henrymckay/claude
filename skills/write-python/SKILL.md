@@ -112,6 +112,9 @@ Write self-documenting code instead of `#` comments.
 A descriptive name, a named constant, or a small well-named helper carries the same meaning as a comment and can't drift out of sync with the code the way a comment does — so lift the intent into a name (`invalid_rows = 3`, not a bare `3` with a comment).
 When a genuine *why* still needs stating — a non-obvious workaround or a subtle invariant — put it in the docstring, not a trailing comment.
 Reserve `#` for what has nowhere else to live: tooling directives (`# noqa`, `# type: ignore`) and the PEP 723 inline-script header.
+**A suppression names what it suppresses** — `# noqa: D103`, `# type: ignore[arg-type]`, never the bare form.
+A bare `# noqa` turns off every rule on that line for good, including ones that did not exist when it was written, so the line stops being checked rather than stops being noisy.
+It reads as a considered exception when it is usually the reverse: forty bare suppressions across a package is a rule nobody decided to disable, disabled.
 Keep config files (`pyproject.toml`, pre-commit, CI) comment-free the same way, explaining any non-obvious setting in prose in the docs rather than inline.
 
 ## Imports
