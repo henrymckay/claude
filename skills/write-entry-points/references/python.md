@@ -28,7 +28,7 @@ cli/
   __init__.py   role, hollow: re-exports app
 typer_/
   __init__.py     re-exports app; imports callback and command
-  application.py  the typer.Typer() instance — imports no drive module
+  driver.py       the typer.Typer() instance — imports no drive module
   argument.py     functions returning a configured typer.Argument
   callback.py     the @app.callback() run before any command
   command.py      the @app.command() functions — the composition root
@@ -43,8 +43,16 @@ Unlike `fastapi`'s `APIRouter`, `typer` has no flat command *router* to decorate
 
 **Give the app object its own module.**
 A framework anchor has to be defined before anything decorates it, so leaving it at the top of `command.py` fixes the order of that file and pushes the callback ahead of the commands — and the commands are what a reader came for.
-Put it in `application.py` and `command.py` is a flat alphabetical list of commands, `write-python`'s ordering intact.
-Name the module and the instance apart — `application.app`, reached like `argument.stations()` — so neither shadows the other; `application.py` imports no other `drive` module, so nothing cycles.
+Put it in `driver.py` and `command.py` is a flat alphabetical list of commands, `write-python`'s ordering intact.
+`driver.py` imports no other `drive` module, so nothing cycles.
+
+**Every framework package keeps its app object in `driver.py`** — `typer_`, `fastapi_`, `shiny_` alike, together with the `run()` launcher where the framework needs one.
+Two things fall out of the fixed home.
+You know where the app is in any framework package without reading it, which matters precisely because that object is the one thing they all have and the one thing named differently by each library's own docs.
+And `__init__.py` stays a **pure re-export** in all three, which is the only shape `write-python` gives a marker for — a file that both defines and re-exports needs the redundant alias on half its lines and nothing on the other half.
+
+Name the module and the instance apart, so `driver.app` reads like `argument.stations()`.
+`application.app` would repeat the namespace in the name it qualifies, the same fault as `user.user_name` (see `write-python`).
 
 ```python
 import typing
@@ -54,10 +62,10 @@ import typer
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_
 from mypackage.code.drive.rich_ import render
-from mypackage.code.drive.typer_ import application, argument
+from mypackage.code.drive.typer_ import argument, driver
 
 
-@application.app.command()
+@driver.app.command()
 def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
     """Report the average temperature for each station."""
     render.table(operate.report(stations, fetch=httpx_.fetch))
@@ -67,7 +75,7 @@ def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
 
 ```python
 from mypackage.code.drive.typer_ import callback, command
-from mypackage.code.drive.typer_.application import app
+from mypackage.code.drive.typer_.driver import app
 
 __all__ = ["app", "callback", "command"]
 ```
@@ -168,7 +176,8 @@ Under `code/drive/`, a hollow `api/` role package re-exports the app and launche
 api/
   __init__.py   role, hollow: re-exports app and run
 fastapi_/
-  __init__.py   app = fastapi.FastAPI(); includes the router; run() launcher
+  __init__.py   re-exports app and run from driver
+  driver.py     app = fastapi.FastAPI(); includes the router; run() launcher
   depend.py     factories returning a fastapi.Depends marker
   provide.py    the providers Depends calls — names the concrete adapter
   query.py      functions returning a configured fastapi.Query
@@ -266,7 +275,7 @@ def report(
     ]
 ```
 
-`fastapi_/__init__.py` builds the app, includes the router, and adds the launcher — an ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `run()` calls `uvicorn.run(app)`; `api/__init__.py` re-exports `app` and `run`:
+`fastapi_/driver.py` builds the app, includes the router, and adds the launcher — an ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `run()` calls `uvicorn.run(app)`; `api/__init__.py` re-exports `app` and `run`:
 
 ```python
 import fastapi
@@ -298,7 +307,8 @@ So `shiny_/` separates the way `typer_/` does:
 gui/
   __init__.py   role, hollow: re-exports app and run
 shiny_/
-  __init__.py   app = shiny.App(layout.root(), callback.server); run() launcher
+  __init__.py   re-exports app and run from driver
+  driver.py     app = shiny.App(layout.root(), callback.server); run() launcher
   layout.py     functions returning shiny.ui objects; root() is the top-level
   callback.py   the server(input, output, session) reactive callbacks
 ```
@@ -339,7 +349,7 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
         )
 ```
 
-`shiny_/__init__.py` wires the two halves and adds the launcher — a `shiny.App` isn't callable to start a server, so `run()` calls `shiny.run_app(app)`; `gui/__init__.py` re-exports `app` and `run`:
+`shiny_/driver.py` wires the two halves and adds the launcher — a `shiny.App` isn't callable to start a server, so `run()` calls `shiny.run_app(app)`; `gui/__init__.py` re-exports `app` and `run`:
 
 ```python
 import shiny
