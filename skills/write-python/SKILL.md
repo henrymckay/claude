@@ -170,7 +170,10 @@ Read it as the elided noun it is — "keep the tradeable ones" — and the rule 
 
 **Never say in the noun what the parameter names and annotations already say.**
 `parse_csv(document: str)` cannot be `parse_document` — the parameter said that — so the noun earns its place by naming the format instead.
-Where both sides are already explained, drop the noun: `transform.resolve(names, catalogue)` needs nothing more, and `httpx_.get(url)` needs no `get_document` when the module is the client and the parameter is the URL.
+Where both sides are already explained, drop the noun: `transform.resolve(names, catalogue)` needs nothing more, because `names` *is* what gets resolved.
+**A parameter only supplies the noun when it is the noun.**
+`get(url)` does not get the URL — it gets a document *from* one, so the parameter names the address and the noun is still missing; `get_document(url)` is the honest name.
+The test is whether the verb and the parameter read as a sentence: "resolve the names" does, "get the url" does not.
 
 **Judge redundancy against the siblings, not just the signature.**
 `parse_holdings` reads well until you notice `fetch_holdings` and `read_holdings` beside it in the same module, at which point the shared half says nothing and the format half says everything.

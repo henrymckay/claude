@@ -81,6 +81,11 @@ The retrieval is a few lines that never change; the parse is where the source's 
 It is also what makes the parse testable on its own.
 A saved response goes straight into `_parse` with no stub for the fetch, so the test that pins how a disclaimer row is handled says so directly instead of arriving through an injected client.
 
+**Return the narrowest thing the callers actually use, not the richest thing the library handed you.**
+An adapter that returns `httpx.Response` has made that library's surface into your internal API: every caller can now reach for `.status_code`, `.headers` or `.json()`, and swapping the library touches all of them instead of the one function that was supposed to contain it.
+Return the text, the rows, the values — whatever the callers read — and keep the library's own objects inside the module.
+It is also what keeps the test seam cheap: a fake that returns a string is a function, where a fake that returns a `Response` is a mock of somebody else's class.
+
 **An adapter's boundary is every library it uses, not just the remote one.**
 The adapter exists so nothing inward depends on `httpx` — and the parser, the client library and the driver behind it are no different.
 A response that arrives and will not parse is the same event to the caller as one that never arrived, so wrap both: catch the parser's exception at the same seam as the client's and raise your own.
@@ -112,6 +117,10 @@ That injection is the essential idea (see `be-functional`).
 **The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`.
 Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say (where `load` means *persist to a store*, not the on-screen presentation a driver owns).
 Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
+
+**Within a package, make every member the same kind.** A directory holding `ark.py` beside `httpx_/` tells a reader nothing by the difference — the shapes do not mark scope, importance or anything else, and the import path is identical either way.
+So when one member has to become a package, promote its siblings too.
+The payoff is that adding a second module to any of them is a one-file diff rather than a restructure, and `ls` of a layer reads as a list of peers.
 
 **Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
 Don't scaffold the full set for a script (KISS, YAGNI).

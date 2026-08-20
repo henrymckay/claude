@@ -185,6 +185,11 @@ Row-wise Python callbacks kill `polars`'s performance.
 - **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
 - **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
 
+**Build a one-column frame from a `Series`, not a dict and a schema.**
+`polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
+Both give the same frame on an empty list, which is the case the schema was there for.
+Keep the dict form for a genuine multi-column literal.
+
 ## Name dataframes
 
 Name a frame by its **contents**, not its type: `customers`, `orders`, `trades` — not `df` or `df_customers`.
