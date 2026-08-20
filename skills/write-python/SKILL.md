@@ -160,6 +160,10 @@ Sort on **visibility first, then name**: dunders, then the underscore-prefixed n
 That is the dunder convention extended rather than a second rule — `__init__` comes first because it is the most internal thing in the class, and a `_helper` is the next most internal.
 It also means a definition is met before it is used, since the public functions are the ones calling the helpers, and nothing is lost from the public surface: `__all__` and the module docstring have already named it above the first definition.
 
+**What Python evaluates at definition time outranks the sort.**
+A base class, a decorator, a default argument's value and a module-level constant are all read as the file executes, so they must sit above whatever names them — `class HoldingsError(SymbolsError)` cannot precede `SymbolsError` however the alphabet falls.
+Order the rest around that fixed skeleton rather than trying to sort through it: an exception hierarchy reads base-first and then alphabetically within each level.
+
 - **Module-level definitions** (functions, classes, constants) in that order — private alphabetically, then public alphabetically.
 Carve-outs: a script's entry point (e.g. `main`) may sit conventionally, and grouped constants and `__all__` stay at the top.
 - **Class members** the same way: dunders (`__init__`, `__repr__`, …) first in conventional order, then private methods alphabetically, then public methods alphabetically.
