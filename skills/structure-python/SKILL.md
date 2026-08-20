@@ -74,6 +74,13 @@ A source that did not answer at all is a different event: the request failed, th
 An adapter **raises** there rather than returning its empty shape, because an empty frame says "there are none" and the caller has no way to tell that apart from "nobody told me" — which is the silent partial result the whole design is meant to prevent.
 A core rule that rejects a source's stray matter as well as its unwanted rows is doing its job, not overreaching — say so in its docstring, so the next reader does not add a filter upstream that duplicates it.
 
+**Split an adapter into getting and making sense of.**
+An adapter does two unrelated jobs — reaching the outside world, and turning what came back into the declared shape — so give each its own function and let the port's own function be the composition of them: `return _parse(name, _get(_url(name)))`.
+The retrieval is a few lines that never change; the parse is where the source's quirks live and where the work grows, so leaving them fused means the port's function gets longer every time the publisher changes something, and the one line a reader wanted — what this adapter actually returns — sinks under it.
+
+It is also what makes the parse testable on its own.
+A saved response goes straight into `_parse` with no stub for the fetch, so the test that pins how a disclaimer row is handled says so directly instead of arriving through an injected client.
+
 **An adapter's boundary is every library it uses, not just the remote one.**
 The adapter exists so nothing inward depends on `httpx` — and the parser, the client library and the driver behind it are no different.
 A response that arrives and will not parse is the same event to the caller as one that never arrived, so wrap both: catch the parser's exception at the same seam as the client's and raise your own.
