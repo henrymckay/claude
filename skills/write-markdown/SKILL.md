@@ -16,12 +16,12 @@ description: >-
 Markdown has two very different readers: **humans**, who skim and scan, and **LLMs (Large Language Models)**, which parse every token.
 Most principles serve both, but some polish helps humans and wastes tokens on a model, and some density suits a model but loses a human.
 So **decide the audience first**, apply the universal rules, then add the audience-specific set.
-Three mistakes account for most weak Markdown: filler that restates what the context already fixes, prose where a heading or list would carry the structure, and polish aimed at the wrong reader.
 
 - **Human-facing** — READMEs, documentation, guides, tutorials, changelogs, wikis, issue/PR descriptions.
 - **LLM-facing** — `SKILL.md`, `CLAUDE.md`, agent/tool instructions, prompts, anything a model consumes as context.
 
 `write-skills` layers on these mechanics for authoring a skill — its name, description, opening and structure.
+Three mistakes account for most weak Markdown: filler that restates what the context already fixes, prose where a heading or list would carry the structure, and polish aimed at the wrong reader.
 
 **In an existing project, ask first.** Where a repo already has an established house style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 

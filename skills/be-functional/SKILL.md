@@ -16,8 +16,8 @@ description: >-
 
 The goal is code that's **expressive, composable, and easy to use** — functional techniques are the means to that end, not a purity contest.
 When behaviour depends only on a function's inputs (not hidden state or order of execution), code becomes easy to reason about, test, and reuse.
-Three mistakes account for most of what goes wrong: reaching for ambient state instead of an argument, mutating a value rather than returning a new one, and letting a function's boundaries accrete instead of deriving them from the data flow.
 It builds on `write-python`'s in-code conventions, and `be-oop` is its object-oriented counterpart.
+Three mistakes account for most of what goes wrong: reaching for ambient state instead of an argument, mutating a value rather than returning a new one, and letting a function's boundaries accrete instead of deriving them from the data flow.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
@@ -54,6 +54,13 @@ The field being special to the *domain* is not the test; the test is whether the
 `[transform(x) for x in items if keep(x)]` states intent more directly than an accumulator loop.
 - **Lazy evaluation.** Compute values only when needed.
 Lazy sequences (generators/streams) let you work with large or infinite data and build pipelines that don't materialise intermediate collections — then force (materialise) the result at the boundary where you actually need it.
+
+Of the three mistakes above, reaching for ambient state is the one that hides, so it is worth seeing spelled out:
+
+- **Wrong** — `total(items)` reads an ambient `TAX_RATE`.
+A caller who needs a second rate has to edit the module, and a test has to patch it.
+- **Right** — `total(items, tax_rate)`.
+Both are one call, and the signature now says everything the result depends on.
 
 ## Functional core, imperative shell
 
