@@ -124,10 +124,16 @@ The signature still has to name every option — `typer` reads the real paramete
 Hand the whole option set to the function that shapes it and let that pick out what it needs by name:
 
 ```python
-def count(daily_setup_min: ..., weekly_setup_min: ..., ...) -> None:
+def count(
+    daily_setup_min: Bound,
+    daily_setup_max: Bound,
+    # one pair per count per timeframe, plus the command's own arguments
+) -> None:
     """Report the counts, keeping only the rows within the bounds given."""
     bounds = bound.frame(**locals())
 ```
+
+`Bound` stands for the `typing.Annotated[...]` the factory above returns; the real signature spells each one out.
 
 `locals()` at the top of a command body is exactly its arguments, and the alternative — repeating all thirty names in a call — is a second list to keep in step with the first, which drifts the moment an option is added.
 Say in the docstring that the parameter names are the keys, and have the receiving function ignore anything it does not recognise so the paths and dates passing through cost nothing.
@@ -333,7 +339,7 @@ import shiny
 def root() -> htmltools.Tag:
     """Return the top-level layout."""
     return shiny.ui.page_fluid(
-        shiny.ui.input_text("stations", "Stations", "london tokyo"),
+        shiny.ui.input_text("stations", label="Stations", value="london tokyo"),
         shiny.ui.output_text("report"),
     )
 ```

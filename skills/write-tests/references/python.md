@@ -94,19 +94,20 @@ Collect them in the `pytest_` package's `then` module, imported as `from pytest_
 
 ```python
 # tests/pytest_/then.py
-def equals(actual: object, expected: object) -> None:
+def equals(actual: object, *, expected: object) -> None:
     """Assert two values are equal."""
     assert actual == expected, f"expected {expected!r}, got {actual!r}"
 
 
 def column_equals(
-    frame: polars.DataFrame, column: str, values: collections.abc.Sequence[object]
+    frame: polars.DataFrame, *, column: str, values: collections.abc.Sequence[object]
 ) -> None:
     """Assert the frame's column holds exactly these values, in order."""
-    equals(frame.get_column(column).to_list(), list(values))
+    equals(frame.get_column(column).to_list(), expected=list(values))
 ```
 
-A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
+A test body then reads `then.equals(code, expected=0)` or `then.column_equals(priced, column="revenue", values=expected_revenue)`.
+Naming the expected side is what stops the classic transposition, where a swapped pair still passes but reports the failure backwards.
 
 - Give each helper a failure message, since `pytest` only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
@@ -121,7 +122,7 @@ def test_when_add_revenue_then_revenue_is_quantity_times_price(
 ) -> None:
     """Revenue is quantity times unit price for every row."""
     priced = pipeline.map_add_revenue(sales).collect()
-    then.column_equals(priced, "revenue", expected_revenue)
+    then.column_equals(priced, column="revenue", values=expected_revenue)
 ```
 
 Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).

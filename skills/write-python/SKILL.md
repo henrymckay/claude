@@ -6,7 +6,7 @@ description: >-
   argument style, member ordering, error handling, and idioms. Use whenever
   writing, editing, refactoring, or reviewing Python code, even if the user
   doesn't explicitly mention "conventions", "style", or "clean code". Targets
-  Python 3.11+.
+  Python 3.12+.
   Formatting/linting is delegated to ruff and type-checking to pyright — this
   skill does NOT restate their rules, only the judgment calls they can't make.
   These are the baseline conventions that apply to all Python; layer a paradigm
@@ -36,7 +36,7 @@ Write it naturally and let the hook format it; hand-formatting just creates need
 Full signatures let `pyright` check call sites, document intent, and make refactors safe.
 **Don't annotate local variables** inside function bodies — let inference do its job and keep bodies uncluttered (add a hint only in the rare case inference genuinely can't resolve a type).
 
-Typing conventions (Python 3.11+):
+Typing conventions (Python 3.12+):
 
 - **Native types, not `typing` equivalents:** `list[int]`, `dict[str, int]`, `tuple[str, ...]` — never `typing.List`, `typing.Dict`, etc.
 - **Union with `|`:** `str | None`, not `typing.Optional[str]` or a `Union[...]`.
@@ -214,6 +214,9 @@ The exception is the **subject** — the thing the function acts on, which the f
 `parse_csv(document)`, `len(items)` and `polars.col("close")` need no label, and `parse_csv(document=document)` is exactly the stutter the Naming section rules out.
 So the shape is a bare subject and a name on everything after it.
 
+**A value that already carries the name does not need it twice.** `revenue(quantity, unit_price)` is as clear as `revenue(quantity=quantity, unit_price=unit_price)` and shorter, because the point of the label is to say what an opaque value means and a variable spelled like its parameter is not opaque.
+The rule bites on literals, expressions and mismatched names, which is where the meaning is genuinely missing.
+
 **A boolean or a bare number is never the subject.** `render(symbols, True)` tells a reader nothing and the value offers no type to guess from, where `render(symbols, table=True)` is the same call made readable.
 
 **Put a `*` in the signature rather than trusting the caller to remember.** Everything optional or modal goes after it, so the language enforces at every call site what this section otherwise only asks for — and a parameter that arrives keyword-only can be reordered later without breaking anyone:
@@ -328,6 +331,7 @@ def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
 ```
 
 `typing.Concatenate` is not needed: `P` carries the whole signature, so the wrapped function keeps its own and the message reads any parameter by name.
+The `[**P, T]` type parameters are PEP 695 syntax and need 3.12, which is the floor this skill assumes; below it, declare `P` and `T` as module-level `typing.ParamSpec`/`typing.TypeVar` instead.
 Take the signature once at decoration time — binding it per call is the only cost, and it is what lets the message name an argument the body never mentions.
 
 **Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
