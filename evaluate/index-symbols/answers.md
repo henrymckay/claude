@@ -87,7 +87,7 @@ One rule covering cash lines, options and a trailing disclaimer alike beats a ro
 Two commands, split by what they do rather than by where the symbols come from.
 Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `catalogue` is its own command rather than a flag that switches what `expand` does.
 
-`catalogue` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since there would be no other way to discover a valid name.
+`catalogue` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since a collection it ships is not otherwise discoverable.
 
 - Two renders, not one styled two ways.
 `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.

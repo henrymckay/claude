@@ -13,8 +13,8 @@ Those collections come from two kinds of place, and I should not have to remembe
 - Some ship with `pytickersymbols`, whose dataset comes with the package, so expanding one costs no network call.
 - Others publish their holdings online, so expanding one is a request and a parse.
 
-Every name belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
-A name belonging to neither is an error.
+Every name I have listed belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
+A name I have not listed still works if it is an ETF ticker, and is an error only when it is not.
 
 I will not be careful about case, spacing or punctuation when I type a name.
 `S&P 500`, `S&P-500`, `SP500` and `sp-500` are all the same index to me, and `dow-jones` is the same as `DOW JONES`.
@@ -43,6 +43,10 @@ I still want the suffix on all eighteen rather than only on those six, because a
 Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
 All forty-eight appear in `catalogue` beside the packaged ones, each under the name that reaches it.
 
+Those forty-eight are the funds I follow, not the limit of what I can ask for.
+Any other ETF ticker should expand as well, so `symbols expand TAN` gives me a solar fund named nowhere in this brief.
+It spells the same way as the rest, bare for a US listing and `.L` for a London one.
+
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
 ## Investors
@@ -53,7 +57,8 @@ Three investors who disclose what they hold rather than running a fund whose boo
 - Duquesne Family Office.
 - Situational Awareness.
 
-Each reports its US positions to the SEC once a quarter, so what comes back is the most recent report rather than today's position, and that suits me.
+Each reports its US positions to the SEC once a quarter, so give me the most recent report and never an older one.
+When it was filed is of no interest to me, so nothing needs to show the date or let me choose by it.
 A report covers more than plain stock, so the same judgement that keeps untradeable rows out of a fund's holdings applies here too.
 
 They answer to their names rather than to a ticker, so `symbols expand berkshire-hathaway` works.
@@ -66,6 +71,7 @@ Two lists that rank companies rather than hold them, and I want to expand them t
 - `largest-etfs`, the ETFs ranked the same way.
 
 These are far longer than any fund, thousands of rows rather than tens, and they are worldwide rather than one country's market.
+The default limit is what keeps them to a size I can use, so `symbols expand largest-companies` gives me the top few hundred rather than everything listed anywhere.
 
 ## Symbols
 
@@ -91,17 +97,26 @@ When I do want to read them myself, a flag gives me a `rich` table down the page
 Two, because finding out what I can expand is a different question from expanding one.
 
 - `expand NAME...` gives me the symbols those collections hold.
-- `catalogue` gives me the names I can expand.
+- `catalogue` gives me the names I follow.
 
-Since an unknown name gets me nothing but an error, `catalogue` is how I find out which names work.
+`catalogue` is how I remind myself which collections I have set up rather than a list of everything that works, since any ETF ticker expands whether it appears there or not.
 It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
 ## Options
 
-Two, spelled the way the tools I already use spell them, and both work on both commands.
+Three, spelled the way the tools I already use spell them.
 
+- `-n`, `--limit N` keeps at most N symbols from each collection, and defaults to 500.
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-t`, `--table` shows a `rich` table instead of the one-per-line default.
+
+`-o` and `-t` work on both commands, where `--limit` only means anything to `expand`.
+
+A collection has an order of its own, a ranking by rank and a fund by weight, and the limit takes from the top of that order.
+So `--limit 10` on a fund gives me its ten largest positions rather than ten picked at random, and the sorting and the dropping of duplicates happen afterwards on whatever the limit left.
+
+Tell me on standard error whenever a limit actually cut something short.
+A list quietly shortened is the same trap as a name quietly dropped, and I have said what I think of that above.
 
 ## Examples
 
@@ -117,6 +132,9 @@ symbols expand berkshire-hathaway
 symbols expand largest-etfs
 symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
+symbols expand TAN
+symbols expand ARKK --limit 10
+symbols expand largest-companies -n 1000
 symbols catalogue
 symbols catalogue | grep ARK
 symbols expand ARKK -t
