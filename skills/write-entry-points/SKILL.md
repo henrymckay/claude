@@ -93,6 +93,10 @@ A tool that senses a terminal behaves one way under a person's hands and another
 So offer the choice through a format option and a destination option, and answer both the same way: same bytes at a terminal, down a pipe and into a file.
 Dropping *colour* off a tty is not this — the structure is identical either way, and a rendering library already does it for you.
 
+- **Wrong** — the command asks whether standard output is a terminal and renders a table if it is.
+The form you check by hand is then never the form a script receives, and nobody finds out until the parse fails in production.
+- **Right** — a `--table` option picks the form and an `--output` option picks the destination, and neither one consults the terminal.
+
 **Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
 
 **Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.

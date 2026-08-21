@@ -46,6 +46,16 @@ Reference issues/PRs here (`Closes #123`).
 A footer is permanent and unfilterable — it rides along in every `git log`, `git blame` and release note for the life of the repo, and the tool that put it there is stale within a year.
 Nothing reads it: authorship is already in the commit metadata, and what a change was for belongs in the body.
 
+Wrong — the subject names the file and the body restates the diff, so the message tells a reader nothing `git show` would not:
+
+```text
+feat(search): change sorting in search.py
+
+Changed the sort order.
+```
+
+Right — the subject says what the change does and the body says why it was worth doing:
+
 ```text
 feat(search): rank users by recent activity
 

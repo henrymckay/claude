@@ -53,6 +53,15 @@ Never a module-level global, and never data built inline in the body.
 - *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
 
 ```python
+# Wrong: the given is built in the body, so the scenario has no name and the next test copies it.
+def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
+    """Every kept row is positive."""
+    raw_sales = polars.DataFrame({"quantity": [2, 0, -1, 5]})
+    kept = keep_valid(raw_sales)
+    assert kept.get_column("quantity").to_list() == [2, 5]
+
+
+# Right: the given arrives as a parameter and the then is a named, reusable claim.
 def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales: polars.DataFrame) -> None:
     """Every kept row is positive."""
     kept = keep_valid(raw_sales)
