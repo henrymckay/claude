@@ -14,7 +14,8 @@ Those collections come from two kinds of place, and I should not have to remembe
 - Others publish their holdings online, so expanding one is a request and a parse.
 
 Every name I have listed belongs to exactly one of the two, so there is nothing to choose between and nothing for me to tell you.
-A name I have not listed still works if it is an ETF ticker, and is an error only when it is not.
+A name I have not listed is tried as an ETF ticker as a last resort, and is an error only once that has failed too.
+Tell me which of the two went wrong, since a name that is no ETF and a request that would not come are different problems and only one of them is my typo.
 
 I will not be careful about case, spacing or punctuation when I type a name.
 `S&P 500`, `S&P-500`, `SP500` and `sp-500` are all the same index to me, and `dow-jones` is the same as `DOW JONES`.
@@ -71,7 +72,8 @@ Two lists that rank companies rather than hold them, and I want to expand them t
 - `largest-etfs`, the ETFs ranked the same way.
 
 These are far longer than any fund, thousands of rows rather than tens, and they are worldwide rather than one country's market.
-The default limit is what keeps them to a size I can use, so `symbols expand largest-companies` gives me the top few hundred rather than everything listed anywhere.
+Give me the top thousand of each and no more, since below that they are too small to be worth scanning.
+That thousand is part of what the two names mean rather than something I want to set each time.
 
 ## Symbols
 
@@ -104,19 +106,10 @@ It writes one name per line, sorted, the same as the symbols do, so I can grep i
 
 ## Options
 
-Three, spelled the way the tools I already use spell them.
+Two, spelled the way the tools I already use spell them, and both work on both commands.
 
-- `-n`, `--limit N` keeps at most N symbols from each collection, and defaults to 500.
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-t`, `--table` shows a `rich` table instead of the one-per-line default.
-
-`-o` and `-t` work on both commands, where `--limit` only means anything to `expand`.
-
-A collection has an order of its own, a ranking by rank and a fund by weight, and the limit takes from the top of that order.
-So `--limit 10` on a fund gives me its ten largest positions rather than ten picked at random, and the sorting and the dropping of duplicates happen afterwards on whatever the limit left.
-
-Tell me on standard error whenever a limit actually cut something short.
-A list quietly shortened is the same trap as a name quietly dropped, and I have said what I think of that above.
 
 ## Examples
 
@@ -133,8 +126,7 @@ symbols expand largest-etfs
 symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
 symbols expand TAN
-symbols expand ARKK --limit 10
-symbols expand largest-companies -n 1000
+symbols expand largest-companies
 symbols catalogue
 symbols catalogue | grep ARK
 symbols expand ARKK -t

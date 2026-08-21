@@ -35,6 +35,19 @@ Two calls have to come from the *same* source — what a place offers, and what 
 A module cannot be mixed with itself, and a module satisfies a structural protocol exactly as an instance does, so nothing has to become a class and the composition root hands over the adapter modules themselves.
 The cost to accept is that a protocol's method name *is* the contract, so every adapter spells it the same — which is right, since a caller reaches a port precisely because it does not care which one answers.
 
+**Resolving a name is ordered, and the open source is a fallback rather than another source.**
+The sources that know their own names are asked first, and only a name none of them claims reaches the one that will try any ticker.
+Put it in the same mapping and it either claims every name before the others are consulted, or it has to be consulted last anyway — at which point the mapping was never what decided it.
+
+That splits what a source is.
+Expanding wants holdings, which anything able to fetch them can give; cataloguing wants names, which only a source with a fixed set has.
+A port demanding both from everything forces the open one to answer with an empty frame, which is a lie the `catalogue` command then prints nothing for.
+So the two calls are two ports, and the composition root hands each operation only the one it needs — `catalogue` never sees the fallback, and `expand` sees it last.
+
+An unmatched name now fails two ways and they are not the same failure.
+A ticker that is no ETF is an unknown name; a request that would not come is a retrieval failure.
+Reporting the second as the first sends the caller hunting a typo in a name that was right all along, which is the more expensive mistake because the tool sounds certain.
+
 **Pure frame work belongs to the core even when the adapter noticed it was needed.**
 A frame in, a frame out, no IO: that is a transform, and three adapters left to their own devices grow three versions of one reshape, none of them under the core's tests.
 The adapter owns the *decision* and the core owns the *operation* — that ARK spells a ticker the Bloomberg way is knowledge about ARK, and moving it inward teaches the core about publishers.
@@ -59,7 +72,7 @@ That is not the composition root moving: the driver still chooses to use the set
 
 ## What should not exist yet
 
-- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — fifty-three named collections across a handful of publishers is still a lookup, not a plugin system.
+- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — fifty-three named collections across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
 
 ## The boundary
 
@@ -121,7 +134,7 @@ This is where the test suite is founded, and the next two builds inherit whateve
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.
 
-Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, a name typed with the wrong case, spacing and punctuation, an unknown name from each source, and a fund whose request fails.
+Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, a name typed with the wrong case, spacing and punctuation, a name only the fallback resolves, a name nothing resolves, and a fund whose request fails.
 
 ## Wrong turns
 
@@ -135,5 +148,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **String-wrangling the holdings file** into lists and dicts before it reaches a frame.
 - **Letting a request failure surface as `httpx`'s own exception**, which makes the calling code depend on the library the adapter exists to hide.
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
+- **Registering the open source alongside the named ones**, so it either swallows every name before a real source is asked or contributes an empty list to `catalogue`.
+- **Reporting a failed request as an unknown name**, which turns somebody else's outage into a hunt for a typo that was never there.
 - **Silently dropping an unmatched name**, which turns a typo into an empty report much later.
 The brief asks for an error, and an empty frame written to standard output is not one.
