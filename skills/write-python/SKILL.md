@@ -1,9 +1,9 @@
 ---
 name: write-python
 description: >-
-  In-code conventions for writing Python that a formatter can't decide —
-  function/member ordering, naming, call-site argument style, public API design,
-  typing, docstrings, import style, error handling, and idioms. Use whenever
+  In-code conventions for writing Python that a formatter can't decide — typing,
+  docstrings, comments, import style, public API design, naming, call-site
+  argument style, member ordering, error handling, and idioms. Use whenever
   writing, editing, refactoring, or reviewing Python code, even if the user
   doesn't explicitly mention "conventions", "style", or "clean code". Targets
   Python 3.11+.
@@ -29,16 +29,6 @@ Three habits account for most of what goes wrong: importing names instead of mod
 Don't restate or fight those tools.
 **Don't spend effort on what `ruff format` fixes automatically** on pre-commit — line length, wrapping and stacking function arguments, quote style, trailing commas.
 Write it naturally and let the hook format it; hand-formatting just creates needless churn and diff noise.
-
-## Public API
-
-Be deliberate about what's public.
-A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
-**Mark a re-export with a redundant alias — `from .membership import resolve as resolve` — not with `__all__`.**
-A name imported into an `__init__.py` for callers to reach is never used in that file, so it is indistinguishable from a leftover; something has to say it is deliberate.
-The alias is the smallest thing that does, and it is what the typing spec defines an explicit re-export to be, so `pyright` and `mypy` read it the same way `ruff` does.
-`__all__` says the same thing at the cost of a second list beside the imports, which is the drift the same section warns about for plain modules; a blanket `per-file-ignores` for `__init__.py` says it by silencing the check, and then never tells you about a genuinely stale import either.
-So skip `__all__` entirely: an `__init__.py` that only *defines* its own names needs no marker at all, and neither does a plain module.
 
 ## Typing
 
@@ -127,7 +117,7 @@ Use **absolute imports** within a package; they survive moving files.
 Relative imports (`from . import db`) are fine for tight intra-package references but get confusing across several levels.
 
 **Avoid `as` renames** unless genuinely unavoidable (a real name clash) — that includes the popular ones: prefer `import polars` / `polars.col(...)` over the conventional `import polars as pl`.
-A **redundant** alias is the exception and is not a rename at all: `from .membership import resolve as resolve` renames nothing and exists to mark a deliberate re-export (see Public API).
+A **redundant** alias is the exception and is not a rename at all: `from .membership import resolve as resolve` renames nothing and exists to mark a deliberate re-export (see Public API, below).
 When a rename truly is forced, derive it from the *true* name with an underscore prefix or suffix (`import numpy as numpy_`), never an arbitrary short alias like `np`.
 
 **Name a local package of code tightly coupled to a third-party library with a trailing underscore** — `polars_/` for your `polars` helpers, `typer_/` for a CLI's `typer` code, `rich_/` for its rendering, `pytest_/` for test fixtures and bare-`assert` helpers — so the name both marks the coupling and never shadows the real `polars`/`typer`/`pytest`.
@@ -138,6 +128,16 @@ Pair it with a role-named package (`cli`, `api`, `gui`) that re-exports the app;
 Circular imports are a design smell — usually two modules that want to be one, or a missing third module they should both depend on.
 Restructure rather than papering over it with function-local imports.
 (Dependency management lives in `setup-python`.)
+
+## Public API
+
+Be deliberate about what's public.
+A leading underscore (`_helper`, `_Internal`) signals "implementation detail, may change" — use it freely so the real surface is obvious.
+**Mark a re-export with a redundant alias — `from .membership import resolve as resolve` — not with `__all__`.**
+A name imported into an `__init__.py` for callers to reach is never used in that file, so it is indistinguishable from a leftover; something has to say it is deliberate.
+The alias is the smallest thing that does, and it is what the typing spec defines an explicit re-export to be, so `pyright` and `mypy` read it the same way `ruff` does.
+`__all__` says the same thing at the cost of a second list beside the imports, and the two drift the moment a name is added to one and not the other; a blanket `per-file-ignores` for `__init__.py` says it by silencing the check, and then never tells you about a genuinely stale import either.
+So skip `__all__` entirely: an `__init__.py` that only *defines* its own names needs no marker at all, and neither does a plain module.
 
 ## Naming
 
@@ -211,7 +211,7 @@ handle(polars.exceptions.PolarsError, report=error.HoldingsError, message="Could
 ```
 
 The exception is the **subject** — the thing the function acts on, which the function's own name has already announced.
-`parse_csv(document)`, `len(items)` and `polars.col("close")` need no label, and `parse_csv(document=document)` is exactly the stutter the Avoid section rules out.
+`parse_csv(document)`, `len(items)` and `polars.col("close")` need no label, and `parse_csv(document=document)` is exactly the stutter the Naming section rules out.
 So the shape is a bare subject and a name on everything after it.
 
 **A boolean or a bare number is never the subject.** `render(symbols, True)` tells a reader nothing and the value offers no type to guess from, where `render(symbols, table=True)` is the same call made readable.
@@ -232,12 +232,12 @@ Order things alphabetically so every name has *one predictable location* — you
 
 Sort on **visibility first, then name**: dunders, then the underscore-prefixed names alphabetically, then the public ones alphabetically.
 That is the dunder convention extended rather than a second rule — `__init__` comes first because it is the most internal thing in the class, and a `_helper` is the next most internal.
-It also means a definition is met before it is used, since the public functions are the ones calling the helpers, and nothing is lost from the public surface: `__all__` and the module docstring have already named it above the first definition.
+It also means a definition is met before it is used, since the public functions are the ones calling the helpers, and nothing is buried by it: the underscore prefix already says which names are not the surface, so a reader scanning for the public ones skips the block above them.
 
 Anything Python reads as the file executes outranks the sort, so a base class sits above its subclasses and an exception hierarchy stays base-first.
 
 - **Module-level definitions** (functions, classes, constants) in that order — private alphabetically, then public alphabetically.
-Carve-outs: a script's entry point (e.g. `main`) may sit conventionally, and grouped constants and `__all__` stay at the top.
+Carve-outs: a script's entry point (e.g. `main`) may sit conventionally, and grouped constants stay at the top.
 - **Class members** the same way: dunders (`__init__`, `__repr__`, …) first in conventional order, then private methods alphabetically, then public methods alphabetically.
 - **Function arguments** alphabetically where possible, both when defining and when calling.
 "Where possible" is doing real work here: `self`/`cls` come first, positional-only and required-before-default constraints win, and don't reorder where argument order itself carries meaning.
@@ -358,7 +358,7 @@ Use `logging` with `%`-style lazy args (`logger.info("got %s", x)`) so the strin
 - **EAFP over LBYL** (Easier to Ask Forgiveness than Permission, over Look Before You Leap) where it reads well — try the operation and handle the exception rather than pre-checking; avoids races and is often clearer.
 - **Prefer a function returning a value over a hardcoded module global.** A function can later compute, parameterise, or override the value without callers changing; a bare global has to be torn out to extend.
 This holds for a value that looks permanently fixed too — "it will never change" is what every constant is believed to be right up until it has to be parameterised, and by then the callers are written against the global.
-The exceptions are names a tool or framework *requires* at module level — `__all__`, a `logging.getLogger(__name__)` module logger, a framework's app object, a test module's shared strategy or fixture data.
+The exceptions are names a tool or framework *requires* at module level — a `logging.getLogger(__name__)` module logger, a framework's app object, a test module's shared strategy or fixture data.
 - **Pass-through variadics use `*a` / `**k`**, not `*args` / `**kwargs`.
 When a function only forwards its variadic arguments onward, the short names keep the noise down; reserve descriptive names for when the function actually inspects them.
 - **For tabular or columnar data, work in a dataframe library's expressions — not Python lists and loops.** When data is rows-and-columns, or another library hands you a dataframe, keep it in the frame (convert a `pandas` result with `polars.from_pandas`) and compute across all rows at once; pulling columns out to lists and looping or folding over them throws away the vectorised engine.
