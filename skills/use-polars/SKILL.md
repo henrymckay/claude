@@ -3,11 +3,12 @@ name: use-polars
 description: >-
   How to write correct, idiomatic Polars (the Python DataFrame library) — the
   expression API, lazy vs eager execution, keeping every group in one long-form
-  frame instead of looping, naming frames and pipe steps, and the mental-model
-  shifts coming from pandas. Use whenever working with Polars
-  DataFrames/LazyFrames, writing data transformations or analytics in Polars,
-  converting pandas code to Polars, reshaping between long and wide, or
-  debugging Polars queries — even if the user only says "polars", "pl.", or
+  frame instead of looping, joining without silently multiplying rows, naming
+  frames and pipe steps, and the mental-model shifts coming from pandas. Use
+  whenever working with Polars DataFrames/LazyFrames, writing data
+  transformations or analytics in Polars, converting pandas code to Polars,
+  joining or reshaping between long and wide, or reading a query plan to work
+  out what it really does — even if the user only says "polars", "pl.", or
   names a .parquet/.csv workflow they want done with it. Targets Polars 1.x.
   Polars-specific; the general write-python conventions still apply on top.
 ---
@@ -15,16 +16,12 @@ description: >-
 # Use Polars
 
 `polars` is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-`write-python`'s general conventions apply on top.
+This targets `polars` 1.x, and `write-python`'s conventions apply on top — including the import rule, which here means `import polars` and qualifying every call as `polars.col(...)`, never the conventional `import polars as pl`.
+Check a method name against the installed version if it doesn't resolve.
 Most mistakes come from writing `pandas` habits in `polars` syntax.
 Three account for nearly all of them: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` types or habits leak past the boundary — each has its own section below.
 
 **In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
-
-Targets `polars` 1.x.
-Verify version-specific method names against the installed version if something doesn't resolve.
-
-Import convention (house style): `import polars` and qualify — `polars.col(...)` — not the conventional `import polars as pl`.
 
 ## The mental model
 
@@ -56,9 +53,8 @@ Choosing the shape is most of the work — the expression API is the easy half.
 ```python
 import polars
 
-out = (
-    df
-    .filter(polars.col("amount").gt(0))
+revenue = (
+    orders.filter(polars.col("amount").gt(0))
     .with_columns(
         polars.col("amount").mul(polars.col("rate")).alias("value"),
         polars.col("name").str.to_uppercase().alias("name_up"),
@@ -80,13 +76,18 @@ So materialise each windowed result into a column in its own `with_columns`, the
 ```python
 # Wrong: the .over("run") is discarded and the cum_sum runs within the segment.
 frame.with_columns(
-    opened=polars.col("qualifies").cum_sum().over("run").first().over("segment")
+    polars.col("qualifies")
+    .cum_sum()
+    .over("run")
+    .first()
+    .over("segment")
+    .alias("opened")
 )
 
 # Right: one .over() per expression, each result carried in a column.
-frame.with_columns(counted=polars.col("qualifies").cum_sum().over("run")).with_columns(
-    opened=polars.col("counted").first().over("segment")
-)
+frame.with_columns(
+    polars.col("qualifies").cum_sum().over("run").alias("counted")
+).with_columns(polars.col("counted").first().over("segment").alias("opened"))
 ```
 
 This is the one place the single-chain rule gives way, and only that far: the chain carries on, each window just gets its own `with_columns`.
@@ -113,6 +114,22 @@ The keyword form is a feature of the *context*, so the name lives outside the ex
 It is also the only form that can name a column Python cannot spell, like `total (£)` or `2024`, so the keyword form quietly stops working on real data rather than at the point you chose it.
 The rest of the API only knows `.alias()` — `.over()`, `.pipe()`, a bare `polars.col(...)` in a `sort` — so one spelling everywhere reads more consistently than two.
 
+## Unlearn the `pandas` habits
+
+- **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
+- **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
+Assign the result.
+- **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
+- **Null is not `NaN`.** `polars` keeps missing (null) apart from float not-a-number (`NaN`), where `pandas` conflates them — so `.fill_null` and `.fill_nan` are different calls, and `.drop_nulls` leaves a `NaN` sitting in the frame.
+- **A null comparison yields null, not false.** `polars.col("a").eq(polars.col("b"))` is null wherever either side is, so a `.filter` on it drops the row instead of keeping it.
+`.eq_missing()` is the null-safe form, and it counts two nulls as equal.
+- **`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
+
+**Build a one-column frame from a `Series`, not a dict and a schema.**
+`polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
+Both give the same frame on an empty list, which is the case the schema was there for.
+Keep the dict form for a genuine multi-column literal.
+
 ## Eager vs lazy
 
 - **Eager** (`polars.read_csv`, `df.select(...)`) runs immediately.
@@ -122,11 +139,11 @@ The optimiser can push filters down, prune columns, and stream — so lazy is th
 
 ```python
 result = (
-    polars.scan_parquet("events/*.parquet")   # lazy: nothing read yet
+    polars.scan_parquet("events/*.parquet")  # lazy: nothing read yet
     .filter(polars.col("ts").ge(start))
     .group_by("user_id")
     .agg(polars.len().alias("n"))
-    .collect()                                # execute the optimised plan
+    .collect()  # execute the optimised plan
 )
 ```
 
@@ -173,7 +190,9 @@ runs = (
         .alias("run_id")
     )
     .with_columns(
-        polars.int_range(1, polars.len().add(1)).over("group", "run_id").alias("run_len")
+        polars.int_range(1, polars.len().add(1))
+        .over("group", "run_id")
+        .alias("run_len")
     )
 )
 ```
@@ -217,9 +236,7 @@ counts = polars.concat([counted(prices, timeframe) for timeframe in timeframes])
 # Right: the axis is a column, so a single pass covers every group.
 counts = prices.join(
     polars.DataFrame({"timeframe": timeframes}), how="cross"
-).with_columns(
-    polars.col("close").diff().over(["ticker", "timeframe"]).alias("move")
-)
+).with_columns(polars.col("close").diff().over(["ticker", "timeframe"]).alias("move"))
 ```
 
 **Reshape so the values you are comparing sit on one row.** `pivot` and `unpivot` change what a row represents, which decides what counts as an element-wise comparison: values in *different rows* need a window, a self-join or a shift, where the same values in *different columns* are a plain expression.
@@ -239,18 +256,18 @@ with warnings.catch_warnings():
     )
 ```
 
-## Habits and `pandas` traps
+## Declare what a join must do
 
-- **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
-- **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
-Assign the result.
-- **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
-- **Null is not `NaN`.** `polars` keeps missing (null) apart from float not-a-number (`NaN`), where `pandas` conflates them — so `.fill_null` and `.fill_nan` are different calls, and `.drop_nulls` leaves a `NaN` sitting in the frame.
+`.join` is where a wrong answer is quietest, because each of its failure modes hands back a perfectly ordinary frame.
 
-**Build a one-column frame from a `Series`, not a dict and a schema.**
-`polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
-Both give the same frame on an empty list, which is the case the schema was there for.
-Keep the dict form for a genuine multi-column literal.
+**Pass `validate=` and let the engine check the cardinality you assumed.** A duplicated key on the right silently multiplies rows — two rows joined against a key that appears twice come back as three, and nothing downstream can tell that from data which genuinely had three.
+`left.join(right, on="k", validate="1:1")` raises instead, and `"1:m"`, `"m:1"` and `"m:m"` spell the other intents.
+One argument turns the most expensive silent bug in a pipeline into a loud one at the line that caused it.
+
+**Pass `coalesce=True` on a full join, or read the wrong key column.** Without it the result carries both `k` and `k_right`, and `k` is null on every row that came only from the right side — so code selecting `k` gets nulls where the key plainly exists.
+
+**A null key matches nothing, not even another null.** Join keys follow the same three-valued logic as everything else, so rows with a null key drop out of an inner join rather than pairing with each other.
+Where a null is a meaningful category rather than an absence, fill it before joining.
 
 ## Name dataframes
 
