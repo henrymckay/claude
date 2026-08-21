@@ -26,7 +26,8 @@ An ETF ticker and an index name are both just names to the lookup, so one normal
 The canonical spelling is what `catalogue` prints, a ticker in capitals and an index under its usual name.
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field *is* the home one — right even where it does not appear among the listings, as it does not for 12 of the FTSE 100.
-So take it, and fall back to the first listing only where it is absent, which is the handful of constituents that would otherwise be lost.
+So take it, and fall back to the first listing only where it is absent.
+That fallback is small and the field's absence is not: fifty constituents carry no bare symbol and only three of them list anywhere else, but on those rows the field is *missing* rather than empty, so a build that subscripts it directly does not lose three constituents — it fails two whole indices on a raw `KeyError`.
 Checking it against the listings first changes no value and costs a pass; falling back while it exists returns a Frankfurt or US line for Barratt Redrow, ICG and Rio Tinto.
 Keep the rule in the adapter — it is a fact about the data source, not about the domain.
 
@@ -79,8 +80,9 @@ That is not the composition root moving: the driver still chooses to use the set
 The brief names the collections and leaves finding them to the build, so the first work is research: no two publishers agree on where their data sits, what it is called, or how often it changes.
 
 - `httpx` is the pick over `requests`.
-- Send a browser-like user agent.
-`ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
+- Say who you are, and expect to be refused unevenly where you do not.
+A tool name, a version and an address a publisher could reply to is the honest default and is what these publishers accept; `www.sec.gov` refuses any user agent carrying no address, and some CDN-fronted services refuse anything that is not a browser string.
+Which is which is found by trying, so what matters is that the header is set deliberately rather than that any one string is right — a build that never sets one works against some publishers and not others, which is worse than failing everywhere because it looks like it works.
 - Set a timeout.
 A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - Retry the transient and only the transient.
@@ -90,11 +92,22 @@ Retrying belongs to the fetch alone, so a parse that fails is never attempted tw
 - Retry is what makes the brief's all-or-nothing rule survivable, which is why it is in scope where caching is not.
 One failure failing the whole run means the odds of a wasted run climb with every name asked for, so a single transient refusal somewhere among fifty collections would otherwise be enough to lose all of them.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
+- One conversion of a library's failures, not one per parse.
+Every adapter turns the same handful of library exceptions into the same error of yours and differs only in the message, so the `try`/`except`/`raise ... from` is written once as a decorator and applied — not copied into each parse.
+A build with a `try` in every parse has the right behaviour and has hand-written, five times over, the abstraction its skills already gave it.
 - Split getting the document from making sense of it.
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
 Apart, a saved response tests the parse with no stub for the fetch.
-- The open ETF source is a third party rather than an issuer, since no issuer publishes anybody else's funds, and the same third party answers for the VanEck ranges — `stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter.
-A build that reaches for each issuer in turn can serve the forty-eight named funds and still has nothing to answer `TAN` with.
+- The open ETF source is a third party rather than an issuer, since no issuer publishes anybody else's funds.
+`stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter, and a build that reaches for each issuer in turn can serve the forty-eight named funds and still has nothing to answer `TAN` with.
+- **A named fund still goes to its issuer, and the third party answers for everything else.**
+The general source publishes a fund's largest holdings and stops — twenty-two for `GDX.L`, where VanEck's own file lists fifty-eight — so routing the named funds through it would trade most of the answer for a smaller adapter.
+That is what makes an issuer worth its price, and for VanEck the price is real: a workbook rather than a CSV, and a document served only to a caller already holding the cookies its locale's front page sets.
+The two ranges still differ by a locale and a slug in one table, so it stays one adapter and not two.
+- **An investor's disclosure names its positions by identifier rather than by ticker, so where you read it decides whether you need a second service at all.**
+The filing gives a CUSIP — and a CINS instead wherever the issuer is foreign, which is a second identifier type to discover before a mapping service will answer — and mapping services cap requests per minute, so one investor with ninety positions is ten requests and a wait, on top of walking the filing index to find the table.
+A site that has already parsed the filings hands back the ticker, the class and the option type in one table, with the most recent quarter as its first row.
+Take that: the brief asks for the most recent report, not for the filing.
 - Where each publisher serves its file is **data**, not a literal in code — one entry per fund, with the host held once rather than repeated against each of them.
 It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
 - Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled.
@@ -125,13 +138,14 @@ A short list is the dangerous outcome, because nothing downstream can tell it ap
 - A `--help` that explains the tool without recourse to a README.
 - `catalogue` writing one name per line, so `symbols catalogue | grep ARK` answers "what can I expand that looks like this".
 
-**Where a good build should push back.** Two things, and both should end in the brief being followed.
-
-`write-entry-points` says to vary the form with the destination, the way `ls` prints columns at a terminal and one entry per line into a pipe, and the brief asks for the opposite — one form always, a flag to change it.
-The brief is right for this tool and the build should say why rather than either detecting quietly or arguing the point: output that changes with context is output a script cannot rely on, and the pretty form here is the rare case rather than the common one.
+**Where a good build should push back.** One thing, and it should end in the brief being followed.
 
 `-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
 Saying so and building it anyway is the right answer; refusing it is not, and neither is building it without noticing.
+
+The form-versus-destination question reads like a second one and is not.
+`write-entry-points` and the brief agree — fix the form, let an option change it, never let the destination decide — so a build presenting this as a disagreement has misread the skill rather than found one.
+`ls` is the exception that skill names, not the pattern it teaches, and it gets away with varying by destination only because both its forms are parseable where a bordered table is not.
 
 ## Verification
 
@@ -158,5 +172,9 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
 - **Registering the open source alongside the named ones**, so it either swallows every name before a real source is asked or contributes an empty list to `catalogue`.
 - **Reporting a failed request as an unknown name**, which turns somebody else's outage into a hunt for a typo that was never there.
+- **Subscripting a field the packaged record does not always carry**, so a `KeyError` escapes into the driver and two whole indices fail on a raw traceback instead of an error naming the collection.
+The seam an adapter closes is every library it touches, and a packaged dataset is one of them.
+- **A `try` in every parse**, where one decorator converts the same library failures for all of them.
+- **Sending a named fund to the general ETF source** because it answers, when its own issuer publishes the whole book and the general source publishes the top of it.
 - **Silently dropping an unmatched name**, which turns a typo into an empty report much later.
 The brief asks for an error, and an empty frame written to standard output is not one.
