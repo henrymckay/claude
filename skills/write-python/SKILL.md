@@ -288,6 +288,11 @@ The hierarchy above is what a library or an app with several failure modes grows
 **Handle a library's exceptions with a decorator, not a `try` in every function.**
 Where several functions convert the same library failures into the same error of yours, the `try`/`except`/`raise ... from` is identical in each and only the message differs.
 Lift it once.
+
+**The trigger is the repetition, not the message.**
+A function whose parameters are worth naming is the *best* case, not the entry condition, so a constant message still earns the decorator — a package of parsers each taking one `document` and each raising the same error of yours is exactly the duplication this removes, however little there is to interpolate.
+The tell that this was missed is a `try` at the top of every function in a layer, all catching the same types and all raising the same one.
+
 Format the message against the decorated function's **own parameters**, so it can name what the caller asked for without the function taking an argument its work never touches:
 
 ```python
@@ -339,6 +344,11 @@ def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
 `typing.Concatenate` is not needed: `P` carries the whole signature, so the wrapped function keeps its own and the message reads any parameter by name.
 The `[**P, T]` type parameters are PEP 695 syntax and need 3.12, which is the floor this skill assumes; below it, declare `P` and `T` as module-level `typing.ParamSpec`/`typing.TypeVar` instead.
 Take the signature once at decoration time — binding it per call is the only cost, and it is what lets the message name an argument the body never mentions.
+
+**The one case the decorator cannot take is a report type that varies by caller.**
+`report` is bound at decoration, so a function whose caller decides what a failure *means* — a 404 that is "no such thing" to one caller and "the publisher moved it" to every other — cannot express that through it.
+Write one shared private converter taking the report type as an argument, and call it from each entry point; that is still one place deciding, which is all the rule was ever asking for.
+Reach for this only where the meaning genuinely differs — a message that differs is the decorator's case, not this one.
 
 **Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
 `tenacity`'s `retry_error_cls` does translate on exhaustion, but the message it raises is a `repr` of a `Future`, and fixing that means subclassing `tenacity.RetryError` — coupling your domain error to the library the adapter exists to hide.
