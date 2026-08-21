@@ -20,6 +20,10 @@ An adapter that returns the dataset's records from one source and parsed rows fr
 
 **Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
+**A helper over a column takes the expression, not the column's name.**
+Typed against a name, the same rule cannot be run over a literal, over another expression's output, or inside a `when/then`, so the normalisation that matches a catalogue entry gets written a second time to match the name the caller typed.
+Take a `polars.Expr` and both are `.pipe()` over one function; leave the `.alias()` to the caller, so it can be used twice in one `select`.
+
 **Names are matched loosely but written back canonically.**
 Case, spacing and punctuation are all things a caller gets wrong and none of them tell one collection from another, so `sp-500`, `SP500` and `S&P 500` all reach the same index.
 An ETF ticker and an index name are both just names to the lookup, so one normalisation covers matching for both rather than each source inventing its own.
@@ -55,6 +59,15 @@ The adapter owns the *decision* and the core owns the *operation* — that ARK s
 
 What counts as *tradeable* is the core's call rather than the adapter's, so cash lines and their like are dropped by one rule in one place instead of once per source.
 The adapter is answerable for reading its file correctly; the core is answerable for what deserves to come back.
+
+**One parse is one chain, and the naming says which steps are the core's.**
+A parse that reads, reshapes and converts a library's failure in one `try` block reads as three statements naming two intermediates, and the reshape in the middle stops looking separable — which is how the same reshape ends up written once per adapter.
+Lift the conversion to a decorator and the parse is a single chain whose middle steps are plainly frame in, frame out, so the ones belonging to the core announce themselves.
+Every frame-to-frame step carries its `map_`/`amap_` prefix and is reached with `.pipe()`, including the last one: `symbols(map_keep_tradeable(holdings))` nests where it should pipe *and* drops the prefix, and each of those hides the other.
+
+**Names are spelled as words.**
+A package or module runs its words together for nobody's benefit — `granny_shots` and `market_cap`, not `grannyshots` and `companiesmarketcap` — and it is spelled from what the thing is *called* rather than from however its domain name ran it together.
+Take the shortest name that still identifies it, since the layer supplies the rest, and name an adapter for the source it actually reads rather than the institution the data came from: `info_13f` says which site breaks, where `sec` names a regulator the code never contacts.
 
 ## What the build earns
 
