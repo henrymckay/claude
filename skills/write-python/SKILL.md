@@ -103,8 +103,8 @@ Qualified names make it obvious where every name comes from and eliminate collis
 This is strict and applies to the standard library too:
 
 ```python
-import pathlib          # pathlib.Path(...)
-import dataclasses      # @dataclasses.dataclass
+import pathlib  # pathlib.Path(...)
+import dataclasses  # @dataclasses.dataclass
 import collections.abc  # def f(xs: collections.abc.Iterable[int]): ...
 ```
 
@@ -207,7 +207,11 @@ Naming it puts the answer in the line they are already reading.
 handle(polars.exceptions.PolarsError, error.HoldingsError, "Could not read {name}")
 
 # Right: the call itself says what each value is for.
-handle(polars.exceptions.PolarsError, report=error.HoldingsError, message="Could not read {name}")
+handle(
+    polars.exceptions.PolarsError,
+    report=error.HoldingsError,
+    message="Could not read {name}",
+)
 ```
 
 The exception is the **subject** — the thing the function acts on, which the function's own name has already announced.

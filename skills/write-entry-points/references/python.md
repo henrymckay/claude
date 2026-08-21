@@ -111,7 +111,9 @@ A command whose surface is one option per column of a report — a bound per cou
 Take the axes as arguments instead, so one factory serves the lot and the help panels fall out of it:
 
 ```python
-def minimum(count: domain.Count, timeframe: domain.Timeframe) -> typer.models.OptionInfo:
+def minimum(
+    count: domain.Count, timeframe: domain.Timeframe
+) -> typer.models.OptionInfo:
     """Return the option bounding one count on one timeframe from below."""
     return typer.Option(
         help=f"Keep rows whose {timeframe} {count} count is at least this.",
@@ -165,7 +167,9 @@ Read input the same way: type the argument `pathlib.Path` and treat `-` as stand
 Pass it a stderr console explicitly:
 
 ```python
-handlers=[rich.logging.RichHandler(console=rich.console.Console(stderr=True))]
+logging.basicConfig(
+    handlers=[rich.logging.RichHandler(console=rich.console.Console(stderr=True))]
+)
 ```
 
 The same applies to any error or prompt the driver prints: `typer.echo(message, err=True)`, or a second `Console(stderr=True)` held for the purpose.

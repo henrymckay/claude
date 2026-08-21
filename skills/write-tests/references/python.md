@@ -135,6 +135,7 @@ Pin a network-backed dependency through `httpx.MockTransport`, which answers fro
 ```python
 def test_when_raise_for_status_then_a_not_found_raises() -> None:
     """A 404 raises rather than handing back an empty body."""
+
     def refuse(request: httpx.Request) -> httpx.Response:
         """Answer every request the way a missing document does."""
         return httpx.Response(404)

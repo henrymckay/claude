@@ -10,6 +10,7 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
   ```python
   import dataclasses
 
+
   @dataclasses.dataclass(frozen=True, slots=True)
   class Point:
       """An immutable 2-D point."""
@@ -17,7 +18,9 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
       x: int
       y: int
 
-  p2 = dataclasses.replace(p, x=10)   # new value, original untouched
+
+  p = Point(x=1, y=2)
+  p2 = dataclasses.replace(p, x=10)  # new value, original untouched
   ```
 - **`typing.NamedTuple`** for lightweight immutable tuples with names.
 - Don't mutate arguments.
@@ -32,11 +35,13 @@ Model *product* types with frozen dataclasses (above) and *sum* types with a uni
 import dataclasses
 import math
 
+
 @dataclasses.dataclass(frozen=True)
 class Circle:
     """A circle, by radius."""
 
     radius: float
+
 
 @dataclasses.dataclass(frozen=True)
 class Square:
@@ -44,7 +49,9 @@ class Square:
 
     side: float
 
-Shape = Circle | Square   # sum type: a shape is exactly one variant
+
+Shape = Circle | Square  # sum type: a shape is exactly one variant
+
 
 def area(shape: Shape) -> float:
     """Return a shape's area."""
@@ -98,17 +105,20 @@ Prefer it to `functools.partial`: it auto-curries, works as a decorator, and com
 ```python
 import toolz
 
+
 @toolz.curry
 def get_many(source: Source, n: int) -> list[Item]:
     """Fetch n items from a source."""
     ...
 
+
 def take_one(items: list[Item]) -> Item:
     """Return the first item."""
     return items[0]
 
-get_pair = get_many(n=2)                            # curry: bind an argument
-get_one = toolz.compose(take_one, get_many(n=1))    # compose: chain steps
+
+get_pair = get_many(n=2)  # curry: bind an argument
+get_one = toolz.compose(take_one, get_many(n=1))  # compose: chain steps
 ```
 
 Keep compositions shallow enough to stay readable — the aim is expressive, reusable building blocks, not point-free cleverness for its own sake.
@@ -120,11 +130,12 @@ Other high-value `toolz` helpers: **`groupby(key, seq)`** (group into a dict of 
 Keep functions that compute/transform free of I/O; do the reading and writing at the call site:
 
 ```python
-def summarise(rows: list[Row]) -> Summary:   # pure — easy to test
+def summarise(rows: list[Row]) -> Summary:  # pure — easy to test
     """Reduce rows to a summary."""
     ...
 
-def main() -> None:                           # shell — does the I/O
+
+def main() -> None:  # shell — does the I/O
     """Load, summarise, and print the report."""
     rows = load(path)
     print(render(summarise(rows)))
@@ -139,6 +150,7 @@ Deterministic and pure under test (pass explicit values), convenient in normal u
 import collections.abc
 import os
 
+
 def build_config(env: collections.abc.Mapping[str, str] = os.environ) -> Config:
     """Build config, reading settings from the environment."""
     return Config(debug=env.get("DEBUG") == "1")
@@ -151,6 +163,7 @@ For a value that must be *re-read* each call — the clock, a fresh random — d
 
 ```python
 import datetime
+
 
 def stamp(now: datetime.datetime | None = None) -> str:
     """Return an ISO-8601 timestamp, defaulting to the current UTC time."""

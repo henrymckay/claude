@@ -11,6 +11,7 @@ Use `dataclasses` for objects that hold state — they generate `__init__`, `__r
 ```python
 import dataclasses
 
+
 @dataclasses.dataclass
 class Account:
     """A bank account."""
@@ -32,6 +33,7 @@ Prefer this for interfaces (interface segregation and dependency inversion) — 
   ```python
   import typing
 
+
   class Reader(typing.Protocol):
       """Anything that can be read as bytes."""
 
@@ -47,6 +49,7 @@ Expose a plain attribute, and upgrade to a `@property` only when you need comput
 
 ```python
 import math
+
 
 class Circle:
     """A circle."""
@@ -103,15 +106,18 @@ Concrete versions of the simpler forms listed in `SKILL.md`:
 import functools
 import typing
 
+
 # Strategy / Command → a function parameter
 def process(data: list[int], strategy: typing.Callable[[list[int]], int]) -> int:
     """Apply a pluggable strategy to the data."""
     return strategy(data)
 
+
 # Factory → a function
 def make_client(env: str) -> Client:
     """Build the client for an environment."""
     return {"prod": ProdClient, "dev": DevClient}[env]()
+
 
 # Singleton → a module (imported once), or a cached factory
 @functools.cache

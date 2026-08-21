@@ -62,7 +62,9 @@ def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
 
 
 # Right: the given arrives as a parameter and the then is a named, reusable claim.
-def test_when_keep_valid_then_non_positive_rows_dropped(raw_sales: polars.DataFrame) -> None:
+def test_when_keep_valid_then_non_positive_rows_dropped(
+    raw_sales: polars.DataFrame,
+) -> None:
     """Every kept row is positive."""
     kept = keep_valid(raw_sales)
     then_every_row_is_positive(kept)
