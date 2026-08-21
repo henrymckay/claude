@@ -84,10 +84,11 @@ Tests bound to implementation break on every refactor and stop being a safety ne
 Lean hardest on the **pure functional core** (see `be-functional`): it holds the logic and the bugs, and it is cheap to test because it is deterministic and needs no setup.
 Keep the imperative shell thin so little is left that needs slow integration tests — the **humble object** pattern.
 
-**The other thing worth its own cases is the adapter's *judgement*, which is not core and is not the library's either.**
-Reading a document correctly is the library's job and rarely wrong twice; deciding *which field is the answer* is the adapter's, and it is a claim about a source that no core test covers and no dependency test touches — which of several symbols is the home listing, which column marks a row as cash, what an absent field means.
-Test it against a saved response, with no stub for the fetch: that is what the getting/parsing split exists for (see `structure-python`), and reaching the parse function directly is the intended surface rather than a breach of the rule above.
-Cover the case the judgement was written for **and** the case it was not — a record carrying the field and a record missing it — since the second is where the source surprises you and the first is where you convince yourself it cannot.
+**The adapter's *judgement* earns its own cases, being neither core nor the library's.**
+Reading a document is the library's job; deciding *which field is the answer* is a claim about a source, and no core or dependency test covers it.
+Which of several symbols is the home listing, which column marks a row as cash, what an absent field means — pin each against a saved response, no stub for the fetch.
+Reaching the parse function directly is what the getting/parsing split is for (see `structure-python`), not a breach of the rule above.
+Cover the case it was written for **and** the case it was not: a record missing the field is where a source surprises you.
 
 This is also why you **mock sparingly**.
 Prefer real objects and dependency injection to mocks: a mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
@@ -164,13 +165,12 @@ Chasing a number produces assertion-free tests that execute code without checkin
 Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
 Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
 
-**A recorded response proves the parse, not the source — so exercise the real surface once before calling a build done.**
-A fixture answers "does this code read that document", which is the question worth asking on every change.
-It cannot answer whether the address still serves it, whether every input the tool *claims* to serve resolves, or whether one of them comes back empty — and those fail in the field while the suite stays green, because the recorded document is by definition one that worked.
-So run the whole declared surface once against the real thing — every name in the catalogue, every command in the help — and **read the counts, not the exit code**: a run that returns zero rows for one input has passed every check a program can make on itself.
-Keep it as a marked test excluded from the default run, or a documented command; either way it belongs in the repo rather than in the memory of whoever last ran it.
-
-The failure this catches is the one nothing else does: not a wrong answer, but a whole input silently answering nothing.
+**A recorded response proves the parse, not the source, so run the real surface once before calling a build done.**
+A fixture cannot say whether the address still serves it, whether every input the tool *claims* to serve resolves, or whether one comes back empty.
+The recorded document is, by definition, one that worked.
+So exercise the whole declared surface against the real thing and **read the counts, not the exit code**.
+An input returning zero rows has passed every check a program can make on itself.
+Keep it as a marked test outside the default run, or a documented command, so it lives in the repo rather than someone's memory.
 
 ## Paradigms
 

@@ -200,8 +200,8 @@ A package that *performs* an action — a behavioural or pipeline layer — take
 
 **Spell a package or module as words, separated by underscores — never run together.**
 `granny_shots`, not `grannyshots`; `market_cap`, not `marketcap`.
-This overrides PEP 8, which allows underscores in a module name and discourages them in a package name; that split is not worth keeping, because a name is read far more often than it is typed and the underscore costs one character where running the words together costs a parse every time.
-Spell it from the words the thing is *called*, not from however a domain name or a logo ran them together — `granny_shots` though the site is `grannyshots.com`, and `vaneck` because the firm spells its own name as one word.
+This overrides PEP 8, which allows the underscore in a module name and discourages it in a package name — a split not worth keeping, since a name is read far more often than typed and running the words together costs a parse every time to save one character.
+Spell it from what the thing is *called*, not from however a domain name ran the words together: `granny_shots` though the site is `grannyshots.com`, and `vaneck` because the firm spells its own name as one word.
 
 **Take the shortest name that still identifies it, since the package around it supplies the rest.**
 A source of market-capitalisation rankings inside `adapt/` is `market_cap`, not `companies_market_cap`: the layer has already said it is a source, and nothing else in there is about market capitalisation.
@@ -209,7 +209,7 @@ This is the namespace rule above applied one level up — the qualifier carries 
 
 **Name an adapter for what it actually reads, not for whose data it is.**
 An adapter fetching an aggregator's already-parsed filings is `info_13f`, not `sec`.
-The regulator is where the data originates; the site is what you open when the parse breaks, what the reference table addresses, and what changes under you without warning — so it is the one a reader needs the name to point at.
+The regulator is where the data originates; the site is what breaks, what the reference table addresses and what changes under you, so it is the one the name has to point at.
 
 ## Arguments
 
@@ -303,8 +303,8 @@ Where several functions convert the same library failures into the same error of
 Lift it once.
 
 **The trigger is the repetition, not the message.**
-A function whose parameters are worth naming is the *best* case, not the entry condition, so a constant message still earns the decorator — a package of parsers each taking one `document` and each raising the same error of yours is exactly the duplication this removes, however little there is to interpolate.
-The tell that this was missed is a `try` at the top of every function in a layer, all catching the same types and all raising the same one.
+Parameters worth naming are the *best* case, not the entry condition, so a constant message still earns the decorator — a layer of parsers each taking one `document` and raising the same error of yours is the duplication this removes, however little there is to interpolate.
+The tell that it was missed is a `try` at the top of every function in a layer, all catching the same types and raising the same one.
 
 Format the message against the decorated function's **own parameters**, so it can name what the caller asked for without the function taking an argument its work never touches:
 
@@ -360,8 +360,8 @@ Take the signature once at decoration time — binding it per call is the only c
 
 **The one case the decorator cannot take is a report type that varies by caller.**
 `report` is bound at decoration, so a function whose caller decides what a failure *means* — a 404 that is "no such thing" to one caller and "the publisher moved it" to every other — cannot express that through it.
-Write one shared private converter taking the report type as an argument, and call it from each entry point; that is still one place deciding, which is all the rule was ever asking for.
-Reach for this only where the meaning genuinely differs — a message that differs is the decorator's case, not this one.
+Write one shared private converter taking the report type as an argument and call it from each entry point, which is still the one place deciding that the rule was asking for.
+Reach for it only where the meaning genuinely differs; a message that differs is the decorator's case, not this one.
 
 **Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
 `tenacity`'s `retry_error_cls` does translate on exhaustion, but the message it raises is a `repr` of a `Future`, and fixing that means subclassing `tenacity.RetryError` — coupling your domain error to the library the adapter exists to hide.

@@ -66,13 +66,12 @@ revenue = (
 ```
 
 **Write one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
-
-**A chain whose first step is a function rather than a method is still a chain.**
-`polars.concat(...)`, `polars.read_csv(...)` and `Series.to_frame()` all return a frame, so what follows them chains off it — but because the line opens with a call rather than a name, nothing about it *looks* like a pipeline, and the result gets bound to a variable that is then used exactly once.
-That is where the intermediates come from in practice: not from someone deciding to name a step, but from a chain that never announced itself.
-The check is `write-python`'s — a local used once is an inlined expression — and it applies to the frame the reader built as much as to any other.
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelises expressions within one context.
+
+**A chain whose first step is a function rather than a method is still a chain.**
+`polars.concat(...)`, `polars.read_csv(...)` and `Series.to_frame()` each return a frame, so what follows chains off it — but the line opens with a call rather than a name, nothing about it *looks* like a pipeline, and the result gets bound to a variable used exactly once.
+That is where intermediates come from in practice: not a decision to name a step, but a chain that never announced itself.
 
 **Give a windowed step its own column before the next step windows it.** `.over()` does **not** compose: chaining a second `.over()` onto an expression that has already been windowed silently discards the inner partition and evaluates the whole expression inside the outer one.
 There is no error and the result looks plausible — it is simply wrong, which makes this the most expensive trap in the API.
@@ -131,9 +130,9 @@ Assign the result.
 - **`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
 
 **Declare a dtype where the data can be empty, and nowhere else.**
-On a non-empty list `polars` infers the type correctly and the declaration is noise — a shipped constant, a literal, anything you can see the values of.
-On an **empty** list, or a column whose every value is `None`, it infers `Null`, and `Null` is not a String that happens to be empty: `concat` raises `SchemaError` against a real column, a join on that key raises, and every `.str` method raises.
-So the frames that need the declaration are exactly the ones whose contents you did not choose — an adapter's output, a filtered result, anything built from a response — and the failure never shows up in the test that had rows.
+On a non-empty list `polars` infers the type correctly and the declaration is noise.
+On an **empty** list, or a column of every-`None`, it infers `Null` — which is not an empty String: `concat` against a real column raises `SchemaError`, as does a join on that key and every `.str` method.
+So declare it exactly where you did not choose the contents — an adapter's output, a filtered result, anything built from a response — since the test that had rows never sees this.
 
 **Build a one-column frame from a `Series`, not a dict and a schema.**
 `polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
@@ -159,9 +158,9 @@ result = (
 
 For data bigger than memory, use the streaming engine: `.collect(engine="streaming")` (the older `.collect(streaming=True)` is deprecated).
 
-**Lazy is also how you read the top of a file whose bottom is broken.** `read_csv` parses the whole document in parallel chunks before it hands anything back, so a stray quotation mark thousands of rows below the part you want kills the read outright — and `n_rows` does not save you, because the chunks are already being parsed when the row limit applies.
-`scan_csv(...).head(n).collect()` stops at `n`, so a published file that is sound where it is ranked and ragged where it is not still reads.
-This is the one case where lazy is not about size or optimisation but about **not looking at data you never asked for**, and it applies to any source you do not control.
+**Lazy is also how you read the top of a file whose bottom is broken.** `read_csv` parses the whole document in parallel chunks before returning, so a stray quotation mark thousands of rows below what you want kills the read — and `n_rows` does not save you, since the chunks are parsing already.
+`scan_csv(...).head(n).collect()` stops at `n`.
+Here lazy is about **not looking at data you never asked for** rather than about size, which makes it the default for any source you do not control.
 
 Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materialising the whole frame.
 
@@ -306,9 +305,9 @@ A domain name says what a step is *about*; the prefix says what it does to the f
 So a transform written to sit in a chain is `map_keep_tradeable` from the start, and the domain name stays in the rest of it — the prefix is added to the name, not swapped for it.
 
 **Every frame-to-frame function takes a prefix, whether or not today's caller pipes it.**
-"Written to sit in a chain" is not something to judge per function: a frame in and a frame out *is* a pipe step, and a caller that nests it instead is the thing to fix.
-The two mistakes arrive together and each hides the other — `symbols(map_keep_tradeable(holdings))` reads as though `symbols` were a different kind of thing, so nothing prompts the prefix, and the missing prefix in turn makes the nesting look normal.
-Write `holdings.pipe(map_keep_tradeable).pipe(map_gather_symbols)` and both are fixed at once.
+"Written to sit in a chain" is not a judgement to make per function: a frame in and a frame out *is* a pipe step, and a caller nesting it is the thing to fix.
+The two mistakes hide each other — `symbols(map_keep_tradeable(holdings))` reads as though `symbols` were a different kind of thing, so nothing prompts the prefix, and the missing prefix makes the nesting look normal.
+`holdings.pipe(map_keep_tradeable).pipe(map_gather_symbols)` fixes both at once.
 
 So reach for `.pipe()` rather than nesting the calls.
 Three transforms wrapped around one another read inside-out and put the last step first; the same three piped read in the order they run, and the prefixes let you see which of them can branch on the data before you open any of them.
@@ -319,12 +318,12 @@ So reach for `bind_` only when the logic genuinely must see the data; prefer `ma
 
 ## Pipe an expression, not just a frame
 
-`.pipe()` is on `polars.Expr` as well as on the frame, so a helper that takes an expression and returns one is reached the same way — `polars.col("name").pipe(normalise)` — and drops into a `select`, a `with_columns` or a `filter` without being unwrapped.
+`.pipe()` is on `polars.Expr` as well as on the frame, so a helper taking an expression and returning one is reached the same way — `polars.col("name").pipe(normalise)` — and drops into a `select`, a `with_columns` or a `filter` unchanged.
 
 **Take a `polars.Expr`, never a column name.**
-A helper typed `normalise(column: str)` can only ever run against a column that already exists under a name you know, so the same rule cannot be applied to a literal, to the output of another expression, or inside a `when/then` — and the second caller writes it again.
-Take the expression and it composes with all of them: `polars.lit(typed).pipe(normalise)` puts a scalar through the identical code that normalises the column, which is exactly the duplication the string parameter was creating.
-Leave the `.alias()` to the caller for the same reason, since a helper that names its own output cannot be used twice in one `select`.
+Typed `normalise(column: str)`, a helper only ever runs against a column already existing under a name you know, so the same rule cannot reach a literal, another expression's output, or a `when/then` — and the second caller writes it again.
+`polars.lit(typed).pipe(normalise)` puts a scalar through the identical code that normalises the column, which is exactly the duplication the string parameter created.
+Leave the `.alias()` to the caller for the same reason: a helper naming its own output cannot be used twice in one `select`.
 
 **Where a helper needs a second expression, pass it through the pipe rather than calling the function.**
 
@@ -337,7 +336,7 @@ polars.col("ticker").pipe(spell_symbol, polars.col("suffix"))
 ```
 
 The prefix vocabulary above is for **frame** steps only.
-An expression helper is named by `write-python`'s verb rules alone and carries no `map_`, because what it does to a frame is not a question that has an answer.
+An expression helper carries no `map_` — what it does to a frame is not a question with an answer — so `write-python`'s verb rules name it alone.
 
 ## Pass extra data through `.pipe()`
 

@@ -120,17 +120,15 @@ That rules out naming implementations for what distinguishes them — no `fetch_
 Put the distinction in the module name, where `pytickersymbols_` already says the data ships with the package.
 
 **Split the port the moment one adapter can only answer half of it.**
-Bundling two calls into one protocol is right while every adapter has both to give, and wrong the moment one of them is *open* — a source that will answer for anything cannot enumerate what it offers, a store that only writes cannot be read, a live feed cannot be replayed.
-The forced answer is always the same shape: an empty frame, a `None`, a `NotImplementedError`, and each is the adapter lying to satisfy a signature.
-Where that lie is then *consumed* it stops being cosmetic — an empty catalogue concatenates into the real one and the command listing it prints nothing for that source, which reads as "it offers none" rather than "it was never the kind of thing that offers".
-
-So make the two calls two ports, and let the composition root hand each operation only the one it needs.
-The open adapter satisfies one port and simply is not a member of the other, which the type checker now enforces instead of a convention.
+Bundling two calls into one protocol is right while every adapter has both to give, and wrong once one of them is *open* — a source answering for anything cannot enumerate what it offers, a write-only store cannot be read, a live feed cannot be replayed.
+The forced answer is always an empty frame, a `None` or a `NotImplementedError`, each of them the adapter lying to satisfy a signature.
+The lie stops being cosmetic where something *consumes* it: an empty catalogue concatenates into the real one, and the command listing it prints nothing for that source — read as "offers none" rather than "was never that kind of thing".
+So make the two calls two ports and let the composition root hand each operation the one it needs, leaving the open adapter a member of one and not the other, which the type checker enforces where a convention would not.
 
 **An open source is a fallback, not another member of the set.**
-Where one adapter will answer for *any* input, it cannot sit in the same mapping as the ones that know their own names: it either claims every name before a real source is consulted, or it is consulted last anyway — and if it is consulted last, the mapping was never what decided.
-Make the ordering explicit — resolve against the sources that state their names, and reach for the open one only where none of them claimed it — so the fallback is a step in the operation rather than an entry the lookup has to be taught to skip.
-It also splits the failures properly: the open source is the only thing that can say a name is *unknown*, since it is the only one that was asked to try.
+An adapter answering for *any* input cannot sit in the mapping beside the ones that know their own names: it either claims every name before a real source is consulted, or it is consulted last anyway — and if last, the mapping never decided.
+Make the ordering explicit, resolving against the sources that state their names and reaching for the open one only where none claimed it, so the fallback is a step in the operation rather than an entry the lookup is taught to skip.
+It splits the failures properly too: only the open source can call a name *unknown*, being the only one asked to try.
 
 **Route on a name the source states, not a position it was given.**
 Where the core picks between several adapters at runtime, the key belongs to the adapter — put it in the record and carry it in the data.
@@ -182,9 +180,9 @@ Leave it in the adapters and three of them grow three versions of one reshape, n
 What stays in the adapter is the *decision*, not the operation: that ARK spells a ticker the Bloomberg way is knowledge about ARK, and moving it inward teaches the core about publishers.
 
 **A `try` wrapped round the chain is what hides the pure part.**
-Fusing the read, the reshape and the conversion of the library's failure into one block makes the reshape read as part of the IO, so it is never offered to the core and the next adapter meeting the same format writes it again.
-Lift the exception handling into a decorator (see `write-python`) and what is left is a single chain whose middle steps are plainly frame in, frame out — at which point moving them inward is obvious rather than a judgement.
-That is the practical reason the decorator matters: it is not only less repetition, it is what lets a parse stay one chain instead of a block of statements that has to name an intermediate at every step.
+Fusing the read, the reshape and the conversion of the library's failure into one block makes the reshape read as part of the IO, so it is never offered to the core and the next adapter meeting that format writes it again.
+Lift the handling into a decorator (see `write-python`) and what is left is one chain whose middle steps are plainly frame in, frame out — at which point moving them inward is obvious rather than a judgement.
+That is the decorator's second reason to exist: it is what keeps a parse one chain instead of statements naming an intermediate at every step.
 So the adapter chooses which transforms to apply and with what arguments, and the core owns the transforms themselves.
 
 **One reader per wire format, shared by every adapter that meets it.**
@@ -206,8 +204,8 @@ Three refusals arrive looking like your own bug, so recognise them rather than r
 
 - **A burst is throttled, not refused.** Ask for a document too many times in a row and the service starts answering `200` with the *page* instead of the file — the same request that worked eleven times now returns HTML, and nothing in the response says why.
 The tell is a failure that follows the request *count* rather than the request, so change one thing: retry the same call after a pause and see whether it comes back.
-- **A rate is stated somewhere you have not read.** `robots.txt` may carry a `Crawl-delay`, and an API may cap requests per minute and answer `429` past it — which is worth retrying, but on a wait long enough to outlast the window rather than the few seconds a transient error deserves.
-Read the terms before tuning the backoff, or the retry exhausts inside the very window it is waiting out.
+- **A rate is stated somewhere you have not read.** `robots.txt` may carry a `Crawl-delay`, and an API may cap requests per minute and answer `429` past it — worth retrying, but on a wait long enough to outlast the window rather than the seconds a transient error deserves.
+Read the terms before tuning the backoff, or the retry exhausts inside the window it is waiting out.
 - **A document is served only to a caller who already has the cookies.** A first request redirects to a consent or region page and the second, carrying what that page set, gets the file.
 So retrieval takes an optional page to *visit first*, and it belongs in the HTTP module beside the timeout and the user agent — not in the adapter, which knows only which page.
 

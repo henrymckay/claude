@@ -19,14 +19,14 @@ Reducing each collection to symbols and merging the results afterwards deduplica
 An adapter that returns the dataset's records from one source and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
 
 **Declare a dtype where the contents were not chosen, and nowhere else.**
-An empty list infers `Null` rather than an empty `String`, and `Null` then raises against a real column on `concat`, on a join key and on every `.str` call — so an adapter's output needs the declaration and a shipped constant does not.
-The test that had rows never sees it.
+An empty list infers `Null` rather than an empty `String`, and `Null` raises against a real column on `concat`, on a join key and on every `.str` call, so an adapter's output needs the declaration where a shipped constant does not.
+The test that had rows never sees this.
 
 **Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
 **A helper over a column takes the expression, not the column's name.**
-Typed against a name, the same rule cannot be run over a literal, over another expression's output, or inside a `when/then`, so the normalisation that matches a catalogue entry gets written a second time to match the name the caller typed.
-Take a `polars.Expr` and both are `.pipe()` over one function; leave the `.alias()` to the caller, so it can be used twice in one `select`.
+Typed against a name, the same rule cannot reach a literal, another expression's output or a `when/then`, so the normalisation matching a catalogue entry gets written again to match the name the caller typed.
+Take a `polars.Expr` and both are one `.pipe()` over one function; leave the `.alias()` to the caller, so it serves twice in one `select`.
 
 **Names are matched loosely but written back canonically.**
 Case, spacing and punctuation are all things a caller gets wrong and none of them tell one collection from another, so `sp-500`, `SP500` and `S&P 500` all reach the same index.
@@ -35,7 +35,7 @@ The canonical spelling is what `catalogue` prints, a ticker in capitals and an i
 
 **A stock's home listing is a judgement the adapter makes.** The dataset gives several Yahoo symbols per stock, one per exchange, and its own bare `symbol` field *is* the home one — right even where it does not appear among the listings, as it does not for 12 of the FTSE 100.
 So take it, and fall back to the first listing only where it is absent.
-That fallback is small and the field's absence is not: fifty constituents carry no bare symbol and only three of them list anywhere else, but on those rows the field is *missing* rather than empty, so a build that subscripts it directly does not lose three constituents — it fails two whole indices on a raw `KeyError`.
+That fallback is small and the field's absence is not: fifty constituents carry no bare symbol and only three list anywhere else, but on those rows the field is *missing* rather than empty, so subscripting it directly does not lose three constituents — it fails two whole indices on a raw `KeyError`.
 Checking it against the listings first changes no value and costs a pass; falling back while it exists returns a Frankfurt or US line for Barratt Redrow, ICG and Rio Tinto.
 Keep the rule in the adapter — it is a fact about the data source, not about the domain.
 
@@ -65,13 +65,13 @@ What counts as *tradeable* is the core's call rather than the adapter's, so cash
 The adapter is answerable for reading its file correctly; the core is answerable for what deserves to come back.
 
 **One parse is one chain, and the naming says which steps are the core's.**
-A parse that reads, reshapes and converts a library's failure in one `try` block reads as three statements naming two intermediates, and the reshape in the middle stops looking separable — which is how the same reshape ends up written once per adapter.
+Reading, reshaping and converting a library's failure inside one `try` reads as three statements naming two intermediates, and the reshape in the middle stops looking separable — which is how it ends up written once per adapter.
 Lift the conversion to a decorator and the parse is a single chain whose middle steps are plainly frame in, frame out, so the ones belonging to the core announce themselves.
-Every frame-to-frame step carries its `map_`/`amap_` prefix and is reached with `.pipe()`, including the last one: `symbols(map_keep_tradeable(holdings))` nests where it should pipe *and* drops the prefix, and each of those hides the other.
+Every frame-to-frame step carries its `map_`/`amap_` prefix and is reached with `.pipe()`, the last one included: `symbols(map_keep_tradeable(holdings))` nests where it should pipe *and* drops the prefix, each hiding the other.
 
 **Names are spelled as words.**
-A package or module runs its words together for nobody's benefit — `granny_shots` and `market_cap`, not `grannyshots` and `companiesmarketcap` — and it is spelled from what the thing is *called* rather than from however its domain name ran it together.
-Take the shortest name that still identifies it, since the layer supplies the rest, and name an adapter for the source it actually reads rather than the institution the data came from: `info_13f` says which site breaks, where `sec` names a regulator the code never contacts.
+`granny_shots` and `market_cap`, not `grannyshots` and `companiesmarketcap`, spelled from what the thing is *called* rather than from however its domain name ran it together.
+Take the shortest name that still identifies it, since the layer supplies the rest, and name an adapter for the source it reads rather than whose data it is: `info_13f` says which site breaks, where `sec` names a regulator the code never contacts.
 
 ## What the build earns
 
@@ -98,8 +98,8 @@ The brief names the collections and leaves finding them to the build, so the fir
 
 - `httpx` is the pick over `requests`.
 - Say who you are, and expect to be refused unevenly where you do not.
-A tool name, a version and an address a publisher could reply to is the honest default and is what these publishers accept; `www.sec.gov` refuses any user agent carrying no address, and some CDN-fronted services refuse anything that is not a browser string.
-Which is which is found by trying, so what matters is that the header is set deliberately rather than that any one string is right — a build that never sets one works against some publishers and not others, which is worse than failing everywhere because it looks like it works.
+A tool name, a version and an address a publisher could reply to is the honest default and what these publishers accept; `www.sec.gov` refuses any user agent carrying no address, and some CDN-fronted services refuse anything that is not a browser string.
+Which is which is found by trying, so what matters is setting the header deliberately rather than any one string being right — never setting one works against some publishers and not others, which is worse than failing everywhere because it looks like it works.
 - Set a timeout.
 A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - Retry the transient and only the transient.
@@ -110,7 +110,7 @@ Retrying belongs to the fetch alone, so a parse that fails is never attempted tw
 One failure failing the whole run means the odds of a wasted run climb with every name asked for, so a single transient refusal somewhere among fifty collections would otherwise be enough to lose all of them.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - One conversion of a library's failures, not one per parse.
-Every adapter turns the same handful of library exceptions into the same error of yours and differs only in the message, so the `try`/`except`/`raise ... from` is written once as a decorator and applied — not copied into each parse.
+Every adapter turns the same exceptions into the same error of yours and differs only in the message, so the `try`/`except`/`raise ... from` is written once as a decorator and applied.
 A build with a `try` in every parse has the right behaviour and has hand-written, five times over, the abstraction its skills already gave it.
 - Split getting the document from making sense of it.
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
@@ -118,12 +118,12 @@ Apart, a saved response tests the parse with no stub for the fetch.
 - The open ETF source is a third party rather than an issuer, since no issuer publishes anybody else's funds.
 `stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter, and a build that reaches for each issuer in turn can serve the forty-eight named funds and still has nothing to answer `TAN` with.
 - **A named fund still goes to its issuer, and the third party answers for everything else.**
-The general source publishes a fund's largest holdings and stops — twenty-two for `GDX.L`, where VanEck's own file lists fifty-eight — so routing the named funds through it would trade most of the answer for a smaller adapter.
-That is what makes an issuer worth its price, and for VanEck the price is real: a workbook rather than a CSV, and a document served only to a caller already holding the cookies its locale's front page sets.
-The two ranges still differ by a locale and a slug in one table, so it stays one adapter and not two.
+The general source publishes a fund's largest holdings and stops — twenty-two for `GDX.L`, where VanEck's own file lists fifty-eight — so routing the named funds through it trades most of the answer for a smaller adapter.
+That is what makes an issuer worth its price, and VanEck's is real: a workbook rather than a CSV, served only to a caller already holding the cookies its locale's front page sets.
+The two ranges still differ by a locale and a slug in one table, so it stays one adapter.
 - **An investor's disclosure names its positions by identifier rather than by ticker, so where you read it decides whether you need a second service at all.**
-The filing gives a CUSIP — and a CINS instead wherever the issuer is foreign, which is a second identifier type to discover before a mapping service will answer — and mapping services cap requests per minute, so one investor with ninety positions is ten requests and a wait, on top of walking the filing index to find the table.
-A site that has already parsed the filings hands back the ticker, the class and the option type in one table, with the most recent quarter as its first row.
+The filing gives a CUSIP, and a CINS wherever the issuer is foreign — a second identifier type to discover before a mapping service answers at all — and those services cap requests per minute, so ninety positions is ten requests and a wait on top of walking the filing index.
+A site that has already parsed the filings hands back the ticker, the class and the option type in one table, most recent quarter first.
 Take that: the brief asks for the most recent report, not for the filing.
 - Where each publisher serves its file is **data**, not a literal in code — one entry per fund, with the host held once rather than repeated against each of them.
 It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
@@ -169,8 +169,8 @@ The form-versus-destination question reads like a second one and is not.
 This is where the test suite is founded, and the next two builds inherit whatever shape it takes, so it carries more weight than the amount of code under test suggests.
 
 - The suite lives apart from the source, with its own directory for the cases, its shared helpers and any data files it loads.
-- A recorded response proves the parse and not the source, so the build is not done until the whole declared surface has been run once against the real thing and the **counts** read.
-Seventy-three catalogued names is seventy-three expansions, and the one that returns nothing has passed every check the program can make on itself — which is exactly how a packaged index with no symbols in it ships.
+- A recorded response proves the parse and not the source, so the build is not done until the declared surface has been run once against the real thing and the **counts** read.
+Seventy-three catalogued names is seventy-three expansions, and the one returning nothing has passed every check the program can make on itself — which is how a packaged index with no symbols in it ships.
 - Tests of a dependency's own behaviour sit a level apart from tests of your code, because they fail for a different reason and on somebody else's schedule.
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.

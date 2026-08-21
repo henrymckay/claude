@@ -28,7 +28,7 @@ That makes a moment's flakiness expensive, so do not give up on the first refusa
 A request that times out, is refused, or comes back complaining about the far end is worth trying again shortly.
 A refusal that tells me the thing does not exist is a real answer, and I want that one straight away rather than after a wait.
 
-Some of these places will not answer at all unless a caller leaves them a way to reply to it.
+Some of these places will not answer unless a caller leaves them a way to reply to it.
 Let me set that address myself rather than shipping one inside the tool, since it is mine to give and mine to change.
 
 ## Funds
@@ -117,7 +117,8 @@ Everything this brief names belongs in it, the packaged indices and the funds an
 It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
 Every name in it has to expand, and expand to something.
-A name I can read in `catalogue` and cannot use is worse than one you never offered me, so check them all before you tell me it is done — I care what each one gives back, not that the command exited cleanly.
+A name I can read in `catalogue` and cannot use is worse than one you never offered me, so check them all before you tell me it is done.
+I care what each gives back, not that the command exited cleanly.
 
 ## Options
 
