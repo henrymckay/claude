@@ -51,6 +51,8 @@ Write it in **plain prose, no backticks** (see `write-markdown`), in a fixed ord
 - **What it is** — a short phrase naming the skill and its key topics; counterpart skills use a **parallel** form ("Functional programming done well — …" / "Object-oriented design done well — …").
 - **When to use it** — "Use when/whenever …", then the contexts and phrases that should invoke it, ending with the casual ones ("even if the user just says '…'").
 Cover the whole body and promise nothing it doesn't deliver.
+- **What it targets, where a version matters** — one sentence naming the version the advice is written against, "Targets Python 3.11+." or "Targets Polars 1.x.", so a reader knows which API's spelling to expect.
+Leave it out where the guidance is version-free.
 - **Opt-in-ness, in fixed words** — an opt-in style skill states, verbatim and matching its body line, "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 A how-to that always applies when its task arises makes no opt-in claim.
 - **The reference pointer, in fixed words** — a language-agnostic skill with a language reference states "Language-agnostic principles here; Python <idioms/build-outs/…> in references/python.md.", matching its `Language specifics` section.
@@ -59,12 +61,14 @@ A topic-split skill states "Detailed cookbooks live in references/." instead, ma
 
 ## Open consistently
 
-Every skill opens the same three-part way:
+Every skill opens with the same four parts, in this order:
 
 - **A line or two placing the skill in the web** — what it is, then the skills it **builds on** and the skills it **builds to**.
   - *Builds on* — the ones it layers on or assumes as a base: `write-entry-points` "layers on `structure-python` and `be-functional`"; `write-tests` "follows the same conventions as the code it covers — in Python that's `write-python`".
   - *Builds to* — where it hands an adjacent concern off: "for scaffolding, see `setup-python`"; "the concrete wiring lives in `write-entry-points`".
   - Bare backticked names, and name the same build-on and build-to skills the description does, so a reader can follow the thread in either direction.
+- **The failure modes** — two or three mistakes that account for most of what goes wrong, so a reader knows what to watch for before reaching the detail.
+Take them from what a real run got wrong rather than from what sounds plausible; a mistake nobody has made costs a reader the attention the ones they will make needed.
 - **The language pointer**, only if it has a language reference — a standalone bold line: `**Language-agnostic here.** The Python specifics live in references/python.md.`
 - **The caveat**, one of two fixed sentences:
   - *Applied to existing code* → `**In an existing project, ask first.** Where a repo already has …, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.`
@@ -87,8 +91,10 @@ Where nothing observable turns on it, the rule is a preference: label it one, so
 Keep *prefer* for a genuine trade-off, and state its exception in the same breath ("reserve mocks for genuine boundaries").
 If every rule hedges, nothing marks which ones bend, and a reader breaks the absolutes at the same rate as the defaults.
 - **Give a load-bearing rule its own line.** Folding trivia into a catalogue is right, but a rule the skill exists to enforce should never be the last sentence of a long paragraph — that is precisely where it gets read past.
-- **Name the failure modes in the opening.** Two or three mistakes that account for most of what goes wrong, so a reader knows what to watch for before reaching the detail.
+- **Keep a cross-reference pointing at what still says it.** A section named in prose — "the Avoid section rules that out", "see Public API" — goes stale the moment the rule moves or is reworded, and the reader who follows it finds nothing and cannot tell whether the rule was dropped or just moved.
+So when you move or reword a rule, grep the skill for its section name and for the rule's own words, and do the same across the skills that point at it.
 - **Show the anti-pattern for the rule most often broken.** A compact wrong/right pair lands what prose alone does not; one per skill is usually enough.
+Make it a fenced pair where the skill is tied to a language, and a named wrong/right in prose where it isn't — a language-agnostic skill that reaches for Python to make its point has quietly become a Python skill, and the next language's reader has to translate the rule before they can apply it.
 
 ## Split the principle from the language
 
@@ -99,6 +105,8 @@ Keep the pair consistent:
 - **The reference** opens with the H1 `<skill H1> in Python` and the line "The language-agnostic principles are in `SKILL.md`; this is how they land in Python[ with `<framework>`]."
 - **Headings mirror** the skill wherever a topic appears in both; reference-only mechanics (framework wiring, assertions) take their own names.
 - **Lead with the structural section** — the package or directory tree everything else hangs off — and **close with `Run`**, the sections between ordered by dependency.
+That is the shape of a reference that *builds something out*, which most are.
+A reference for a **style** has no tree to lead with and nothing to run, so it orders by dependency alone — don't invent a tree or a `Run` section to satisfy the rule.
 - **The skill states each principle; the reference shows the mechanics** for it — never restating the principle.
 
 A skill already tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks (`use-polars`'s `expressions.md`), each opening with its own H1 and scope line, a closing `## Reference cookbooks` section in place of `Language specifics`, and the cookbook description pointer above in place of the language one.
