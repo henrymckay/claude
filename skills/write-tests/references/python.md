@@ -21,13 +21,12 @@ tests/
       test_httpx.py
 ```
 
-- Three folders, three jobs: `data/` (files a fixture loads), `pytest_/` (imported helpers), `suite/` (the tests `pytest` collects).
-Under `suite/`, your code is mirrored in `suite/<package>/` and dependency-behaviour tests sit in `suite/packages/`.
-- `pytest_/` is the one **package** (`__init__.py`) — it holds *imported* code: `given`, `then`, a `when` where actions earn naming, and a `reference` where a property test needs an oracle to agree with.
-Only `given` is loaded as a plugin (`-p pytest_.given`, naming the module that *holds* the fixtures — `-p pytest_` would load the empty `__init__` and register nothing); `then` and `when` are imported by the tests.
-The `suite/` folders are **not** packages, because `importlib` collects them by path, so they need no `__init__.py` (add one only if two test files share a name).
-- Config: `pythonpath = ["tests"]` and `testpaths = ["tests/suite"]`; `--import-mode importlib` (see `structure-python`) so nested folders and a test dir sharing the package's name don't confuse imports; `-p pytest_.given` registers the fixtures; `src = ["src", "tests"]` marks `tests/` a source root so isort files `pytest_` as first-party, not third-party.
-- `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — `pyright` finds it, but an IDE like PyCharm needs `tests/` marked as a source root (an uncommitted IDE setting, so it can't live in `pyproject.toml`).
+`structure-python` owns this tree and the `pytest` settings that serve it; what follows is only what writing the tests adds to it.
+
+- `reference.py` is the addition to the `pytest_` package — the oracle a property test agrees with (see `SKILL.md`), a starting state like any other and so reached through a fixture.
+- `-p` must name the module the fixtures are *defined* in, `pytest_.given`; `-p pytest_` loads the empty `__init__` and registers nothing.
+The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers — and the `pytest_plugins` variable works only there, never in `pyproject.toml`.
+- `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — `pyright` finds it, but an IDE like PyCharm needs `tests/` marked as a source root, an uncommitted setting that can't live in `pyproject.toml`.
 
 ## Tests are code
 
@@ -41,9 +40,7 @@ The three beats become the `pytest_` package's `given`, `when` and `then` module
 Supply the *given* through fixtures:
 
 - Take each *given* as a `@pytest.fixture` argument; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"`.
-`-p` must name the module where the fixtures are *defined* — `pytest_.given`, not the package `pytest_` (whose `__init__` holds none) — and needs no `conftest.py`, resolving via `pythonpath`.
-The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers — note the `pytest_plugins` variable works only there, never `pyproject.toml`.
+- Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"` (see Pick a layout).
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 - Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you can't inject.
@@ -111,8 +108,6 @@ def column_equals(
 
 A test body then reads `then.equals(code, 0)` or `then.column_equals(priced, "revenue", expected_revenue)`.
 
-- Keep the helpers in a `pytest_` package (`pytest_/__init__.py`) on `pythonpath = ["tests"]` so `from pytest_ import then` resolves.
-Set `src = ["src", "tests"]` so `ruff` treats `tests/` as a source root and files `pytest_` with your own code, not third-party deps.
 - Give each helper a failure message, since `pytest` only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
