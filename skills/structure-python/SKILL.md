@@ -183,6 +183,18 @@ Neither shows up in a passing test, because the failure is somebody else's confi
 Say who you are by default — a tool name and version is honest and is what a publisher checking its logs wants to see — but know that some services front-ended by a CDN refuse anything that is not a browser string.
 That is a fact about one service, found by trying it, not a default to adopt everywhere.
 
+**A publisher also decides how fast and on what terms you may ask, and says none of it in a status code.**
+Three refusals arrive looking like your own bug, so recognise them rather than rediscovering them:
+
+- **A burst is throttled, not refused.** Ask for a document too many times in a row and the service starts answering `200` with the *page* instead of the file — the same request that worked eleven times now returns HTML, and nothing in the response says why.
+The tell is a failure that follows the request *count* rather than the request, so change one thing: retry the same call after a pause and see whether it comes back.
+- **A rate is stated somewhere you have not read.** `robots.txt` may carry a `Crawl-delay`, and an API may cap requests per minute and answer `429` past it — which is worth retrying, but on a wait long enough to outlast the window rather than the few seconds a transient error deserves.
+Read the terms before tuning the backoff, or the retry exhausts inside the very window it is waiting out.
+- **A document is served only to a caller who already has the cookies.** A first request redirects to a consent or region page and the second, carrying what that page set, gets the file.
+So retrieval takes an optional page to *visit first*, and it belongs in the HTTP module beside the timeout and the user agent — not in the adapter, which knows only which page.
+
+None of the three shows up in a test, and all three make the adapter look broken on the day a publisher is busy.
+
 ## Configuration
 
 Configuration is **input crossing the boundary**, so it takes the same path as any other IO: read at the edge, validated there, injected inward.
