@@ -66,6 +66,11 @@ revenue = (
 ```
 
 **Write one fluent method chain.** Build pipelines by **chaining contexts** end to end rather than assigning intermediate frames to variables between steps — a single chain reads as one transformation and stays one query the optimiser can work on.
+
+**A chain whose first step is a function rather than a method is still a chain.**
+`polars.concat(...)`, `polars.read_csv(...)` and `Series.to_frame()` all return a frame, so what follows them chains off it — but because the line opens with a call rather than a name, nothing about it *looks* like a pipeline, and the result gets bound to a variable that is then used exactly once.
+That is where the intermediates come from in practice: not from someone deciding to name a step, but from a chain that never announced itself.
+The check is `write-python`'s — a local used once is an inlined expression — and it applies to the frame the reader built as much as to any other.
 Wrap it in parentheses for multi-line readability, and don't break the chain without a real reason (reusing an intermediate, or debugging).
 Within a context, compute multiple columns in a single `with_columns` rather than many sequential calls — the engine parallelises expressions within one context.
 
@@ -124,6 +129,11 @@ Assign the result.
 - **A null comparison yields null, not false.** `polars.col("a").eq(polars.col("b"))` is null wherever either side is, so a `.filter` on it drops the row instead of keeping it.
 `.eq_missing()` is the null-safe form, and it counts two nulls as equal.
 - **`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
+
+**Declare a dtype where the data can be empty, and nowhere else.**
+On a non-empty list `polars` infers the type correctly and the declaration is noise — a shipped constant, a literal, anything you can see the values of.
+On an **empty** list, or a column whose every value is `None`, it infers `Null`, and `Null` is not a String that happens to be empty: `concat` raises `SchemaError` against a real column, a join on that key raises, and every `.str` method raises.
+So the frames that need the declaration are exactly the ones whose contents you did not choose — an adapter's output, a filtered result, anything built from a response — and the failure never shows up in the test that had rows.
 
 **Build a one-column frame from a `Series`, not a dict and a schema.**
 `polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.

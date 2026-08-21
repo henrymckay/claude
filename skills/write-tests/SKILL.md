@@ -164,6 +164,14 @@ Chasing a number produces assertion-free tests that execute code without checkin
 Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
 Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
 
+**A recorded response proves the parse, not the source — so exercise the real surface once before calling a build done.**
+A fixture answers "does this code read that document", which is the question worth asking on every change.
+It cannot answer whether the address still serves it, whether every input the tool *claims* to serve resolves, or whether one of them comes back empty — and those fail in the field while the suite stays green, because the recorded document is by definition one that worked.
+So run the whole declared surface once against the real thing — every name in the catalogue, every command in the help — and **read the counts, not the exit code**: a run that returns zero rows for one input has passed every check a program can make on itself.
+Keep it as a marked test excluded from the default run, or a documented command; either way it belongs in the repo rather than in the memory of whoever last ran it.
+
+The failure this catches is the one nothing else does: not a wrong answer, but a whole input silently answering nothing.
+
 ## Paradigms
 
 Reach beyond example-based unit tests when the problem fits.

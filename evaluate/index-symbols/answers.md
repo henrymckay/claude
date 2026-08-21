@@ -18,6 +18,10 @@ Reducing each collection to symbols and merging the results afterwards deduplica
 **The adapters differ entirely inside and agree exactly at their edge.** Each returns holdings in the same frame, whatever its source published, so the concatenation is a stack rather than a reconciliation.
 An adapter that returns the dataset's records from one source and parsed rows from the other has pushed its source's shape outward, and every later build pays for it.
 
+**Declare a dtype where the contents were not chosen, and nowhere else.**
+An empty list infers `Null` rather than an empty `String`, and `Null` then raises against a real column on `concat`, on a join key and on every `.str` call — so an adapter's output needs the declaration and a shipped constant does not.
+The test that had rows never sees it.
+
 **Holdings stay a frame the whole way.** The published file becomes a frame at the boundary and never leaves it, so sorting and dropping duplicates are one pass of expressions rather than a trip through a Python `set` — which loses the order the brief asks for and has to be re-sorted anyway.
 
 **A helper over a column takes the expression, not the column's name.**
@@ -165,6 +169,8 @@ The form-versus-destination question reads like a second one and is not.
 This is where the test suite is founded, and the next two builds inherit whatever shape it takes, so it carries more weight than the amount of code under test suggests.
 
 - The suite lives apart from the source, with its own directory for the cases, its shared helpers and any data files it loads.
+- A recorded response proves the parse and not the source, so the build is not done until the whole declared surface has been run once against the real thing and the **counts** read.
+Seventy-three catalogued names is seventy-three expansions, and the one that returns nothing has passed every check the program can make on itself — which is exactly how a packaged index with no symbols in it ships.
 - Tests of a dependency's own behaviour sit a level apart from tests of your code, because they fail for a different reason and on somebody else's schedule.
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.

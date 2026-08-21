@@ -116,6 +116,9 @@ Two, because finding out what I can expand is a different question from expandin
 Everything this brief names belongs in it, the packaged indices and the funds and the investors and the rankings alike.
 It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
+Every name in it has to expand, and expand to something.
+A name I can read in `catalogue` and cannot use is worse than one you never offered me, so check them all before you tell me it is done — I care what each one gives back, not that the command exited cleanly.
+
 ## Options
 
 Two, spelled the way the tools I already use spell them, and both work on both commands.
