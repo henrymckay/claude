@@ -8,7 +8,7 @@ This is the first piece of a bigger tool for scanning stocks, so I will keep add
 One or more names, given as arguments to `expand`.
 Each might name an index, a fund, an ETF or anything else standing for a collection of symbols.
 
-Those collections come from two places, and I should not have to remember which.
+Those collections come from two kinds of place, and I should not have to remember which.
 
 - Some ship with `pytickersymbols`, whose dataset comes with the package, so expanding one costs no network call.
 - Others publish their holdings online, so expanding one is a request and a parse.
@@ -25,18 +25,43 @@ A short list I might not notice is worse than no list at all.
 
 ## Funds
 
-Ten collections across three families, none of them in the packaged dataset, all publishing their holdings online.
+Twenty-seven collections across four families, none of them in the packaged dataset, all publishing their holdings online.
 
 - **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
 - **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
+- **VanEck.** `CURE`, `CYBO`, `DAPP`, `DFNS`, `ESPO`, `GDIG`, `GDX`, `GDXJ`, `HDRO`, `JEDI`, `NUCL`, `OIHV`, `QNTM`, `REMX`, `REUS`, `SMH` and `VEGI`.
 - **Wedbush.** `IVES`.
 
 Work out where each of them publishes.
 
+The VanEck ones are the UCITS funds listed in London, not the US funds that share several of those tickers, and the two do not hold the same stocks.
+
 Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
-All ten appear in `catalogue` beside the packaged ones.
+All twenty-seven appear in `catalogue` beside the packaged ones.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
+
+## Investors
+
+Three investors who disclose what they hold rather than running a fund whose book is published.
+
+- Berkshire Hathaway.
+- Duquesne Family Office.
+- Situational Awareness.
+
+Each reports its US positions to the SEC once a quarter, so what comes back is the most recent report rather than today's position, and that suits me.
+A report covers more than plain stock, so the same judgement that keeps untradeable rows out of a fund's holdings applies here too.
+
+They answer to their names rather than to a ticker, so `symbols expand berkshire-hathaway` works.
+
+## Rankings
+
+Two lists that rank companies rather than hold them, and I want to expand them the same way as everything else.
+
+- `largest-companies`, the listed companies ranked by market capitalisation.
+- `largest-etfs`, the ETFs ranked the same way.
+
+These are far longer than any fund, thousands of rows rather than tens, and they are worldwide rather than one country's market.
 
 ## Symbols
 
@@ -82,6 +107,8 @@ symbols expand sp-500
 symbols expand "S&P 500"
 symbols expand ARKK
 symbols expand ARKK ARKW ARKG
+symbols expand berkshire-hathaway
+symbols expand largest-etfs
 symbols expand dow-jones > dow-jones.txt
 symbols expand ARKK -o ark.txt
 symbols catalogue

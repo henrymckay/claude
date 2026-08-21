@@ -5,7 +5,7 @@ None of it appears in the brief — each line is something the skills alone shou
 
 ## The shape
 
-Two sources, one pipeline, and the join between them happens before anything is reduced.
+Seven sources, one pipeline, and the join between them happens before anything is reduced.
 
 | shape | one row is | how it is reached |
 |---|---|---|
@@ -59,11 +59,11 @@ That is not the composition root moving: the driver still chooses to use the set
 
 ## What should not exist yet
 
-- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — ten collections across two sources is a lookup, not a plugin system.
+- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — thirty-two named collections across seven sources is still a lookup, not a plugin system.
 
 ## The boundary
 
-The brief names the funds and leaves finding them to the build, so the first work is research: each issuer publishes a daily holdings file, and the three do not agree on where it sits or what it is called.
+The brief names the collections and leaves finding them to the build, so the first work is research: no two of the six publishers agree on where their data sits, what it is called, or how often it changes.
 
 - `httpx` is the pick over `requests`.
 - Send a browser-like user agent.
