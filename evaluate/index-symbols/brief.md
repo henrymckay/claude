@@ -28,6 +28,9 @@ That makes a moment's flakiness expensive, so do not give up on the first refusa
 A request that times out, is refused, or comes back complaining about the far end is worth trying again shortly.
 A refusal that tells me the thing does not exist is a real answer, and I want that one straight away rather than after a wait.
 
+Some of these places will not answer at all unless a caller leaves them a way to reply to it.
+Let me set that address myself rather than shipping one inside the tool, since it is mine to give and mine to change.
+
 ## Funds
 
 Forty-eight collections across four families, none of them in the packaged dataset, all publishing their holdings online.
@@ -53,6 +56,8 @@ Any other ETF ticker should expand as well, so `symbols expand TAN` gives me a s
 It spells the same way as the rest, bare for a US listing and `.L` for a London one.
 No issuer publishes anybody else's funds, so that one will not come from an issuer — look for somewhere that carries ETFs generally and covers both listings.
 When it is what answers, just give me the symbols; I do not need telling that the name was not one of mine.
+For one of my forty-eight I want the whole book.
+For anything else the largest holdings are enough, so do not pay for completeness there at the cost of the funds I actually follow.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
