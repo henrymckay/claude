@@ -74,18 +74,14 @@ def report(stations: typing.Annotated[list[str], argument.stations()]) -> None:
 `typer_/__init__.py` re-exports the app and names the modules whose import registers the decorators — without those two imports the app carries no commands, because a decorator only runs when its module is imported:
 
 ```python
-from mypackage.code.drive.typer_ import callback, command
-from mypackage.code.drive.typer_.driver import app
-
-__all__ = ["app", "callback", "command"]
+from mypackage.code.drive.typer_ import callback as callback, command as command
+from mypackage.code.drive.typer_.driver import app as app
 ```
 
 `cli/__init__.py` re-exports that `app` as the stable entry point, so the console script never names the framework behind it:
 
 ```python
-from mypackage.code.drive.typer_ import app
-
-__all__ = ["app"]
+from mypackage.code.drive.typer_ import app as app
 ```
 
 A `typer` app is callable, so its console script points straight at the app object (see Run).
