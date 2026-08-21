@@ -177,7 +177,9 @@ The tell that this has gone wrong is one file being read four times in a run bec
 
 **A type stays a noun even when the thing it names does work.**
 A port is `Holdings` — what the core needs, not how it is got (see `structure-python`) — while the function satisfying it is `fetch_holdings`.
-Two adapters behind one port then say which is expensive: `ark.fetch_holdings` beside `pytickersymbols_.read_holdings`.
+Where that port is a **callable alias**, two adapters behind it each say which is expensive: `ark.fetch_holdings` beside `pytickersymbols_.read_holdings`.
+Where it is a **`typing.Protocol`**, they cannot, and this rule gives way to the contract: the protocol's member name *is* the interface, so every adapter spells it identically and the cost moves to the module name, where `pytickersymbols_` already says the data ships with the package.
+So settle which kind of port you have before naming the function — `structure-python`'s "Declare a port" owns that trade and states it in full.
 
 **A domain prefix goes in front of the finished name, and never replaces the verb.**
 `use-polars` marks a `.pipe()` step's functional shape with `map_`/`amap_`/`bind_`; form the name by the rules above first, then prefix it — `map_keep_tradeable`, `amap_join_orders`.
