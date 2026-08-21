@@ -149,6 +149,10 @@ result = (
 
 For data bigger than memory, use the streaming engine: `.collect(engine="streaming")` (the older `.collect(streaming=True)` is deprecated).
 
+**Lazy is also how you read the top of a file whose bottom is broken.** `read_csv` parses the whole document in parallel chunks before it hands anything back, so a stray quotation mark thousands of rows below the part you want kills the read outright — and `n_rows` does not save you, because the chunks are already being parsed when the row limit applies.
+`scan_csv(...).head(n).collect()` stops at `n`, so a published file that is sound where it is ranked and ragged where it is not still reads.
+This is the one case where lazy is not about size or optimisation but about **not looking at data you never asked for**, and it applies to any source you do not control.
+
 Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materialising the whole frame.
 
 **Read the plan with `.explain()` rather than guessing what the optimiser did.** Two lines answer most questions: `PROJECT n/m COLUMNS` says how many columns the scan actually reads, and where `FILTER` sits says whether the predicate reached the scan or is running after all the work.
