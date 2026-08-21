@@ -119,6 +119,19 @@ The trade to know: a protocol's method name **is** the contract, so every adapte
 That rules out naming implementations for what distinguishes them — no `fetch_holdings` beside `read_holdings` to mark which costs a network call — and it should: callers reach the port precisely because they do not care which one answers, and a contract whose name changes per implementation is not a contract.
 Put the distinction in the module name, where `pytickersymbols_` already says the data ships with the package.
 
+**Split the port the moment one adapter can only answer half of it.**
+Bundling two calls into one protocol is right while every adapter has both to give, and wrong the moment one of them is *open* — a source that will answer for anything cannot enumerate what it offers, a store that only writes cannot be read, a live feed cannot be replayed.
+The forced answer is always the same shape: an empty frame, a `None`, a `NotImplementedError`, and each is the adapter lying to satisfy a signature.
+Where that lie is then *consumed* it stops being cosmetic — an empty catalogue concatenates into the real one and the command listing it prints nothing for that source, which reads as "it offers none" rather than "it was never the kind of thing that offers".
+
+So make the two calls two ports, and let the composition root hand each operation only the one it needs.
+The open adapter satisfies one port and simply is not a member of the other, which the type checker now enforces instead of a convention.
+
+**An open source is a fallback, not another member of the set.**
+Where one adapter will answer for *any* input, it cannot sit in the same mapping as the ones that know their own names: it either claims every name before a real source is consulted, or it is consulted last anyway — and if it is consulted last, the mapping was never what decided.
+Make the ordering explicit — resolve against the sources that state their names, and reach for the open one only where none of them claimed it — so the fallback is a step in the operation rather than an entry the lookup has to be taught to skip.
+It also splits the failures properly: the open source is the only thing that can say a name is *unknown*, since it is the only one that was asked to try.
+
 **Route on a name the source states, not a position it was given.**
 Where the core picks between several adapters at runtime, the key belongs to the adapter — put it in the record and carry it in the data.
 A position in whatever sequence the driver happened to build is meaningless away from that one call, so the frame carrying it cannot be logged, cached or tested on its own; and indexing back into the sequence is a lookup no type checker can check, where a missing key at least fails loudly.
