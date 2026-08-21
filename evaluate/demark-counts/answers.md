@@ -35,7 +35,7 @@ A previous run spent its whole core design on that machinery, for a requirement 
 **Filtering is not a seam.** It drops rows without changing what a row is.
 It earns its own function by being independently useful, not because the flow demands one, and it comes last, since the bounds are set on columns that only exist once the frame is wide.
 
-## What should not exist yet
+## What the build earns
 
 The hexagon becomes worth its keep here, and not before.
 
@@ -45,7 +45,9 @@ The hexagon becomes worth its keep here, and not before.
 
 Introducing all three *now* is right; having introduced them while the tool only expanded an index was not.
 
-Still absent unless asked for: a caching layer, a configuration system, a plugin or registry mechanism for counts, and any abstraction over "indicators" of which DeMark is imagined to be the first.
+## What should not exist yet
+
+Absent unless the brief asks for it: a caching layer, a configuration system, a plugin or registry mechanism for counts, and any abstraction over "indicators" of which DeMark is imagined to be the first.
 Three counts named in a brief are three counts, not a family to build a framework around.
 
 ## The boundary

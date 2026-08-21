@@ -162,7 +162,7 @@ Take `pandas.read_html` only where `pandas` is already a dependency, converting 
 Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
 - **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.
-- **Validation & settings** → `pydantic` v2 for data models and validation, `pydantic-settings` for typed config from the environment.
+- **Validation and settings** → `pydantic` v2 for data models and validation, `pydantic-settings` for typed config from the environment.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 
 ## Standalone scripts

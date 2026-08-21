@@ -9,7 +9,7 @@
 
 ## Answers
 
-- **Be concise.** Use as few words as carry the point, and let the length follow the question — a small question gets a small answer.
+- **Let the length follow the question.** Use as few words as carry the point; a small question gets a small answer.
 - Lead with the answer. No preamble, no restating my question back at me.
 - Report a finding once, where it matters. Don't preview it, state it, then summarise it.
 - One example beats three; a table beats a table plus its prose restatement.

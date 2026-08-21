@@ -60,7 +60,9 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 Raise it for a hard bug or design decision.
 Lower it for routine edits.
 - **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
-- **Output style.** `/output-style` swaps Claude's behavioural preset, e.g. Default, Proactive, Explanatory or a custom one.
+- **Output style.** `/output-style` swaps Claude's behavioural preset.
+Default, Proactive and Explanatory ship with it.
+A custom one can be added.
 - **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`).
 It controls how much Claude does before checking in.
 
