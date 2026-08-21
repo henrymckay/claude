@@ -108,6 +108,7 @@ Two, because finding out what I can expand is a different question from expandin
 - `catalogue` gives me the names I follow.
 
 `catalogue` is how I remind myself which collections I have set up rather than a list of everything that works, since any ETF ticker expands whether it appears there or not.
+Everything this brief names belongs in it, the packaged indices and the funds and the investors and the rankings alike.
 It writes one name per line, sorted, the same as the symbols do, so I can grep it.
 
 ## Options
