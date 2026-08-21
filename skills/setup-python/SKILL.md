@@ -151,9 +151,10 @@ Everywhere else the stdlib-first rule holds — don't add a dependency you don't
 - **Configuration and reference data files** → `pyyaml` (always `yaml.safe_load`, never `yaml.load`) for anything that isn't naturally a table, and `polars.read_csv` where it is; `structure-python` has the rule for choosing between them.
 `tomllib` reads TOML from the stdlib but cannot write it, so leave TOML to the files a tool already owns.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
-- **HTML and XML parsing** → `lxml` for pulling data out of a document, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
-Take `pandas.read_html` only where `pandas` is already a dependency, converting its result with `polars.from_pandas` — a whole table for one column is not worth `pandas`, `pyarrow` and a parser arriving together.
-For XML, `lxml.etree` over the stdlib `xml.etree`, and match on `local-name()` rather than the namespace a document declares, since two publishers filing the same schema declare it differently and a namespace-bound XPath silently matches nothing.
+- **HTML tables** → `pandas.read_html`, converting the result with `polars.from_pandas` and never touching `pandas` again.
+It reads every table on a page into frames in one call, where the same job by hand is a parser, an XPath and a loop rebuilding rows the reader already had.
+Pass `extract_links="body"` where a cell's link carries what its text does not — every cell then arrives as a `(text, href)` pair, which is what stops a linked table needing a parser after all.
+It brings `pandas` and `pyarrow`, which are large; pay that once and use it for every table rather than mixing two approaches to one job.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API.
 `rich` formats output but isn't itself a logging framework.
@@ -169,6 +170,8 @@ Keep the work in the frame rather than extracting to Python lists, per `write-py
 - **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.
 - **Validation and settings** → `pydantic` v2 for data models and validation, `pydantic-settings` for typed config from the environment.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
+- **XML and other markup** → `lxml` for pulling data out of a document that is not a table, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
+For XML use `lxml.etree` over the stdlib `xml.etree`, and match on `local-name()` rather than the namespace a document declares, since two publishers filing the same schema declare it differently and a namespace-bound XPath silently matches nothing.
 
 ## Standalone scripts
 
