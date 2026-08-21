@@ -489,9 +489,6 @@ logger = logging.getLogger(__name__)
 logger.info("fetched %s stations", len(stations))
 ```
 
-Only the driver configures logging — a library or core module that calls `basicConfig` hijacks its host.
-Write log lines with `logging`'s lazy `%` args, never f-strings, so a suppressed record builds no string (see `write-python`).
-
 ## Run
 
 Each entry point is launched by a `[project.scripts]` console command named `<project>-<role>` — a *global* command once installed (it lands on `PATH`), so namespace it to the project, never a bare `cli`/`api`/`gui`; `uv run` scoping to the local env doesn't change that.

@@ -99,6 +99,11 @@ Design types so invalid combinations simply can't be constructed; then whole cla
 Apply this to the values the core computes over, not to the syntax an input arrived in.
 A variant per accepted phrasing models the grammar rather than the problem — parse each phrasing straight to the value the core needs, and the variants disappear with it.
 
+## Pattern matching
+
+Decompose data by its **shape** rather than a ladder of type checks and attribute access.
+Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
+
 ## Derive functions from the data flow
 
 Before writing the core, write down the **sequence of shapes** the data passes through — the type going in, the type coming out, and the forms between.
@@ -137,11 +142,6 @@ This is the same test as "a value matched against the data element by element is
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).
 Make functions total by **narrowing the input** so every value is valid (accept a sum type/enum, not an arbitrary string) or by **widening the output** to represent the awkward cases (`X | None`, a `Result`) instead of raising.
 Total functions compose without hidden landmines — the signature tells the caller nothing will explode.
-
-## Pattern matching
-
-Decompose data by its **shape** rather than a ladder of type checks and attribute access.
-Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
 
 ## Choose axis of change
 

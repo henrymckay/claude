@@ -165,8 +165,7 @@ Reach beyond example-based unit tests when the problem fits.
 Drives design and guarantees every line exists to satisfy a stated intent.
 - **BDD (Behaviour-Driven Development)** — express tests as given-when-then behaviour in domain language, the structure above.
 Keeps tests tied to requirements, not implementation.
-- **Property-based** — assert invariants over generated, shrinking inputs (`hypothesis`, `QuickCheck`).
-For pure, algorithmic, or numeric code where you can state a law but not enumerate cases.
+- **Property-based** — assert invariants over generated, shrinking inputs (`hypothesis`, `QuickCheck`), per Many inputs above.
 - **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end.
 A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.
 - **Characterization** — capture the *current* behaviour of existing code before changing it.
@@ -187,15 +186,12 @@ Reach for a named pattern to structure a test or its suite.
 - **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form.
 The skeleton of every test.
 - **Test doubles** — *dummy* (filler, unused), *stub* (canned answers), *spy* (records calls), *mock* (asserts on expected calls), *fake* (a working lightweight implementation).
-Prefer fakes and injection; reserve mocks for genuine boundaries.
-- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message.
-Names a domain expectation and reuses it.
+- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message, per Given, when, then above.
 - **Test data builder** — a fluent builder for a valid object with overridable parts (`a_sale().with_quantity(0)`).
 For objects with many fields where tests vary one at a time.
 - **Object mother** — a factory of canonical, named test objects (`Sales.typical()`).
 For a small set of standard scenarios shared across tests.
-- **Parametrized / table-driven** — one test, a table of cases.
-For the same assertion over many inputs.
+- **Parametrized / table-driven** — one test, a table of cases, per Many inputs above.
 - **Humble object** — push logic out of a hard-to-test boundary (UI, I/O) into a plain, testable object; the functional-core / imperative-shell split is this pattern.
 - **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup.
 Default to fresh.

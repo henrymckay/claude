@@ -44,6 +44,8 @@ The first three compute **within** the frame's current shape; `.group_by(...).ag
 Reshaping has its own vocabulary alongside them: `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows, and `.explode` splits a list column into rows.
 Choosing the shape is most of the work — the expression API is the easy half.
 
+Two more pieces of expression vocabulary the rest of this file spends: **`when/then/otherwise`** builds a conditional column (`polars.when(cond).then(a).otherwise(b)`), and the typed **namespaces** — `.str`, `.dt`, `.list`, `.struct` — hold the operations particular to a dtype.
+
 ```python
 import polars
 
@@ -130,6 +132,7 @@ Two more lazy-execution habits: run several independent queries together with `p
 **If data is a dataframe, or you're doing dataframe-shaped work, do it *in* `polars` — don't drop to Python lists and loops.**
 Pulling columns out to Python lists and looping, comprehending, or `functools.reduce`-ing over them throws away the engine's speed and the query optimiser, and it's the most common way people accidentally leave `polars`.
 Comparing a column to an earlier row, running a count, grouping by a key — that is all expression work, so it belongs in the frame.
+`.map_elements` is the same mistake with a `polars` method on it: it hands each value to a Python callback, so the engine runs single-threaded through the interpreter for every row.
 
 **Convert at the boundary, and never reach back.** When another library hands you a frame (a `pandas` result from `yfinance`, an API), convert it with `polars.from_pandas` at the first opportunity and keep going with expressions.
 Tidying in `pandas` first — resetting an index, renaming, reshaping — does the work in the weaker API and drags `pandas` types into your own signatures, while a `polars` chain that reaches back into the original frame for a column name or a shape has left the boundary open.
@@ -187,11 +190,7 @@ Spreading a key across columns with a chain of joins is `pivot` hand-rolled, and
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
 - **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
 Assign the result.
-- **Don't use `.map_elements`/Python loops** for per-row work — express it with column expressions.
-Row-wise Python callbacks kill `polars`'s performance.
 - **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
-- **`when/then/otherwise`** for conditional columns: `polars.when(cond).then(a).otherwise(b)`.
-- **Namespaces** for typed ops: `.str`, `.dt`, `.list`, `.struct`.
 
 **Build a one-column frame from a `Series`, not a dict and a schema.**
 `polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
