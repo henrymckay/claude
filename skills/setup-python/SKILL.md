@@ -151,8 +151,9 @@ Everywhere else the stdlib-first rule holds — don't add a dependency you don't
 - **Configuration and reference data files** → `pyyaml` (always `yaml.safe_load`, never `yaml.load`) for anything that isn't naturally a table, and `polars.read_csv` where it is; `structure-python` has the rule for choosing between them.
 `tomllib` reads TOML from the stdlib but cannot write it, so leave TOML to the files a tool already owns.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
-- **HTML parsing** → `lxml` for pulling data out of a page, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
+- **HTML and XML parsing** → `lxml` for pulling data out of a document, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
 Take `pandas.read_html` only where `pandas` is already a dependency, converting its result with `polars.from_pandas` — a whole table for one column is not worth `pandas`, `pyarrow` and a parser arriving together.
+For XML, `lxml.etree` over the stdlib `xml.etree`, and match on `local-name()` rather than the namespace a document declares, since two publishers filing the same schema declare it differently and a namespace-bound XPath silently matches nothing.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API.
 `rich` formats output but isn't itself a logging framework.
@@ -160,6 +161,8 @@ Take `pandas.read_html` only where `pandas` is already a dependency, converting 
 - **Retries** → `tenacity` for retrying flaky IO, with exponential backoff and a predicate that retries only what is worth retrying.
 A hand-rolled loop with `time.sleep` gets the jitter, the give-up condition and the final re-raise wrong, and it retries the errors that will never succeed alongside the ones that might.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
+- **Spreadsheets** → `polars.read_excel`, which needs a reader engine installed beside it — `fastexcel` (the `calamine` backend) is the default and the fastest.
+`polars` names the function but ships no engine, so a project that never adds one fails at the first call rather than at install; declare it as a dependency the moment a source publishes `.xlsx`.
 - **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a `pandas` result with `polars.from_pandas`, adding `pyarrow` alongside it, which that conversion needs for anything beyond plain numpy-backed columns.
 Keep the work in the frame rather than extracting to Python lists, per `write-python`.
 - **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
