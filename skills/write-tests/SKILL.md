@@ -84,6 +84,11 @@ Tests bound to implementation break on every refactor and stop being a safety ne
 Lean hardest on the **pure functional core** (see `be-functional`): it holds the logic and the bugs, and it is cheap to test because it is deterministic and needs no setup.
 Keep the imperative shell thin so little is left that needs slow integration tests — the **humble object** pattern.
 
+**The other thing worth its own cases is the adapter's *judgement*, which is not core and is not the library's either.**
+Reading a document correctly is the library's job and rarely wrong twice; deciding *which field is the answer* is the adapter's, and it is a claim about a source that no core test covers and no dependency test touches — which of several symbols is the home listing, which column marks a row as cash, what an absent field means.
+Test it against a saved response, with no stub for the fetch: that is what the getting/parsing split exists for (see `structure-python`), and reaching the parse function directly is the intended surface rather than a breach of the rule above.
+Cover the case the judgement was written for **and** the case it was not — a record carrying the field and a record missing it — since the second is where the source surprises you and the first is where you convince yourself it cannot.
+
 This is also why you **mock sparingly**.
 Prefer real objects and dependency injection to mocks: a mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
 Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
