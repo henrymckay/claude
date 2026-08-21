@@ -5,7 +5,7 @@ None of it appears in the brief — each line is something the skills alone shou
 
 ## The shape
 
-Seven sources, one pipeline, and the join between them happens before anything is reduced.
+One packaged dataset and a spread of publishers, one pipeline, and the join between them happens before anything is reduced.
 
 | shape | one row is | how it is reached |
 |---|---|---|
@@ -59,11 +59,11 @@ That is not the composition root moving: the driver still chooses to use the set
 
 ## What should not exist yet
 
-- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — thirty-two named collections across seven sources is still a lookup, not a plugin system.
+- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — fifty-three named collections across a handful of publishers is still a lookup, not a plugin system.
 
 ## The boundary
 
-The brief names the collections and leaves finding them to the build, so the first work is research: no two of the six publishers agree on where their data sits, what it is called, or how often it changes.
+The brief names the collections and leaves finding them to the build, so the first work is research: no two publishers agree on where their data sits, what it is called, or how often it changes.
 
 - `httpx` is the pick over `requests`.
 - Send a browser-like user agent.

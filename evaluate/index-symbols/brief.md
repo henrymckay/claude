@@ -25,19 +25,23 @@ A short list I might not notice is worse than no list at all.
 
 ## Funds
 
-Twenty-seven collections across four families, none of them in the packaged dataset, all publishing their holdings online.
+Forty-eight collections across four families, none of them in the packaged dataset, all publishing their holdings online.
 
 - **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
 - **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
-- **VanEck.** `CURE`, `CYBO`, `DAPP`, `DFNS`, `ESPO`, `GDIG`, `GDX`, `GDXJ`, `HDRO`, `JEDI`, `NUCL`, `OIHV`, `QNTM`, `REMX`, `REUS`, `SMH` and `VEGI`.
+- **VanEck, listed in London.** `CURE`, `CYBO`, `DAPP`, `DFNS`, `ESPO`, `GDIG`, `GDX`, `GDXJ`, `HDRO`, `JEDI`, `NUCL`, `OIHV`, `PIKA`, `QNTM`, `REMX`, `REUS`, `SMH` and `VEGI`.
+- **VanEck, listed in the US.** `BBH`, `CRAK`, `DAPP`, `EMET`, `ESPO`, `GDX`, `GDXJ`, `IBOT`, `MOAT`, `MOTI`, `MVAL`, `NLR`, `OIH`, `PPH`, `REMX`, `SMH`, `SMHC`, `SMHX`, `SMOT` and `WARP`.
 - **Wedbush.** `IVES`.
 
 Work out where each of them publishes.
+VanEck's two ranges are separate funds under one manager, so expect to find them in different places.
 
-The VanEck ones are the UCITS funds listed in London, not the US funds that share several of those tickers, and the two do not hold the same stocks.
+Six tickers appear in both VanEck ranges, and a London fund never holds the same stocks as the US fund sharing its ticker.
+Where a ticker is claimed twice the bare form is the US fund and the London one takes a `.L` suffix, which is the spelling the tool already gives me back for a London listing.
+Where a ticker is claimed once it needs nothing added, so `DFNS` and `MOAT` stay as they are.
 
 Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
-All twenty-seven appear in `catalogue` beside the packaged ones.
+All forty-eight appear in `catalogue` beside the packaged ones, each under the name that reaches it.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 
@@ -107,6 +111,8 @@ symbols expand sp-500
 symbols expand "S&P 500"
 symbols expand ARKK
 symbols expand ARKK ARKW ARKG
+symbols expand SMH
+symbols expand SMH.L
 symbols expand berkshire-hathaway
 symbols expand largest-etfs
 symbols expand dow-jones > dow-jones.txt
