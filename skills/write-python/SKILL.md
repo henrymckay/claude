@@ -198,6 +198,19 @@ Functions, methods and CLI commands are imperative regardless of what wraps them
 A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
 `structure-python`'s package layers are the worked example.
 
+**Spell a package or module as words, separated by underscores — never run together.**
+`granny_shots`, not `grannyshots`; `market_cap`, not `marketcap`.
+This overrides PEP 8, which allows underscores in a module name and discourages them in a package name; that split is not worth keeping, because a name is read far more often than it is typed and the underscore costs one character where running the words together costs a parse every time.
+Spell it from the words the thing is *called*, not from however a domain name or a logo ran them together — `granny_shots` though the site is `grannyshots.com`, and `vaneck` because the firm spells its own name as one word.
+
+**Take the shortest name that still identifies it, since the package around it supplies the rest.**
+A source of market-capitalisation rankings inside `adapt/` is `market_cap`, not `companies_market_cap`: the layer has already said it is a source, and nothing else in there is about market capitalisation.
+This is the namespace rule above applied one level up — the qualifier carries the meaning, so the member name stays short.
+
+**Name an adapter for what it actually reads, not for whose data it is.**
+An adapter fetching an aggregator's already-parsed filings is `info_13f`, not `sec`.
+The regulator is where the data originates; the site is what you open when the parse breaks, what the reference table addresses, and what changes under you without warning — so it is the one a reader needs the name to point at.
+
 ## Arguments
 
 **Name an argument at the call site unless it is the one thing the function is about.**
