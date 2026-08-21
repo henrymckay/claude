@@ -294,12 +294,40 @@ E.g. attach FX rates by looking at which currencies are actually present and joi
 **The prefix covers everything `.pipe()` reaches, a core transform included.**
 A domain name says what a step is *about*; the prefix says what it does to the frame, which is the half a reader of the chain cannot see.
 So a transform written to sit in a chain is `map_keep_tradeable` from the start, and the domain name stays in the rest of it — the prefix is added to the name, not swapped for it.
-And reach for `.pipe()` rather than nesting the calls.
+
+**Every frame-to-frame function takes a prefix, whether or not today's caller pipes it.**
+"Written to sit in a chain" is not something to judge per function: a frame in and a frame out *is* a pipe step, and a caller that nests it instead is the thing to fix.
+The two mistakes arrive together and each hides the other — `symbols(map_keep_tradeable(holdings))` reads as though `symbols` were a different kind of thing, so nothing prompts the prefix, and the missing prefix in turn makes the nesting look normal.
+Write `holdings.pipe(map_keep_tradeable).pipe(map_gather_symbols)` and both are fixed at once.
+
+So reach for `.pipe()` rather than nesting the calls.
 Three transforms wrapped around one another read inside-out and put the last step first; the same three piped read in the order they run, and the prefixes let you see which of them can branch on the data before you open any of them.
 
 The line between `amap_` and `bind_` is exactly the one between applicative and monad: **an applicative step's behaviour is fixed regardless of the values inside; a bind step's behaviour depends on the materialised data.**
 That has teeth in `polars` — `map_`/`amap_` are pure plan transforms and stay **lazy**, whereas `bind_` usually has to **materialise** (collect/inspect) the data to decide what to do, breaking laziness.
 So reach for `bind_` only when the logic genuinely must see the data; prefer `map_`/`amap_` to keep the query lazy and optimisable.
+
+## Pipe an expression, not just a frame
+
+`.pipe()` is on `polars.Expr` as well as on the frame, so a helper that takes an expression and returns one is reached the same way — `polars.col("name").pipe(normalise)` — and drops into a `select`, a `with_columns` or a `filter` without being unwrapped.
+
+**Take a `polars.Expr`, never a column name.**
+A helper typed `normalise(column: str)` can only ever run against a column that already exists under a name you know, so the same rule cannot be applied to a literal, to the output of another expression, or inside a `when/then` — and the second caller writes it again.
+Take the expression and it composes with all of them: `polars.lit(typed).pipe(normalise)` puts a scalar through the identical code that normalises the column, which is exactly the duplication the string parameter was creating.
+Leave the `.alias()` to the caller for the same reason, since a helper that names its own output cannot be used twice in one `select`.
+
+**Where a helper needs a second expression, pass it through the pipe rather than calling the function.**
+
+```python
+# Wrong: the function comes first and its subject second.
+spell_symbol(polars.col("ticker"), polars.col("suffix"))
+
+# Right: reads left to right, in the order the data flows.
+polars.col("ticker").pipe(spell_symbol, polars.col("suffix"))
+```
+
+The prefix vocabulary above is for **frame** steps only.
+An expression helper is named by `write-python`'s verb rules alone and carries no `map_`, because what it does to a frame is not a question that has an answer.
 
 ## Pass extra data through `.pipe()`
 
