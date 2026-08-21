@@ -180,6 +180,11 @@ Write it generic enough to name without naming the publisher — "take this colu
 Leave it in the adapters and three of them grow three versions of one reshape, none of which the core tests.
 
 What stays in the adapter is the *decision*, not the operation: that ARK spells a ticker the Bloomberg way is knowledge about ARK, and moving it inward teaches the core about publishers.
+
+**A `try` wrapped round the chain is what hides the pure part.**
+Fusing the read, the reshape and the conversion of the library's failure into one block makes the reshape read as part of the IO, so it is never offered to the core and the next adapter meeting the same format writes it again.
+Lift the exception handling into a decorator (see `write-python`) and what is left is a single chain whose middle steps are plainly frame in, frame out — at which point moving them inward is obvious rather than a judgement.
+That is the practical reason the decorator matters: it is not only less repetition, it is what lets a parse stay one chain instead of a block of statements that has to name an intermediate at every step.
 So the adapter chooses which transforms to apply and with what arguments, and the core owns the transforms themselves.
 
 **One reader per wire format, shared by every adapter that meets it.**
