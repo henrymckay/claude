@@ -51,6 +51,8 @@ All forty-eight appear in `catalogue` beside the packaged ones, each under the n
 Those forty-eight are the funds I follow, not the limit of what I can ask for.
 Any other ETF ticker should expand as well, so `symbols expand TAN` gives me a solar fund named nowhere in this brief.
 It spells the same way as the rest, bare for a US listing and `.L` for a London one.
+No issuer publishes anybody else's funds, so that one will not come from an issuer — look for somewhere that carries ETFs generally and covers both listings.
+When it is what answers, just give me the symbols; I do not need telling that the name was not one of mine.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
 

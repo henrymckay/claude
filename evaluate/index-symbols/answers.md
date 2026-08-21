@@ -93,6 +93,8 @@ One failure failing the whole run means the odds of a wasted run climb with ever
 - Split getting the document from making sense of it.
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
 Apart, a saved response tests the parse with no stub for the fetch.
+- The open ETF source is a third party rather than an issuer, since no issuer publishes anybody else's funds, and the same third party answers for the VanEck ranges — `stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter.
+A build that reaches for each issuer in turn can serve the forty-eight named funds and still has nothing to answer `TAN` with.
 - Where each publisher serves its file is **data**, not a literal in code — one entry per fund, with the host held once rather than repeated against each of them.
 It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
 - Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled.
