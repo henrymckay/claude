@@ -48,6 +48,9 @@ Three more you reach for constantly: `.sort`, `.unique` to drop duplicate rows, 
 **`.sort` is a correctness requirement, not presentation.** `.shift`, every cumulative, `.first`/`.last` and `join_asof` all read the frame in its current row order, so an unsorted input returns a wrong answer rather than an untidy one, and nothing raises.
 Naming is `.alias`, conditionals are `when/then/otherwise` (`polars.when(cond).then(a).otherwise(b)`), and the typed **namespaces** — `.str`, `.dt`, `.list`, `.struct` — hold whatever is particular to a dtype.
 
+**Where an expression applies to a *class* of columns, say the class — `polars.selectors`.** `polars.selectors.numeric()`, `.starts_with("bid_")`, `.by_dtype(...)` and `.exclude(...)` resolve against the frame's real schema when the query runs, so `frame.with_columns(polars.selectors.numeric().fill_null(0))` covers the column somebody adds next month without the call being touched.
+Naming each column, or assembling the list in Python first, pins the set to what the schema held the day it was written.
+
 Choosing the shape is most of the work — the expression API is the easy half.
 
 ```python
@@ -131,6 +134,10 @@ For data bigger than memory, use the streaming engine: `.collect(engine="streami
 
 Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materialising the whole frame.
 
+**Read the plan with `.explain()` rather than guessing what the optimiser did.** Two lines answer most questions: `PROJECT n/m COLUMNS` says how many columns the scan actually reads, and where `FILTER` sits says whether the predicate reached the scan or is running after all the work.
+It is how you check a claim about a query instead of trusting one — including the projection cost of `polars.struct("*")` below, which is visible there as the difference between reading two columns and reading every one.
+Don't reach for `.profile()`: it is deprecated, having been built for the older in-memory engine, and its timings mislead under the streaming one.
+
 ## Stay in the dataframe
 
 **If data is a dataframe, or you're doing dataframe-shaped work, do it *in* `polars` — don't drop to Python lists and loops.**
@@ -177,11 +184,19 @@ Two `with_columns` rather than one because `run_len` windows on `run_id`, which 
 
 **Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.**
 
+**Filter by membership with a semi join, not a list pulled out to Python.**
+`frame.join(wanted, on="ticker", how="semi")` keeps the rows having a match and brings no columns across, and `how="anti"` keeps the rows having none.
+The reflex — `frame.filter(polars.col("ticker").is_in(wanted.get_column("ticker").to_list()))` — collects the other frame to build the list, so a lazy query stops being lazy on that line and the optimiser loses sight of the second frame entirely.
+Passing the `Series` rather than the list avoids the `to_list()` but is deprecated in recent 1.x as ambiguous against a list-typed column, so the join is the spelling with a future.
+A Python list you already hold is still fine in `is_in`; it is reaching into another *frame* for one that costs you.
+
 **A grouping key that arrives as an argument is still a group.** Whether an axis reaches you as rows already in the frame (a `ticker` column from a fetch), as a caller-supplied list (a set of timeframes, regions, or scenarios to compute over), or as a set the *problem itself* fixes (there are exactly three counts, four quartiles, two scenarios), it is the same thing to the computation, and all of them belong in the frame.
 
 That last one is the easiest to miss, because a closed set feels like structure rather than data — three counts become three columns and three expressions, and the axis never appears.
 Three tells: a name repeated across columns (`daily_setup`, `weekly_setup`), a function returning one column per member of a fixed set, and a `polars.concat([...])` wrapping a comprehension.
 The first two are a wide frame that should be long, and going long collapses the near-copies into one pass with the axis as a column; the third is the per-group loop already, wearing a parameter as a disguise.
+The comprehension is not itself the fault: one building a *list of expressions* for a single `with_columns` stays one plan and is fine, though `polars.selectors` usually says it better.
+It is the one building a *frame per group* that is the loop.
 Widen at the end, once, for whatever has to display in columns.
 Put the values in their own small frame and `.join(other, how="cross")` where each applies to every row (a plain join where it's selective), then group by that axis alongside the rest: `.over(["ticker", "timeframe"])`.
 `be-functional`'s "Derive functions from the data flow" has the general test for whether a parameter is really data.
@@ -304,3 +319,5 @@ Three things to get right, each of which bites silently:
 - **Name the columns the function reads, never `polars.struct("*")`.** The struct's members are what the query has to materialise, so `"*"` defeats projection pushdown: `struct("a", "b")` over a four-column scan reads two columns, `struct("*")` reads all four, and on a wide `.parquet` that is the whole file.
 - **Pass `return_dtype`.** Without it the engine resolves the output type by *calling your function* on a fabricated two-row frame, so it runs an extra time on invented values — and a function that rejects them fails when the schema is resolved, nowhere near the call.
 - **The optimiser cannot see through it.** A `.filter` written after the expression stays after it rather than pushing down to the scan, so filter first and map second where the order is yours to choose.
+
+**A single expression can return several columns, too.** Build a `polars.struct(...)` of the aliased parts and `.unnest()` it, and one pass over the data yields the lot where a column each would have made a pass each — the same move as above, run the other way round.
