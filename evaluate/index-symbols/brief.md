@@ -24,6 +24,10 @@ I do want them written back the way they are properly spelled, a ticker in capit
 When I name several, one failure fails the whole run, whether that name was unknown or its holdings would not come.
 A short list I might not notice is worse than no list at all.
 
+That makes a moment's flakiness expensive, so do not give up on the first refusal.
+A request that times out, is refused, or comes back complaining about the far end is worth trying again shortly.
+A refusal that tells me the thing does not exist is a real answer, and I want that one straight away rather than after a wait.
+
 ## Funds
 
 Forty-eight collections across four families, none of them in the packaged dataset, all publishing their holdings online.

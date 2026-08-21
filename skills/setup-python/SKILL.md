@@ -157,6 +157,8 @@ Take `pandas.read_html` only where `pandas` is already a dependency, converting 
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API.
 `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
+- **Retries** → `tenacity` for retrying flaky IO, with exponential backoff and a predicate that retries only what is worth retrying.
+A hand-rolled loop with `time.sleep` gets the jitter, the give-up condition and the final re-raise wrong, and it retries the errors that will never succeed alongside the ones that might.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a `pandas` result with `polars.from_pandas`, adding `pyarrow` alongside it, which that conversion needs for anything beyond plain numpy-backed columns.
 Keep the work in the frame rather than extracting to Python lists, per `write-python`.

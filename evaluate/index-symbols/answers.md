@@ -72,7 +72,7 @@ That is not the composition root moving: the driver still chooses to use the set
 
 ## What should not exist yet
 
-- **No caching, no retry policy, no configuration layer**, and no registry that sources sign up to — fifty-three named collections across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
+- **No caching, no configuration layer**, and no registry that sources sign up to — fifty-three named collections across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
 
 ## The boundary
 
@@ -83,6 +83,12 @@ The brief names the collections and leaves finding them to the build, so the fir
 `ark-funds.com` answers a default client with a 403, so a build that never sets one works against Wedbush and Fundstrat but not ARK — worse than failing everywhere, because it looks like it works.
 - Set a timeout.
 A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
+- Retry the transient and only the transient.
+A timeout, a refused connection or a 5xx deserves another go after a short backoff, where a 404 is an answer and retrying it turns a mistyped ticker into a slow error instead of a quick one.
+That distinction stops being a nicety the moment any ticker can be tried, because a 404 is then the ordinary reply to a name that was never a fund.
+Retrying belongs to the fetch alone, so a parse that fails is never attempted twice.
+- Retry is what makes the brief's all-or-nothing rule survivable, which is why it is in scope where caching is not.
+One failure failing the whole run means the odds of a wasted run climb with every name asked for, so a single transient refusal somewhere among fifty collections would otherwise be enough to lose all of them.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - Split getting the document from making sense of it.
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
