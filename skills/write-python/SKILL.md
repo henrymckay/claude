@@ -2,10 +2,11 @@
 name: write-python
 description: >-
   In-code conventions for writing Python that a formatter can't decide —
-  function/member ordering, naming, public API design, typing, docstrings,
-  import style, error handling, and idioms. Use whenever writing, editing,
-  refactoring, or reviewing Python code, even if the user doesn't explicitly
-  mention "conventions", "style", or "clean code". Targets Python 3.11+.
+  function/member ordering, naming, call-site argument style, public API design,
+  typing, docstrings, import style, error handling, and idioms. Use whenever
+  writing, editing, refactoring, or reviewing Python code, even if the user
+  doesn't explicitly mention "conventions", "style", or "clean code". Targets
+  Python 3.11+.
   Formatting/linting is delegated to ruff and type-checking to pyright — this
   skill does NOT restate their rules, only the judgment calls they can't make.
   These are the baseline conventions that apply to all Python; layer a paradigm
@@ -194,6 +195,36 @@ Functions, methods and CLI commands are imperative regardless of what wraps them
 **Name a package for what it does or holds.**
 A package that *performs* an action — a behavioural or pipeline layer — takes an imperative verb (`transform/`, `operate/`, `adapt/`, `drive/`); a package that only *defines* or *holds* things takes a noun (`port/`, `domain/`, and the `cli`/`api`/`gui` role packages).
 `structure-python`'s package layers are the worked example.
+
+## Arguments
+
+**Name an argument at the call site unless it is the one thing the function is about.**
+A positional value is readable only to someone who already knows the signature, so every unnamed argument past the first sends the reader to another file to learn what it meant.
+Naming it puts the answer in the line they are already reading.
+
+```python
+# Wrong: three values whose meaning lives in another file.
+handle(polars.exceptions.PolarsError, error.HoldingsError, "Could not read {name}")
+
+# Right: the call itself says what each value is for.
+handle(polars.exceptions.PolarsError, report=error.HoldingsError, message="Could not read {name}")
+```
+
+The exception is the **subject** — the thing the function acts on, which the function's own name has already announced.
+`parse_csv(document)`, `len(items)` and `polars.col("close")` need no label, and `parse_csv(document=document)` is exactly the stutter the Avoid section rules out.
+So the shape is a bare subject and a name on everything after it.
+
+**A boolean or a bare number is never the subject.** `render(symbols, True)` tells a reader nothing and the value offers no type to guess from, where `render(symbols, table=True)` is the same call made readable.
+
+**Put a `*` in the signature rather than trusting the caller to remember.** Everything optional or modal goes after it, so the language enforces at every call site what this section otherwise only asks for — and a parameter that arrives keyword-only can be reordered later without breaking anyone:
+
+```python
+def fetch_user(user_id: int, *, include_archived: bool = False) -> User: ...
+```
+
+Two things bound the rule.
+A named argument binds callers to the parameter's *name*, so renaming one is a breaking change where renaming a positional is not — a real constraint on a published API and almost none on your own code.
+And some callables remove the choice: `len`, `abs`, `int` and much of the C-implemented standard library take positional-only parameters, so `len(obj=items)` raises `TypeError` rather than reading better.
 
 ## Ordering
 
