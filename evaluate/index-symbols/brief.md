@@ -29,16 +29,16 @@ Forty-eight collections across four families, none of them in the packaged datas
 
 - **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
 - **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
-- **VanEck, listed in London.** `CURE`, `CYBO`, `DAPP`, `DFNS`, `ESPO`, `GDIG`, `GDX`, `GDXJ`, `HDRO`, `JEDI`, `NUCL`, `OIHV`, `PIKA`, `QNTM`, `REMX`, `REUS`, `SMH` and `VEGI`.
+- **VanEck, listed in London.** `CURE.L`, `CYBO.L`, `DAPP.L`, `DFNS.L`, `ESPO.L`, `GDIG.L`, `GDX.L`, `GDXJ.L`, `HDRO.L`, `JEDI.L`, `NUCL.L`, `OIHV.L`, `PIKA.L`, `QNTM.L`, `REMX.L`, `REUS.L`, `SMH.L` and `VEGI.L`.
 - **VanEck, listed in the US.** `BBH`, `CRAK`, `DAPP`, `EMET`, `ESPO`, `GDX`, `GDXJ`, `IBOT`, `MOAT`, `MOTI`, `MVAL`, `NLR`, `OIH`, `PPH`, `REMX`, `SMH`, `SMHC`, `SMHX`, `SMOT` and `WARP`.
 - **Wedbush.** `IVES`.
 
 Work out where each of them publishes.
 VanEck's two ranges are separate funds under one manager, so expect to find them in different places.
 
-Six tickers appear in both VanEck ranges, and a London fund never holds the same stocks as the US fund sharing its ticker.
-Where a ticker is claimed twice the bare form is the US fund and the London one takes a `.L` suffix, which is the spelling the tool already gives me back for a London listing.
-Where a ticker is claimed once it needs nothing added, so `DFNS` and `MOAT` stay as they are.
+Every London fund takes a `.L` suffix and every US one stays bare, which is how the tool already spells a London listing when it hands me symbols back.
+Six tickers are claimed by both ranges and a London fund never holds the same stocks as the US fund sharing its ticker.
+I still want the suffix on all eighteen rather than only on those six, because a name I have put in a script should not change the day VanEck lists something that collides with it.
 
 Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
 All forty-eight appear in `catalogue` beside the packaged ones, each under the name that reaches it.
