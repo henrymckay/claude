@@ -109,4 +109,8 @@ That is the shape of a reference that *builds something out*, which most are.
 A reference for a **style** has no tree to lead with and nothing to run, so it orders by dependency alone — don't invent a tree or a `Run` section to satisfy the rule.
 - **The skill states each principle; the reference shows the mechanics** for it — never restating the principle.
 
-A skill already tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks (`use-polars`'s `expressions.md`), each opening with its own H1 and scope line, a closing `## Reference cookbooks` section in place of `Language specifics`, and the cookbook description pointer above in place of the language one.
+A skill already tied to one library has no language axis, so where it needs references at all it splits by **topic** instead: `references/<topic>.md` cookbooks, each opening with its own H1 and scope line, a closing `## Reference cookbooks` section in place of `Language specifics`, and the cookbook description pointer above in place of the language one.
+
+**A reference earns its place by holding what the skill cannot, not more of the same.** Mechanics too long for the body, a worked trap, a framework build-out — each pays for the extra file.
+An API listing does not: whoever reads this already knows that a filter takes a predicate, so a cookbook of one-line calls spends a file and a pointer restating what the reader arrived with, and the genuine traps buried among them get read at the same weight as the filler.
+Check each line against whether it would change what gets written; fold the few that would into the skill and delete the rest, references directory included.

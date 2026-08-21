@@ -9,14 +9,13 @@ description: >-
   converting pandas code to Polars, reshaping between long and wide, or
   debugging Polars queries — even if the user only says "polars", "pl.", or
   names a .parquet/.csv workflow they want done with it. Targets Polars 1.x.
-  Detailed cookbooks live in references/. Polars-specific; the general
-  write-python conventions still apply on top.
+  Polars-specific; the general write-python conventions still apply on top.
 ---
 
 # Use Polars
 
 `polars` is fast and correct when you work *with* its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-This file is the mental model; reach into `references/` for concrete recipes, and `write-python`'s general conventions apply on top.
+`write-python`'s general conventions apply on top.
 Most mistakes come from writing `pandas` habits in `polars` syntax.
 Three account for nearly all of them: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` types or habits leak past the boundary — each has its own section below.
 
@@ -39,9 +38,11 @@ You never loop over rows.
 - `.with_columns(...)` — add/replace columns, keep the rest.
 - `.filter(...)` — keep rows matching a boolean expression.
 - `.group_by(...).agg(...)` — aggregate per group.
+Group order is arbitrary unless you pass `maintain_order=True`, which costs speed — so where you only need determinism at the end, sort the result instead.
+An aggregation takes a condition without a second pass: `polars.col("value").filter(polars.col("value").gt(0)).sum()` totals only the rows that qualify.
 
 The first three compute **within** the frame's current shape; `.group_by(...).agg(...)` also changes it, coarsening what one row represents.
-Reshaping has its own vocabulary alongside them: `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows, and `.explode` splits a list column into rows.
+Reshaping has its own vocabulary alongside them: `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows (it was `melt` before 1.0), and `.explode` splits a list column into rows.
 Choosing the shape is most of the work — the expression API is the easy half.
 
 Two more pieces of expression vocabulary the rest of this file spends: **`when/then/otherwise`** builds a conditional column (`polars.when(cond).then(a).otherwise(b)`), and the typed **namespaces** — `.str`, `.dt`, `.list`, `.struct` — hold the operations particular to a dtype.
@@ -138,15 +139,38 @@ Comparing a column to an earlier row, running a count, grouping by a key — tha
 Tidying in `pandas` first — resetting an index, renaming, reshaping — does the work in the weaker API and drags `pandas` types into your own signatures, while a `polars` chain that reaches back into the original frame for a column name or a shape has left the boundary open.
 Convert, then let every decision after that be an expression.
 
-**The one thing you must do in `pandas` is dissolve an index that `polars` cannot represent.** A `MultiIndex` has no `polars` equivalent, so a frame carrying one on either axis has to be flattened *before* it converts, or the levels arrive as tuple column names you then unpick by hand.
-Allow exactly the calls that turn indices into columns — a `.stack(level=..., future_stack=True)` and a `.reset_index()` — and nothing else; the renaming, casting, selecting and filtering all belong on the `polars` side.
+**The one `pandas` call you cannot avoid is dissolving a column `MultiIndex`.** It has no `polars` equivalent, so flatten it *before* converting or the levels arrive as tuple column names you unpick by hand — a `.stack(level=..., future_stack=True)` and nothing else.
+A **row** index needs no `pandas` call at all: `polars.from_pandas(frame, include_index=True)` brings every level across as a column, so a `.reset_index()` first is one more `pandas` operation doing what the converter already does.
+Pass that argument whenever the index carries meaning, because the default **drops it silently** — convert a frame indexed by date and ticker without it and you get the values alone, with nothing to say which row is which.
+The renaming, casting, selecting and filtering all belong on the `polars` side.
 `polars.from_pandas` also needs `pyarrow` installed for anything beyond plain numpy-backed columns, so add it as a dependency when you convert.
 
 **Keep every group in one long-form frame — don't split it up.**
 Stack all groups (all tickers, all users, all categories) into a single frame and compute across them together, rather than holding a frame per group and looping.
 Most work is plain column expressions that apply to every group in one pass — element-wise maths, filters, `when/then` — with **no `.over` at all**.
 Reach for `.over(group)` only where an operation must respect group boundaries: a `.shift`, a cumulative, a rank, or a per-group window.
-Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator (see the run-length recipe in `references/expressions.md`).
+Even sequential per-group logic stays in the one frame that way — a consecutive-run length or reset-on-change counter is a change flag, a `cum_sum` to number the runs, and a cumulative count within each run, all `.over(group)`, not a Python accumulator:
+
+```python
+runs = (
+    frame.sort("group", "order")
+    .with_columns(
+        polars.col("state")
+        .ne(polars.col("state").shift(1).over("group"))
+        .fill_null(True)
+        .cum_sum()
+        .over("group")
+        .alias("run_id")
+    )
+    .with_columns(
+        polars.int_range(1, polars.len().add(1)).over("group", "run_id").alias("run_len")
+    )
+)
+```
+
+`state` is whatever you are measuring runs of — for an up/down/flat run, `polars.col("close").sub(polars.col("close").shift(4).over("group")).sign()`.
+Two `with_columns` rather than one because `run_len` windows on `run_id`, which is the rule above.
+**`.fill_null(True)` is what makes the first row of each group start a run.** Comparing against a null yields null under three-valued logic, not `True`, so without it that row's `run_id` is null and it drops out of every window keyed on it — a silent hole at the head of every group.
 
 **Splitting into per-group sub-frames and looping is the same mistake as looping rows one at a time, a level up.**
 
@@ -185,12 +209,25 @@ So pivot mid-computation when a comparison spans a key — one timeframe against
 Long form is the default because most work applies to every series alike; wide is what you reach for when the key itself is what you are comparing across, and what you pivot to once at the boundary where something needs columns to display.
 Spreading a key across columns with a chain of joins is `pivot` hand-rolled, and stacking per-column selects with a `concat` is `unpivot` hand-rolled — reach for the named operation instead.
 
+**Attach a coarser series to finer rows with `join_asof`.** `strategy="backward"` answers "the last row at or before this one" — a weekly candle against daily rows, a rate that changes on effective dates — and both frames must be sorted on the `on` key.
+Passing `by=` then warns `Sortedness of columns cannot be checked when 'by' groups provided` on **every** call, sorted or not, and nothing done to the frames silences it: not sorting by the `by` columns first, not `set_sorted`.
+So sort correctly and suppress that one message where the join happens, rather than widening the filter or living with the noise:
+
+```python
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Sortedness of columns")
+    aligned = dates.sort("date").join_asof(
+        counts.sort("date"), by=["ticker", "timeframe"], on="date", strategy="backward"
+    )
+```
+
 ## Habits and `pandas` traps
 
 - **No index.** There's no implicit row index and no `.loc`/`.iloc` — select and filter with expressions.
 - **Immutable.** Every operation returns a *new* frame; there's no `inplace=`.
 Assign the result.
 - **Select before compute.** Only pull the columns you need; with lazy frames the optimiser does this for you.
+- **Null is not `NaN`.** `polars` keeps missing (null) apart from float not-a-number (`NaN`), where `pandas` conflates them — so `.fill_null` and `.fill_nan` are different calls, and `.drop_nulls` leaves a `NaN` sitting in the frame.
 
 **Build a one-column frame from a `Series`, not a dict and a schema.**
 `polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
@@ -238,10 +275,3 @@ A mutable **state object** the UDF reads *and writes* also works, but treat it w
 Prefer carrying state **as data in the frame** — an extra column or a `struct` — so it flows through the query natively and stays lazy.
 If it genuinely must live outside the frame, thread it explicitly with a plain function returning `(frame, state)` rather than a mutable side-channel.
 Reserve a write-through state argument for pragmatic cases like collecting diagnostics, knowing it's impure and runs at build time.
-
-## Reference cookbooks
-
-Read the relevant file for detail and worked examples:
-
-- `references/expressions.md` — the expression API: selection, conditionals, aggregations, window functions (`.over`), joins, string/date ops.
-- `references/pandas-migration.md` — `pandas` → `polars` translations and the gotchas that bite most often.
