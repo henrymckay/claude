@@ -32,20 +32,23 @@ Import convention (house style): `import polars` and qualify — `polars.col(...
 They're lazy descriptions, run in parallel by the engine, and are the heart of `polars`.
 You never loop over rows.
 
-**Contexts** are where expressions run:
+**Contexts** are where expressions run.
+A handful of methods carry nearly all the work, and they sort by what they do to the frame's shape:
 
-- `.select(...)` — pick/compute columns (result has only what you select).
-- `.with_columns(...)` — add/replace columns, keep the rest.
-- `.filter(...)` — keep rows matching a boolean expression.
-- `.group_by(...).agg(...)` — aggregate per group.
+- **Keep the shape.** `.select` picks and computes columns and returns only what you selected; `.with_columns` adds or replaces columns and keeps the rest; `.filter` drops the rows a boolean expression rejects.
+- **Change the grain.** `.group_by(...).agg(...)` collapses rows to one per group, changing what a single row represents.
 Group order is arbitrary unless you pass `maintain_order=True`, which costs speed — so where you only need determinism at the end, sort the result instead.
 An aggregation takes a condition without a second pass: `polars.col("value").filter(polars.col("value").gt(0)).sum()` totals only the rows that qualify.
+- **Change the layout.** `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows (it was `melt` before 1.0), and `.explode` splits a list column into rows.
+- **Aggregate without collapsing.** `.over` evaluates an expression within a partition and writes the answer back onto every row.
+It is what keeps per-group work in one frame instead of a loop, and it carries the worst trap in the API — below.
+- **Factor out a step.** `.pipe` hands the frame to a function and returns what comes back, so a named transform joins a chain without breaking it.
 
-The first three compute **within** the frame's current shape; `.group_by(...).agg(...)` also changes it, coarsening what one row represents.
-Reshaping has its own vocabulary alongside them: `.join` widens a row by key, `.pivot` turns a key's values into columns, `.unpivot` turns columns back into rows (it was `melt` before 1.0), and `.explode` splits a list column into rows.
+Three more you reach for constantly: `.sort`, `.unique` to drop duplicate rows, and `polars.concat` to stack frames.
+**`.sort` is a correctness requirement, not presentation.** `.shift`, every cumulative, `.first`/`.last` and `join_asof` all read the frame in its current row order, so an unsorted input returns a wrong answer rather than an untidy one, and nothing raises.
+Naming is `.alias`, conditionals are `when/then/otherwise` (`polars.when(cond).then(a).otherwise(b)`), and the typed **namespaces** — `.str`, `.dt`, `.list`, `.struct` — hold whatever is particular to a dtype.
+
 Choosing the shape is most of the work — the expression API is the easy half.
-
-Two more pieces of expression vocabulary the rest of this file spends: **`when/then/otherwise`** builds a conditional column (`polars.when(cond).then(a).otherwise(b)`), and the typed **namespaces** — `.str`, `.dt`, `.list`, `.struct` — hold the operations particular to a dtype.
 
 ```python
 import polars
@@ -275,3 +278,29 @@ A mutable **state object** the UDF reads *and writes* also works, but treat it w
 Prefer carrying state **as data in the frame** — an extra column or a `struct` — so it flows through the query natively and stays lazy.
 If it genuinely must live outside the frame, thread it explicitly with a plain function returning `(frame, state)` rather than a mutable side-channel.
 Reserve a write-through state argument for pragmatic cases like collecting diagnostics, knowing it's impure and runs at build time.
+
+## Run a frame function inside an expression
+
+`.pipe()` works at frame level, so a function taking a whole frame and returning one column has nowhere to sit inside `with_columns`.
+`polars.struct(...).map_batches(...)` is the way in: the struct packs the columns into one value per row, `map_batches` hands the whole `Series` to your function at once, and `.struct.unnest()` turns it back into a frame:
+
+```python
+frame.with_columns(
+    polars.struct("close", "volume")
+    .map_batches(lambda s: s.struct.unnest().pipe(vwap), return_dtype=polars.Float64)
+    .over("ticker")
+    .alias("vwap")
+)
+```
+
+**Ask first whether it should be an expression at all**, because most frame-to-column functions are one and the wrapper only hides that.
+Then note that an *eager, ungrouped* frame does not need this: `with_columns` accepts a `Series`, so `frame.with_columns(vwap(frame).alias("vwap"))` already works.
+What earns the wrapper is the two cases that leave you without a frame to call: a **`LazyFrame`**, where no frame exists yet to hand over, and **per-group application**, where `.over("ticker")` runs the function within each partition instead of once over everything.
+
+It is emphatically **not** `.map_elements`.
+That one calls Python per row; this one calls it once per batch, so a body written in expressions stays vectorised — on two million rows it costs the same as the plain expression.
+Three things to get right, each of which bites silently:
+
+- **Name the columns the function reads, never `polars.struct("*")`.** The struct's members are what the query has to materialise, so `"*"` defeats projection pushdown: `struct("a", "b")` over a four-column scan reads two columns, `struct("*")` reads all four, and on a wide `.parquet` that is the whole file.
+- **Pass `return_dtype`.** Without it the engine resolves the output type by *calling your function* on a fabricated two-row frame, so it runs an extra time on invented values — and a function that rejects them fails when the schema is resolved, nowhere near the call.
+- **The optimiser cannot see through it.** A `.filter` written after the expression stays after it rather than pushing down to the scan, so filter first and map second where the order is yours to choose.
