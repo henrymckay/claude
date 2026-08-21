@@ -54,7 +54,60 @@ Model data so illegal states can't be built (see `be-functional`); the domain's 
 Multiplying types are a prompt to check each still earns its place, not grounds for a package: a set of one-parser-to-one-consumer records is the input grammar modelled as types rather than a domain.
 - **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], dict[str, list[float]]]`).
 A noun that names *what* the core needs, not *how* — `operate` depends on it, `adapt` implements it.
-Interfaces, not data, so the domain's own types stay in `transform`.
+Interfaces, not data, so the domain's own types stay in `transform`; [Declare a port](#declare-a-port) has the shape to give one.
+- **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
+Imports `transform` and `port` only, and holds **at most** one module per use case — two commands means at most two modules — each re-exported so a driver calls `operate.report(...)`.
+That is a ceiling rather than a quota: a helper two use cases share lives in whichever module it most belongs to, not in a third one of its own.
+- **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
+Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled code takes a trailing-underscore package name (`httpx_/`), per `write-python`; [Write an adapter](#write-an-adapter) covers what one owes its callers.
+- **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
+
+`mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
+
+Two rules hold it together:
+
+- **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the outside world: network, filesystem, clock, randomness, external services.
+The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free.
+Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO.
+(Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
+- **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward.
+A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
+
+Control flows the other way: a running operation calls *out* through a port to whichever adapter a driver injected.
+Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
+That injection is the essential idea (see `be-functional`).
+
+**The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`.
+Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say (where `load` means *persist to a store*, not the on-screen presentation a driver owns).
+Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
+
+**Within a package, make every member the same kind.** A directory holding `ark.py` beside `httpx_/` tells a reader nothing by the difference — the shapes do not mark scope, importance or anything else, and the import path is identical either way.
+So when one member has to become a package, promote its siblings too.
+The payoff is that adding a second module to any of them is a one-file diff rather than a restructure, and `ls` of a layer reads as a list of peers.
+
+**Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
+Don't scaffold the full set for a script (KISS, YAGNI).
+
+**Design the core's shape before the edge's.** An entry point's interface — a CLI's flags, an API's schema — invites a design pass before it's built; the core's data shape rarely does, and it is the one that matters more.
+A driver is cheap to replace and serves one presentation, where the core's shape is what every adapter, operation and test is then built on, and a second entry point inherits it wholesale.
+So settle the core's shapes first — `be-functional`'s "Derive functions from the data flow" is how to arrive at them.
+
+**A module separates what is read separately — never one module per function.**
+A layer's modules exist so a reader can open the part they care about without the rest; where the whole layer is one sitting's reading, that is one module and the package holds nothing else.
+The tell is following a single call and opening three files to do it, each holding a dozen lines — the split cost more than it saved, and the `__init__.py` re-exporting them exists only to undo it.
+Split when a module would be worth reading on its own, and not before.
+
+**Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
+A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
+Either way you import a *module* and reach its members qualified through it (see `write-python`).
+
+**A re-exported member shadows the module it came from.** Re-exporting `count` out of `transform/count.py` binds the *function* to `transform.count`, so `from mypackage.transform import count` hands back the function and the module becomes unreachable by name — including from a test that wants to reach a private helper, and from a sibling module inside the same package.
+That is the trade the re-export makes and it is usually the right one, since callers want the function.
+Where it bites, name the module for the *shape* it holds rather than the one function it exports — `sequence.py` re-exporting `count`, `membership.py` re-exporting `symbols` — so the module name stays free.
+Those are naming examples, not a target shape: each of those modules holds everything of its kind, and a module that genuinely exports one function is the split the rule above warns against.
+
+### Declare a port
+
 **Where the core needs several calls from the *same* outside thing, make the port a `Protocol` and let the adapter module satisfy it.**
 A source that lists what it offers and then expands one of them, a store that reads and writes — declare the pair as a `typing.Protocol` and pass the adapter **module** where one is wanted: `{"ark": ark}`, not `Source(holdings=ark.fetch, names=ark.read)`.
 A module satisfies a structural protocol in `pyright` exactly as an instance does, extra keyword-only parameters and all, so nothing has to be a class — the `Protocol` is a type declaration and no adapter inherits from it.
@@ -65,18 +118,18 @@ Prefer it to an abstract base class too, which buys the contract being checked i
 The trade to know: a protocol's method name **is** the contract, so every adapter spells it the same.
 That rules out naming implementations for what distinguishes them — no `fetch_holdings` beside `read_holdings` to mark which costs a network call — and it should: callers reach the port precisely because they do not care which one answers, and a contract whose name changes per implementation is not a contract.
 Put the distinction in the module name, where `pytickersymbols_` already says the data ships with the package.
+
 **Route on a name the source states, not a position it was given.**
 Where the core picks between several adapters at runtime, the key belongs to the adapter — put it in the record and carry it in the data.
 A position in whatever sequence the driver happened to build is meaningless away from that one call, so the frame carrying it cannot be logged, cached or tested on its own; and indexing back into the sequence is a lookup no type checker can check, where a missing key at least fails loudly.
 It also removes a step: with the name in the record, collecting the catalogue and routing a name back to its source read the same way, and neither has to know how many sources there are.
-- **`operate`** (core) — the functions that orchestrate a whole task (`operate.report(stations, fetch)`), calling `transform` for logic and a `port` for IO and staying IO-free because the adapter is injected.
-Imports `transform` and `port` only, and holds **at most** one module per use case — two commands means at most two modules — each re-exported so a driver calls `operate.report(...)`.
-That is a ceiling rather than a quota: a helper two use cases share lives in whichever module it most belongs to, not in a third one of its own.
-- **`adapt`** (edge) — concrete implementations of the ports, each adapting an outside system to what the core expects (`httpx_.fetch` calls the weather service over HTTP and adapts its JSON to the `Fetch` port).
-Imports `transform`/`port` to conform to them, never `operate` or `drive`; library-coupled code takes a trailing-underscore package name (`httpx_/`), per `write-python`.
+
+### Write an adapter
+
 **An adapter declares its own output shape and always returns it** — the same columns and types on a full response, an empty one, and a failure alike.
 That is what stops the upstream library's own shape leaking inward: a client that answers `None` on a bad symbol, or a frame whose columns depend on how many rows came back, is normalised *once* at the boundary into the declared empty shape, so nothing downstream ever branches on which of those happened.
 Normalising that absence is the one Python-level branch that belongs in an adapter; a branch on the upstream's shape anywhere past it means the adapter did not finish its job.
+
 **The declared shape covers an absent value, not an absent answer.**
 A row the upstream had nothing for, a field it left off, a response with no matches — all normalise into the declared shape, because the caller asked a question and got an answer meaning "none".
 A source that did not answer at all is a different event: the request failed, the document would not parse, the table was not where it is published.
@@ -129,51 +182,6 @@ Both are one argument.
 Neither shows up in a passing test, because the failure is somebody else's configuration on a day you were not looking.
 Say who you are by default — a tool name and version is honest and is what a publisher checking its logs wants to see — but know that some services front-ended by a CDN refuse anything that is not a browser string.
 That is a fact about one service, found by trying it, not a default to adopt everywhere.
-- **`drive`** (edge) — the driving side and composition root: the entry points that start the program, each importing an operation and a concrete adapter, injecting the adapter into the operation (`operate.report(stations, fetch=httpx_.fetch)`), built out in `write-entry-points`.
-
-`mypackage/`, `code/`, and every layer under `code/` is a regular package — each carries an `__init__.py` — which is what makes `from mypackage.code import operate` and the `importlib.resources.files("mypackage")` anchor resolve; `data/` is a plain resource tree, not a package.
-
-Two rules hold it together:
-
-- **IO lives only at the edge.** The edge — driven adapters like `adapt`, and the drivers under `drive` — is the only code that touches the outside world: network, filesystem, clock, randomness, external services.
-The core (`transform`, `port`, `operate`) stays **pure** — deterministic and side-effect-free.
-Purity is about side effects, not dependencies: the core uses third-party *computation* libraries freely (`polars` for dataframes, `numpy`), and only avoids the IO/delivery frameworks (`fastapi`, `httpx`, `uvicorn`, `typer`, `shiny`) whose job *is* IO.
-(Even within `polars`, the transforms are core while `scan_csv`/`write_*` are edge.)
-- **Imports point inward.** The edge imports the core; the core imports neither the edge nor anything outward.
-A driver is the one place that imports both an operation and a concrete adapter, to wire them together.
-
-Control flows the other way: a running operation calls *out* through a port to whichever adapter a driver injected.
-Dependency injection is what lets the import arrow point in while control flows out — the operation *calls* the adapter without *importing* it.
-That injection is the essential idea (see `be-functional`).
-
-**The names are a standard, not a fixed set.** What fixes a package is which group it's in — set by the two rules — not that it's spelled exactly `transform` or `adapt`.
-Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say (where `load` means *persist to a store*, not the on-screen presentation a driver owns).
-Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
-
-**Within a package, make every member the same kind.** A directory holding `ark.py` beside `httpx_/` tells a reader nothing by the difference — the shapes do not mark scope, importance or anything else, and the import path is identical either way.
-So when one member has to become a package, promote its siblings too.
-The payoff is that adding a second module to any of them is a one-file diff rather than a restructure, and `ls` of a layer reads as a list of peers.
-
-**Let it grow into the app.** A tiny tool is a module or two at the package root (`mypackage/transform.py` + `mypackage/drive.py`) — no `code/`/`data/` split; introduce the `code/` wrapper, `data/`, and the layer packages only once there's a real boundary to name — an external service, a second entry point, more than one operation, assets to separate from code.
-Don't scaffold the full set for a script (KISS, YAGNI).
-
-**Design the core's shape before the edge's.** An entry point's interface — a CLI's flags, an API's schema — invites a design pass before it's built; the core's data shape rarely does, and it is the one that matters more.
-A driver is cheap to replace and serves one presentation, where the core's shape is what every adapter, operation and test is then built on, and a second entry point inherits it wholesale.
-So settle the core's shapes first — `be-functional`'s "Derive functions from the data flow" is how to arrive at them.
-
-**A module separates what is read separately — never one module per function.**
-A layer's modules exist so a reader can open the part they care about without the rest; where the whole layer is one sitting's reading, that is one module and the package holds nothing else.
-The tell is following a single call and opening three files to do it, each holding a dozen lines — the split cost more than it saved, and the `__init__.py` re-exporting them exists only to undo it.
-Split when a module would be worth reading on its own, and not before.
-
-**Reach each package through one qualified name.** A package presenting a single cohesive API re-exports it in `__init__.py`, so callers import the package and qualify through it — `transform.averages(...)`, `operate.report(...)`, `port.Fetch` — never a bare `averages` or a stuttering `average.averages`.
-A package of independent peers instead keeps them as separate modules you import and qualify directly — an adapter is `httpx_.fetch`, a `typer` module is `argument.stations()`.
-Either way you import a *module* and reach its members qualified through it (see `write-python`).
-
-**A re-exported member shadows the module it came from.** Re-exporting `count` out of `transform/count.py` binds the *function* to `transform.count`, so `from mypackage.transform import count` hands back the function and the module becomes unreachable by name — including from a test that wants to reach a private helper, and from a sibling module inside the same package.
-That is the trade the re-export makes and it is usually the right one, since callers want the function.
-Where it bites, name the module for the *shape* it holds rather than the one function it exports — `sequence.py` re-exporting `count`, `membership.py` re-exporting `symbols` — so the module name stays free.
-Those are naming examples, not a target shape: each of those modules holds everything of its kind, and a module that genuinely exports one function is the split the rule above warns against.
 
 ## Configuration
 
