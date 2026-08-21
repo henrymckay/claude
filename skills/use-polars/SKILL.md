@@ -2,13 +2,15 @@
 name: use-polars
 description: >-
   How to write correct, idiomatic Polars (the Python DataFrame library) — the
-  expression API, lazy vs eager execution, and the mental-model shifts coming
-  from pandas. Use whenever working with Polars DataFrames/LazyFrames, writing
-  data transformations or analytics in Polars, converting pandas code to
-  Polars, or debugging Polars queries — even if the user only says "polars",
-  "pl.", or names a .parquet/.csv workflow they want done with it. Targets
-  Polars 1.x. Detailed cookbooks live in references/. Polars-specific; the
-  general write-python conventions still apply on top.
+  expression API, lazy vs eager execution, keeping every group in one long-form
+  frame instead of looping, naming frames and pipe steps, and the mental-model
+  shifts coming from pandas. Use whenever working with Polars
+  DataFrames/LazyFrames, writing data transformations or analytics in Polars,
+  converting pandas code to Polars, reshaping between long and wide, or
+  debugging Polars queries — even if the user only says "polars", "pl.", or
+  names a .parquet/.csv workflow they want done with it. Targets Polars 1.x.
+  Detailed cookbooks live in references/. Polars-specific; the general
+  write-python conventions still apply on top.
 ---
 
 # Use Polars

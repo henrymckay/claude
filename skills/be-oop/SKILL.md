@@ -1,16 +1,16 @@
 ---
 name: be-oop
 description: >-
-  Object-oriented design done well — when to reach for classes, composition over
-  inheritance, encapsulation, SOLID, and the classic design patterns. Use when
-  designing or reviewing class hierarchies, working in an OOP codebase or
-  framework (subclassing, overriding hooks), modelling stateful long-lived
-  objects, or when the user mentions OOP, classes, inheritance, interfaces,
-  SOLID, or a design pattern by name — even if not explicitly. This is an opt-in
-  style skill: reach for OOP where it genuinely fits, not by default.
-  Language-agnostic principles here; Python idioms in references/python.md.
-  Layers on write-python (the in-code baseline); be-functional is the functional
-  counterpart.
+  Object-oriented design done well — when to reach for classes, composition
+  over inheritance, encapsulation, mixins, SOLID, and the classic design
+  patterns. Use when designing or reviewing class hierarchies, working in an
+  OOP codebase or framework (subclassing, overriding hooks), modelling stateful
+  long-lived objects, or when the user mentions OOP, classes, inheritance,
+  interfaces, mixins, SOLID, or a design pattern by name — even if not
+  explicitly. This is an opt-in style skill: reach for OOP where it genuinely
+  fits, not by default. Language-agnostic principles here; Python idioms in
+  references/python.md. Layers on write-python (the in-code baseline);
+  be-functional is the functional counterpart.
 ---
 
 # Be object-oriented

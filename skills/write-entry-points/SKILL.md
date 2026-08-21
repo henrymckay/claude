@@ -4,14 +4,17 @@ description: >-
   How to build an application's entry points — the drivers that invoke it: a
   command-line interface, an HTTP API, a GUI or dashboard, and scheduled or
   event-triggered jobs. Each is a thin shell over the pure core and the
-  composition root that injects a concrete adapter into an operation. Use
-  whenever adding or structuring an entry point, wiring dependency injection at
-  the boundary, splitting a driver into role and framework packages, or naming a
-  launch command — even if the user just says "add a CLI", "expose an API",
-  "build a dashboard", "run this on a schedule", or names typer, fastapi,
-  uvicorn, pydantic, shiny, or a scheduler. Language-agnostic principles here;
-  Python build-outs in references/python.md. Layers on structure-python's drive
-  layer and be-functional.
+  composition root that injects a concrete adapter into an operation, designed
+  as a public surface and built to compose with the tools around it. Use
+  whenever adding or structuring an entry point, designing a command's options
+  or an API's surface, deciding what goes to standard output and what to
+  standard error, wiring dependency injection at the boundary, splitting a
+  driver into role and framework packages, or naming a launch command — even if
+  the user just says "add a CLI", "expose an API", "build a dashboard", "run
+  this on a schedule", or names typer, fastapi, uvicorn, pydantic, shiny, or a
+  scheduler. Language-agnostic principles here; Python build-outs in
+  references/python.md. Layers on structure-python's drive layer and
+  be-functional.
 ---
 
 # Write entry points
