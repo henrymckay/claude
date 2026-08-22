@@ -444,6 +444,16 @@ render.table(operate.report(stations, fetch=httpx_.fetch, rate=settings.rate))
 `config.Settings()` reads `MYPACKAGE_RATE` and validates it, failing fast on a bad value.
 A secret is a `pydantic.SecretStr` field and arrives the same way — from the environment or a mounted file, never a default baked into the code (see `use-git`).
 
+**One value from the environment is a function, not a settings model.**
+`pydantic-settings` earns its place on a handful of fields — a prefix worth declaring once, types to coerce, defaults to state, a secret to wrap — and a single string buys none of that while costing a dependency, a class and a module.
+Read it with a function that raises a clear error naming the variable when it is unset, and grow into the model when a second field arrives; the call sites do not change, because they were calling a function either way (see `be-functional`).
+The lighter form is also what keeps a *required* value honest: a settings model invites a default, and a default for an address a publisher is meant to reply to ships a lie.
+
+**Validate at startup only what the command about to run actually needs.**
+Failing fast is worth having where a long run would otherwise waste work, so a driver that reads its settings in a `typer` callback stops before the first request rather than midway through fifty.
+But a callback runs before *every* command, so validating there makes the command that fetches nothing — listing what the tool offers, printing a version — fail for want of a value it will never use.
+Read it where it is used and let the first use fail, or check it in the commands that need it; a tool that cannot list its own contents without a network credential has made the check cost more than it saves.
+
 ## Logging
 
 Configure logging once, at the composition root — the root logger and one handler — then let every module emit through `logging.getLogger(__name__)` (see `structure-python`).
