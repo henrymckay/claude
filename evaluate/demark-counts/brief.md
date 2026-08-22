@@ -55,8 +55,8 @@ Every one of them takes tickers the three ways above, carries the same filters, 
 
 The same table, the same two options and the same plain form the other groups already answer with — comma-separated, no heading row, columns in alphabetical order, `-o` to a file I name and `-t` for a `rich` table.
 
-**The column names for this group are not settled.**
-I will pin them down the way I have for `index` and `symbol`; until I do, take what the Table section describes above and treat neither the names nor their spelling as fixed.
+**The column names for this group are not settled**, and neither are short forms for the filter options.
+I will pin both down the way I have for `index` and `symbol`; until I do, take what the Table and Filters sections describe above, give the filters their long forms alone, and treat none of those names as fixed.
 
 ## Not in this build
 

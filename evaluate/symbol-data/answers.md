@@ -51,10 +51,11 @@ The tell that this was missed is a second `rich.Table` construction appearing in
 
 ## What should not exist yet
 
-- **No date range, no filtering, no counts.** The brief asks for candles, and a `--from`/`--to` pair added now is a guess at the next build rather than a requirement of this one.
 - **No caching.** Candles change daily and the brief says nothing about storing them, so a build that adds a cache has invented a requirement and a cache invalidation problem with it.
-- **No timeframe option.** The brief names three and asks for all three every run; an option to pick one is a capability nobody wanted, on a public surface that then has to keep it.
 - **No abstraction over price sources.** The core needs candles from outside, which is a port; one named source behind it is not a family, and a registry, a provider protocol or a `--source` flag is machinery for a set that has one member and no way to gain another.
+- **No adjustment option.** The brief settles that prices are split-adjusted and not dividend-adjusted, so a `--adjust` flag offers a choice nobody asked for and puts back the decision the adapter exists to make.
+- **No filtering, and no counts.** The bounds size the *fetch*; they are not a general row filter, and the moment one is written the next build's filter has to be reconciled with it.
+- **No paging.** `--count` is the most the caller wants, which is not the same as a number to go and reach.
 
 ## The boundary
 
@@ -124,6 +125,15 @@ The brief asking for a settled order is the same requirement arriving from the o
 **`threads` is on by default, so one call is many requests.**
 An index expansion is five hundred tickers in a single `download`, which is where a publisher's rate limit is found rather than in any test.
 
+**`end` is exclusive in `yfinance` and inclusive in the brief, and the difference is one day.**
+`start=2026-06-01, end=2026-06-30` returns candles up to the 29th, and naming the same date for both returns an **empty frame** — which is exactly the "give me just this day" the brief says must work.
+So the adapter adds a day to the bound it was handed, in the one place that knows the two conventions differ.
+Passing it straight through loses the last candle of every run without saying so, and answers nothing at all for a single day.
+
+**`--count` is a ceiling, not a target.**
+A search for `nvidia` capped at 250 comes back with 56, because that is what Yahoo matched.
+A build that pages to make up the difference has invented a requirement out of a number that was always an upper bound.
+
 ### What `info` returns
 
 **The key set varies by instrument, so a field is *absent* rather than empty.**
@@ -169,8 +179,16 @@ A flag would mean the pipeline only composes for someone who already knows the f
 Three input routes are three chances for whitespace, case and repetition to differ, and the brief asks for a symbol back once however many times it was given.
 Doing it at the boundary is what stops each route growing its own version.
 
-Candles go out the same two ways the symbols already do, and the options are spelled the way they already were — the destination is `-o`/`--output`, and an input path is spelled after it.
+Candles go out the same two ways the symbols already do, and every option the brief spells is spelled once for the whole tool rather than per command.
 Spelling the same idea differently between two commands of one tool is the cheapest possible thing to get wrong and the most irritating to live with.
+
+**A repeated `--interval` is one column, not three code paths.**
+The option collects into a list, the adapter makes one call per member and concatenates, and the value lands in the `interval` column — so the axis the brief exposes as an option is the same axis `use-polars` insists stays data.
+The failure is a branch per timeframe, or three boolean flags, or a function returning a column per interval: each turns a grouping key into control flow, and each is the per-group loop the previous section already ruled out, arriving this time through the option parser.
+
+**The bounds are parameters of the fetch, not of a filter.**
+Nothing here filters rows — the source applies them — and keeping it that way is what lets the next build widen the same bounds by a warm-up margin before they reach this adapter.
+A build that fetches everything and filters afterwards is correct and grows with the data; one that filters what it already narrowed has written the reconciliation the next build then has to undo.
 
 **`lookup` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a ticker rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
@@ -194,6 +212,7 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 - That the index converts to a `Datetime` rather than a `Date`.
 - That `get_info()` omits keys rather than nulling them, on an ETF and an index as well as a stock, and returns a near-empty dict for a ticker that does not exist.
 - That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
+- That `end` excludes its own date on every interval, and that an equal `start` and `end` return nothing — the two facts the inclusive bounds are built on.
 
 **The default run must not touch the network.**
 Record one response covering two tickers on different exchanges, keep it beside the tests as a data file, and parse that.
@@ -227,3 +246,6 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **`getattr(lookup, f"get_{kind}")`**, which trades a checked mapping for a runtime `AttributeError` — and `get_crypto`, which is what that guess produces and is not a method.
 - **Three adapter packages for one library**, tripling the failure conversion and the naming to draw a boundary that is not there.
 - **Treating a search that matched nothing as a failure**, when not finding something is what searching for it risks.
+- **Passing `--end` straight to `yfinance`**, so every run quietly loses its last candle and a single-day request returns nothing.
+- **A flag per timeframe**, or a branch per timeframe behind one flag, turning the `interval` axis into control flow.
+- **Paging a search to reach `--count`**, which was a ceiling all along.

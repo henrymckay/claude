@@ -134,9 +134,15 @@ It is one less thing to remember, and it means a column added later lands somewh
 The plain form is comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
 Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
 
-## Options
+## Arguments and options
 
-Two, spelled the way the tools I already use spell them, both working on every command in the tool, and spelled the same way in every group that gets added later.
+`expand` takes one or more names as arguments and is an error given none.
+`catalogue` takes none at all.
+
+Every option has a long form and a single-letter short form.
+An option meaning the same thing keeps the same spelling everywhere it appears — in both commands here, and in every group added after this one.
+
+Two are common to every command in the tool:
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-t`, `--table` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.

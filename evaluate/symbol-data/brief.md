@@ -38,8 +38,8 @@ A search that matches nothing is an answer rather than a failure, since not find
 
 One row per ticker, timeframe and date, carrying the open, high, low and close.
 
-All three timeframes come back on every run.
-I am reading them against each other, so a run that served me one of them is a run I have to do three times.
+All three timeframes come back unless I ask for fewer.
+I am usually reading them against each other, so a run that served me one of them by default would be a run I have to do three times.
 
 Give me the prices at the precision a price chart shows rather than whatever tail a float carries.
 Four decimal places is more than I need and everything past it is noise I have to read around.
@@ -108,6 +108,38 @@ That spelling is between you and the library and I should never see it.
 
 `date` is the day the candle's period **begins**: the Monday for a weekly row and the first of the month for a monthly one, not a day somewhere inside the period and not the day it ended.
 
+## Arguments and options
+
+`candles` and `info` take any number of tickers as arguments, or none at all where the tickers arrive on standard input or from a file.
+`lookup` takes exactly one thing to search for.
+
+Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
+
+Common to every command, as they already are in the `index` group:
+
+- `-o`, `--output PATH` writes to that file instead of standard output.
+- `-t`, `--table` shows a `rich` table instead of the plain default.
+
+On `candles` and `info`, which both take tickers:
+
+- `-f`, `--file PATH` reads the tickers from that file rather than from standard input.
+
+On `candles`:
+
+- `-s`, `--start DATE` is the earliest candle I want.
+- `-e`, `--end DATE` is the latest.
+- `-i`, `--interval` picks a timeframe, given once per timeframe I want: `-i daily -i weekly`.
+
+Both bounds are **inclusive**, so naming the same date twice asks for that one day and gets it back rather than nothing.
+A candle is in range when its `date` is, so a weekly row is in or out by the Monday its week began.
+Leave `--start` off and I get as far back as Yahoo will go; leave `--end` off and I get everything up to today.
+Leave `--interval` off and I get all three.
+
+On `lookup`:
+
+- `-k`, `--kind` narrows the search to one kind of instrument; leaving it off searches every kind.
+- `-c`, `--count N` is the most matches I want back, a hundred if I do not say.
+
 ## Examples
 
 ```bash
@@ -116,6 +148,10 @@ trade symbol candles AAPL MSFT NVDA
 trade index expand dow-jones | trade symbol candles
 trade symbol candles < tickers.txt
 trade symbol candles AAPL -o aapl.csv
+trade symbol candles AAPL -i daily -i weekly
+trade symbol candles AAPL --interval monthly --start 2020-01-01
+trade symbol candles AAPL MSFT -s 2026-06-01 -e 2026-06-30
+trade symbol candles -f tickers.txt -i daily
 trade index expand ftse-100 | trade symbol candles > ftse.csv
 
 trade symbol info NVDA
