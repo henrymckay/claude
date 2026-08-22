@@ -196,6 +196,14 @@ Left in each adapter it becomes a set of near-copies, and a correction to the re
 What is emphatically *not* shared is the shaping: how a ticker becomes a symbol is that publisher's own knowledge and stays put.
 Wait for the second caller before extracting, and count what is actually shared — where the library reads the format natively, two adapters may have only the wrapper line in common, and a package holding one three-line function costs more than the duplication.
 
+**A convention several publishers write in stays at the edge, named for the convention rather than for any of them.**
+The moment a second source spells something the same way — an exchange code beside a ticker, an identifier scheme, a date format somebody's industry fixed — the shaping stops being one publisher's knowledge without becoming the domain's: the core still must not learn that such a convention exists.
+So it earns its own member of the edge layer, named for what it is, holding both the rule and the reference table it reads.
+Each adapter then says only that it writes in that convention, which is the one fact about it that is true.
+
+That member is not a source, and the layer's own mapping should not pretend otherwise.
+A package of interchangeable adapters names its members so every driver reads the same set (see `write-entry-points`), and what it names is the ones something can be *fetched from* — a shared convention, a shared reader, a settings module are all members of the package and none of them belongs in that mapping.
+
 **An adapter calling a service you do not own states a deadline and identifies itself.**
 A request with no timeout hangs the whole program on somebody else's outage, and there is no upper bound on how long that lasts.
 A client sending its library's default user agent gets refused by whatever sits in front of the service — and refused *unevenly*, on the host behind a CDN and not the one serving from object storage, so the same code works against two publishers and 403s the third.
