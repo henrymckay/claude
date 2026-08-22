@@ -22,7 +22,12 @@ Nothing in the first group moves or is renamed to make room for it.
 - Read from a file I name.
 - Piped or redirected in on standard input, so `trade index get-symbols dow-jones | trade symbol get-candles` just works.
 
-An index stands in for its constituents, the way `trade index get-symbols` already resolves it.
+These are symbols, not indices, and nothing here expands one.
+`trade symbol get-candles SMH` gives me the candles for SMH itself, which I can go and buy, never for the twenty-five stocks it holds.
+An index reaches these commands by being expanded first, so `trade index get-symbols SMH | trade symbol get-candles` is how I ask for the holdings.
+
+I would rather type the pipe than have the tool guess which of the two I meant.
+Most of what my catalogue names is tradeable in its own right, so a guess would be wrong about as often as it was right, and I would not be able to tell which had happened.
 
 I will hand you the same symbol twice without meaning to, since two funds hold the same stock and I have piped both in.
 I want it back once.

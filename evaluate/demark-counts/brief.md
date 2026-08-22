@@ -8,7 +8,8 @@ Now I want DeMark counts over those candles, and a table I can scan a whole inde
 A third group, `demark`, beside the `index` and `symbol` groups already there.
 Nothing in either of them moves or is renamed to make room for it.
 
-Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input — including an index standing in for its constituents, and a symbol I have handed you twice coming back once.
+Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input, and a symbol I have handed you twice coming back once.
+They are symbols, not indices: an index reaches this group the same way it reaches `trade symbol get-candles`, by being expanded first.
 
 ## Filters
 

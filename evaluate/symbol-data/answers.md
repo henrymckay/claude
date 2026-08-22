@@ -43,7 +43,17 @@ A renderer reordering columns is doing at the edge what the shape should already
 **A port that is a `Protocol`, not three callable aliases.** The core needs three things from the *same* outside thing, which is the case `structure-python` names: declare the trio as a protocol the adapter module satisfies, and the composition root hands over the module.
 That one adapter satisfies it today is not an argument against the protocol, and it is not an argument for inventing a second one either.
 
-**An `operate` package.** The symbols build already defines a port for holdings; this build adds a second port and three more use cases, so the operations stop being loose functions and the package the last build did not earn is earned here.
+**Three more use cases in the `operate` package the last build already earned**, one per command, which is a fact about this rung rather than a rule — the five operations are five because each does a different job, and the next build's four commands share one.
+
+**The operations are the stages, and the driver composes them.**
+`get_candles` and `get_info` take **symbols**; turning an index into symbols is `get_symbols`, which the previous build already built.
+A driver asked for an index's candles calls both, in that order, and injects one port into each.
+
+Handing `get_candles` a list of names instead is the seam mistake `be-functional` names outright: a function given something upstream of its own seam has to reconstruct its real input internally, so the two transformations fuse and the step between them stops existing.
+It also gives the operation three ports where it uses one.
+
+The payoff is that `trade index get-symbols dow-jones | trade symbol get-candles` and the same work inside one process run the *same* two steps, rather than arriving at one answer by two routes only one of which is tested.
+The cost to accept is that a second driver repeats two lines — which is not duplication worth an abstraction until a third one arrives.
 
 **One pair of renderers for the whole tool, not a pair per group.**
 The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.
@@ -56,6 +66,7 @@ The tell that this was missed is a second `rich.Table` construction appearing in
 - **No adjustment option.** The brief settles that prices are split-adjusted and not dividend-adjusted, so a `--adjust` flag offers a choice nobody asked for and puts back the decision the adapter exists to make.
 - **No filtering, and no counts.** The bounds size the *fetch*; they are not a general row filter, and the moment one is written the next build's filter has to be reconciled with it.
 - **No paging.** `--count` is the most the caller wants, which is not the same as a number to go and reach.
+- **No index resolution in this group.** The brief is explicit that these commands take symbols, so an operation reaching for the holdings port to expand a name it was handed has added a stage nobody asked for — and made half the catalogue unchartable, since most of what it names is tradeable itself.
 
 ## The boundary
 
@@ -246,6 +257,7 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **`getattr(lookup, f"get_{kind}")`**, which trades a checked mapping for a runtime `AttributeError` — and `get_crypto`, which is what that guess produces and is not a method.
 - **Three adapter packages for one library**, tripling the failure conversion and the naming to draw a boundary that is not there.
 - **Treating a search that matched nothing as a failure**, when not finding something is what searching for it risks.
+- **An operation taking names where its seam begins at symbols**, so it rebuilds its own input and carries ports it never calls.
 - **Passing `--end` straight to `yfinance`**, so every run quietly loses its last candle and a single-day request returns nothing.
 - **A flag per timeframe**, or a branch per timeframe behind one flag, turning the `interval` axis into control flow.
 - **Paging a search to reach `--count`**, which was a ceiling all along.
