@@ -10,8 +10,8 @@ Now I want the tool to say things about the symbols themselves — what they cos
 A second group, `symbol`, beside the `index` group already there.
 Nothing in the first group moves or is renamed to make room for it.
 
-- `trade symbol candles [TICKER...]` gives me the price candles behind those tickers.
-- `trade symbol info [TICKER...]` gives me what each ticker is.
+- `trade symbol candles [SYMBOL...]` gives me the price candles behind those tickers.
+- `trade symbol info [SYMBOL...]` gives me what each ticker is.
 - `trade symbol lookup QUERY` finds tickers I could then ask about.
 
 ## Tickers

@@ -110,7 +110,7 @@ More groups follow in the builds after this one, so the shape has to take them w
 
 Two commands in the group, because finding out what I can expand is a different question from expanding one.
 
-- `trade index expand NAME...` gives me the symbols those collections hold.
+- `trade index expand INDEX...` gives me the symbols those collections hold.
 - `trade index catalogue` gives me the names I follow.
 
 `catalogue` is how I remind myself which collections I have set up rather than a list of everything that works, since any ETF ticker expands whether it appears there or not.
