@@ -26,17 +26,17 @@ Deriving coarser candles from dailies is a transform the problem does not need, 
 **Timeframe is a column, not something the caller stitches together.** The adapter makes one call per interval because the API has no other shape, concatenates them itself, and hands back a single frame.
 A `concat` over a comprehension is only the per-group-loop mistake when the groups are computation; here each group is its own network call.
 
-**The stamp is the candle's start, and naming it so is what makes the completed-candle rule true rather than checked.**
-Yahoo stamps a weekly candle on the Monday and a monthly one on the first of the month, so the column is `start` — the beginning of the period the row covers, not a day the row is about.
-Call it `date` and the next rung reads it as one, at which point asking a Wednesday for its weekly figure needs a rule nobody wrote down.
+**The date the brief asks for is the one Yahoo already gives, so nothing re-stamps it.**
+A weekly candle arrives stamped on the Monday and a monthly one on the first, which is exactly what the brief says the column means — so the adapter carries the value across and the completed-candle rule holds by construction.
+The failure is a build that reads "date" as a day the row is *about* and shifts the stamp to the period's end, or spreads a weekly row over its five days, either of which invents a transform to satisfy a requirement already met.
 
 **The adapter spells the columns in the domain's words, in one expression over the whole schema.**
 Yahoo publishes CamelCase and a space in `Adj Close`; the frame leaving the adapter carries neither.
 Rename through `polars.all().name.map(...)` rather than a dict naming every column, so a field the source adds arrives spelled correctly instead of waiting for someone to find the dict — the same reason `use-polars` prefers a selector to a hand-written list.
 
-**Volume comes back too, though the brief names only the open, high, low and close.**
-`structure-python` settles an adapter's columns against the **source**, not today's caller: volume is published, the domain has a name for it, and the costs are asymmetric — dropping a column later is one line in the core, where widening means revisiting the adapter, its tests and the recorded response.
-"Build what the brief asks for and no more" bounds the *surface* — no option nobody asked for, no stage nobody wanted — and the shape an adapter declares is not part of that surface.
+**Alphabetical column order is the declared schema, not a sort at the end.**
+The adapter declares its output in that order once and every renderer selects it unchanged, so nothing sorts column names on the way out.
+A renderer reordering columns is doing at the edge what the shape should already guarantee, and it has to be written again in the next group.
 
 ## What the build earns
 
@@ -45,11 +45,9 @@ That one adapter satisfies it today is not an argument against the protocol, and
 
 **An `operate` package.** The symbols build already defines a port for holdings; this build adds a second port and three more use cases, so the operations stop being loose functions and the package the last build did not earn is earned here.
 
-**A format option, replacing the previous rung's `--table` boolean.**
-One column made the boolean honest: there were two forms and a flag picked between them.
-Five columns means the machine form has to be *named* — whether it has a header, what separates the fields, what happens to a value carrying the separator — and once that is a decision, a flag called `--table` is answering a question it never asks.
-So the option takes a format, `csv` by default because that is the form the tools beside it already read, and `table` for the `rich` render.
-This is the previous rung's own note coming due, and it reaches back: the symbols command grows the same option rather than keeping its boolean, because a tool whose second command re-spells its first command's options is one nobody can use from memory.
+**One pair of renderers for the whole tool, not a pair per group.**
+The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.
+The tell that this was missed is a second `rich.Table` construction appearing in the next build: the table differs by which frame it is handed, and nothing else.
 
 ## What should not exist yet
 
@@ -120,7 +118,7 @@ Everything after the `stack` is an expression.
 **The adapter declares its own output shape and returns it whatever happens**, including when the download comes back empty or `None`, so no later code branches on what the library felt like returning.
 
 **Sorting is correctness, not presentation.**
-The frame leaves the adapter sorted by ticker and start, because every window the next rung writes reads the frame in its current row order and nothing raises on an unsorted input.
+The frame leaves the adapter sorted by symbol and date, because every window the next rung writes reads the frame in its current row order and nothing raises on an unsorted input.
 The brief asking for a settled order is the same requirement arriving from the other end, and satisfying it in the renderer satisfies only the half that shows.
 
 **`threads` is on by default, so one call is many requests.**
@@ -176,7 +174,7 @@ Spelling the same idea differently between two commands of one tool is the cheap
 
 **`lookup` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a ticker rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
-What must stay identical across all three is the *output* — the same format option, the same `-o`, the same table — because that is the half a caller composes with.
+What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-t` — because that is the half a caller composes with.
 
 **The group is a sub-application, not a prefix.**
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
@@ -218,7 +216,9 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **A `Datetime` stamp left uncast**, so a value printing as a date fails to join against one.
 - **A leaky adapter**: tidying in `pandas` past what the `MultiIndex` forces, reaching back into the original frame mid-chain, typing the incoming frame as `object` with a `# type: ignore`, or letting the upstream's empty shape reach the core.
 - **Reading stdin only when a flag says so.** Taking a path where one is named and standard input otherwise is what makes the two commands compose.
-- **Carrying the previous rung's `--table` boolean onto five columns**, so the machine form was never named and nobody decided whether it has a header.
+- **A renderer per command**, so eight columns and one column are rendered by two functions that agree only by accident.
+- **A heading row on the plain form**, which turns `trade index expand dow-jones | trade symbol candles` into a request for a ticker called `symbol`.
+- **Leaking `yfinance`'s interval spelling into the `interval` column**, so `1wk` reaches a caller who was promised `weekly` and the adapter's reference table has been published as the interface.
 - **Interval strings written into the adapter**, where the table of domain name against library argument belongs in `data/adapt/`.
 - **Sorting in the renderer**, which leaves the frame the core computes on in whatever order the source happened to return.
 - **Subscripting a field `get_info()` does not always carry**, so an ETF or an index fails on a raw `KeyError` where a stock passed.

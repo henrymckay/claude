@@ -51,6 +51,13 @@ Four in the group.
 
 Every one of them takes tickers the three ways above, carries the same filters, and answers the same ways.
 
+## Output
+
+The same table, the same two options and the same plain form the other groups already answer with — comma-separated, no heading row, columns in alphabetical order, `-o` to a file I name and `-t` for a `rich` table.
+
+**The column names for this group are not settled.**
+I will pin them down the way I have for `index` and `symbol`; until I do, take what the Table section describes above and treat neither the names nor their spelling as fixed.
+
 ## Not in this build
 
 I also want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.

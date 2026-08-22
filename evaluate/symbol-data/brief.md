@@ -93,13 +93,20 @@ That is a fact about Yahoo rather than something to build around, but it is why 
 
 ## Output
 
-The same two ways `trade index expand` already goes, to standard output for piping and to a file I name.
-All three commands answer the same way as each other.
+The same table, the same two options and the same plain form `trade index expand` already answers with — comma-separated, no heading row, columns in alphabetical order.
+`-o` writes to a file I name and `-t` shows a `rich` table, spelled exactly as they already are.
+Several columns now where the symbols had one, and that is the only thing that changes.
 
-Whatever lands on standard output has to be readable by the tools I already have, without my writing a parser for it first.
-Several columns now where the symbols had one, so that stops being obvious and needs deciding.
+- `candles` has `close`, `date`, `high`, `interval`, `low`, `open`, `symbol` and `volume`.
+- `info` has `country`, `currency`, `full_exchange_name`, `industry`, `long_name`, `market`, `market_cap`, `quote_type`, `sector`, `short_name` and `symbol`.
+- `lookup` has `exchange`, `quote_type`, `rank`, `short_name` and `symbol`.
 
-When I want to read it myself rather than pipe it, a `rich` table down the page, the way `trade index expand` already gives me one.
+Yahoo spells its fields in camel case and I do not want to read them that way, so `fullExchangeName` reaches me as `full_exchange_name`.
+
+`interval` says which timeframe the row is, in the words I use for them — `daily`, `weekly` and `monthly` — rather than however `yfinance` spells its argument.
+That spelling is between you and the library and I should never see it.
+
+`date` is the day the candle's period **begins**: the Monday for a weekly row and the first of the month for a monthly one, not a day somewhere inside the period and not the day it ended.
 
 ## Examples
 
@@ -120,7 +127,7 @@ trade symbol lookup nvidia
 trade symbol lookup '^' --kind index
 trade symbol lookup '=X' --kind currency
 trade symbol lookup 'VANECK UCITS' --kind etf --count 200
-trade symbol lookup nvidia --kind stock | trade symbol candles
+trade symbol lookup nvidia --kind stock | cut -d, -f5 | trade symbol candles
 ```
 
 ## Working style

@@ -101,9 +101,6 @@ Where a file leaves it out and there is nothing to work it out from, I would rat
 Hold them in a `polars` frame, ready to show, rather than assembling the output a line at a time on the way out.
 
 One symbol per line and nothing else, always, so `grep`, `sort` and `xargs` all work on them without my thinking about it.
-Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
-
-When I do want to read them myself, a flag gives me a `rich` table down the page instead, with a heading and a count at the end so I know how many came back.
 
 ## Commands
 
@@ -124,12 +121,25 @@ Every name in it has to expand, and expand to something.
 A name I can read in `catalogue` and cannot use is worse than one you never offered me, so check them all before you tell me it is done.
 I care what each gives back, not that the command exited cleanly.
 
+## Output
+
+Every command in the tool answers with a table, and this is where that starts.
+
+- `trade index catalogue` has one column, `index`.
+- `trade index expand` has one column, `symbol`.
+
+Columns come back in **alphabetical order**, whatever order I have listed them in when describing them.
+It is one less thing to remember, and it means a column added later lands somewhere predictable instead of on the end.
+
+The plain form is comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
+Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
+
 ## Options
 
-Two, spelled the way the tools I already use spell them, and both work on both commands.
+Two, spelled the way the tools I already use spell them, both working on every command in the tool, and spelled the same way in every group that gets added later.
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-t`, `--table` shows a `rich` table instead of the one-per-line default.
+- `-t`, `--table` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
 
 ## Examples
 

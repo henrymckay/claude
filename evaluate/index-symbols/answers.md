@@ -164,7 +164,8 @@ Spelling the commands `index-expand` and `index-catalogue` at the root reaches t
 - `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table.
 A path does not silently override the flag.
 - One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect.
-A boolean `--table` covers the two forms this build has; the moment a second column arrives it will want naming a format instead, which is the next build's problem to notice.
+The brief reaches it by fixing the plain form as headerless comma-separated values rather than by describing a list, which is the same thing over one column and still a thing over eight — so the renderer written here is the one every later group inherits.
+A build that prints bare lines because there happens to be one column has written a renderer that will not survive the next command, and the `--table` flag beside it then looks like a choice between two forms when it is a choice between one form and a `rich` table.
 - Several names expanding into one list, deduplicated across them, since `ARKK` and `ARKW` hold much the same stocks and asking for both should not say so twice.
 - One name failing the whole run.
 A short list is the dangerous outcome, because nothing downstream can tell it apart from a collection that genuinely shrank.
