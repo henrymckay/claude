@@ -9,14 +9,14 @@ Three new shapes, three seams, each a change of entity or grain.
 
 | shape | one row is | how it is reached |
 |---|---|---|
-| candles | a ticker's candle in one timeframe | the candles build, unchanged |
+| candles | a symbol's candle in one timeframe | the candles build, unchanged |
 | counts | one count on that candle | count the runs and the countdowns |
-| aligned | a ticker, day, timeframe and count | map each candle's counts onto the days it covers |
-| wide | a ticker on a day | `pivot` timeframe and count kind out together |
+| aligned | a symbol, day, timeframe and count | map each candle's counts onto the days it covers |
+| wide | a symbol on a day | `pivot` timeframe and count kind out together |
 
-**The counting function needs nothing but its input.** Given a long frame of candles covering every ticker and every timeframe at once, it returns a long frame of counts, and it is expressible entirely in column and window expressions.
+**The counting function needs nothing but its input.** Given a long frame of candles covering every symbol and every timeframe at once, it returns a long frame of counts, and it is expressible entirely in column and window expressions.
 
-There are **three** axes — ticker, timeframe and which count — and all three are **columns**, never arguments.
+There are **three** axes — symbol, timeframe and which count — and all three are **columns**, never arguments.
 Where each arrived from is irrelevant to how it is modelled: a fetch, a flag, or the problem statement fixing that there are exactly three counts.
 A loop over any of them is the same mistake, and three count *columns* produced by three near-identical expressions is that loop written wide.
 
@@ -66,7 +66,7 @@ Logs go to standard error, or they land in the middle of piped data — `RichHan
 
 `trade demark count`, the three per-count commands, `trade symbol candles` and `trade index expand` each reach their own stage, so a caller can take any one of them without running the rest.
 The three groups are three sub-applications under one root, and the third arrives by registering a fourth thing on the root rather than by editing what the first two exposed — which is the test of whether the second build nested them or merely prefixed them.
-Every command spells a shared idea the same way — the file it writes to, the way tickers arrive — because a tool whose second command renames its first command's options is one nobody can use from memory.
+Every command spells a shared idea the same way — the file it writes to, the way symbols arrive — because a tool whose second command renames its first command's options is one nobody can use from memory.
 
 Filters are one option per column taking a bound pair, so the surface grows by a column rather than by three flags a column.
 Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity, and the pair is what keeps both.
@@ -106,7 +106,7 @@ Bias the walk and measure where it lands before trusting the result.
 
 ## Wrong turns
 
-- **A Python loop** over the candles, the tickers, the timeframes, or the counts.
+- **A Python loop** over the candles, the symbols, the timeframes, or the counts.
 - **Three counting functions.** Setup, sequential and combo differ in their per-candle condition, not in how a run is counted.
 - **Three count columns instead of a count axis**, which is the same loop wearing a schema.
 - **A direction column beside the count**, which doubles what has to be reshaped and forces every consumer to understand setups.

@@ -10,8 +10,8 @@ A second source, three shapes out of it, and the first shapes the core genuinely
 | shape | one row is | how it is reached |
 |---|---|---|
 | symbols | one symbol | rung 1, unchanged |
-| candles | a ticker's candle in one timeframe | fetch each timeframe directly |
-| descriptions | one ticker's description | one call per ticker, a declared schema over each response |
+| candles | a symbol's candle in one timeframe | fetch each timeframe directly |
+| descriptions | one symbol's description | one call per symbol, a declared schema over each response |
 | matches | one instrument a search found | one call, already a frame |
 
 **Three commands over one source is one adapter, not three.**
@@ -77,33 +77,33 @@ Both are things `structure-python` and `write-python` would have you add; go and
 **`auto_adjust=False` also brings `Adj Close` back**, sitting in the frame beside `Close` and holding the rejected number under a name nobody will question.
 Select the columns you declared rather than keeping what arrived.
 
-**A ticker Yahoo has nothing for does not raise.**
+**A symbol Yahoo has nothing for does not raise.**
 It comes back as a block of columns full of `NaN` — an empty frame if it was the only one asked for — and the only sign is a line on the library's own logger.
-So the adapter compares what came back against what it asked for, because nothing else in the program can: once the nulls are gone the ticker has simply vanished, and the short table that results is indistinguishable from a stock that stopped trading.
+So the adapter compares what came back against what it asked for, because nothing else in the program can: once the nulls are gone the symbol has simply vanished, and the short table that results is indistinguishable from a stock that stopped trading.
 This is the previous rung's all-or-nothing rule arriving from a source that will not raise for you.
 
-**The download is a dense grid over the union of every ticker's trading days**, not one row per candle.
+**The download is a dense grid over the union of every symbol's trading days**, not one row per candle.
 Ask for a London stock and a New York one and every day either market was shut carries a row for the other.
-Those nulls are what the reshape exists to remove, and a fixture holding one ticker never contains one.
+Those nulls are what the reshape exists to remove, and a fixture holding one symbol never contains one.
 
 **The null test is over the candle, not the row.**
 `.drop_nulls()` is the reflex and it is wrong twice: it throws away a real candle wherever the source left a single field off, and it never says which absence was meant.
-Drop where the price fields are *all* null — that is "this ticker did not trade" — and leave a candle with a gap in it for the core to judge.
-On one live three-month fetch of two tickers, four rows were absent candles and one was a real candle with no close, and the reflex cannot tell them apart.
+Drop where the price fields are *all* null — that is "this symbol did not trade" — and leave a candle with a gap in it for the core to judge.
+On one live three-month fetch of two symbols, four rows were absent candles and one was a real candle with no close, and the reflex cannot tell them apart.
 
-**The one thing that must happen in `pandas` is dissolving an index `polars` cannot represent** — and it is a single `stack` on the **ticker** level.
-The columns arrive as a `MultiIndex` of `Price` over `Ticker`, and stacking that one level lands directly on the shape you want: a row index of date and ticker, a column per field.
+**The one thing that must happen in `pandas` is dissolving an index `polars` cannot represent** — and it is a single `stack` on the **`Ticker`** level.
+The columns arrive as a `MultiIndex` of `Price` over `Ticker`, and stacking that one level lands directly on the shape you want: a row index of date and symbol, a column per field.
 Melting all the way to long and pivoting back on the `polars` side reaches the same frame after two more reshapes.
 
 **`reset_index()` is not forced, and reaching for it costs twice.**
-`polars.from_pandas(frame, include_index=True)` brings both index levels across as columns, so calling `reset_index` first is one more `pandas` operation doing what the converter already does — and omitting that argument instead **drops the date and the ticker silently**, leaving the values with nothing to say which row is which.
+`polars.from_pandas(frame, include_index=True)` brings both index levels across as columns, so calling `reset_index` first is one more `pandas` operation doing what the converter already does — and omitting that argument instead **drops the date and the symbol silently**, leaving the values with nothing to say which row is which.
 
 **The stamp arrives as a timestamp, not a date.**
 The index is `datetime64[s]` and converts to a `polars` `Datetime`, so a midnight value that prints like a date is not equal to one.
 Cast it at the boundary; the next rung joins a daily row against a weekly one on exactly this column.
 
 **`polars.from_pandas` needs `pyarrow`, and not only in a corner case.**
-Recent `pandas` backs a string column with arrow, so the ticker column alone is enough to raise `ImportError` without it.
+Recent `pandas` backs a string column with arrow, so the one string column it carries is enough to raise `ImportError` without it.
 It is a dependency of the conversion.
 
 **Which interval string means which timeframe is reference data**, one row each in `data/adapt/`, read by the adapter that passes them.
@@ -123,7 +123,7 @@ The frame leaves the adapter sorted by symbol and date, because every window the
 The brief asking for a settled order is the same requirement arriving from the other end, and satisfying it in the renderer satisfies only the half that shows.
 
 **`threads` is on by default, so one call is many requests.**
-An index expansion is five hundred tickers in a single `download`, which is where a publisher's rate limit is found rather than in any test.
+An index expansion is five hundred symbols in a single `download`, which is where a publisher's rate limit is found rather than in any test.
 
 **`end` is exclusive in `yfinance` and inclusive in the brief, and the difference is one day.**
 `start=2026-06-01, end=2026-06-30` returns candles up to the 29th, and naming the same date for both returns an **empty frame** — which is exactly the "give me just this day" the brief says must work.
@@ -138,20 +138,20 @@ A build that pages to make up the difference has invented a requirement out of a
 
 **The key set varies by instrument, so a field is *absent* rather than empty.**
 `get_info()` gives 187 keys for `NVDA` and 71 for `^NDX`, and four of the eleven the brief asks for — country, industry, sector and market capitalisation — are simply not in the dict for an ETF, an index, a future or a currency pair.
-Subscripting raises `KeyError` on the tickers the brief explicitly says it checks with.
+Subscripting raises `KeyError` on the symbols the brief explicitly says it checks with.
 This is the previous rung's packaged-record trap arriving from a different library, which is the point: an adapter's seam is every library it touches, and a dict one hands back is a record like any other.
 
 **Declare the schema, and declare market capitalisation a float.**
 Let `polars` infer it and the same column comes back a different type depending on who was asked: a batch of indices infers `Null`, a batch of stocks infers `Int64`, and concatenating two such runs raises `SchemaError`.
-`use-polars` says to declare a dtype where the contents were not chosen — here the contents are chosen by *which tickers the caller named*, which is the sharpest version of that rule there is and the one no fixture catches, because a fixture picks its tickers.
+`use-polars` says to declare a dtype where the contents were not chosen — here the contents are chosen by *which symbols the caller gave*, which is the sharpest version of that rule there is and the one no fixture catches, because a fixture picks its symbols.
 
 **Which eleven fields is reference data**, in `data/adapt/`, because the brief says the set is the user's to change without opening code.
 A list in the module fails that requirement outright rather than merely being untidy.
 
-**A ticker Yahoo has nothing for returns a one-key dict.**
+**A symbol Yahoo has nothing for returns a one-key dict.**
 It does not raise, exactly as the download does not, so `info` needs the same check of what came back against what was asked for — written once and shared, since it is the same rule twice.
 
-**There is no batch call.** `Ticker(...).get_info()` is one request per ticker, so `trade index expand largest-companies | trade symbol info` is a thousand of them.
+**There is no batch call.** `Ticker(...).get_info()` is one request per symbol, so `trade index expand largest-companies | trade symbol info` is a thousand of them.
 That is the one-call-per-group case `use-polars` blesses, and it is where a rate limit is met.
 
 ### What `lookup` returns
@@ -169,13 +169,13 @@ A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a stri
 
 ## The surface
 
-Tickers arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
+Symbols arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
 That last one is the whole point of the build — it is what makes `trade index expand dow-jones | trade symbol candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
 
-Read standard input when no tickers are named, rather than behind a flag that says to.
+Read standard input when no symbols are given, rather than behind a flag that says to.
 A flag would mean the pipeline only composes for someone who already knows the flag exists.
 
-**Normalise the tickers once, where they arrive.**
+**Normalise the symbols once, where they arrive.**
 Three input routes are three chances for whitespace, case and repetition to differ, and the brief asks for a symbol back once however many times it was given.
 Doing it at the boundary is what stops each route growing its own version.
 
@@ -191,7 +191,7 @@ Nothing here filters rows — the source applies them — and keeping it that wa
 A build that fetches everything and filters afterwards is correct and grows with the data; one that filters what it already narrowed has written the reconciliation the next build then has to undo.
 
 **`lookup` taking a different kind of input is not an inconsistency to iron out.**
-It searches for a ticker rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
+It searches for a symbol rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
 What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-t` — because that is the half a caller composes with.
 
 **The group is a sub-application, not a prefix.**
@@ -204,22 +204,22 @@ Two commands spelled `symbol-candles` and `symbol-info` at the root reach the sa
 
 Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept apart from your own and marked slow because it hits the network:
 
-- The column `MultiIndex` and its level names, `Price` over `Ticker`, on one ticker as well as several.
-- That stacking the ticker level yields one row per date and ticker.
+- The column `MultiIndex` and its level names, `Price` over `Ticker`, on one symbol as well as several.
+- That stacking the `Ticker` level yields one row per date and symbol.
 - That a weekly candle is stamped on the Monday and a monthly one on the first.
 - That `auto_adjust=False` returns `Adj Close` beside `Close` and that the two differ, since the whole requirement rests on picking between them.
-- That a ticker Yahoo has nothing for returns `NaN` rather than raising.
+- That a symbol Yahoo has nothing for returns `NaN` rather than raising.
 - That the index converts to a `Datetime` rather than a `Date`.
-- That `get_info()` omits keys rather than nulling them, on an ETF and an index as well as a stock, and returns a near-empty dict for a ticker that does not exist.
+- That `get_info()` omits keys rather than nulling them, on an ETF and an index as well as a stock, and returns a near-empty dict for a symbol that does not exist.
 - That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
 - That `end` excludes its own date on every interval, and that an equal `start` and `end` return nothing — the two facts the inclusive bounds are built on.
 
 **The default run must not touch the network.**
-Record one response covering two tickers on different exchanges, keep it beside the tests as a data file, and parse that.
-One exchange is the fixture that never has a null in it, so it is the fixture under which the dense grid, the drop rule and the missing-ticker check all pass by accident.
+Record one response covering two symbols on different exchanges, keep it beside the tests as a data file, and parse that.
+One exchange is the fixture that never has a null in it, so it is the fixture under which the dense grid, the drop rule and the missing-symbol check all pass by accident.
 
-**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — three timeframes against the tickers asked for, eleven columns against every kind of instrument.
-A ticker that came back empty has passed every check the program can make on itself.
+**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — three timeframes against the symbols asked for, eleven columns against every kind of instrument.
+A symbol that came back empty has passed every check the program can make on itself.
 The six the brief names — a stock, an ETF, an index, a future, a coin and a currency pair — are the run that matters, because five of them are missing fields the sixth has.
 
 ## Wrong turns
@@ -229,19 +229,19 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **Taking `yfinance`'s defaults**, so the closes are dividend-adjusted and the history is one month, and every test still passes.
 - **Keeping `Adj Close`**, which leaves the number the brief rejected in the frame beside the one it asked for.
 - **A bare `.drop_nulls()`**, which throws away a real candle in order to remove a phantom one.
-- **A silently short result** where a ticker returned nothing, because the library reported it on a logger instead of raising.
+- **A silently short result** where a symbol returned nothing, because the library reported it on a logger instead of raising.
 - **Forwarding `**kwargs` to `yfinance.download`**, which makes the library's signature the adapter's interface and hands back the one argument the adapter existed to fix.
-- **`reset_index()` before converting** — or converting without `include_index=True`, which loses the date and the ticker outright.
+- **`reset_index()` before converting** — or converting without `include_index=True`, which loses the date and the symbol outright.
 - **A `Datetime` stamp left uncast**, so a value printing as a date fails to join against one.
 - **A leaky adapter**: tidying in `pandas` past what the `MultiIndex` forces, reaching back into the original frame mid-chain, typing the incoming frame as `object` with a `# type: ignore`, or letting the upstream's empty shape reach the core.
 - **Reading stdin only when a flag says so.** Taking a path where one is named and standard input otherwise is what makes the two commands compose.
 - **A renderer per command**, so eight columns and one column are rendered by two functions that agree only by accident.
-- **A heading row on the plain form**, which turns `trade index expand dow-jones | trade symbol candles` into a request for a ticker called `symbol`.
+- **A heading row on the plain form**, which turns `trade index expand dow-jones | trade symbol candles` into a request for a symbol literally spelled `symbol`.
 - **Leaking `yfinance`'s interval spelling into the `interval` column**, so `1wk` reaches a caller who was promised `weekly` and the adapter's reference table has been published as the interface.
 - **Interval strings written into the adapter**, where the table of domain name against library argument belongs in `data/adapt/`.
 - **Sorting in the renderer**, which leaves the frame the core computes on in whatever order the source happened to return.
 - **Subscripting a field `get_info()` does not always carry**, so an ETF or an index fails on a raw `KeyError` where a stock passed.
-- **Letting `polars` infer the market capitalisation**, so the column's type depends on which tickers were asked about and two runs will not concatenate.
+- **Letting `polars` infer the market capitalisation**, so the column's type depends on which symbols were asked about and two runs will not concatenate.
 - **The eleven fields written into the adapter**, when the brief made the set the user's to change without opening code.
 - **`getattr(lookup, f"get_{kind}")`**, which trades a checked mapping for a runtime `AttributeError` — and `get_crypto`, which is what that guess produces and is not a method.
 - **Three adapter packages for one library**, tripling the failure conversion and the naming to draw a boundary that is not there.

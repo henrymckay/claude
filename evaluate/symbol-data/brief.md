@@ -1,20 +1,20 @@
 # Symbol data brief
 
-Carry on from the `trade` tool, the one whose `index` group expands a collection name into the symbols it holds.
-If you are starting without it, build that much first, since I still want to name an index rather than list it out.
+Carry on from the `trade` tool, the one whose `index` group expands an index into the symbols it holds.
+If you are starting without it, build that much first, since I still want to give an index rather than list its symbols out.
 
-Now I want the tool to say things about the symbols themselves — what they cost, what they are, and how to find one when I do not know its ticker.
+Now I want the tool to say things about the symbols themselves — what they cost, what they are, and how to find one when I do not know its symbol.
 
 ## Commands
 
 A second group, `symbol`, beside the `index` group already there.
 Nothing in the first group moves or is renamed to make room for it.
 
-- `trade symbol candles [SYMBOL...]` gives me the price candles behind those tickers.
-- `trade symbol info [SYMBOL...]` gives me what each ticker is.
-- `trade symbol lookup QUERY` finds tickers I could then ask about.
+- `trade symbol candles [SYMBOL...]` gives me the price candles behind those symbols.
+- `trade symbol info [SYMBOL...]` gives me what each symbol is.
+- `trade symbol lookup QUERY` finds symbols I could then ask about.
 
-## Tickers
+## Symbols
 
 `candles` and `info` take any number of them, given whichever way suits what I am doing at the time.
 
@@ -22,21 +22,21 @@ Nothing in the first group moves or is renamed to make room for it.
 - Read from a file I name.
 - Piped or redirected in on standard input, so `trade index expand dow-jones | trade symbol candles` just works.
 
-An index name stands in for its constituents, the way `trade index expand` already resolves it.
+An index stands in for its constituents, the way `trade index expand` already resolves it.
 
-I will hand you the same ticker twice without meaning to, since two funds hold the same stock and I have piped both in.
+I will hand you the same symbol twice without meaning to, since two funds hold the same stock and I have piped both in.
 I want it back once.
 
-If I name a ticker and nothing comes back for it, that fails the run and tells me which one, the same way one unknown name fails `trade index expand`.
+If I give a symbol and nothing comes back for it, that fails the run and tells me which one, the same way one unknown index fails `trade index expand`.
 A short table is the dangerous outcome, because nothing downstream can tell it apart from a stock that genuinely stopped trading.
 This holds for `candles` and for `info` alike.
 
-`lookup` is the exception to all of it: what it takes is the thing I am searching for, which is not a ticker and does not arrive any of those ways.
+`lookup` is the exception to all of it: what it takes is the thing I am searching for, which is not a symbol and does not arrive any of those ways.
 A search that matches nothing is an answer rather than a failure, since not finding something is what searching for it risks.
 
 ## Candles
 
-One row per ticker, timeframe and date, carrying the open, high, low and close.
+One row per symbol, timeframe and date, carrying the open, high, low and close.
 
 All three timeframes come back unless I ask for fewer.
 I am usually reading them against each other, so a run that served me one of them by default would be a run I have to do three times.
@@ -44,7 +44,7 @@ I am usually reading them against each other, so a run that served me one of the
 Give me the prices at the precision a price chart shows rather than whatever tail a float carries.
 Four decimal places is more than I need and everything past it is noise I have to read around.
 
-A day a ticker did not trade is not a row.
+A day a symbol did not trade is not a row.
 Markets keep different holidays, so asking for a London stock and a New York one together covers days one of them was shut, and I want that gap absent rather than sitting there empty.
 
 Give them to me in a settled order, so I can diff two runs and read what changed.
@@ -62,15 +62,15 @@ I never want a week rebuilt as it stood partway through.
 
 ## Info
 
-What each ticker *is*, rather than what it costs.
+What each symbol *is*, rather than what it costs.
 
-One row per ticker, carrying its symbol, its short name and its long name, the exchange and the market it trades on, its currency, what kind of instrument it is, its market capitalisation, and its sector and industry.
+One row per symbol, carrying that symbol, its short name and its long name, the exchange and the market it trades on, its currency, what kind of instrument it is, its market capitalisation, and its sector and industry.
 Eleven columns, the same eleven every run.
 
-Yahoo hands back a couple of hundred fields per ticker and I want those eleven.
+Yahoo hands back a couple of hundred fields per symbol and I want those eleven.
 Which eleven is mine to change and I should be able to change it without opening any code.
 
-Not every ticker carries every field — an index has no sector and a currency pair has no market capitalisation.
+Not every symbol carries every field — an index has no sector and a currency pair has no market capitalisation.
 I want those empty rather than the column missing, because I am reading a whole scan down the page and a column that comes and goes is worse than one with holes in it.
 
 I ask about six kinds of thing and expect the same shape back from all of them: a stock, an ETF, an index, a future, a coin and a currency pair.
@@ -78,9 +78,9 @@ I ask about six kinds of thing and expect the same shape back from all of them: 
 
 ## Lookup
 
-Finding a ticker when I do not know it.
+Finding a symbol when I do not know it.
 
-Give it something to search for and it gives me back what Yahoo matches: the symbol, the name, the exchange it trades on, what kind of instrument it is, and where Yahoo ranked it.
+Give it something to search for and it gives me back what Yahoo matches: the symbol, the short name, the exchange it trades on, what kind of instrument it is, and where Yahoo ranked it.
 Leave them in Yahoo's ranking, since that ranking is most of what a search is for.
 
 Let me narrow it to one kind of instrument, or leave it alone and take every kind.
@@ -110,7 +110,7 @@ That spelling is between you and the library and I should never see it.
 
 ## Arguments and options
 
-`candles` and `info` take any number of tickers as arguments, or none at all where the tickers arrive on standard input or from a file.
+`candles` and `info` take any number of symbols as arguments, or none at all where the symbols arrive on standard input or from a file.
 `lookup` takes exactly one thing to search for.
 
 Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
@@ -120,9 +120,9 @@ Common to every command, as they already are in the `index` group:
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-t`, `--table` shows a `rich` table instead of the plain default.
 
-On `candles` and `info`, which both take tickers:
+On `candles` and `info`, which both take symbols:
 
-- `-f`, `--file PATH` reads the tickers from that file rather than from standard input.
+- `-f`, `--file PATH` reads the symbols from that file rather than from standard input.
 
 On `candles`:
 
@@ -146,12 +146,12 @@ On `lookup`:
 trade symbol candles AAPL
 trade symbol candles AAPL MSFT NVDA
 trade index expand dow-jones | trade symbol candles
-trade symbol candles < tickers.txt
+trade symbol candles < symbols.txt
 trade symbol candles AAPL -o aapl.csv
 trade symbol candles AAPL -i daily -i weekly
 trade symbol candles AAPL --interval monthly --start 2020-01-01
 trade symbol candles AAPL MSFT -s 2026-06-01 -e 2026-06-30
-trade symbol candles -f tickers.txt -i daily
+trade symbol candles -f symbols.txt -i daily
 trade index expand ftse-100 | trade symbol candles > ftse.csv
 
 trade symbol info NVDA

@@ -1,6 +1,6 @@
 # DeMark counts brief
 
-Carry on from the `trade` tool, the one whose `symbol` group fetches daily, weekly and monthly candles for a list of tickers.
+Carry on from the `trade` tool, the one whose `symbol` group fetches daily, weekly and monthly candles for a list of symbols.
 If you are starting without it, build that much first, since the counts have nothing to run over otherwise.
 
 Now I want DeMark counts over those candles, and a table I can scan a whole index with.
@@ -8,7 +8,7 @@ Now I want DeMark counts over those candles, and a table I can scan a whole inde
 A third group, `demark`, beside the `index` and `symbol` groups already there.
 Nothing in either of them moves or is renamed to make room for it.
 
-Tickers reach it exactly the way `trade symbol candles` already takes them, as arguments, from a file I name, or on standard input — including an index name standing in for its constituents, and a ticker I have handed you twice coming back once.
+Symbols reach it exactly the way `trade symbol candles` already takes them, as arguments, from a file I name, or on standard input — including an index standing in for its constituents, and a symbol I have handed you twice coming back once.
 
 ## Filters
 
@@ -49,7 +49,7 @@ Four in the group.
 - `trade demark count` reports all three counts together.
 - `trade demark setup`, `trade demark sequential` and `trade demark combo` each report one on its own.
 
-Every one of them takes tickers the three ways above, carries the same filters, and answers the same ways.
+Every one of them takes symbols the three ways above, carries the same filters, and answers the same ways.
 
 ## Output
 
@@ -127,7 +127,7 @@ trade demark sequential NVDA --weekly-sequential 11 13
 trade demark combo NVDA
 trade index expand sp-500 | trade demark count --daily-setup -9 -9
 trade index expand dow-jones | trade demark count -o counts.csv
-trade demark count < tickers.txt
+trade demark count < symbols.txt
 trade demark count AAPL --date 2026-01-01 2026-03-01 --monthly-setup 8 9
 ```
 
