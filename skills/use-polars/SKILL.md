@@ -323,25 +323,30 @@ So reach for `bind_` only when the logic genuinely must see the data; prefer `ma
 
 ## Pipe an expression, not just a frame
 
-`.pipe()` is on `polars.Expr` as well as on the frame, so a helper taking an expression and returning one is reached the same way — `polars.col("name").pipe(normalise)` — and drops into a `select`, a `with_columns` or a `filter` unchanged.
+`.pipe()` is on `polars.Expr` as well as on the frame, so a helper taking an expression and returning one is reached the same way — `polars.col("name").pipe(map_normalise)` — and drops into a `select`, a `with_columns` or a `filter` unchanged.
 
 **Take a `polars.Expr`, never a column name.**
 Typed `normalise(column: str)`, a helper only ever runs against a column already existing under a name you know, so the same rule cannot reach a literal, another expression's output, or a `when/then` — and the second caller writes it again.
-`polars.lit(typed).pipe(normalise)` puts a scalar through the identical code that normalises the column, which is exactly the duplication the string parameter created.
+`polars.lit(typed).pipe(map_normalise)` puts a scalar through the identical code that normalises the column, which is exactly the duplication the string parameter created.
 Leave the `.alias()` to the caller for the same reason: a helper naming its own output cannot be used twice in one `select`.
 
 **Where a helper needs a second expression, pass it through the pipe rather than calling the function.**
 
 ```python
 # Wrong: the function comes first and its subject second.
-spell_symbol(polars.col("ticker"), polars.col("suffix"))
+amap_spell_symbol(polars.col("ticker"), polars.col("suffix"))
 
 # Right: reads left to right, in the order the data flows.
-polars.col("ticker").pipe(spell_symbol, polars.col("suffix"))
+polars.col("ticker").pipe(amap_spell_symbol, polars.col("suffix"))
 ```
 
-The prefix vocabulary above is for **frame** steps only.
-An expression helper carries no `map_` — what it does to a frame is not a question with an answer — so `write-python`'s verb rules name it alone.
+**An expression helper takes the prefix too, on the same test as a frame step.**
+Anything reached with `.pipe()` is a step in a chain, and a reader of a `select` full of them wants the same thing they want of a frame chain: to see what each step does to what it was handed before opening any of them.
+So the vocabulary is one vocabulary — `map_` for a helper working on the piped expression alone, `amap_` for one combining it with expressions supplied independently, and the name formed by `write-python`'s verb rules first and prefixed after.
+
+Two things follow from an expression being a *description* rather than data.
+`bind_` does not arise, because nothing is materialised for the helper to branch on — an expression helper that wants to inspect values has misunderstood where it runs, and the prefix's absence is the tell.
+And the applicative reading is the honest one for `amap_`: the extra expressions are combined in a fixed way, whatever values arrive.
 
 ## Pass extra data through `.pipe()`
 
