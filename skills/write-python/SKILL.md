@@ -366,10 +366,23 @@ def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
 The `[**P, T]` type parameters are PEP 695 syntax and need 3.12, which is the floor this skill assumes; below it, declare `P` and `T` as module-level `typing.ParamSpec`/`typing.TypeVar` instead.
 Take the signature once at decoration time — binding it per call is the only cost, and it is what lets the message name an argument the body never mentions.
 
+**Put the decorator on the function that knows what was asked for, not on the one that fails.**
+The `try` would have gone around the parse, so that is where the decorator looks like it belongs — but the message formats over the *decorated* function's parameters, and the parser was given a document rather than a name.
+Decorating it yields "the holdings file could not be read" with nothing to say which fund's, which is the failure a caller cannot act on.
+Decorate the entry point that took the name and the same failure comes back naming it, because an exception raised deeper still passes through on its way out.
+The example above is the shape: `@handle` sits on `get_holdings(name, ...)` and catches what the parse it calls throws.
+This is the section's last rule applied to placement rather than to parameters — the boundary that holds the name is the boundary that reports.
+
 **The one case the decorator cannot take is a report type that varies by caller.**
 `report` is bound at decoration, so a function whose caller decides what a failure *means* — a 404 that is "no such thing" to one caller and "the publisher moved it" to every other — cannot express that through it.
 Write one shared private converter taking the report type as an argument and call it from each entry point, which is still the one place deciding that the rule was asking for.
 Reach for it only where the meaning genuinely differs; a message that differs is the decorator's case, not this one.
+
+**The decorator converts a failure; it does not classify one.**
+It maps a set of exception types onto a single error of yours, so it cannot say that one answer from a service means something different from another — that a 404 is "there is no such thing", a 503 is "ask again shortly" and a 401 is neither.
+Where the caller's next move differs by *which* failure it was, that decision is a branch and it belongs at the one boundary that can see the raw outcome: raise a distinct error per outcome there, from a single function.
+The two then compose rather than compete — the decorator handles the library exceptions that all mean the same thing (a connection that would not open, a document that would not parse), and the explicit raises cover the ones the caller has to tell apart.
+A retry policy sitting outside that function is what consumes the distinction, which is the usual reason the distinction has to exist at all.
 
 **Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
 `tenacity`'s `retry_error_cls` does translate on exhaustion, but the message it raises is a `repr` of a `Future`, and fixing that means subclassing `tenacity.RetryError` — coupling your domain error to the library the adapter exists to hide.
