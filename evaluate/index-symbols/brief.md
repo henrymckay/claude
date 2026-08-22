@@ -5,7 +5,7 @@ This is the first piece of a bigger tool for scanning stocks, so I will keep add
 
 ## Indices
 
-One or more indices, given as arguments to `expand`.
+One or more indices, given as arguments to `get-symbols`.
 Some are indices proper and others are a fund, an ETF, an investor or a ranking — anything standing for a set of symbols.
 I call them all indices, since the tool treats them alike and the difference never reaches me.
 
@@ -49,11 +49,11 @@ Every London fund takes a `.L` suffix and every US one stays bare, which is how 
 Six symbols are claimed by both ranges and a London fund never holds the same stocks as the US fund sharing its symbol.
 I still want the suffix on all eighteen rather than only on those six, because an index I have put in a script should not change the day VanEck lists something that collides with it.
 
-Each answers to its own symbol, so `trade index expand ARKK` and `trade index expand IVES` work where `trade index expand ARK` does not.
+Each answers to its own symbol, so `trade index get-symbols ARKK` and `trade index get-symbols IVES` work where `trade index get-symbols ARK` does not.
 All forty-eight appear in `catalogue` beside the packaged ones, each under the spelling that reaches it.
 
 Those forty-eight are the funds I follow, not the limit of what I can ask for.
-Any other ETF symbol should expand as well, so `trade index expand TAN` gives me a solar fund named nowhere in this brief.
+Any other ETF symbol should expand as well, so `trade index get-symbols TAN` gives me a solar fund named nowhere in this brief.
 It spells the same way as the rest, bare for a US listing and `.L` for a London one.
 No issuer publishes anybody else's funds, so that one will not come from an issuer — look for somewhere that carries ETFs generally and covers both listings.
 When it is what answers, just give me the symbols; I do not need telling that the index was not one of mine.
@@ -74,7 +74,7 @@ Each reports its US positions to the SEC once a quarter, so give me the most rec
 When it was filed is of no interest to me, so nothing needs to show the date or let me choose by it.
 A report covers more than plain stock, so the same judgement that keeps untradeable rows out of a fund's holdings applies here too.
 
-They answer to what they are called rather than to a symbol, so `trade index expand berkshire-hathaway` works.
+They answer to what they are called rather than to a symbol, so `trade index get-symbols berkshire-hathaway` works.
 
 ## Rankings
 
@@ -111,7 +111,7 @@ More groups follow in the builds after this one, so the shape has to take them w
 
 Two commands in the group, because finding out what I can expand is a different question from expanding one.
 
-- `trade index expand INDEX...` gives me the symbols those indices hold.
+- `trade index get-symbols INDEX...` gives me the symbols those indices hold.
 - `trade index catalogue` gives me the indices I follow.
 
 `catalogue` is how I remind myself which indices I have set up rather than a list of everything that works, since any ETF symbol expands whether it appears there or not.
@@ -127,7 +127,7 @@ I care what each gives back, not that the command exited cleanly.
 Every command in the tool answers with a table, and this is where that starts.
 
 - `trade index catalogue` has one column, `index`.
-- `trade index expand` has one column, `symbol`.
+- `trade index get-symbols` has one column, `symbol`.
 
 Columns come back in **alphabetical order**, whatever order I have listed them in when describing them.
 It is one less thing to remember, and it means a column added later lands somewhere predictable instead of on the end.
@@ -137,7 +137,7 @@ Same bytes whether I am at a terminal, in a pipe or in a script — I would rath
 
 ## Arguments and options
 
-`expand` takes one or more indices as arguments and is an error given none.
+`get-symbols` takes one or more indices as arguments and is an error given none.
 `catalogue` takes none at all.
 
 Every option has a long form and a single-letter short form.
@@ -151,27 +151,27 @@ Two are common to every command in the tool:
 ## Examples
 
 ```bash
-trade index expand dow-jones
-trade index expand sp-500
-trade index expand "S&P 500"
-trade index expand ARKK
-trade index expand ARKK ARKW ARKG
-trade index expand SMH
-trade index expand SMH.L
-trade index expand berkshire-hathaway
-trade index expand largest-etfs
-trade index expand dow-jones > dow-jones.txt
-trade index expand ARKK -o ark.txt
-xargs trade index expand < indices.csv
-trade index expand TAN
-trade index expand largest-companies
+trade index get-symbols dow-jones
+trade index get-symbols sp-500
+trade index get-symbols "S&P 500"
+trade index get-symbols ARKK
+trade index get-symbols ARKK ARKW ARKG
+trade index get-symbols SMH
+trade index get-symbols SMH.L
+trade index get-symbols berkshire-hathaway
+trade index get-symbols largest-etfs
+trade index get-symbols dow-jones > dow-jones.txt
+trade index get-symbols ARKK -o ark.txt
+xargs trade index get-symbols < indices.csv
+trade index get-symbols TAN
+trade index get-symbols largest-companies
 trade index catalogue
 trade index catalogue | grep ARK
-trade index catalogue | grep ARK | xargs trade index expand
-trade index expand ARKK -t
-trade index expand ftse-100 | grep '\.L$'
-comm -12 <(trade index expand ARKK) <(trade index expand ARKW)
-diff <(trade index expand SMH) <(trade index expand SMH.L)
+trade index catalogue | grep ARK | xargs trade index get-symbols
+trade index get-symbols ARKK -t
+trade index get-symbols ftse-100 | grep '\.L$'
+comm -12 <(trade index get-symbols ARKK) <(trade index get-symbols ARKW)
+diff <(trade index get-symbols SMH) <(trade index get-symbols SMH.L)
 ```
 
 ## Working style

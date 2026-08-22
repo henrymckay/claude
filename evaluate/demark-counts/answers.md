@@ -64,7 +64,7 @@ Size the margin from evidence — measure how far back a pending countdown actua
 `rich` drops colour by itself when standard output is not a terminal, which is not enough: a boxed table is still unparseable, so the plain form is a second render rather than the same one unstyled.
 Logs go to standard error, or they land in the middle of piped data — `RichHandler` builds its own stdout console unless told otherwise.
 
-`trade demark count`, the three per-count commands, `trade symbol candles` and `trade index expand` each reach their own stage, so a caller can take any one of them without running the rest.
+`trade demark count`, the three per-count commands, `trade symbol get-candles` and `trade index get-symbols` each reach their own stage, so a caller can take any one of them without running the rest.
 The three groups are three sub-applications under one root, and the third arrives by registering a fourth thing on the root rather than by editing what the first two exposed — which is the test of whether the second build nested them or merely prefixed them.
 Every command spells a shared idea the same way — the file it writes to, the way symbols arrive — because a tool whose second command renames its first command's options is one nobody can use from memory.
 

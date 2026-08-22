@@ -15,7 +15,7 @@ A second source, three shapes out of it, and the first shapes the core genuinely
 | matches | one instrument a search found | one call, already a frame |
 
 **Three commands over one source is one adapter, not three.**
-`candles`, `info` and `lookup` are three calls to Yahoo through one library, so they are three functions in a `yfinance_` package sharing its failure conversion, its column spelling and its declared-shape rule.
+`get-candles`, `get-info` and `look-up` are three calls to Yahoo through one library, so they are three functions in a `yfinance_` package sharing its failure conversion, its column spelling and its declared-shape rule.
 Splitting them into three adapter packages triples the decorator, the naming and the tests to buy a boundary that does not exist — there is one outside system here, and it breaks all at once.
 
 What they do **not** share is the parse: a `MultiIndex` frame, a dict of a couple of hundred keys and a frame indexed by symbol have nothing in common past the library that returned them.
@@ -134,7 +134,7 @@ Passing it straight through loses the last candle of every run without saying so
 A search for `nvidia` capped at 250 comes back with 56, because that is what Yahoo matched.
 A build that pages to make up the difference has invented a requirement out of a number that was always an upper bound.
 
-### What `info` returns
+### What `get-info` returns
 
 **The key set varies by instrument, so a field is *absent* rather than empty.**
 `get_info()` gives 187 keys for `NVDA` and 71 for `^NDX`, and four of the eleven the brief asks for — country, industry, sector and market capitalisation — are simply not in the dict for an ETF, an index, a future or a currency pair.
@@ -149,12 +149,12 @@ Let `polars` infer it and the same column comes back a different type depending 
 A list in the module fails that requirement outright rather than merely being untidy.
 
 **A symbol Yahoo has nothing for returns a one-key dict.**
-It does not raise, exactly as the download does not, so `info` needs the same check of what came back against what was asked for — written once and shared, since it is the same rule twice.
+It does not raise, exactly as the download does not, so `get-info` needs the same check of what came back against what was asked for — written once and shared, since it is the same rule twice.
 
-**There is no batch call.** `Ticker(...).get_info()` is one request per symbol, so `trade index expand largest-companies | trade symbol info` is a thousand of them.
+**There is no batch call.** `Ticker(...).get_info()` is one request per symbol, so `trade index get-symbols largest-companies | trade symbol get-info` is a thousand of them.
 That is the one-call-per-group case `use-polars` blesses, and it is where a rate limit is met.
 
-### What `lookup` returns
+### What `look-up` returns
 
 **Do not reach the method by an interpolated name.**
 `yfinance.Lookup` spells them `get_all`, `get_cryptocurrency`, `get_currency`, `get_etf`, `get_future`, `get_index`, `get_mutualfund` and `get_stock` — note it is `get_cryptocurrency`, not `get_crypto`.
@@ -170,7 +170,7 @@ A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a stri
 ## The surface
 
 Symbols arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
-That last one is the whole point of the build — it is what makes `trade index expand dow-jones | trade symbol candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
+That last one is the whole point of the build — it is what makes `trade index get-symbols dow-jones | trade symbol get-candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
 
 Read standard input when no symbols are given, rather than behind a flag that says to.
 A flag would mean the pipeline only composes for someone who already knows the flag exists.
@@ -190,7 +190,7 @@ The failure is a branch per timeframe, or three boolean flags, or a function ret
 Nothing here filters rows — the source applies them — and keeping it that way is what lets the next build widen the same bounds by a warm-up margin before they reach this adapter.
 A build that fetches everything and filters afterwards is correct and grows with the data; one that filters what it already narrowed has written the reconciliation the next build then has to undo.
 
-**`lookup` taking a different kind of input is not an inconsistency to iron out.**
+**`look-up` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a symbol rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
 What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-t` — because that is the half a caller composes with.
 
@@ -236,7 +236,7 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **A leaky adapter**: tidying in `pandas` past what the `MultiIndex` forces, reaching back into the original frame mid-chain, typing the incoming frame as `object` with a `# type: ignore`, or letting the upstream's empty shape reach the core.
 - **Reading stdin only when a flag says so.** Taking a path where one is named and standard input otherwise is what makes the two commands compose.
 - **A renderer per command**, so eight columns and one column are rendered by two functions that agree only by accident.
-- **A heading row on the plain form**, which turns `trade index expand dow-jones | trade symbol candles` into a request for a symbol literally spelled `symbol`.
+- **A heading row on the plain form**, which turns `trade index get-symbols dow-jones | trade symbol get-candles` into a request for a symbol literally spelled `symbol`.
 - **Leaking `yfinance`'s interval spelling into the `interval` column**, so `1wk` reaches a caller who was promised `weekly` and the adapter's reference table has been published as the interface.
 - **Interval strings written into the adapter**, where the table of domain name against library argument belongs in `data/adapt/`.
 - **Sorting in the renderer**, which leaves the frame the core computes on in whatever order the source happened to return.

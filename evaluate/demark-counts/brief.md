@@ -8,7 +8,7 @@ Now I want DeMark counts over those candles, and a table I can scan a whole inde
 A third group, `demark`, beside the `index` and `symbol` groups already there.
 Nothing in either of them moves or is renamed to make room for it.
 
-Symbols reach it exactly the way `trade symbol candles` already takes them, as arguments, from a file I name, or on standard input — including an index standing in for its constituents, and a symbol I have handed you twice coming back once.
+Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input — including an index standing in for its constituents, and a symbol I have handed you twice coming back once.
 
 ## Filters
 
@@ -37,7 +37,7 @@ On a day the market has not traded, today means the most recent day it did.
 A column for the date and a column for the symbol, then one for each count on each timeframe.
 A row per symbol, and a row per date as well where I have asked for a range.
 
-It goes out the same ways `trade symbol candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
+It goes out the same ways `trade symbol get-candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
 
 The `rich` one differs in more than styling.
 Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
@@ -47,7 +47,7 @@ Plain output carries the sign, where the `rich` table shows every count positive
 Four in the group.
 
 - `trade demark count` reports all three counts together.
-- `trade demark setup`, `trade demark sequential` and `trade demark combo` each report one on its own.
+- `trade demark count-setup`, `trade demark count-sequential` and `trade demark count-combo` each report one on its own.
 
 Every one of them takes symbols the three ways above, carries the same filters, and answers the same ways.
 
@@ -122,11 +122,11 @@ Ask about a Wednesday and the weekly column gives me that whole week as it finis
 ```bash
 trade demark count AAPL
 trade demark count AAPL MSFT NVDA
-trade demark setup AAPL
-trade demark sequential NVDA --weekly-sequential 11 13
-trade demark combo NVDA
-trade index expand sp-500 | trade demark count --daily-setup -9 -9
-trade index expand dow-jones | trade demark count -o counts.csv
+trade demark count-setup AAPL
+trade demark count-sequential NVDA --weekly-sequential 11 13
+trade demark count-combo NVDA
+trade index get-symbols sp-500 | trade demark count --daily-setup -9 -9
+trade index get-symbols dow-jones | trade demark count -o counts.csv
 trade demark count < symbols.txt
 trade demark count AAPL --date 2026-01-01 2026-03-01 --monthly-setup 8 9
 ```

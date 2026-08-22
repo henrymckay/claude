@@ -56,7 +56,7 @@ Put it in the same mapping and it either claims every index before the others ar
 That splits what a source is.
 Expanding wants holdings, which anything able to fetch them can give; cataloguing wants the indices themselves, which only a source with a fixed set has.
 A port demanding both from everything forces the open one to answer with an empty frame, which is a lie the `catalogue` command then prints nothing for.
-So the two calls are two ports, and the composition root hands each operation only the one it needs — `catalogue` never sees the fallback, and `expand` sees it last.
+So the two calls are two ports, and the composition root hands each operation only the one it needs — `catalogue` never sees the fallback, and `get-symbols` sees it last.
 
 An unmatched index now fails two ways and they are not the same failure.
 A symbol that is no ETF is an unknown index; a request that would not come is a retrieval failure.
@@ -150,7 +150,7 @@ One rule covering cash lines, options and a trailing disclaimer alike beats a ro
 ## The surface
 
 Two commands, split by what they do rather than by where the symbols come from.
-Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `catalogue` is its own command rather than a flag that switches what `expand` does.
+Resolving a name is the tool's job, so `get-symbols` takes the name alone; finding out which names exist is a different question, so `catalogue` is its own command rather than a flag that switches what `get-symbols` does.
 
 **The group is a package, not a prefix on two command names.**
 The brief says more groups follow, so `index` is a `typer` sub-application registered on the root — which is what lets the next group be added without the root command being touched, and what makes `trade index --help` list this group alone.
