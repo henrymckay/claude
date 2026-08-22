@@ -79,11 +79,11 @@ Order every brief and every answers file the same way.
 - Briefs by input, output, uses, rules and working style.
 - Answers files by shape, structure, boundary, surface, tests and wrong turns.
 
-Each build below carries on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
+Each build below carries on from the last, adding a group to one `trade` command, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
-- [`index-symbols`](evaluate/index-symbols) expands the name of an index or a fund into the symbols it holds.
-- [`price-candles`](evaluate/price-candles) fetches candles for those symbols, on three timeframes.
-- [`demark-counts`](evaluate/demark-counts) counts DeMark setups and countdowns into a filtered table.
+- [`index-symbols`](evaluate/index-symbols) builds `trade index`, expanding the name of an index or a fund into the symbols it holds.
+- [`symbol-data`](evaluate/symbol-data) adds `trade symbol`, fetching candles on three timeframes, describing a ticker, and searching for one.
+- [`demark-counts`](evaluate/demark-counts) adds `trade demark`, counting setups and countdowns into a filtered table.
 
 ## 📚 Learn more
 
