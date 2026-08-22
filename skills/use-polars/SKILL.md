@@ -236,11 +236,16 @@ Put the values in their own small frame and `.join(other, how="cross")` where ea
 **The tell is about computation, not IO.** A `concat` over a comprehension that makes *one call per group to the outside world* — a request per timeframe because the API serves one interval at a time, a read per partition file — is not this mistake, and there is no in-frame form of it because the rows do not exist yet.
 Keep that concat inside the adapter, have it return a single long frame with the axis as a column, and the rule then holds for everything downstream.
 
-**Rendering is the other legitimate exit.**
+**Rendering is another legitimate exit.**
 A frame becomes a `rich.Table`, a chart, an HTTP response body — and there is no in-frame form of that either, because the destination is not a frame.
 Iterate at that boundary and nowhere earlier: reshape, filter and sort while it is still a frame, then leave it once, in the driver.
 
-Both exits look identical to a reader scanning for `iter_rows`, so say which one you are taking in the docstring — otherwise the next person reads it as the lapse the rule warns about and deletes it.
+**Decoding is the third.**
+A source handing back nested records, a JSON array or a parsed document has no frame *yet*, so the comprehension that builds one is not the loop this rule forbids — it is the boundary the rule assumes you already crossed.
+It runs once, in the adapter, and it ends in a frame with a declared schema; take the fields you actually want on the way rather than routing whole records through, since every column you declare is one the query then carries.
+The tell that it has overrun its licence is a second comprehension *after* the frame exists.
+
+All three exits look identical to a reader scanning for `iter_rows` or a comprehension, so say which one you are taking in the docstring — otherwise the next person reads it as the lapse the rule warns about and deletes it.
 
 ```python
 # Wrong: a Python loop over groups, one frame per timeframe.
