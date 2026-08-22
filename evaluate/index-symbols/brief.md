@@ -150,9 +150,10 @@ trade index expand TAN
 trade index expand largest-companies
 trade index catalogue
 trade index catalogue | grep ARK
-trade index catalogue | xargs trade index expand
+trade index catalogue | grep ARK | xargs trade index expand
 trade index expand ARKK -t
 trade index expand ftse-100 | grep '\.L$'
+comm -12 <(trade index expand ARKK) <(trade index expand ARKW)
 ```
 
 ## Working style
