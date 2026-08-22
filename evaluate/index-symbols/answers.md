@@ -44,6 +44,11 @@ Two calls have to come from the *same* source — what a place offers, and what 
 A module cannot be mixed with itself, and a module satisfies a structural protocol exactly as an instance does, so nothing has to become a class and the composition root hands over the adapter modules themselves.
 The cost to accept is that a protocol's method name *is* the contract, so every adapter spells it the same — which is right, since a caller reaches a port precisely because it does not care which one answers.
 
+**The port's two calls are named for the work they do, and every adapter spells them the same.**
+`get_holdings(name)` and `get_names()`, each returning a `polars` frame: a verb because nearly every adapter reaches the network to answer, and a bare `holdings()` reads as an attribute a caller may take twice in a loop without noticing what it cost.
+The protocol fixes the spelling for all of them, so the adapter answering from packaged data cannot say so in the call and says it in the module name instead.
+Both are reached through the injected fetch rather than calling it directly, which is what lets the whole expansion be tested against a recorded response with no network.
+
 **Resolving a name is ordered, and the open source is a fallback rather than another source.**
 The sources that know their own names are asked first, and only a name none of them claims reaches the one that will try any ticker.
 Put it in the same mapping and it either claims every name before the others are consulted, or it has to be consulted last anyway — at which point the mapping was never what decided it.
@@ -97,6 +102,10 @@ That is not the composition root moving: the driver still chooses to use the set
 The brief names the collections and leaves finding them to the build, so the first work is research: no two publishers agree on where their data sits, what it is called, or how often it changes.
 
 - `httpx` is the pick over `requests`.
+- The fetch is **one function with its parts named beside it**.
+`fetch(url)` performs the request and nothing else, taking as arguments the axes a caller varies and calling `headers()`, `timeout()` and the rest for the ones it does not — each of those a function rather than a module constant, so any can be computed or overridden without a call site changing.
+Stack a `handle` decorator per library exception it converts rather than one `try` catching several.
+What the decorators cannot do is **classify**: which status the far end answered with is a branch on the response, not on an exception type, so the missing-versus-refused distinction the retry policy consumes is written explicitly in that one function and the decorators cover the library's own failures around it.
 - Say who you are, and expect to be refused unevenly where you do not.
 A tool name, a version and an address a publisher could reply to is the honest default and what these publishers accept; `www.sec.gov` refuses any user agent carrying no address, and some CDN-fronted services refuse anything that is not a browser string.
 Which is which is found by trying, so what matters is setting the header deliberately rather than any one string being right — never setting one works against some publishers and not others, which is worse than failing everywhere because it looks like it works.
@@ -127,6 +136,11 @@ A site that has already parsed the filings hands back the ticker, the class and 
 Take that: the brief asks for the most recent report, not for the filing.
 - Where each publisher serves its file is **data**, not a literal in code — one entry per fund, with the host held once rather than repeated against each of them.
 It is read by the adapter that fetches them, since where an outside service lives is the edge's knowledge and not the core's.
+Each adapter turns a collection's name into its address through one function, and that function **joins** rather than concatenates: `urllib.parse.urljoin` knows what a scheme, an absolute path and a relative segment each mean, where `base + path` guesses at a separator and silently doubles or drops one.
+The trap to know is that it reads the base as a *document*, so a base missing its trailing slash loses its last segment and a path carrying a leading one resets to the host — hold the slash on the base and not on the path, and the table stays readable.
+- One reader per wire format, shared by every adapter meeting it, then a chain of prefixed transforms.
+`polars.read_csv` and `polars.read_excel` for a tabular file and `pandas.read_html` for a page's table converted straight to a frame — which is the one job `pandas` is here for, CSV included going to `polars`.
+From the frame onward the parse is method chaining and nothing else: each step a `.pipe()` into a `map_`/`amap_` transform, so the adapter reads as which transforms this publisher needs and in what order, and the transforms themselves live in the core under the core's tests.
 - Parse the response **into the frame** where the response is rows and columns — a CSV is read by the frame library, not split on commas and reassembled.
 Where the source hands back records or markup and one field is wanted, pulling that field out and building a one-column frame is both simpler and cheaper: routing the whole record through the frame materialises every nested column you did not ask for, at a cost of two orders of magnitude here.
 - A holdings file is not a list of shares.
@@ -194,6 +208,8 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **Subscripting a field the packaged record does not always carry**, so a `KeyError` escapes into the driver and two whole indices fail on a raw traceback instead of an error naming the collection.
 The seam an adapter closes is every library it touches, and a packaged dataset is one of them.
 - **A `try` in every parse**, where one decorator converts the same library failures for all of them.
+- **Naming a port's call with a bare noun.** `holdings(name)` reads as an attribute, so it gets called wherever convenient and the same document is fetched twice in one run with nothing in the name to suggest it would be.
+- **Building an address with `+`.** It works until a base gains or loses its trailing slash, and then it fails as a 404 that looks like the publisher moved the file.
 - **Sending a named fund to the general ETF source** because it answers, when its own issuer publishes the whole book and the general source publishes the top of it.
 - **Silently dropping an unmatched name**, which turns a typo into an empty report much later.
 The brief asks for an error, and an empty frame written to standard output is not one.
