@@ -85,6 +85,40 @@ The payoff is that the whole expansion becomes testable against a fake source wi
 
 Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
 
+**What this build declares.** Two ports and two operations, and every later build adds to these rather than restating them:
+
+```python
+Holdings = collections.abc.Callable[[str], polars.DataFrame]
+
+
+class Publisher(typing.Protocol):
+    def get_holdings(self, index: str) -> polars.DataFrame: ...
+    def get_indices(self) -> polars.DataFrame: ...
+
+
+def catalogue_indices(
+    *, publishers: collections.abc.Iterable[port.Publisher]
+) -> polars.DataFrame: ...
+
+
+def get_symbols(
+    indices: collections.abc.Iterable[str],
+    *,
+    fallback: port.Holdings,
+    publishers: collections.abc.Iterable[port.Publisher],
+) -> polars.DataFrame: ...
+```
+
+**The two forms are chosen, not mixed by accident.**
+`Publisher` is a protocol because its two calls must come from the *same* place, per the shape section above.
+`Holdings` is a plain callable alias because the fallback has one call taking one positional argument, and there is nothing to mispair — an alias is then the lighter declaration and a test fake is a lambda where a protocol needs a stub module.
+Reach for a protocol where the calls must pair or the call carries keyword arguments, which `collections.abc.Callable` cannot express; reach for an alias otherwise.
+
+**`fallback` is a parameter, not a member of `publishers`** — the ordering above made structural, so the type checker enforces that the open source is never catalogued and never asked first.
+
+One language detail neither `write-python` nor `structure-python` mentions: a protocol method's body needs a bare `...` **after** its docstring.
+A docstring alone returns `None`, which `pyright` rejects against the declared return type.
+
 **An `operate` layer.** There are two use cases here, not one: expanding names and listing them.
 Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
 The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.

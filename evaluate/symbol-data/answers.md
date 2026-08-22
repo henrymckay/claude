@@ -40,20 +40,66 @@ A renderer reordering columns is doing at the edge what the shape should already
 
 ## What the build earns
 
-**A port that is a `Protocol`, not three callable aliases.** The core needs three things from the *same* outside thing, which is the case `structure-python` names: declare the trio as a protocol the adapter module satisfies, and the composition root hands over the module.
-That one adapter satisfies it today is not an argument against the protocol, and it is not an argument for inventing a second one either.
+**What this build declares**, on top of the two ports and two operations the index build already has:
 
-**Three more use cases in the `operate` package the last build already earned**, one per command, which is a fact about this rung rather than a rule — the five operations are five because each does a different job, and the next build's four commands share one.
+```python
+Info = collections.abc.Callable[[collections.abc.Iterable[str]], polars.DataFrame]
 
-**The operations are the stages, and the driver composes them.**
-`get_candles` and `get_info` take **symbols**; turning an index into symbols is `get_symbols`, which the previous build already built.
-A driver asked for an index's candles calls both, in that order, and injects one port into each.
 
-Handing `get_candles` a list of names instead is the seam mistake `be-functional` names outright: a function given something upstream of its own seam has to reconstruct its real input internally, so the two transformations fuse and the step between them stops existing.
-It also gives the operation three ports where it uses one.
+class Candles(typing.Protocol):
+    def __call__(
+        self,
+        symbols: collections.abc.Iterable[str],
+        *,
+        end: datetime.date | None,
+        intervals: collections.abc.Iterable[transform.Interval],
+        start: datetime.date | None,
+    ) -> polars.DataFrame: ...
 
-The payoff is that `trade index get-symbols dow-jones | trade symbol get-candles` and the same work inside one process run the *same* two steps, rather than arriving at one answer by two routes only one of which is tested.
-The cost to accept is that a second driver repeats two lines — which is not duplication worth an abstraction until a third one arrives.
+
+class Lookup(typing.Protocol):
+    def __call__(
+        self, query: str, *, count: int, kind: transform.Kind | None
+    ) -> polars.DataFrame: ...
+
+
+def get_candles(
+    symbols: collections.abc.Iterable[str],
+    *,
+    end: datetime.date | None,
+    fetch: port.Candles,
+    intervals: collections.abc.Iterable[transform.Interval],
+    start: datetime.date | None,
+) -> polars.DataFrame: ...
+
+
+def get_info(
+    symbols: collections.abc.Iterable[str], *, fetch: port.Info
+) -> polars.DataFrame: ...
+
+
+def look_up(
+    query: str, *, count: int, fetch: port.Lookup, kind: transform.Kind | None
+) -> polars.DataFrame: ...
+```
+
+**Three ports, not one covering the library.**
+The index build bundles two calls into `Publisher` because they must come from the same place — you ask who claims `ARKK`, then ask *that* publisher for it.
+Candles, descriptions and search have no such tie: nothing says they must come from one source, and one `yfinance_` module satisfies three separate ports at once anyway.
+Bundling them buys nothing and costs a fake for `get_info` that has to implement candles and search as well.
+
+**The form follows the call, by the rule the last build set.**
+`Info` is an alias because it takes one positional argument.
+`Candles` and `Lookup` carry keyword-only options, and `collections.abc.Callable` cannot express those at all, so they are protocols declaring `__call__` — and a plain module-level function satisfies one, so no adapter grows a class.
+
+**The options stay on the operation.**
+Binding `start`, `end` and `intervals` into the adapter with `functools.partial` at the composition root type-checks, and makes both protocols plain aliases, which is why it is tempting.
+It is still wrong: it fuses a dependency fixed at startup with data that changes every invocation, so the injected value must be rebuilt per call and the operation can never run twice with different bounds against one adapter.
+Worse, it moves the use case into the driver — every second driver, a dashboard included, rebuilds the same partial, which is the duplication `operate` exists to prevent.
+
+**Nothing here composes with `get_symbols`.**
+The brief makes this group take symbols, so no operation in it resolves an index, and the pipe that expands one runs between two processes rather than inside the driver.
+A driver calling `get_symbols` and then `get_candles` has rebuilt the stage the brief removed.
 
 **One pair of renderers for the whole tool, not a pair per group.**
 The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.

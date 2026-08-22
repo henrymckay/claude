@@ -35,15 +35,25 @@ A previous run spent its whole core design on that machinery, for a requirement 
 **Filtering is not a seam.** It drops rows without changing what a row is.
 It earns its own function by being independently useful, not because the flow demands one, and it comes last, since the bounds are set on columns that only exist once the frame is wide.
 
+## What this build declares
+
+**Placeholder — not settled.**
+The column schema, the filter options' short forms and the re-filtering seam are all still open in the brief, and what this group declares follows from them.
+
+Two things are settled and can be relied on.
+Its four commands share **one** operation, because they differ by which counts reach the output rather than by what they do.
+And it needs **no new port**: the counting is pure, so what it wants from outside is candles, which `port.Candles` already provides.
+
 ## What the build earns
 
-The hexagon becomes worth its keep here, and not before.
+**A `transform` layer with real computation in it**, and that is the only thing new here.
 
-- **A pure core**, because there is now real logic that must be testable without touching the network.
-- **A `port`**, because an operation calls outward for candles while staying pure, so the driver injects the adapter.
-- **An `operate`**, because fetching and counting is a task worth naming, and the group's four commands share it.
+The first two builds already have a core, ports and an `operate`; what their core holds is reshaping, normalisation and a tradeability rule — work that is easy to check by eye.
+This one is the first whose core can be *subtly* wrong: a run length that wraps a candle early, a countdown that survives a cancellation it should not.
+That is what the reference implementation and the property tests below are for, and neither was worth building before there was something they could catch.
 
-Introducing all three *now* is right; having introduced them while the tool only expanded an index was not.
+Nothing else is new.
+The port and the operation this group needs are ones the last two builds already declared, and whether that is true is the real test of how well they were declared.
 
 ## What should not exist yet
 
