@@ -116,6 +116,32 @@ Reach for a protocol where the calls must pair or the call carries keyword argum
 
 **`fallback` is a parameter, not a member of `publishers`** — the ordering above made structural, so the type checker enforces that the open source is never catalogued and never asked first.
 
+**Routing an index to its publisher is a seam, and it is private.**
+`be-functional` opens one wherever a new independent input enters, and the publishers' catalogues are exactly that: indices go in, the catalogues arrive from outside, and out come indices paired with whoever serves them.
+So it is a function rather than something inlined into the expansion — but not a third public operation, because no driver calls it and both operations need the same gathering behind it:
+
+```python
+def _get_publishers(
+    indices: collections.abc.Iterable[str],
+    *,
+    publishers: collections.abc.Iterable[port.Publisher],
+) -> dict[str, port.Publisher]:
+    """Return the publisher claiming each index, omitting any none claims."""
+```
+
+**It returns a `dict` because a frame cannot hold a module**, which is what stops the pairing being a column and makes this one of the few places the tool leaves `polars` on purpose.
+Say so where it happens: `use-polars` names two legitimate exits and this is neither, so the next reader takes it for the lapse that rule warns about and puts it back in the frame — where it cannot go.
+The indices no publisher claimed need no second return value; they are the keys the mapping does not have, and they are what reaches the fallback.
+
+**The matching itself is pure and belongs in `transform`.**
+Deciding that `sp-500`, `SP500` and `S&P 500` are one catalogued index is two frames in and one out, with no IO, so it is testable against no port at all.
+Left in the operation it gets written twice — once to route an index to its publisher, and once to compare a typed index against what `catalogue` prints.
+
+**Which publishers exist is `adapt`'s to say, not a driver's.**
+The set is a fact about what the adapter layer ships, so `adapt` returns it and the composition root injects it: `operate.catalogue_indices(publishers=adapt.publishers())`.
+It is neither a port nor an operation — the core never calls it — which is why it sits outside the declarations above.
+Name it with a bare noun: it returns a tuple of modules and touches nothing, and `write-python` reserves noun-only names for exactly that, so the contrast with every `get_` beside it says which calls cost a request.
+
 One language detail neither `write-python` nor `structure-python` mentions: a protocol method's body needs a bare `...` **after** its docstring.
 A docstring alone returns `None`, which `pyright` rejects against the declared return type.
 
