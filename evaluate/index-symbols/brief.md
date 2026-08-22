@@ -154,6 +154,7 @@ trade index catalogue | grep ARK | xargs trade index expand
 trade index expand ARKK -t
 trade index expand ftse-100 | grep '\.L$'
 comm -12 <(trade index expand ARKK) <(trade index expand ARKW)
+diff <(trade index expand SMH) <(trade index expand SMH.L)
 ```
 
 ## Working style
