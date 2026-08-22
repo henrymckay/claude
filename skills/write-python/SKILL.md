@@ -275,6 +275,14 @@ Add complexity (another abstraction, a dependency, a clever trick) only when a c
 Assume a mature library already names any standard manipulation, and go and look before writing more than a few lines of your own.
 Reinventing what a dependency already offers is more code to maintain and usually a worse version.
 (Do confirm the feature exists, though — not every library has every convenience; a genuine gap is fine to fill.)
+
+**A record a library hands back is part of its API, so read every field before deriving one.**
+The instinct is to check a library's *functions* and treat the data it returns as raw material, but a field you never noticed is the same reinvention as a method you never looked up — and a worse one, because a derived value can be wrong where the field is right.
+The publisher of the data knows things you cannot compute: which of a company's listings is its home one, which of several identifiers is canonical, which row the source considers current.
+Deriving those from the other fields produces a rule that needs a lookup table, misses the cases the table does not cover, and is silently wrong rather than absent.
+So print one whole record and read the keys before writing anything that computes over it, and where a field answers the question directly, take it and fall back only where it is missing.
+This is KISS again rather than a new rule, but it hides where KISS usually does not, because the hand-rolled version *works* — it just answers a fraction of the rows.
+
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Error handling
