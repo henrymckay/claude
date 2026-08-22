@@ -145,10 +145,12 @@ trade index expand berkshire-hathaway
 trade index expand largest-etfs
 trade index expand dow-jones > dow-jones.txt
 trade index expand ARKK -o ark.txt
+xargs trade index expand < indices.csv
 trade index expand TAN
 trade index expand largest-companies
 trade index catalogue
 trade index catalogue | grep ARK
+trade index catalogue | xargs trade index expand
 trade index expand ARKK -t
 trade index expand ftse-100 | grep '\.L$'
 ```
