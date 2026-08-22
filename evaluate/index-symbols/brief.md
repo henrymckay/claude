@@ -1,6 +1,6 @@
 # Index symbols brief
 
-Build me a command-line tool called `symbols` that turns the name of a collection of stocks into the symbols it holds.
+Build me a command-line tool called `trade` that turns the name of a collection of stocks into the symbols it holds.
 This is the first piece of a bigger tool for scanning stocks, so I will keep adding to the same repository.
 
 ## Names
@@ -48,11 +48,11 @@ Every London fund takes a `.L` suffix and every US one stays bare, which is how 
 Six tickers are claimed by both ranges and a London fund never holds the same stocks as the US fund sharing its ticker.
 I still want the suffix on all eighteen rather than only on those six, because a name I have put in a script should not change the day VanEck lists something that collides with it.
 
-Each answers to its own ticker, so `symbols expand ARKK` and `symbols expand IVES` work where `symbols expand ARK` does not.
+Each answers to its own ticker, so `trade index expand ARKK` and `trade index expand IVES` work where `trade index expand ARK` does not.
 All forty-eight appear in `catalogue` beside the packaged ones, each under the name that reaches it.
 
 Those forty-eight are the funds I follow, not the limit of what I can ask for.
-Any other ETF ticker should expand as well, so `symbols expand TAN` gives me a solar fund named nowhere in this brief.
+Any other ETF ticker should expand as well, so `trade index expand TAN` gives me a solar fund named nowhere in this brief.
 It spells the same way as the rest, bare for a US listing and `.L` for a London one.
 No issuer publishes anybody else's funds, so that one will not come from an issuer — look for somewhere that carries ETFs generally and covers both listings.
 When it is what answers, just give me the symbols; I do not need telling that the name was not one of mine.
@@ -73,7 +73,7 @@ Each reports its US positions to the SEC once a quarter, so give me the most rec
 When it was filed is of no interest to me, so nothing needs to show the date or let me choose by it.
 A report covers more than plain stock, so the same judgement that keeps untradeable rows out of a fund's holdings applies here too.
 
-They answer to their names rather than to a ticker, so `symbols expand berkshire-hathaway` works.
+They answer to their names rather than to a ticker, so `trade index expand berkshire-hathaway` works.
 
 ## Rankings
 
@@ -107,10 +107,14 @@ When I do want to read them myself, a flag gives me a `rich` table down the page
 
 ## Commands
 
-Two, because finding out what I can expand is a different question from expanding one.
+The tool is `trade`, and its commands are grouped by what they are about rather than sitting flat under it.
+This build fills the first group, `index`.
+More groups follow in the builds after this one, so the shape has to take them without this group moving or being renamed.
 
-- `expand NAME...` gives me the symbols those collections hold.
-- `catalogue` gives me the names I follow.
+Two commands in the group, because finding out what I can expand is a different question from expanding one.
+
+- `trade index expand NAME...` gives me the symbols those collections hold.
+- `trade index catalogue` gives me the names I follow.
 
 `catalogue` is how I remind myself which collections I have set up rather than a list of everything that works, since any ETF ticker expands whether it appears there or not.
 Everything this brief names belongs in it, the packaged indices and the funds and the investors and the rankings alike.
@@ -130,23 +134,23 @@ Two, spelled the way the tools I already use spell them, and both work on both c
 ## Examples
 
 ```bash
-symbols expand dow-jones
-symbols expand sp-500
-symbols expand "S&P 500"
-symbols expand ARKK
-symbols expand ARKK ARKW ARKG
-symbols expand SMH
-symbols expand SMH.L
-symbols expand berkshire-hathaway
-symbols expand largest-etfs
-symbols expand dow-jones > dow-jones.txt
-symbols expand ARKK -o ark.txt
-symbols expand TAN
-symbols expand largest-companies
-symbols catalogue
-symbols catalogue | grep ARK
-symbols expand ARKK -t
-symbols expand ftse-100 | grep '\.L$'
+trade index expand dow-jones
+trade index expand sp-500
+trade index expand "S&P 500"
+trade index expand ARKK
+trade index expand ARKK ARKW ARKG
+trade index expand SMH
+trade index expand SMH.L
+trade index expand berkshire-hathaway
+trade index expand largest-etfs
+trade index expand dow-jones > dow-jones.txt
+trade index expand ARKK -o ark.txt
+trade index expand TAN
+trade index expand largest-companies
+trade index catalogue
+trade index catalogue | grep ARK
+trade index expand ARKK -t
+trade index expand ftse-100 | grep '\.L$'
 ```
 
 ## Working style

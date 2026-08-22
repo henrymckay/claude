@@ -152,6 +152,10 @@ One rule covering cash lines, options and a trailing disclaimer alike beats a ro
 Two commands, split by what they do rather than by where the symbols come from.
 Resolving a name is the tool's job, so `expand` takes the name alone; finding out which names exist is a different question, so `catalogue` is its own command rather than a flag that switches what `expand` does.
 
+**The group is a package, not a prefix on two command names.**
+The brief says more groups follow, so `index` is a `typer` sub-application registered on the root — which is what lets the next group be added without the root command being touched, and what makes `trade index --help` list this group alone.
+Spelling the commands `index-expand` and `index-catalogue` at the root reaches the same invocation and gives up both.
+
 `catalogue` is what makes a bare error acceptable on an unmatched name — without it the tool would owe the caller near matches, since a collection it ships is not otherwise discoverable.
 
 - Two renders, not one styled two ways.
@@ -167,7 +171,7 @@ A short list is the dangerous outcome, because nothing downstream can tell it ap
 - Diagnostics, progress and errors to standard error, so a redirect captures symbols alone.
 - A non-zero exit on any failure, an unknown name or a fetch that would not come, so `&&` and `set -e` behave.
 - A `--help` that explains the tool without recourse to a README.
-- `catalogue` writing one name per line, so `symbols catalogue | grep ARK` answers "what can I expand that looks like this".
+- `catalogue` writing one name per line, so `trade index catalogue | grep ARK` answers "what can I expand that looks like this".
 
 **Where a good build should push back.** One thing, and it should end in the brief being followed.
 

@@ -1,11 +1,14 @@
 # DeMark counts brief
 
-Carry on from the candles tool, the one that fetches daily, weekly and monthly candles for a list of tickers.
+Carry on from the `trade` tool, the one whose `symbol` group fetches daily, weekly and monthly candles for a list of tickers.
 If you are starting without it, build that much first, since the counts have nothing to run over otherwise.
 
 Now I want DeMark counts over those candles, and a table I can scan a whole index with.
 
-Tickers reach it the way the candles tool already takes them, as arguments, from a file I name, or on standard input.
+A third group, `demark`, beside the `index` and `symbol` groups already there.
+Nothing in either of them moves or is renamed to make room for it.
+
+Tickers reach it exactly the way `trade symbol candles` already takes them, as arguments, from a file I name, or on standard input — including an index name standing in for its constituents, and a ticker I have handed you twice coming back once.
 
 ## Filters
 
@@ -15,9 +18,9 @@ One option per filterable column, taking a lower bound and an upper bound, both 
 Give the same value twice to ask for exactly that one.
 
 ```bash
-demark counts AAPL --daily-setup -13 -8
-demark counts AAPL --daily-setup -9 -9
-demark counts AAPL --date 2026-01-01 2026-03-01
+trade demark count AAPL --daily-setup -13 -8
+trade demark count AAPL --daily-setup -9 -9
+trade demark count AAPL --date 2026-01-01 2026-03-01
 ```
 
 I expect to set several at once in a single run, and every one of them has to hold.
@@ -34,21 +37,25 @@ On a day the market has not traded, today means the most recent day it did.
 A column for the date and a column for the symbol, then one for each count on each timeframe.
 A row per symbol, and a row per date as well where I have asked for a range.
 
-The same table has to go three ways.
+It goes out the same ways `trade symbol candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
 
-- Rendered prettily at the terminal with `rich`.
-- Written to a file I name.
-- Written plainly to standard output, so I can pipe it into another command or redirect it.
-
-The pretty one differs in more than styling.
+The `rich` one differs in more than styling.
 Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
 
 ## Commands
 
-- Report all three counts together.
-- Report one count on its own, with a command each for setup, sequential and combo.
+Four in the group.
+
+- `trade demark count` reports all three counts together.
+- `trade demark setup`, `trade demark sequential` and `trade demark combo` each report one on its own.
+
+Every one of them takes tickers the three ways above, carries the same filters, and answers the same ways.
+
+## Not in this build
 
 I also want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.
+I have not settled how that should reach me, so leave it out — no option, no command and no file format decided for it.
+It is written down here so that neither of us forgets it, not so that you build it.
 
 ## Counts
 
@@ -103,9 +110,23 @@ The `rich` table is the one exception, showing every count positive and leaving 
 A date in the past reports the count of the **completed** candle covering it.
 Ask about a Wednesday and the weekly column gives me that whole week as it finished, never the week rebuilt as it stood partway through.
 
+## Examples
+
+```bash
+trade demark count AAPL
+trade demark count AAPL MSFT NVDA
+trade demark setup AAPL
+trade demark sequential NVDA --weekly-sequential 11 13
+trade demark combo NVDA
+trade index expand sp-500 | trade demark count --daily-setup -9 -9
+trade index expand dow-jones | trade demark count -o counts.csv
+trade demark count < tickers.txt
+trade demark count AAPL --date 2026-01-01 2026-03-01 --monthly-setup 8 9
+```
+
 ## Working style
 
-Keep going in the repository the candles tool left, and let its structure change as this build earns it.
+Keep going in the repository the `symbol` group left, and let its structure change as this build earns it.
 Build what this brief asks for and no more.
 
 This is the interface I think I want.

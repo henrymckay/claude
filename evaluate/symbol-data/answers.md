@@ -1,16 +1,24 @@
-# Price candles answers
+# Symbol data answers
 
 The design a good build reaches, and the wrong turns that miss it.
 None of it appears in the brief — each line is something the skills alone should produce.
 
 ## The shape
 
-A second source, and the first shape the core genuinely owns.
+A second source, three shapes out of it, and the first shapes the core genuinely owns.
 
 | shape | one row is | how it is reached |
 |---|---|---|
 | symbols | one symbol | rung 1, unchanged |
 | candles | a ticker's candle in one timeframe | fetch each timeframe directly |
+| descriptions | one ticker's description | one call per ticker, a declared schema over each response |
+| matches | one instrument a search found | one call, already a frame |
+
+**Three commands over one source is one adapter, not three.**
+`candles`, `info` and `lookup` are three calls to Yahoo through one library, so they are three functions in a `yfinance_` package sharing its failure conversion, its column spelling and its declared-shape rule.
+Splitting them into three adapter packages triples the decorator, the naming and the tests to buy a boundary that does not exist — there is one outside system here, and it breaks all at once.
+
+What they do **not** share is the parse: a `MultiIndex` frame, a dict of a couple of hundred keys and a frame indexed by symbol have nothing in common past the library that returned them.
 
 **There is no resample step.** `yfinance` serves daily, weekly and monthly, so the adapter returns one long frame already carrying a timeframe column, and Yahoo's own week and month alignment is used rather than a reinvented one.
 Deriving coarser candles from dailies is a transform the problem does not need, and it adds a seam that then has to be threaded through every later rung.
@@ -32,8 +40,10 @@ Rename through `polars.all().name.map(...)` rather than a dict naming every colu
 
 ## What the build earns
 
-**A second port, and with it an `operate` package.** The symbols build already defines a port for holdings; fetching candles is a second thing the core needs from outside, so it gets its own rather than being bent through the first.
-Two use cases is also where the operations stop being loose functions, so the package the last build did not earn is earned here.
+**A port that is a `Protocol`, not three callable aliases.** The core needs three things from the *same* outside thing, which is the case `structure-python` names: declare the trio as a protocol the adapter module satisfies, and the composition root hands over the module.
+That one adapter satisfies it today is not an argument against the protocol, and it is not an argument for inventing a second one either.
+
+**An `operate` package.** The symbols build already defines a port for holdings; this build adds a second port and three more use cases, so the operations stop being loose functions and the package the last build did not earn is earned here.
 
 **A format option, replacing the previous rung's `--table` boolean.**
 One column made the boolean honest: there were two forms and a flag picked between them.
@@ -116,10 +126,43 @@ The brief asking for a settled order is the same requirement arriving from the o
 **`threads` is on by default, so one call is many requests.**
 An index expansion is five hundred tickers in a single `download`, which is where a publisher's rate limit is found rather than in any test.
 
+### What `info` returns
+
+**The key set varies by instrument, so a field is *absent* rather than empty.**
+`get_info()` gives 187 keys for `NVDA` and 71 for `^NDX`, and four of the eleven the brief asks for — country, industry, sector and market capitalisation — are simply not in the dict for an ETF, an index, a future or a currency pair.
+Subscripting raises `KeyError` on the tickers the brief explicitly says it checks with.
+This is the previous rung's packaged-record trap arriving from a different library, which is the point: an adapter's seam is every library it touches, and a dict one hands back is a record like any other.
+
+**Declare the schema, and declare market capitalisation a float.**
+Let `polars` infer it and the same column comes back a different type depending on who was asked: a batch of indices infers `Null`, a batch of stocks infers `Int64`, and concatenating two such runs raises `SchemaError`.
+`use-polars` says to declare a dtype where the contents were not chosen — here the contents are chosen by *which tickers the caller named*, which is the sharpest version of that rule there is and the one no fixture catches, because a fixture picks its tickers.
+
+**Which eleven fields is reference data**, in `data/adapt/`, because the brief says the set is the user's to change without opening code.
+A list in the module fails that requirement outright rather than merely being untidy.
+
+**A ticker Yahoo has nothing for returns a one-key dict.**
+It does not raise, exactly as the download does not, so `info` needs the same check of what came back against what was asked for — written once and shared, since it is the same rule twice.
+
+**There is no batch call.** `Ticker(...).get_info()` is one request per ticker, so `trade index expand largest-companies | trade symbol info` is a thousand of them.
+That is the one-call-per-group case `use-polars` blesses, and it is where a rate limit is met.
+
+### What `lookup` returns
+
+**Do not reach the method by an interpolated name.**
+`yfinance.Lookup` spells them `get_all`, `get_cryptocurrency`, `get_currency`, `get_etf`, `get_future`, `get_index`, `get_mutualfund` and `get_stock` — note it is `get_cryptocurrency`, not `get_crypto`.
+A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a string nothing checks, so the wrong guess is an `AttributeError` in front of the user rather than an error at import.
+`write-python` is explicit that a fixed known set is a lookup rather than a mechanism; a mapping from your own kind to the method is the same number of lines and fails where it should.
+
+**The kind is a closed set, so it is an enum** — in the core, in the port and in the option — not a string the driver passes through and the adapter interpolates.
+
+**The result is a frame indexed by symbol**, so `include_index=True` again, and it carries columns the brief did not ask for; select what you declared.
+
+**A search matching nothing is an answer, not a failure**, which is where the declared-dtype rule bites a third time: the empty frame still has to carry `String` columns, or it will not concat or join and the emptiness surfaces as a schema error somewhere else entirely.
+
 ## The surface
 
 Tickers arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
-That last one is the whole point of the build — it is what makes `symbols dow-jones | candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
+That last one is the whole point of the build — it is what makes `trade index expand dow-jones | trade symbol candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
 
 Read standard input when no tickers are named, rather than behind a flag that says to.
 A flag would mean the pipeline only composes for someone who already knows the flag exists.
@@ -130,6 +173,14 @@ Doing it at the boundary is what stops each route growing its own version.
 
 Candles go out the same two ways the symbols already do, and the options are spelled the way they already were — the destination is `-o`/`--output`, and an input path is spelled after it.
 Spelling the same idea differently between two commands of one tool is the cheapest possible thing to get wrong and the most irritating to live with.
+
+**`lookup` taking a different kind of input is not an inconsistency to iron out.**
+It searches for a ticker rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
+What must stay identical across all three is the *output* — the same format option, the same `-o`, the same table — because that is the half a caller composes with.
+
+**The group is a sub-application, not a prefix.**
+`index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
+Two commands spelled `symbol-candles` and `symbol-info` at the root reach the same invocation and give that up, along with a `trade symbol --help` that lists the group alone.
 
 **Where a good build should push back.** A named input file does nothing that `< file` does not, exactly as `-o` mirrors `>` in the previous build — worth saying, worth building anyway.
 
@@ -143,13 +194,16 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 - That `auto_adjust=False` returns `Adj Close` beside `Close` and that the two differ, since the whole requirement rests on picking between them.
 - That a ticker Yahoo has nothing for returns `NaN` rather than raising.
 - That the index converts to a `Datetime` rather than a `Date`.
+- That `get_info()` omits keys rather than nulling them, on an ETF and an index as well as a stock, and returns a near-empty dict for a ticker that does not exist.
+- That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
 
 **The default run must not touch the network.**
 Record one response covering two tickers on different exchanges, keep it beside the tests as a data file, and parse that.
 One exchange is the fixture that never has a null in it, so it is the fixture under which the dense grid, the drop rule and the missing-ticker check all pass by accident.
 
-**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — three timeframes against the tickers asked for.
+**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — three timeframes against the tickers asked for, eleven columns against every kind of instrument.
 A ticker that came back empty has passed every check the program can make on itself.
+The six the brief names — a stock, an ETF, an index, a future, a coin and a currency pair — are the run that matters, because five of them are missing fields the sixth has.
 
 ## Wrong turns
 
@@ -167,3 +221,9 @@ A ticker that came back empty has passed every check the program can make on its
 - **Carrying the previous rung's `--table` boolean onto five columns**, so the machine form was never named and nobody decided whether it has a header.
 - **Interval strings written into the adapter**, where the table of domain name against library argument belongs in `data/adapt/`.
 - **Sorting in the renderer**, which leaves the frame the core computes on in whatever order the source happened to return.
+- **Subscripting a field `get_info()` does not always carry**, so an ETF or an index fails on a raw `KeyError` where a stock passed.
+- **Letting `polars` infer the market capitalisation**, so the column's type depends on which tickers were asked about and two runs will not concatenate.
+- **The eleven fields written into the adapter**, when the brief made the set the user's to change without opening code.
+- **`getattr(lookup, f"get_{kind}")`**, which trades a checked mapping for a runtime `AttributeError` — and `get_crypto`, which is what that guess produces and is not a method.
+- **Three adapter packages for one library**, tripling the failure conversion and the naming to draw a boundary that is not there.
+- **Treating a search that matched nothing as a failure**, when not finding something is what searching for it risks.
