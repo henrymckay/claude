@@ -3,7 +3,7 @@
 Carry on from the `trade` tool, the one whose `symbol` group fetches daily, weekly and monthly candles for a list of symbols.
 If you are starting without it, build that much first, since the counts have nothing to run over otherwise.
 
-Now I want DeMark counts over those candles, and a table I can scan a whole index with.
+Now I want DeMark counts over those candles, so I can start scanning a whole index with them.
 
 A third group, `demark`, beside the `index` and `symbol` groups already there.
 Nothing in either of them moves or is renamed to make room for it.
@@ -11,37 +11,35 @@ Nothing in either of them moves or is renamed to make room for it.
 Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input, and a symbol I have handed you twice coming back once.
 They are symbols, not indices: an index reaches this group the same way it reaches `trade symbol get-candles`, by being expanded first.
 
-## Filters
+## Dates and timeframes
 
-Every column but the symbol, so the date and each count on each timeframe.
+Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells them.
 
-One option per filterable column, taking a lower bound and an upper bound, both inclusive.
-Give the same value twice to ask for exactly that one.
+- `-s`, `--start DATE` is the earliest date I want reported.
+- `-e`, `--end DATE` is the latest.
+- `-i`, `--interval` picks a timeframe, given once per timeframe I want.
 
-```bash
-trade demark count AAPL --daily-setup -13 -8
-trade demark count AAPL --daily-setup -9 -9
-trade demark count AAPL --date 2026-01-01 2026-03-01
-```
+Both bounds are inclusive, and naming the same date twice asks for that one day.
+Leave `--end` off and it **defaults to today**; leave `--start` off and it means that same day alone, since a single day is what I want most of the time.
+Leave `--interval` off and I get all three.
 
-I expect to set several at once in a single run, and every one of them has to hold.
-Because counts are signed, one option per column covers both directions and I never have to say which direction I mean.
-
-The date is a filter like any other, and it decides which candles I am reported on.
-Leave it alone and it **defaults to today**.
+The dates decide which candles I am reported on, and they are not the whole story of what has to be fetched — a count is only right if the candles before it were counted too.
 
 I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
 On a day the market has not traded, today means the most recent day it did.
 
-## Table
+## Filtering
 
-A column for the date and a column for the symbol, then one for each count on each timeframe.
-A row per symbol, and a row per date as well where I have asked for a range.
+**Not settled — leave it out of this build.**
 
-It goes out the same ways `trade symbol get-candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
+What I am actually doing is looking for a **symbol**, not a row: something with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once, on the same day.
+Any mechanism has to let me say several such conditions and give me back only the symbols where every one of them holds.
 
-The `rich` one differs in more than styling.
-Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
+Bounds on a single column are not that, because each of my conditions is about a different timeframe and a different count, and in the layout below those live on different rows.
+Whatever this turns into, it has to reach across rows and answer at the level of the symbol.
+
+I will settle it separately.
+Until I do, build the commands without it, so no option, no column of its own and no filtering behind the fetch bounds above.
 
 ## Commands
 
@@ -50,18 +48,29 @@ Four in the group.
 - `trade demark count` reports all three counts together.
 - `trade demark count-setup`, `trade demark count-sequential` and `trade demark count-combo` each report one on its own.
 
-Every one of them takes symbols the three ways above, carries the same filters, and answers the same ways.
+Every one of them takes symbols the three ways above, carries the same options, and answers the same way.
 
 ## Output
 
-The same table, the same two options and the same plain form the other groups already answer with — comma-separated, no heading row, columns in alphabetical order, `-o` to a file I name and `-t` for a `rich` table.
+One row per date, symbol, timeframe and count, carrying that count.
+Five columns, the same five every run: `count`, `date`, `indicator`, `interval` and `symbol`, alphabetically as everywhere else.
 
-**The column names for this group are not settled**, and neither are short forms for the filter options.
-I will pin both down the way I have for `index` and `symbol`; until I do, take what the Table and Filters sections describe above, give the filters their long forms alone, and treat none of those names as fixed.
+`indicator` says which count the row is — `setup`, `sequential` or `combo`.
+`interval` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
 
-## Not in this build
+Long rather than a column per count on each timeframe, because I am asking for one timeframe as often as three and I do not want the shape of what comes back to depend on which options I gave.
 
-I also want to re-filter or re-render a table I have already produced, without paying to fetch the prices again.
+It goes out the same ways `trade symbol get-candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
+
+The `rich` one differs in more than styling.
+Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
+
+**Whether the `rich` table stays long or turns a column per count is not settled**, and it depends on what the filtering above turns into.
+Build the plain form long; take the `rich` one long too until I say otherwise.
+
+## Also not in this build
+
+Separately from the filtering above, I want to re-render or re-select from a table I have already produced, without paying to fetch the prices again.
 I have not settled how that should reach me, so leave it out — no option, no command and no file format decided for it.
 It is written down here so that neither of us forgets it, not so that you build it.
 
@@ -124,12 +133,15 @@ Ask about a Wednesday and the weekly column gives me that whole week as it finis
 trade demark count AAPL
 trade demark count AAPL MSFT NVDA
 trade demark count-setup AAPL
-trade demark count-sequential NVDA --weekly-sequential 11 13
+trade demark count-sequential NVDA -i weekly
 trade demark count-combo NVDA
-trade index get-symbols sp-500 | trade demark count --daily-setup -9 -9
-trade index get-symbols dow-jones | trade demark count -o counts.csv
+trade demark count AAPL -i daily -i weekly
+trade demark count AAPL -s 2026-01-01 -e 2026-03-01
 trade demark count < symbols.txt
-trade demark count AAPL --date 2026-01-01 2026-03-01 --monthly-setup 8 9
+trade demark count -f symbols.txt -t
+trade index get-symbols sp-500 | trade demark count
+trade index get-symbols dow-jones | trade demark count -o counts.csv
+trade index get-symbols sp-500 | trade demark count-setup -i daily | awk -F, '$1 >= 8'
 ```
 
 ## Working style

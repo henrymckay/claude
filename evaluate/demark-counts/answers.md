@@ -12,7 +12,6 @@ Three new shapes, three seams, each a change of entity or grain.
 | candles | a symbol's candle in one timeframe | the candles build, unchanged |
 | counts | one count on that candle | count the runs and the countdowns |
 | aligned | a symbol, day, timeframe and count | map each candle's counts onto the days it covers |
-| wide | a symbol on a day | `pivot` timeframe and count kind out together |
 
 **The counting function needs nothing but its input.** Given a long frame of candles covering every symbol and every timeframe at once, it returns a long frame of counts, and it is expressible entirely in column and window expressions.
 
@@ -25,24 +24,28 @@ Write one counting function parameterised by the condition rather than three nea
 
 **Signed counts remove the direction column.** The sign carries the direction and the magnitude the position, so `Direction` never becomes a column or a type — it survives only as a rendering concern.
 
-**Widening is not presentation.** A pivot changes what a row represents, and a change of grain is a seam, so it belongs to a transform even though a table is what made you want it.
-Presentation starts where the result stops being data and becomes a `Table`; an API serving the same report wants the same pivot and a different renderer.
+**`aligned` is what leaves the tool, so there is no fourth shape.**
+The brief fixes the output long — five columns whatever the options — which deletes the pivot this rung would otherwise have needed and the argument about whose job it is.
+That is the option surface deciding a core shape, and rightly: `--interval` means a wide frame's columns would depend on what was asked for, and a schema that varies with the flags is not a schema.
+
+Should the `rich` table later widen, the pivot is a **transform** the driver calls before rendering, not something the renderer does — a change of grain is a seam, and an API serving the same report wants the same pivot with a different renderer.
 
 **Alignment is a containment join, nothing more.** A weekly count attaches to a weekly candle and has to be spread across the days that candle covers before it can sit beside a daily count on the same row.
 Nothing is reconstructed as of a past date — there is no "the weekly candle as it stood last Wednesday", so there is no per-date rebuild and none of the machinery that would make one fast.
 A previous run spent its whole core design on that machinery, for a requirement nobody wanted.
 
-**Filtering is not a seam.** It drops rows without changing what a row is.
-It earns its own function by being independently useful, not because the flow demands one, and it comes last, since the bounds are set on columns that only exist once the frame is wide.
+**The date bounds are not a seam.** They drop rows without changing what a row is, so they earn their own function by being independently useful rather than because the flow demands one, and they come last.
+The selection the brief defers is a different thing entirely: it answers about a symbol rather than a row, so when it arrives it will change the grain and *will* be a seam.
 
 ## What this build declares
 
-**Placeholder — not settled.**
-The column schema, the filter options' short forms and the re-filtering seam are all still open in the brief, and what this group declares follows from them.
+**No new port.** The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it.
+That is the test of whether the last build declared it well, and it passes only because the bounds and intervals stayed on the port rather than being bound into an adapter one group had curried for itself.
 
-Two things are settled and can be relied on.
-Its four commands share **one** operation, because they differ by which counts reach the output rather than by what they do.
-And it needs **no new port**: the counting is pure, so what it wants from outside is candles, which `port.Candles` already provides.
+**One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do.
+It takes symbols and the same bounds and intervals `get_candles` takes, calls that port, and hands the frame to the counting transform.
+
+**Still a placeholder.** The filtering is unsettled in the brief and so is whether the `rich` table widens; the operation's final signature waits on the first of those, since a predicate that selects symbols rather than rows may not be a parameter of this operation at all.
 
 ## What the build earns
 
@@ -81,7 +84,8 @@ Every command spells a shared idea the same way — the file it writes to, the w
 Filters are one option per column taking a bound pair, so the surface grows by a column rather than by three flags a column.
 Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity, and the pair is what keeps both.
 
-**Where a good build should push back.** Nine filter options is still a lot of signature, and a build that finds a way to keep the surface while shrinking the declaration — rather than restating all nine in the body — has understood the constraint properly.
+**Where a good build should push back.** The brief defers the filtering and explains what it is for, which is an invitation to argue rather than to guess.
+The argument worth making is that a condition per timeframe and count is a claim about a *symbol*, so it cannot be a bound on a column of a long frame; the argument not worth making is a proposal for the option spelling, which the brief has deliberately not asked for.
 
 ## The window trap
 
@@ -92,12 +96,13 @@ The cancellation rules are what make it delicate: a rule that depends on the run
 `.over()` does not compose.
 Chaining a second one onto an already-windowed expression silently discards the inner partition and returns a plausible wrong answer, so each windowed step goes in its own column before the next one windows it.
 
-## The filter is generic over columns
+## Bounding is generic over columns
 
 One function, bounding a named column, knowing nothing about setups — and the date is just another column it bounds.
-Two mechanisms for the same operation, a date bounded by its own parameters beside a general filter for everything else, means the general one was not general enough.
+Two mechanisms for the same operation, a date bounded by its own parameters beside a general bound for everything else, means the general one was not general enough.
+That rule is what the deferred filtering will be judged against when it arrives, and it is why guessing at it now is expensive: a mechanism built per condition cannot be made generic afterwards without changing every caller.
 
-The option surface is the driver's problem, not the filter's: parse each bound pair straight to the value the core needs.
+The option surface is the driver's problem, not the core's: parse each bound straight to the value the core needs.
 A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
 
 ## Verification
@@ -123,10 +128,11 @@ Bias the walk and measure where it lands before trusting the result.
 - **A cancellation rule expressed circularly**, depending on the countdown state it is supposed to end.
 - **Chained `.over()`**, above — the failure is silent, so only the reference catches it.
 - **Optimising before there is a correct simple version.** An optimisation that changes what a function takes has leaked into the interface.
-- **Hand-rolling `pivot`.** A `reduce` over per-timeframe joins is `pivot` spelled out the long way.
-- **A filter DSL**, where the requirement is bounds on a named column.
-- **Dates as their own type hierarchy.** A latest/on/span sum type, when a date is a column like any other and "latest" is a default bound of today.
+- **Pivoting at all**, when the brief fixes the output long — and, should the `rich` table later want columns, hand-rolling that pivot as a `reduce` over per-timeframe joins.
+- **Building the filtering anyway.** The brief defers it and says why: the thing wanted is a symbol satisfying several conditions across different rows, which bounds on one column cannot express.
+Guessing at a mechanism now means the real one arrives as a breaking change to a published surface.
+- **Dates as their own type hierarchy.** A latest/on/span sum type, when a date is a bound like any other and "latest" is a default of today.
 - **Filtering the dates before counting**, which starves the run counter of the history it needs.
 The bound selects rows at the end and sizes the fetch at the start, and does nothing in between.
-- **Widening in the renderer**, which puts a change of grain in the driver and leaves a second entry point to repeat it.
+- **Widening in the renderer**, which puts a change of grain in the driver and leaves a second entry point to repeat it — the trap waiting if the `rich` table is ever given columns.
 - **A `--format` flag that only changes colour**, leaving the piped output as unparseable as the pretty one.
