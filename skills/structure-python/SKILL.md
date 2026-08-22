@@ -147,6 +147,11 @@ A source that did not answer at all is a different event: the request failed, th
 An adapter **raises** there rather than returning its empty shape, because an empty frame says "there are none" and the caller has no way to tell that apart from "nobody told me" — which is the silent partial result the whole design is meant to prevent.
 A core rule that rejects a source's stray matter as well as its unwanted rows is doing its job, not overreaching — say so in its docstring, so the next reader does not add a filter upstream that duplicates it.
 
+**Before an adapter drops a row, check whether the core rule already drops it.**
+A publisher's own column saying which rows are cash reads as better evidence than a rule over the value, so filtering on it feels like diligence — but where the core rule rejects the same rows anyway, the filter is a second place one judgement lives, and the two drift the day a publisher renames the column or a range stops carrying it.
+The tell is a branch in the adapter asking whether the column is even there: normalising an absent *value* is the adapter's job, but normalising an absent *filter* means the filter was never load-bearing.
+Filter in the adapter only where the source states something the value cannot show — a flag beside an otherwise ordinary ticker marking the row an option over the holding rather than the holding — and leave everything the core rule can see for the core rule.
+
 **Split an adapter into getting and making sense of.**
 An adapter does two unrelated jobs — reaching the outside world, and turning what came back into the declared shape — so give each its own function and let the port's own function be the composition of them: `return _parse(name, _get(_url(name)))`.
 The retrieval is a few lines that never change; the parse is where the source's quirks live and where the work grows, so leaving them fused means the port's function gets longer every time the publisher changes something, and the one line a reader wanted — what this adapter actually returns — sinks under it.
@@ -206,6 +211,8 @@ Three refusals arrive looking like your own bug, so recognise them rather than r
 The tell is a failure that follows the request *count* rather than the request, so change one thing: retry the same call after a pause and see whether it comes back.
 - **A rate is stated somewhere you have not read.** `robots.txt` may carry a `Crawl-delay`, and an API may cap requests per minute and answer `429` past it — worth retrying, but on a wait long enough to outlast the window rather than the seconds a transient error deserves.
 Read the terms before tuning the backoff, or the retry exhausts inside the window it is waiting out.
+A stated delay governs a *walk you decided on* — the ten pages an adapter fetches because a ranking is paginated, the file per fund a loop asks for — rather than the one document a person asked for, so pace the walk and leave the single request alone.
+Say in the docs which you are doing, since the difference is invisible in the code and the cost of being wrong lands on somebody else's schedule.
 - **A document is served only to a caller who already has the cookies.** A first request redirects to a consent or region page and the second, carrying what that page set, gets the file.
 So retrieval takes an optional page to *visit first*, and it belongs in the HTTP module beside the timeout and the user agent — not in the adapter, which knows only which page.
 
@@ -221,6 +228,9 @@ A `pydantic-settings` model is the usual tool.
 This is `be-functional`'s "inject the environment as a default argument" applied to the whole app.
 - **Wire it at the composition root.** The driver loads the settings once at startup and injects them into operations beside the adapters — configuration and dependencies enter through the same seam.
 The concrete `pydantic-settings` loading lives in `write-entry-points`.
+- **A value only an adapter needs is read by that adapter, not threaded through the core.** Injection is for what the *operation* takes; a value the core never sees — the address an HTTP client identifies itself with, a connection string, a region — would otherwise have to enter through the port, which means every adapter behind that port accepts a parameter to satisfy the signature and the ones making no request ignore it.
+That is the adapter lying to satisfy a contract, which "Declare a port" already rules out, so read it at the edge module that uses it and keep it out of the port entirely.
+The core stays pure either way: the rule it must obey is that *it* never reaches for ambient state, not that no edge module may.
 - **Secrets are configuration too** — the same path, from the environment or a secret store, validated at the boundary and never committed (see `use-git`).
 
 ## Logging
