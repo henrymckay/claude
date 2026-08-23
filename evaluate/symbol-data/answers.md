@@ -92,10 +92,18 @@ Bundling them buys nothing and costs a fake for `get_info` that has to implement
 `Info` is an alias because it takes one positional argument.
 `Candles` and `Lookup` carry keyword-only options, and `collections.abc.Callable` cannot express those at all, so they are protocols declaring `__call__` — and a plain module-level function satisfies one, so no adapter grows a class.
 
+Both ways of making them aliases cost more than the shorter declaration saves.
+Flattening the options to positional arguments buys the alias with four positional parameters at every call site, which `write-python` rules out on its own.
+Collapsing them into one positional record buys it with a `Request` type per port — the input grammar modelled as a type, and a construction standing between every caller and the call.
+
 **The options stay on the operation.**
 Binding `start`, `end` and `timeframes` into the adapter with `functools.partial` at the composition root type-checks, and makes both protocols plain aliases, which is why it is tempting.
 It is still wrong: it fuses a dependency fixed at startup with data that changes every invocation, so the injected value must be rebuilt per call and the operation can never run twice with different bounds against one adapter.
 Worse, it moves the use case into the driver — every second driver, a dashboard included, rebuilds the same partial, which is the duplication `operate` exists to prevent.
+
+**`get_candles` looks like a forwarding call and is not one.**
+It is one line today because the fetch is the whole use case, and the next build calls it rather than the port — which is what an operation over a single port call earns its place by, and what a group reaching past it to `fetch` would give up.
+That is also the second cost of currying the bounds into the adapter: the next build would inherit an adapter fixed to one caller's dates rather than a stage it can reuse.
 
 **Nothing here composes with `get_symbols`.**
 The brief makes this group take symbols, so no operation in it resolves an index, and the pipe that expands one runs between two processes rather than inside the driver.

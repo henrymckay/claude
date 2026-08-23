@@ -34,9 +34,29 @@ That concatenation appends the restored columns rather than ordering them, so th
 
 **No new port.** Screening needs candles, which `port.Candles` already provides — and that is the third build running to need nothing new, which is the evidence the ports were drawn at the right size.
 
-**One operation**, `find_matches`, taking the symbols, the bounds and the conditions, calling the candles port, then the demark transform, then the pivot and the filter.
+**One operation**, and it calls the last build's rather than the port:
 
-**A `transform` for the conditions themselves**, turning what the driver parsed into the frame the filter is built from — pure, and the only part with any subtlety in it.
+```python
+def find_matches(
+    symbols: collections.abc.Iterable[str],
+    *,
+    conditions: collections.abc.Iterable[transform.Condition],
+    end: datetime.date,
+    fetch: port.Candles,
+    start: datetime.date,
+) -> polars.DataFrame: ...
+```
+
+`get_counts` already fetches, widens for warm-up and counts, so this operation reads the indicators and timeframes out of the conditions, hands them over, and pipes what comes back through the pivot and the filter.
+Reaching for `port.Candles` directly instead rebuilds the stage the last build named, warm-up margin and all — and gets it subtly wrong, since the margin is the one part of that stage nothing downstream can see.
+
+**No `--timeframe` and no `--indicator` on the signature**, because the conditions carry both.
+That is the option surface the brief already argued for, arriving in the core: a screen names what it is about once, and the operation derives the rest.
+
+**The conditions reach the core as records and become a frame inside it.**
+`--where NAME LOWER UPPER` is three values with a domain meaning, so a frozen record carries them across the boundary and a `transform` turns the set into the frame the filter is built from — pure, and the only part with any subtlety in it.
+That is not the input grammar modelled as types: the driver still parses the option's spelling, and what it hands on is what a condition *is* rather than how it was typed.
+Handing over the frame instead makes the operation's input a set of column names no signature states, which the next entry point then has to know.
 
 **`--load` reads the stage before, not this stage's own output.**
 That is what makes it useful rather than merely symmetrical: a `demark` file is unfiltered and carries every indicator computed, so any set of conditions can be tried against it.
@@ -56,9 +76,10 @@ A build that invents `port.Saved` has made a port out of the driver's own input.
 
 ## The boundary
 
-**`--where` enters the program twice, and only the driver knows the second use.**
+**`--where` enters the program twice, and the second use is the core's.**
 The conditions say which timeframes matter, so they size the fetch as well as filtering the result — a screen on `daily_setup` alone has no business fetching monthly candles.
-That derivation is the composition root's, exactly as the warm-up margin is: the filter stays generic and knows nothing about fetching, and the core cannot ask for data it was not given.
+That a condition named `weekly_setup` is about weekly candles is domain knowledge, so reading it out of the conditions is a `transform` the operation calls, exactly as the warm-up margin is.
+The driver passes on what the caller typed; the filter stays generic and knows nothing about fetching, and the core cannot ask for data it was not given.
 
 Both apply at once here, which is the trap — the fetch window is the date bounds *plus* warm-up, and the timeframes are those the conditions name, and getting one right while missing the other is a screen that is quietly wrong rather than slow.
 
@@ -103,6 +124,8 @@ A build that notices the tension and follows the brief has read it properly; one
 - **Letting the empty result lose its schema**, so the screen that matched nothing raises instead of printing nothing.
 - **Fetching every timeframe regardless of the conditions**, tripling the slowest part of the run to compute columns nobody asked for.
 - **Deriving the fetch window from the dates but not the timeframes**, or the reverse — both are half the composition root's job, and the half that is missing is invisible.
-- **A `port` for `--load`**, turning the driver's own file into an outward call the core makes.
+- **A `port` for `--load`**, turning the driver's own file into an outward call the core makes — and here it cannot even be built, since the live source of counts is this program's own operation.
+- **Fetching candles directly rather than through `get_counts`**, which rebuilds the last build's stage and drops the warm-up margin nothing downstream can see is missing.
+- **A driver that builds the conditions frame itself**, so the operation's input is an untyped frame whose column names every entry point has to know.
 - **An `if` around the filter for the no-condition case**, where seeding the fold covers it with no branch at all.
 - **An `or`, a `not`, or parentheses**, none of which the brief asks for and all of which need the grammar it rules out.

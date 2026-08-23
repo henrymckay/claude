@@ -44,16 +44,51 @@ The selection the brief defers is a different thing entirely: it answers about a
 
 ## What this build declares
 
-**`--load` needs a reader at the edge, and not a port.**
-Reading candles the tool itself wrote is IO, so it belongs to the driver; it is not an outward call the core makes, so the core never learns about it.
-The operation takes candles either way — fetched through the port, or read from the file — which is why one operation serves both paths and neither knows which happened.
-That is the whole payoff of the operation taking candles rather than symbols, and it is why the option costs a branch in the driver and nothing anywhere else.
-
 **No new port.** The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it.
 That is the test of whether the last build declared it well, and it passes only because the bounds and timeframes stayed on the port rather than being bound into an adapter one group had curried for itself.
 
-**One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do.
-It takes symbols and the same bounds and timeframes `get_candles` takes, calls that port, and hands the frame to the counting transform.
+**One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do:
+
+```python
+def get_counts(
+    symbols: collections.abc.Iterable[str],
+    *,
+    end: datetime.date,
+    fetch: port.Candles,
+    indicators: collections.abc.Iterable[transform.Indicator],
+    start: datetime.date,
+    timeframes: collections.abc.Iterable[transform.Timeframe],
+) -> polars.DataFrame: ...
+```
+
+**It takes symbols, not candles.**
+An operation handed a frame and calling no port is a transform wearing the wrong layer's name, and the fetch it dropped has to be written again in every driver — which is the objection that already ruled out currying the bounds into the adapter, arriving from the other side.
+
+**It calls `operate.get_candles` rather than the port directly.**
+Fetching candles for a list of symbols is a use case the last build already named, and reaching past it to `fetch` is this group deciding for itself what that stage means.
+It is also what makes `get_candles` more than a forwarding call: a second caller is what an operation over a single port call earns its place by.
+
+**The bounds are not optional here, where they are on the port.**
+`--end` defaults to today and `--start` to that same day, so the driver resolves both before it calls and the core never sees a missing one — where `trade symbol get-candles` leaves either off to mean an open end.
+Reading the clock stays the driver's, being the one piece of IO in the defaulting.
+
+**Which counts come back is the same generic bound as the dates.**
+The four commands differ by a set of indicators, and the indicator is a column, so `count-setup` is a filter on `indicator` exactly as `--start` is a filter on `date`.
+Four operations, or a branch per command, is that filter written as control flow.
+
+**`--load` needs a reader at the edge, and not a port.**
+Reading candles the tool itself wrote is IO, so it belongs to the driver; it is not an outward call the core makes, so the core never learns about it.
+
+**It enters at the transform the operation would have reached next**, which is the whole rule and the one that generalises.
+The operation is fetch-then-count, so the loaded path is count alone — one call in the driver's branch rather than a re-run of the operation's tail — and the screening build's `--load` enters at its own next transform the same way.
+That works only because the counting transform is a composite: count, bound the dates, keep the indicators asked for.
+Piping those three steps in the driver instead puts the operation's tail in every entry point, which is the thing the operation exists to prevent.
+The branch belongs beside the check that the two options are mutually exclusive, which is unarguably the driver's.
+
+**A reading adapter satisfying `port.Candles` is the tempting alternative, and it does not survive the next rung.**
+It is genuinely neater here — the branch moves out of the flow and into the wiring, the warm-up widening reaches the reader as a filter and still comes out right, and the operation is called identically either way.
+But the screening build's `--load` reads *counts*, and the live implementation of a counts port would be this group's own operation, so the core would be reaching outward to arrive back at itself.
+One rule across both rungs beats a better rule covering one.
 
 **Nothing is left open here.** Both forms are long, the pivot belongs to the screening build, and the operation's signature follows from the brief without waiting on anything.
 
@@ -76,9 +111,11 @@ Three counts named in a brief are three counts, not a family to build a framewor
 ## The boundary
 
 The date filters the final frame, but it also decides how much history to fetch, and the count needs a warm-up run of candles before the earliest date asked about or the first counts come out wrong.
-So the edge derives a fetch window from the same bounds the core later filters on, plus a margin.
+So the operation widens the same bounds the core later filters on by a margin, and fetches that.
 
-Deriving that window is the driver's job.
+**Deriving that window is the core's, not the driver's.**
+How far back a pending countdown reaches is a fact about the counts, and a driver that knows it has been taught the indicator — so the margin is a `transform` the operation calls, and the driver passes on the dates the caller typed.
+A second entry point then inherits a correct fetch instead of re-deriving one, which is the same reason the fetch is an operation rather than a call each driver makes.
 The filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
 Size the margin from evidence — measure how far back a pending countdown actually reaches over real data — rather than guessing, and prefer an unbounded fetch to a margin that is too small, because too small fails silently.
 
@@ -138,6 +175,9 @@ Bias the walk and measure where it lands before trusting the result.
 - **A cancellation rule expressed circularly**, depending on the countdown state it is supposed to end.
 - **Chained `.over()`**, above — the failure is silent, so only the reference catches it.
 - **Optimising before there is a correct simple version.** An optimisation that changes what a function takes has leaked into the interface.
+- **An operation taking candles instead of symbols**, which is a transform under another layer's name and leaves fetch-then-count to be written in every driver.
+- **Reaching past `operate.get_candles` to the port**, so this group re-decides what fetching candles means and inherits none of the last build's answer.
+- **Deriving the warm-up margin in the driver**, so a second entry point fetches too little and the first counts of every run are quietly wrong.
 - **Pivoting at all**, when the brief fixes both forms long.
 - **Building the filtering anyway.** The brief puts it in the next build and says why: the thing wanted is a symbol satisfying several conditions across different rows, which bounds on one column cannot express.
 Guessing at a mechanism here means the real one arrives as a breaking change to a published surface.
