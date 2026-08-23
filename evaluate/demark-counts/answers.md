@@ -52,35 +52,70 @@ It supplies a *different value at a different stage*, and the whole design of th
 **Skipping a stage changes the type of what goes in, so it cannot be a parameter.**
 It has to be a choice of function, made where the input is known — which is the composition root's job, and the only question worth arguing is whether both functions it chooses between are named in the core.
 
-**So the group declares two operations, and the fetching one is defined in terms of the other:**
+**So the group declares one operation per command per entry point** — four commands by two ways in — over two private ones that carry the whole implementation:
 
 ```python
-def get_counts(
-    symbols: collections.abc.Iterable[str],
+def count_candles(
+    candles: polars.DataFrame,
     *,
     end: datetime.date,
-    fetch: port.Candles,
-    indicators: collections.abc.Iterable[transform.Indicator],
     start: datetime.date,
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
 
 
-def count_candles(
+# count_combo, count_sequential and count_setup repeat that signature exactly.
+
+
+def get_counts(
+    symbols: collections.abc.Iterable[str],
+    *,
+    end: datetime.date,
+    fetch: port.Candles,
+    start: datetime.date,
+    timeframes: collections.abc.Iterable[transform.Timeframe],
+) -> polars.DataFrame: ...
+
+
+# get_combo, get_sequential and get_setup repeat that one.
+
+
+def _count(
     candles: polars.DataFrame,
     *,
     end: datetime.date,
     indicators: collections.abc.Iterable[transform.Indicator],
     start: datetime.date,
     timeframes: collections.abc.Iterable[transform.Timeframe],
-) -> polars.DataFrame: ...
+) -> polars.DataFrame:
+    """Return the named counts on those candles, bounded to the dates asked for."""
+
+
+def _get_history(
+    symbols: collections.abc.Iterable[str],
+    *,
+    end: datetime.date,
+    fetch: port.Candles,
+    start: datetime.date,
+    timeframes: collections.abc.Iterable[transform.Timeframe],
+) -> polars.DataFrame:
+    """Return the candles the counts need, reaching behind the start for warm-up."""
 ```
 
-The two signatures differ by exactly `symbols` and `fetch` against `candles`, which is the skipped stage spelled out.
-Both serve all four commands, which differ by which counts reach the output rather than by what they do.
+The three narrow commands take the same options as the broad one, so their signatures repeat it exactly; each `get_*` is its own `count_*` composed over `_get_history`, and each pair differs by exactly `symbols` and `fetch` against `candles` — the skipped stage, spelled out.
 
-**`get_counts` is `count_candles` composed over the fetch, and the warm-up is all it adds.**
-It fetches from a widened start and `count_candles` bounds back to the one that was asked for, so the widening lives in the one operation that fetches and the other never learns that a margin exists.
+**The warm-up lives in `_get_history` and nowhere else.**
+It fetches from a widened start, and the `count_*` it feeds bounds back to the one that was asked for, so every loaded path is spared a margin it has no use for and no operation but that one knows a margin exists.
+
+**Four names rather than an `indicators` argument, because a driver may parse a domain value but may not choose one.**
+`--timeframe daily` and `--kind etf` are values the *user* supplied and the driver only parses; an `indicators=[transform.Indicator.SETUP]` in the body of `count-setup` is the CLI reaching into the domain and picking one.
+That is a domain decision in the edge, and it is the third this group would otherwise have left there, beside the warm-up margin and the next rung's timeframes.
+The rule is worth stating because it decides the others too: parsing what arrives is the edge's, choosing what it means is not.
+
+**Four names, and still one counting function.**
+The four are bindings of `_count`'s indicator argument, which is currying rather than control flow — `transform` holds exactly one windowed computation with `indicator` as a column, and nothing above it branches per count either.
+Four counting functions in `transform` is the wrong turn below; four named bindings in `operate` is the surface four commands need, and the two are not the same claim.
+The narrowing itself stays the generic bound: `indicator` is a column, so `count_setup` filters it exactly as `--start` filters `date`.
 
 **`count_candles` calls no port and still belongs in `operate`.**
 The test is who a function is for: a `transform` serves whoever needs that computation, an operation serves a driver.
@@ -107,10 +142,6 @@ It is also what makes `get_candles` more than a forwarding call: a second caller
 **The bounds are not optional here, where they are on the port.**
 `--end` defaults to today and `--start` to that same day, so the driver resolves both before it calls and the core never sees a missing one — where `trade symbol get-candles` leaves either off to mean an open end.
 Reading the clock stays the driver's, being the one piece of IO in the defaulting.
-
-**Which counts come back is the same generic bound as the dates.**
-The four commands differ by a set of indicators, and the indicator is a column, so `count-setup` is a filter on `indicator` exactly as `--start` is a filter on `date`.
-Four operations, or a branch per command, is that filter written as control flow.
 
 **The mutual exclusion stops needing enforcement in the core.**
 Symbols cannot be handed to `count_candles`, so the illegal combination is unreachable rather than rejected; the driver's check exists only to turn a mistyped command into a decent message, which is a fact about the option surface and nothing else.
@@ -159,6 +190,50 @@ Every command spells a shared idea the same way — the file it writes to, the w
 
 The bounds are two options, not a pair of them per column, so the surface grows by a timeframe rather than by three flags a timeframe.
 Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity.
+
+### What the driver holds
+
+Four commands with eight options each is where a command body starts repeating itself, so the group's module holds one private taking the whole option set and four commands binding an operation to it:
+
+```python
+@app.command()
+def count_setup(
+    symbols: Symbols = None,
+    end: End = None,
+    input_: Input = None,
+    load: Load = None,
+    output: Output = None,
+    pretty: Pretty = False,
+    start: Start = None,
+    timeframes: Timeframes = None,
+) -> None:
+    """Report the setup count on each candle."""
+    _report(operate.count_setup, operate.get_setup, **locals())
+```
+
+`locals()` at the top of a command body is exactly its arguments, which is what stops eight option names being written five times; the alternative is a second list that drifts the first time an option is added.
+The signature still spells every option out, because `typer` reads the real parameters — what must not be restated is the *body*.
+
+The private is where the two paths meet, and it is the only branch in the group:
+
+```python
+def _report(count, get, *, end, input_, load, output, pretty, start, symbols, timeframes):
+    """Run whichever operation the options chose, and render what comes back."""
+```
+
+Passing the operations in rather than the indicator is what keeps the enum out of the driver — the command names a function, and which counts that function reports is the core's business.
+
+**The command and one of its two operations share a name, and that is worth noticing rather than fixing.**
+`count-setup` is the brief's spelling and it binds *both* `operate.count_setup` and `operate.get_setup`; the prefix on each says which way in it serves, not which command calls it.
+A build that reads the matching name as the wiring hooks up the loaded path and quietly drops the fetching one, which is a command that works only with `--load`.
+
+**What the driver does not hold is the point.**
+No margin arithmetic, no knowledge that a countdown reaches backwards, no mapping from a name to an indicator: it resolves the transports, refuses the clash, defaults the clock, picks an operation and renders.
+Every one of those is IO or a fact about the option surface.
+
+**The `--load` reader is a driver module that imports nothing from `typer`.**
+It reads the plain form with the schema `transform` declares, so it sits beside its one caller rather than in a package of its own — and it is the first thing to lift into a shared `drive/` module the day a second entry point wants the same file.
+The `--output` writer is its mirror and lives in `rich_`, because the bytes it writes are the plain *render*; the two are one decision held together by that shared schema rather than by sitting in one place.
 
 **Where a good build should push back.** The brief says the filtering is not here and says what it is for, which is an invitation to agree rather than to guess.
 The argument worth making is *why* it cannot live here — a condition per timeframe and count is a claim about a symbol, and the symbol's rows are not on one row to be conjoined — which is the same reason the build after this one has to widen before it can screen.

@@ -268,6 +268,14 @@ What must stay identical across all three is the *output* — the same plain for
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
 Two commands spelled `symbol-candles` and `symbol-info` at the root reach the same invocation and give that up, along with a `trade symbol --help` that lists the group alone.
 
+**That is what turns the last build's `command.py` into a `command/` package** — a module per group owning its own sub-app and its commands, and `command/__init__.py` mounting each on the root app.
+The root app itself stays in `driver.py`, where every framework package keeps it, so nothing in `command/` is imported by the thing it decorates and no cycle appears.
+This is the one place the skill reads two ways, saying both that `driver.py` holds the app object and that `command/__init__.py` holds the main one; the reading that keeps `driver.py` importing no other driver module is the one that works.
+
+**The three transports resolve in one driver function, not in each command.**
+Arguments, `--input` and standard input become a list of symbols before any operation is called, so `get-candles` and `get-info` share the resolution rather than each growing its own precedence — and the next group inherits it instead of writing a third.
+It imports nothing from `typer`, which makes it driver work rather than library work: it sits beside its one caller now and lifts into a shared `drive/` module the day a second entry point wants it.
+
 **Where a good build should push back.** A named input file does nothing that `< file` does not, exactly as `-o` mirrors `>` in the previous build — worth saying, worth building anyway.
 
 ## Verification

@@ -216,6 +216,23 @@ Resolving a name is the tool's job, so `get-symbols` takes the name alone; findi
 The brief says more groups follow, so `index` is a `typer` sub-application registered on the root — which is what lets the next group be added without the root command being touched, and what makes `trade index --help` list this group alone.
 Spelling the commands `index-expand` and `index-catalogue` at the root reaches the same invocation and gives up both.
 
+### The driver is three packages, not one
+
+A hollow `cli/` naming what the entry point *is*, over `typer_/` for the parsing and `rich_/` for the presentation.
+Swapping either library then touches one package and never the console script, which points at `cli` and so never names the framework behind it.
+Collapsing all three into one `cli.py` is the right call for a one-command tool and the wrong one here, because the brief says two more groups follow.
+
+**The app object goes in `typer_/driver.py`, not at the top of the commands module.**
+A framework anchor has to exist before anything decorates it, so leaving it beside the commands fixes that file's order and pushes the callback ahead of the thing a reader opened the file for.
+Given its own module, the commands stay a flat alphabetical list.
+
+**Every argument and option is a function returning its configuration**, in `argument.py` and `option.py`, referenced from the signature rather than inlined.
+At two commands that looks like ceremony; it is the shape that survives the group after this one, where one option set is spelled across seven commands.
+It pays immediately too: because every option here carries a short form, each factory names its own flags — so the parameter behind `--input` can be `input_` without the CLI ever seeing the underscore, and no option has to be renamed around a builtin.
+
+**A command's name is its function's name.**
+`typer` turns `get_symbols` into `get-symbols`, so passing `name=` is a second place the name lives and the reason someone greps for the command a user typed and finds nothing.
+
 `catalogue` is what makes a bare error acceptable on an unmatched index — without it the tool would owe the caller near matches, since an index it ships is not otherwise discoverable.
 
 - Two renders, not one styled two ways.

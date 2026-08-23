@@ -56,12 +56,16 @@ def screen_counts(
 ) -> polars.DataFrame: ...
 ```
 
-`find_matches` is `screen_counts` composed over `get_counts`: it reads the indicators and timeframes out of the conditions, hands them to the operation that fetches, and pipes what comes back through the pivot and the filter.
-That the shape repeats is the point — **every group with a `--load` declares two operations, and the fetching one is defined in terms of the other** — and a build that reaches this rung having invented a second mechanism has missed a rule the last rung already paid for.
+`find_matches` is `screen_counts` composed over `get_counts`: it reads the timeframes out of the conditions, hands them to the operation that fetches, and pipes what comes back through the pivot and the filter.
+That the shape repeats is the point — **every group with a `--load` declares an operation per entry point, and the fetching one is defined in terms of the other** — and a build that reaches this rung having invented a second mechanism has missed a rule the last rung already paid for.
+
+**The timeframes are derived and the indicators are not, because only one of them is expensive.**
+A timeframe is a network call, so a screen naming only daily conditions must not fetch monthly candles; the counts are free once the candles are there, so `get_counts` computes all three and the projection down to the named ones happens at the pivot, where it has to happen anyway.
+Deriving both would mean the three narrow operations the last build declared were the ones to call here, and they are not — those exist for four commands, not for a screen that names its own columns.
 
 Reaching for `port.Candles` directly instead rebuilds the stage the last build named, warm-up margin and all — and gets it subtly wrong, since the margin is the one part of that stage nothing downstream can see.
 
-**No `--timeframe` and no `--indicator` on the signature**, because the conditions carry both.
+**No `--timeframe` on the signature**, because the conditions carry it.
 That is the option surface the brief already argued for, arriving in the core: a screen names what it is about once, and the operation derives the rest.
 
 **The conditions reach the core as records and become a frame inside it.**

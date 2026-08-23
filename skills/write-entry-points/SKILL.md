@@ -116,11 +116,17 @@ The driver is the one place that imports **both** an operation and a concrete ad
 This is the **composition root** — where the abstract core meets a concrete implementation.
 Everywhere else the core depends only on its **ports** (the interfaces it defines); dependency injection is what lets the import arrow point inward while the driver alone names the real adapter (see `be-functional` and `structure-python`).
 
-**One input can enter the program twice, and the driver is what derives the second use.** A bound the core filters on at the end often also decides how much the adapter has to fetch at the start — a date range selecting rows, and the same range sizing the request.
+**One input can enter the program twice, and the second use is easy to miss.** A bound the core filters on at the end often also decides how much the adapter has to fetch at the start — a date range selecting rows, and the same range sizing the request.
 Miss that and you either fetch everything, which is correct but slow and grows with the data, or fetch exactly the range asked for, which is fast and **wrong**.
 
 Wrong, because a windowed computation needs history *before* the earliest row it reports on: a running count, a moving average, a state that carries forward all read candles the user never asked to see.
-So the driver derives the fetch window as the requested range **plus a warm-up margin**, and only the driver knows to do that — the filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
+So the fetch window is the requested range **plus a warm-up margin**.
+
+**Derive it wherever the port is called from, which is usually the operation rather than the driver.**
+How far back the state reaches is a fact about the computation, so a driver deriving it has been taught the domain — and every second entry point then re-derives it, or gets it wrong in a way nothing downstream can see.
+Where the operation owns the port call, as in `structure-python`'s core, it takes the range the caller asked for and widens it itself; the driver passes on what the user typed and holds no margin.
+The driver derives it only where the driver is what fetches — a job assembling its own extract, a shell handing data to a pure core — and then it is still the same derivation, just made by whoever calls out.
+Either way the filter stays generic and knows nothing about warm-up, and nothing can ask for data it was not given.
 
 Size the margin from evidence rather than instinct: measure how far back the state actually reaches over real data, and take a multiple of the observed worst case.
 Where no bound is available at all, say so in the docs rather than guessing — an unbounded fetch is the honest default, and a margin that is too small fails silently, which is the worst of the three outcomes.
