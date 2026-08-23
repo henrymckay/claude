@@ -38,14 +38,21 @@ I never want to say that twice, so there is no separate option for it here.
 
 ## Dates
 
-- `-s`, `--start DATE` is the earliest date I want screened.
+- `-s`, `--start DATE` is the earliest date I want back.
 - `-e`, `--end DATE` is the latest.
 
 Spelled and defaulting exactly as they do in the `demark` group: inclusive, `--end` today, `--start` that same day alone.
 
+They bound what I am shown, not what has to be fetched.
+An indicator on a date is only right if the candles before it were counted too, so screening one day still needs a run of candles behind it, and screening a year needs that year and more.
+Work out how much for yourself — I am telling you the dates I care about, not the dates you need.
+
 ## Reusing a run
 
 - `-l`, `--load PATH` screens a table I have already produced instead of fetching anything.
+
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the table already says which symbols and which dates it holds.
+Don't take both and guess which I meant.
 
 This is the thing I said I would come back to.
 Screening the S&P is slow and I will want to try three sets of conditions against one run of it, so let me save what came back and screen that.

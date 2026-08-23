@@ -131,13 +131,14 @@ On `get-candles` and `get-info`, which both take symbols:
 
 On `get-candles`:
 
-- `-s`, `--start DATE` is the earliest candle I want.
+- `-s`, `--start DATE` is the earliest date I want back.
 - `-e`, `--end DATE` is the latest.
 - `-i`, `--interval` picks a timeframe, given once per timeframe I want: `-i daily -i weekly`.
 
 Both bounds are **inclusive**, so naming the same date twice asks for that one day and gets it back rather than nothing.
 A candle is in range when its `date` is, so a weekly row is in or out by the Monday its week began.
 Leave `--start` off and I get as far back as Yahoo will go; leave `--end` off and I get everything up to today.
+Here they are the whole of what gets fetched, since there is nothing to work out that needs more than I asked for.
 Leave `--interval` off and I get all three.
 
 On `look-up`:

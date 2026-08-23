@@ -15,7 +15,7 @@ They are symbols, not indices: an index reaches this group the same way it reach
 
 Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells them.
 
-- `-s`, `--start DATE` is the earliest date I want reported.
+- `-s`, `--start DATE` is the earliest date I want back.
 - `-e`, `--end DATE` is the latest.
 - `-i`, `--interval` picks a timeframe, given once per timeframe I want.
 

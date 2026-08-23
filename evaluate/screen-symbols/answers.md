@@ -73,6 +73,10 @@ The reflex is an `if` around the filter instead, which is exactly the Python con
 
 **`--load` makes the group's own output an input**, which is what makes the surface composable rather than merely pipe-friendly — and it is the pair `write-entry-points` describes, where the stage boundary already exists so the file is writable at all.
 
+**It is not `--file` under another name**, and a build that folds them together has broken both.
+`--file` names a list of symbols and `--load` names a saved wide table: different shapes, and one supplies what the other has already consumed.
+They are mutually exclusive, and the brief says to refuse rather than guess — which is the same instruction as reading standard input only when nothing was named, arriving from the other side.
+
 **Where a good build should push back.** The columns depend on the options, which every earlier brief went out of its way to prevent, and this one asks for on purpose.
 Saying so is right; the answer is that a screen's columns *are* the question asked, so a stable schema here would mean printing nine columns to answer about two.
 A build that notices the tension and follows the brief has read it properly; one that quietly returns a fixed schema has not.
