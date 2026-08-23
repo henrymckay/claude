@@ -235,6 +235,9 @@ Every one of those is IO or a fact about the option surface.
 It reads the plain form with the schema `transform` declares, so it sits beside its one caller rather than in a package of its own — and it is the first thing to lift into a shared `drive/` module the day a second entry point wants the same file.
 The `--output` writer is its mirror and lives in `rich_`, because the bytes it writes are the plain *render*; the two are one decision held together by that shared schema rather than by sitting in one place.
 
+**It fails the way every other boundary does**, with `@error.handle` over the frame library's own exceptions reporting a `SourceError` that names the path.
+A file the tool wrote is still somebody else's input by the time it is read back — edited, truncated, or written by a version whose schema has since moved — so the group adds no error type and no new handling, only one more decorated entry point.
+
 **Where a good build should push back.** The brief says the filtering is not here and says what it is for, which is an invitation to agree rather than to guess.
 The argument worth making is *why* it cannot live here — a condition per timeframe and count is a claim about a symbol, and the symbol's rows are not on one row to be conjoined — which is the same reason the build after this one has to widen before it can screen.
 

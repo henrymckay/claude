@@ -148,6 +148,22 @@ It comes back as a block of columns full of `NaN` — an empty frame if it was t
 So the adapter compares what came back against what it asked for, because nothing else in the program can: once the nulls are gone the symbol has simply vanished, and the short table that results is indistinguishable from a stock that stopped trading.
 This is the previous rung's all-or-nothing rule arriving from a source that will not raise for you.
 
+**Nothing new is needed to report it.**
+The `error` package the last build declared already holds the classes and `handle`, so this group adds one class and one decorator and invents no mechanism:
+
+```python
+class UnknownSymbolError(TradeError):
+    """Raised when the price source has nothing for the symbol asked for."""
+```
+
+**`check_complete` is that decorator, and it lives in `yfinance_`.**
+A decorator sees the arguments and the return value together, which is exactly what this check needs — the symbols that were asked for, against the symbols the frame came back with — so the comparison is a decorator on `get_candles` and `get_info` rather than a check written into both.
+It imports nothing from `yfinance`, which makes it the same case as a driver's own helper sitting in a framework package: both its callers are here, so it stays beside them and lifts out the day a third source needs it.
+
+That it applies to two functions in one package is the whole argument for it being shared, and the argument against a third adapter package per call — one boundary, one failure vocabulary, one check.
+
+The three ports carry their own `:raises:` for the same reason `Publisher` does, and `Info` carries it in a string literal beneath the assignment, being an alias with no docstring to hang it on.
+
 **The download is a dense grid over the union of every symbol's trading days**, not one row per candle.
 Ask for a London stock and a New York one and every day either market was shut carries a row for the other.
 Those nulls are what the reshape exists to remove, and a fixture holding one symbol never contains one.
@@ -308,6 +324,8 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **Keeping `Adj Close`**, which leaves the number the brief rejected in the frame beside the one it asked for.
 - **A bare `.drop_nulls()`**, which throws away a real candle in order to remove a phantom one.
 - **A silently short result** where a symbol returned nothing, because the library reported it on a logger instead of raising.
+- **The missing-symbol check written into both functions**, where a decorator over the arguments and the return does it once.
+- **A second error hierarchy for this source**, when one boundary's vocabulary is the tool's.
 - **Forwarding `**kwargs` to `yfinance.download`**, which makes the library's signature the adapter's interface and hands back the one argument the adapter existed to fix.
 - **`reset_index()` before converting** — or converting without `include_index=True`, which loses the date and the symbol outright.
 - **A `Datetime` stamp left uncast**, so a value printing as a date fails to join against one.

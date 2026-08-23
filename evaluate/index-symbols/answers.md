@@ -179,7 +179,7 @@ Retrying belongs to the fetch alone, so a parse that fails is never attempted tw
 One failure failing the whole run means the odds of a wasted run climb with every index asked for, so a single transient refusal somewhere among fifty would otherwise be enough to lose all of them.
 - The adapter owns its outcome: a fund that 404s, times out, or returns something unparseable becomes an error naming the fund, not a status code or a library exception escaping into the driver.
 - One conversion of a library's failures, not one per parse.
-Every adapter turns the same exceptions into the same error of yours and differs only in the message, so the `try`/`except`/`raise ... from` is written once as a decorator and applied.
+Every adapter turns the same exceptions into the same error of yours, so the `try`/`except`/`raise ... from` is written once as a decorator and applied.
 A build with a `try` in every parse has the right behaviour and has hand-written, five times over, the abstraction its skills already gave it.
 - Split getting the document from making sense of it.
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
@@ -206,6 +206,106 @@ Where the source hands back records or markup and one field is wanted, pulling t
 - A holdings file is not a list of shares.
 Cash lines, placeholder rows and a trailing disclaimer all appear in them, so the adapter hands on what the file gave it and the core decides what deserves to come back.
 One rule covering cash lines, options and a trailing disclaimer alike beats a row filter in every adapter plus a tradeability rule after it — the second filter is the same judgement written four more times.
+
+## Failure
+
+Five ways this build fails, and the whole of the machinery that reports them.
+
+**An `error/` package in the core**, holding the classes and the decorator that raises them.
+It imports nothing at all — not `httpx`, not `polars` — which is what lets both edges and every driver import it, and what settles that it is core rather than a corner of `adapt`.
+A single module would read the same and is still wrong here: `code/` otherwise holds packages, and the rule promoting a member's siblings when one becomes a package exists so `ls` of a layer reads as a list of peers.
+Inside it, one module rather than one per function — the classes and the decorator are read together, since the decorator's `report` argument is one of the classes — and it is named for the shape it holds rather than for the function it exports, which is what keeps `error.handle` free to be the function.
+
+```python
+class TradeError(Exception):
+    """Base class for this tool's errors."""
+
+
+class AbsentError(TradeError):
+    """Raised when a source has no such document, for each adapter to reinterpret."""
+
+
+class SourceError(TradeError):
+    """Raised when a source answered with something that could not be read."""
+
+
+class UnavailableError(TradeError):
+    """Raised when a source could not be reached, and might be shortly."""
+
+
+class UnknownIndexError(TradeError):
+    """Raised when no publisher offers the index asked for."""
+```
+
+**Four siblings, not a tree.**
+`SourceError` and `UnavailableError` read as a base and a special case, and making them one would leave a base with a single subclass, which distinguishes nothing.
+They are told apart by *who asks*: the retry predicate wants the transient one narrowly, a driver wants `TradeError` broadly, and nothing wants "either kind of source failure" in between.
+The base is earned by there being five, not by the first one arriving.
+
+**The 404 is the interesting one, because its meaning is the caller's.**
+To the open source that will try any symbol, a missing document means the index was never a fund; to a named issuer publishing a book this tool ships, it means the file moved.
+Same status, two meanings — so the shared fetch raises the neutral `AbsentError`, and each adapter's own decorator says what it means there:
+
+```python
+@error.handle(
+    error.AbsentError,
+    report=error.UnknownIndexError,
+    message="No index called {index}",
+)
+def get_holdings(index: str) -> polars.DataFrame: ...
+```
+
+**`handle` does not care whose exception it converts**, which is the realisation that makes this need no second mechanism.
+It reads as a tool for a library's failures and is equally a tool for reinterpreting your own where its meaning changes — and because the message formats over the *decorated* function's parameters, the one on `get_holdings` can name the index where anything deeper only holds a URL.
+Threading a report type down into the fetch reaches the same errors and gives up both: a helper carrying an argument its work never touches, and a message with nothing in it to act on.
+
+**Classifying a response is a decorator too, and it is not exception handling.**
+A decorator sees a return value as readily as an exception, so `check_response` inspects what came back and raises — 404 to `AbsentError`, 5xx to `UnavailableError`, any other refusal to `SourceError` — with no `try` anywhere in it.
+It is `httpx`-coupled, so it lives in the shared HTTP package at the edge and never in `error`, which is what keeps that package free of imports.
+
+The whole policy at that boundary is then a column of three decorators over a one-line body:
+
+```python
+@tenacity.retry(retry=tenacity.retry_if_exception_type(error.UnavailableError))
+@error.handle(
+    httpx.TimeoutException,
+    httpx.ConnectError,
+    report=error.UnavailableError,
+    message="Could not reach {url}",
+)
+@check_response
+def _get(url: str) -> httpx.Response:
+    """Return whatever the publisher answered."""
+```
+
+The order is the design.
+`check_response` classifies innermost; `handle` converts the library's own transient failures into the same error and leaves the classifier's raises alone, since they are not among its `kinds`; `tenacity` sits outside and retries only that one.
+Retry wrapping the fetch alone is what stops a parse being attempted twice, and it only knows what to retry because something below it drew the distinction.
+
+**So `raise` appears in decorators and nowhere else**, and `try` appears in exactly one of them — inside `handle`, written once.
+The rule is worth stating because the alternative looks so reasonable: a `try` at the top of every parse has the right behaviour and has hand-written, five times over, the abstraction the skills already gave it.
+
+**A port declares what may come back the other way.**
+An operation carrying a `:raises:` it has no `raise` for is not a contradiction — the field documents the contract, not the statement — and the contract belongs to the port, because that is what a test fake has to honour to be a fair stand-in:
+
+```python
+class Publisher(typing.Protocol):
+    def get_holdings(self, index: str) -> polars.DataFrame:
+        """Return the holdings that index publishes.
+
+        :param index: The index to read.
+        :returns: One row per constituent.
+        :raises SourceError: If the published file could not be read.
+        :raises UnavailableError: If the publisher could not be reached.
+        """
+```
+
+**A callable alias cannot carry that**, which is a cost of the lighter form worth knowing before choosing it.
+`Holdings` has no docstring to hang a `:raises:` on, so the contract goes in a string literal beneath the assignment — the documentation convention every tool reads, though not a runtime `__doc__`.
+It is enough, and it is the one thing a protocol gives for free that an alias does not.
+
+**The driver catches the base once**, in a decorator on each command that writes the message to standard error and raises `typer.Exit(1)`.
+That is the program's other `try`, and it is the boundary `write-python` means when it allows a broad catch: one place, logs and exits, nothing swallowed.
 
 ## The surface
 
@@ -287,6 +387,10 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **Tests that hit the network by default**, which turn an unrelated outage into a failing suite.
 - **Registering the open source alongside the named ones**, so it either swallows every index before a real source is asked or contributes an empty list to `catalogue`.
 - **Reporting a failed request as an unknown index**, which turns somebody else's outage into a hunt for a typo that was never there.
+- **Deciding what a 404 means in the fetch**, so a helper carries a report type it never uses and the message names a URL instead of the index the caller typed.
+- **A base class with one subclass**, added because a hierarchy looked tidier than four siblings.
+- **A `try` in a command**, where a decorator on it turns the tool's errors into a message and an exit code once.
+- **Ports declaring only the happy path**, so every fake is a fair stand-in until the first one has to fail.
 - **Subscripting a field the packaged record does not always carry**, so a `KeyError` escapes into the driver and two whole indices fail on a raw traceback instead of an error naming the index.
 The seam an adapter closes is every library it touches, and a packaged dataset is one of them.
 - **A `try` in every parse**, where one decorator converts the same library failures for all of them.
