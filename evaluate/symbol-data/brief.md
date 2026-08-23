@@ -99,16 +99,16 @@ That is a fact about Yahoo rather than something to build around, but it is why 
 ## Output
 
 The same table, the same two options and the same plain form `trade index get-symbols` already answers with — comma-separated, no heading row, columns in alphabetical order.
-`-o` writes to a file I name and `-t` shows a `rich` table, spelled exactly as they already are.
+`-o` writes to a file I name and `-p` shows a `rich` table, spelled exactly as they already are.
 Several columns now where the symbols had one, and that is the only thing that changes.
 
-- `get-candles` has `close`, `date`, `high`, `interval`, `low`, `open`, `symbol` and `volume`.
+- `get-candles` has `close`, `date`, `high`, `low`, `open`, `symbol`, `timeframe` and `volume`.
 - `get-info` has `country`, `currency`, `full_exchange_name`, `industry`, `long_name`, `market`, `market_cap`, `quote_type`, `sector`, `short_name` and `symbol`.
 - `look-up` has `exchange`, `quote_type`, `rank`, `short_name` and `symbol`.
 
 Yahoo spells its fields in camel case and I do not want to read them that way, so `fullExchangeName` reaches me as `full_exchange_name`.
 
-`interval` says which timeframe the row is, in the words I use for them — `daily`, `weekly` and `monthly` — rather than however `yfinance` spells its argument.
+`timeframe` says which timeframe the row is, in the words I use for them — `daily`, `weekly` and `monthly` — rather than however `yfinance` spells its argument.
 That spelling is between you and the library and I should never see it.
 
 `date` is the day the candle's period **begins**: the Monday for a weekly row and the first of the month for a monthly one, not a day somewhere inside the period and not the day it ended.
@@ -123,23 +123,23 @@ Every option has a long form and a single-letter short form, and an option meani
 Common to every command, as they already are in the `index` group:
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-t`, `--table` shows a `rich` table instead of the plain default.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default.
 
 On `get-candles` and `get-info`, which both take symbols:
 
-- `-f`, `--file PATH` reads the symbols from that file rather than from standard input.
+- `-i`, `--input PATH` reads the symbols from that file rather than from standard input.
 
 On `get-candles`:
 
 - `-s`, `--start DATE` is the earliest date I want back.
 - `-e`, `--end DATE` is the latest.
-- `-i`, `--interval` picks a timeframe, given once per timeframe I want: `-i daily -i weekly`.
+- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want: `-t daily -t weekly`.
 
 Both bounds are **inclusive**, so naming the same date twice asks for that one day and gets it back rather than nothing.
 A candle is in range when its `date` is, so a weekly row is in or out by the Monday its week began.
 Leave `--start` off and I get as far back as Yahoo will go; leave `--end` off and I get everything up to today.
 Here they are the whole of what gets fetched, since there is nothing to work out that needs more than I asked for.
-Leave `--interval` off and I get all three.
+Leave `--timeframe` off and I get all three.
 
 On `look-up`:
 
@@ -154,10 +154,10 @@ trade symbol get-candles AAPL MSFT NVDA
 trade index get-symbols dow-jones | trade symbol get-candles
 trade symbol get-candles < symbols.txt
 trade symbol get-candles AAPL -o aapl.csv
-trade symbol get-candles AAPL -i daily -i weekly
-trade symbol get-candles AAPL --interval monthly --start 2020-01-01
+trade symbol get-candles AAPL -t daily -t weekly
+trade symbol get-candles AAPL --timeframe monthly --start 2020-01-01
 trade symbol get-candles AAPL MSFT -s 2026-06-01 -e 2026-06-30
-trade symbol get-candles -f symbols.txt -i daily
+trade symbol get-candles -i symbols.txt -t daily
 trade index get-symbols ftse-100 | trade symbol get-candles > ftse.csv
 
 trade symbol get-info NVDA

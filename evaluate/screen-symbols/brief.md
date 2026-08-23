@@ -20,7 +20,7 @@ Most days most screens match nothing, and that is what I am asking.
 
 ## Symbols
 
-Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-f`, or on standard input.
+Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-i`, or on standard input.
 They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen find …` is how I point one at an index.
 
 ## Conditions
@@ -54,7 +54,7 @@ Work out how much for yourself — I am telling you the dates I care about, not 
 What it reads is what a `trade demark` command writes, so the two are ends of one file.
 Screening the S&P is slow in the fetching and free in the screening, so let me pay once and try as many sets of conditions against it as I like.
 
-It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the file already says which symbols and which dates it holds.
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-i` or anything on standard input — the file already says which symbols and which dates it holds.
 Don't take both and guess which I meant.
 
 A condition naming an indicator the file does not carry is an error saying so, not an empty screen.
@@ -70,7 +70,22 @@ That the columns depend on the conditions is the point rather than a problem: th
 
 The values in those columns are the indicator's own, carried across unchanged, so they read the way the `demark` group writes them.
 
-It goes out the same two ways as everything else, and `-t` gives me the `rich` table, with the same colour for the sign that the `demark` group uses.
+It goes out the same two ways as everything else, and `-p` gives me the `rich` table, with the same colour for the sign that the `demark` group uses.
+
+## Arguments and options
+
+`find` takes any number of symbols as arguments, or none at all where they arrive on standard input, from `--input`, or already worked out in `--load`.
+
+Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
+
+- `-o`, `--output PATH` writes to that file instead of standard output.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default.
+- `-i`, `--input PATH` reads the symbols from that file rather than from standard input.
+- `-l`, `--load PATH` reads worked-out indicator values instead, as above.
+- `-s`, `--start DATE` and `-e`, `--end DATE` bound what comes back.
+- `-w`, `--where NAME LOWER UPPER`, given once per condition.
+
+No `--timeframe` here: the conditions already name the timeframes they are about, and I am not saying that twice.
 
 ## Commands
 
@@ -82,14 +97,14 @@ One in the group for now.
 
 ```bash
 trade screen find AAPL --where daily_setup 7 9
-trade screen find -f sp500.txt --where daily_setup 7 9 --where weekly_setup -3 -1
+trade screen find -i sp500.txt --where daily_setup 7 9 --where weekly_setup -3 -1
 trade index get-symbols sp-500 | trade screen find --where daily_setup 9 9
-trade index get-symbols ftse-100 | trade screen find --where weekly_combo 11 13 -t
-trade demark count -f sp500.txt -o counts.csv
+trade index get-symbols ftse-100 | trade screen find --where weekly_combo 11 13 -p
+trade demark count -i sp500.txt -o counts.csv
 trade screen find --load counts.csv --where daily_setup 7 9
 trade screen find --load counts.csv --where weekly_combo 11 13 --where daily_setup -9 -9
-trade screen find -f sp500.txt --where daily_setup 8 9 -s 2026-01-01 -e 2026-03-01
-trade screen find -f sp500.txt --where daily_setup 9 9 | cut -d, -f3 | trade symbol get-candles
+trade screen find -i sp500.txt --where daily_setup 8 9 -s 2026-01-01 -e 2026-03-01
+trade screen find -i sp500.txt --where daily_setup 9 9 | cut -d, -f3 | trade symbol get-candles
 ```
 
 ## Working style

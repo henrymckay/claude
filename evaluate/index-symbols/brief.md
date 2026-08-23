@@ -146,7 +146,7 @@ An option meaning the same thing keeps the same spelling everywhere it appears â
 Two are common to every command in the tool:
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-t`, `--table` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
 
 ## Examples
 
@@ -168,7 +168,7 @@ trade index get-symbols largest-companies
 trade index catalogue
 trade index catalogue | grep ARK
 trade index catalogue | grep ARK | xargs trade index get-symbols
-trade index get-symbols ARKK -t
+trade index get-symbols ARKK -p
 trade index get-symbols ftse-100 | grep '\.L$'
 comm -12 <(trade index get-symbols ARKK) <(trade index get-symbols ARKW)
 diff <(trade index get-symbols SMH) <(trade index get-symbols SMH.L)

@@ -30,7 +30,7 @@ A build that narrows it to an integer because these particular values are whole 
 
 **`aligned` is what leaves the tool, so there is no fourth shape.**
 The brief fixes the output long — five columns whatever the options — which deletes the pivot this rung would otherwise have needed and the argument about whose job it is.
-That is the option surface deciding a core shape, and rightly: `--interval` means a wide frame's columns would depend on what was asked for, and a schema that varies with the flags is not a schema.
+That is the option surface deciding a core shape, and rightly: `--timeframe` means a wide frame's columns would depend on what was asked for, and a schema that varies with the flags is not a schema.
 
 Should the `rich` table later widen, the pivot is a **transform** the driver calls before rendering, not something the renderer does — a change of grain is a seam, and an API serving the same report wants the same pivot with a different renderer.
 
@@ -49,10 +49,10 @@ The operation takes candles either way — fetched through the port, or read fro
 That is the whole payoff of the operation taking candles rather than symbols, and it is why the option costs a branch in the driver and nothing anywhere else.
 
 **No new port.** The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it.
-That is the test of whether the last build declared it well, and it passes only because the bounds and intervals stayed on the port rather than being bound into an adapter one group had curried for itself.
+That is the test of whether the last build declared it well, and it passes only because the bounds and timeframes stayed on the port rather than being bound into an adapter one group had curried for itself.
 
 **One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do.
-It takes symbols and the same bounds and intervals `get_candles` takes, calls that port, and hands the frame to the counting transform.
+It takes symbols and the same bounds and timeframes `get_candles` takes, calls that port, and hands the frame to the counting transform.
 
 **Still open:** whether the `rich` table widens. The plain form is long and that is fixed; the pivot, if it ever arrives here, is the one the screening build owns.
 

@@ -17,11 +17,11 @@ Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells
 
 - `-s`, `--start DATE` is the earliest date I want back.
 - `-e`, `--end DATE` is the latest.
-- `-i`, `--interval` picks a timeframe, given once per timeframe I want.
+- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want.
 
 Both bounds are inclusive, and naming the same date twice asks for that one day.
 Leave `--end` off and it **defaults to today**; leave `--start` off and it means that same day alone, since a single day is what I want most of the time.
-Leave `--interval` off and I get all three.
+Leave `--timeframe` off and I get all three.
 
 The dates decide which candles I am reported on, and they are not the whole story of what has to be fetched — a count is only right if the candles before it were counted too.
 
@@ -42,11 +42,24 @@ It comes in the build after this one, so leave it out entirely: no option, no co
 What it reads is what `trade symbol get-candles` writes, so the two are ends of one file.
 Fetching a whole index is the slow part and the counting is free, so let me pay for the candles once and count them as often as I like.
 
-It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the file already says which symbols it holds.
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-i` or anything on standard input — the file already says which symbols it holds.
 Don't take both and guess which I meant.
 
-`--start`, `--end` and `--interval` still say what I want back, they just have nothing left to fetch.
+`--start`, `--end` and `--timeframe` still say what I want back, they just have nothing left to fetch.
 The file has to carry enough history behind my dates for the counts to be right; that is my problem when I save it, not yours when you read it.
+
+## Arguments and options
+
+Every command in the group takes any number of symbols as arguments, or none at all where they arrive on standard input, from `--input`, or already fetched in `--load`.
+
+Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
+
+- `-o`, `--output PATH` writes to that file instead of standard output.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default.
+- `-i`, `--input PATH` reads the symbols from that file rather than from standard input.
+- `-l`, `--load PATH` reads candles instead, as above.
+- `-s`, `--start DATE` and `-e`, `--end DATE` bound what comes back.
+- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want.
 
 ## Commands
 
@@ -60,14 +73,14 @@ Every one of them takes symbols the three ways above, carries the same options, 
 ## Output
 
 One row per date, symbol, timeframe and count, carrying that count.
-Five columns, the same five every run: `date`, `indicator`, `interval`, `symbol` and `value`, alphabetically as everywhere else.
+Five columns, the same five every run: `date`, `indicator`, `symbol`, `timeframe` and `value`, alphabetically as everywhere else.
 
 `value` rather than `count`, and a number that can carry a fraction rather than a whole one, because a DeMark count is not the last indicator I will want.
 When there is a second, I want to stack the two tables with `cat` and screen across both, and that only works if every indicator writes the same five columns with the same types.
 It means my counts come back reading `-9.0` where `-9` would have done, and I would rather have that than two shapes that will not stack.
 
 `indicator` says which count the row is — `setup`, `sequential` or `combo`.
-`interval` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
+`timeframe` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
 
 Long rather than a column per count on each timeframe, because I am asking for one timeframe as often as three and I do not want the shape of what comes back to depend on which options I gave.
 
@@ -138,18 +151,18 @@ Ask about a Wednesday and the weekly column gives me that whole week as it finis
 trade demark count AAPL
 trade demark count AAPL MSFT NVDA
 trade demark count-setup AAPL
-trade demark count-sequential NVDA -i weekly
+trade demark count-sequential NVDA -t weekly
 trade demark count-combo NVDA
-trade demark count AAPL -i daily -i weekly
+trade demark count AAPL -t daily -t weekly
 trade demark count AAPL -s 2026-01-01 -e 2026-03-01
 trade demark count < symbols.txt
-trade demark count -f symbols.txt -t
-trade symbol get-candles -f sp500.txt -o candles.csv
+trade demark count -i symbols.txt -p
+trade symbol get-candles -i sp500.txt -o candles.csv
 trade demark count --load candles.csv
-trade demark count-setup --load candles.csv -i daily
+trade demark count-setup --load candles.csv -t daily
 trade index get-symbols sp-500 | trade demark count
 trade index get-symbols dow-jones | trade demark count -o counts.csv
-trade index get-symbols sp-500 | trade demark count-setup -i daily | awk -F, '$5 >= 8'
+trade index get-symbols sp-500 | trade demark count-setup -t daily | awk -F, '$5 >= 8'
 ```
 
 ## Working style

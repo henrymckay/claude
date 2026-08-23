@@ -11,7 +11,7 @@ The rung the pivot was being saved for.
 |---|---|---|
 | candles | a symbol's candle in one timeframe | the symbol build, unchanged |
 | counts | one indicator's value on one candle | the demark build, unchanged |
-| wide | a symbol on a day | `pivot` the indicator and interval out together |
+| wide | a symbol on a day | `pivot` the indicator and timeframe out together |
 | matches | a symbol on a day that passed | one predicate per condition, all conjoined |
 
 **The pivot finally has a reason, and it is the one the demark answers named.**
@@ -60,7 +60,7 @@ A build that invents `port.Saved` has made a port out of the driver's own input.
 The conditions say which timeframes matter, so they size the fetch as well as filtering the result — a screen on `daily_setup` alone has no business fetching monthly candles.
 That derivation is the composition root's, exactly as the warm-up margin is: the filter stays generic and knows nothing about fetching, and the core cannot ask for data it was not given.
 
-Both apply at once here, which is the trap — the fetch window is the date bounds *plus* warm-up, and the intervals are those the conditions name, and getting one right while missing the other is a screen that is quietly wrong rather than slow.
+Both apply at once here, which is the trap — the fetch window is the date bounds *plus* warm-up, and the timeframes are those the conditions name, and getting one right while missing the other is a screen that is quietly wrong rather than slow.
 
 **`--load` reads what `-o` wrote, so the two are one decision.**
 The saved form is the plain form, so it is read back with the same column names and dtypes it was written with, and a build that writes floats and reads strings has broken its own round trip.
@@ -79,8 +79,8 @@ The reflex is an `if` around the filter instead, which is exactly the Python con
 
 **`--load` makes the group's own output an input**, which is what makes the surface composable rather than merely pipe-friendly — and it is the pair `write-entry-points` describes, where the stage boundary already exists so the file is writable at all.
 
-**It is not `--file` under another name**, and a build that folds them together has broken both.
-`--file` names a list of symbols and `--load` names the previous stage's table: different shapes, entering the pipeline at different points, and one supplies what the other still has to be turned into.
+**It is not `--input` under another name**, and a build that folds them together has broken both.
+`--input` names a list of symbols and `--load` names the previous stage's table: different shapes, entering the pipeline at different points, and one supplies what the other still has to be turned into.
 They are mutually exclusive, and the brief says to refuse rather than guess — which is the same instruction as reading standard input only when nothing was named, arriving from the other side.
 
 **Where a good build should push back.** The columns depend on the options, which every earlier brief went out of its way to prevent, and this one asks for on purpose.
@@ -102,7 +102,7 @@ A build that notices the tension and follows the brief has read it properly; one
 - **Pivoting everything and projecting after**, which materialises nine columns to answer about two.
 - **Letting the empty result lose its schema**, so the screen that matched nothing raises instead of printing nothing.
 - **Fetching every timeframe regardless of the conditions**, tripling the slowest part of the run to compute columns nobody asked for.
-- **Deriving the fetch window from the dates but not the intervals**, or the reverse — both are half the composition root's job, and the half that is missing is invisible.
+- **Deriving the fetch window from the dates but not the timeframes**, or the reverse — both are half the composition root's job, and the half that is missing is invisible.
 - **A `port` for `--load`**, turning the driver's own file into an outward call the core makes.
 - **An `if` around the filter for the no-condition case**, where seeding the fold covers it with no branch at all.
 - **An `or`, a `not`, or parentheses**, none of which the brief asks for and all of which need the grammar it rules out.

@@ -23,7 +23,7 @@ What they do **not** share is the parse: a `MultiIndex` frame, a dict of a coupl
 **There is no resample step.** `yfinance` serves daily, weekly and monthly, so the adapter returns one long frame already carrying a timeframe column, and Yahoo's own week and month alignment is used rather than a reinvented one.
 Deriving coarser candles from dailies is a transform the problem does not need, and it adds a seam that then has to be threaded through every later rung.
 
-**Timeframe is a column, not something the caller stitches together.** The adapter makes one call per interval because the API has no other shape, concatenates them itself, and hands back a single frame.
+**Timeframe is a column, not something the caller stitches together.** The adapter makes one call per timeframe because the API has no other shape, concatenates them itself, and hands back a single frame.
 A `concat` over a comprehension is only the per-group-loop mistake when the groups are computation; here each group is its own network call.
 
 **The date the brief asks for is the one Yahoo already gives, so nothing re-stamps it.**
@@ -52,8 +52,8 @@ class Candles(typing.Protocol):
         symbols: collections.abc.Iterable[str],
         *,
         end: datetime.date | None,
-        intervals: collections.abc.Iterable[transform.Interval],
         start: datetime.date | None,
+        timeframes: collections.abc.Iterable[transform.Timeframe],
     ) -> polars.DataFrame: ...
 
 
@@ -68,8 +68,8 @@ def get_candles(
     *,
     end: datetime.date | None,
     fetch: port.Candles,
-    intervals: collections.abc.Iterable[transform.Interval],
     start: datetime.date | None,
+    timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
 
 
@@ -93,7 +93,7 @@ Bundling them buys nothing and costs a fake for `get_info` that has to implement
 `Candles` and `Lookup` carry keyword-only options, and `collections.abc.Callable` cannot express those at all, so they are protocols declaring `__call__` — and a plain module-level function satisfies one, so no adapter grows a class.
 
 **The options stay on the operation.**
-Binding `start`, `end` and `intervals` into the adapter with `functools.partial` at the composition root type-checks, and makes both protocols plain aliases, which is why it is tempting.
+Binding `start`, `end` and `timeframes` into the adapter with `functools.partial` at the composition root type-checks, and makes both protocols plain aliases, which is why it is tempting.
 It is still wrong: it fuses a dependency fixed at startup with data that changes every invocation, so the injected value must be rebuilt per call and the operation can never run twice with different bounds against one adapter.
 Worse, it moves the use case into the driver — every second driver, a dashboard included, rebuilds the same partial, which is the duplication `operate` exists to prevent.
 
@@ -239,9 +239,9 @@ Doing it at the boundary is what stops each route growing its own version.
 Candles go out the same two ways the symbols already do, and every option the brief spells is spelled once for the whole tool rather than per command.
 Spelling the same idea differently between two commands of one tool is the cheapest possible thing to get wrong and the most irritating to live with.
 
-**A repeated `--interval` is one column, not three code paths.**
-The option collects into a list, the adapter makes one call per member and concatenates, and the value lands in the `interval` column — so the axis the brief exposes as an option is the same axis `use-polars` insists stays data.
-The failure is a branch per timeframe, or three boolean flags, or a function returning a column per interval: each turns a grouping key into control flow, and each is the per-group loop the previous section already ruled out, arriving this time through the option parser.
+**A repeated `--timeframe` is one column, not three code paths.**
+The option collects into a list, the adapter makes one call per member and concatenates, and the value lands in the `timeframe` column — so the axis the brief exposes as an option is the same axis `use-polars` insists stays data.
+The failure is a branch per timeframe, or three boolean flags, or a function returning a column per timeframe: each turns a grouping key into control flow, and each is the per-group loop the previous section already ruled out, arriving this time through the option parser.
 
 **The bounds are parameters of the fetch, not of a filter.**
 Nothing here filters rows — the source applies them — and keeping it that way is what lets the next build widen the same bounds by a warm-up margin before they reach this adapter.
@@ -249,7 +249,7 @@ A build that fetches everything and filters afterwards is correct and grows with
 
 **`look-up` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a symbol rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
-What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-t` — because that is the half a caller composes with.
+What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-p` — because that is the half a caller composes with.
 
 **The group is a sub-application, not a prefix.**
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
@@ -294,7 +294,7 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **Reading stdin only when a flag says so.** Taking a path where one is named and standard input otherwise is what makes the two commands compose.
 - **A renderer per command**, so eight columns and one column are rendered by two functions that agree only by accident.
 - **A heading row on the plain form**, which turns `trade index get-symbols dow-jones | trade symbol get-candles` into a request for a symbol literally spelled `symbol`.
-- **Leaking `yfinance`'s interval spelling into the `interval` column**, so `1wk` reaches a caller who was promised `weekly` and the adapter's reference table has been published as the interface.
+- **Leaking `yfinance`'s interval spelling into the `timeframe` column**, so `1wk` reaches a caller who was promised `weekly` and the adapter's reference table has been published as the interface.
 - **Interval strings written into the adapter**, where the table of domain name against library argument belongs in `data/adapt/`.
 - **Sorting in the renderer**, which leaves the frame the core computes on in whatever order the source happened to return.
 - **Subscripting a field `get_info()` does not always carry**, so an ETF or an index fails on a raw `KeyError` where a stock passed.
@@ -305,5 +305,5 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 - **Treating a search that matched nothing as a failure**, when not finding something is what searching for it risks.
 - **An operation taking names where its seam begins at symbols**, so it rebuilds its own input and carries ports it never calls.
 - **Passing `--end` straight to `yfinance`**, so every run quietly loses its last candle and a single-day request returns nothing.
-- **A flag per timeframe**, or a branch per timeframe behind one flag, turning the `interval` axis into control flow.
+- **A flag per timeframe**, or a branch per timeframe behind one flag, turning the `timeframe` axis into control flow.
 - **Paging a search to reach `--count`**, which was a ceiling all along.
