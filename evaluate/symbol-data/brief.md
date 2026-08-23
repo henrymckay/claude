@@ -8,31 +8,6 @@ Now I want the tool to say things about the symbols themselves — what they cos
 A second group, `symbol`, beside the `index` group already there.
 Nothing in the first group moves or is renamed to make room for it.
 
-## Symbols
-
-`get-candles` and `get-info` take any number of symbols, given whichever way suits what I am doing at the time.
-
-- Written out as arguments.
-- Read from a file I name.
-- Piped or redirected in on standard input, so `trade index get-symbols dow-jones | trade symbol get-candles` just works.
-
-These are symbols, not indices, and nothing here expands one.
-`trade symbol get-candles SMH` gives me the candles for SMH itself, which I can go and buy, never for the twenty-five stocks it holds.
-An index reaches these commands by being expanded first, so `trade index get-symbols SMH | trade symbol get-candles` is how I ask for the holdings.
-
-I would rather type the pipe than have the tool guess which of the two I meant.
-Most of what my catalogue names is tradeable in its own right, so a guess would be wrong about as often as it was right, and I would not be able to tell which had happened.
-
-I will hand you the same symbol twice without meaning to, since two funds hold the same stock and I have piped both in.
-I want it back once.
-
-If I give a symbol and nothing comes back for it, that fails the run and tells me which one, the same way one unknown index fails `trade index get-symbols`.
-A short table is the dangerous outcome, because nothing downstream can tell it apart from a stock that genuinely stopped trading.
-This holds for `get-candles` and for `get-info` alike.
-
-`look-up` is the exception to all of it: what it takes is the thing I am searching for, which is not a symbol and does not arrive any of those ways.
-A search that matches nothing is an answer rather than a failure, since not finding something is what searching for it risks.
-
 ## Candles
 
 One row per symbol, timeframe and date, carrying the open, high, low and close.
@@ -89,6 +64,31 @@ A hundred matches unless I ask for more, since I am looking for something rather
 
 Searching is also how I enumerate a whole asset class, because Yahoo spells the kind into the symbol: `^` finds indices, `=X` currencies, `=F` futures and `-USD` coins.
 That is a fact about Yahoo rather than something to build around, but it is why the count is mine to raise and why the kind is a filter I set rather than something guessed from what I typed.
+
+## Symbols
+
+`get-candles` and `get-info` take any number of symbols, given whichever way suits what I am doing at the time.
+
+- Written out as arguments.
+- Read from a file I name.
+- Piped or redirected in on standard input, so `trade index get-symbols dow-jones | trade symbol get-candles` just works.
+
+These are symbols, not indices, and nothing here expands one.
+`trade symbol get-candles SMH` gives me the candles for SMH itself, which I can go and buy, never for the twenty-five stocks it holds.
+An index reaches these commands by being expanded first, so `trade index get-symbols SMH | trade symbol get-candles` is how I ask for the holdings.
+
+I would rather type the pipe than have the tool guess which of the two I meant.
+Most of what my catalogue names is tradeable in its own right, so a guess would be wrong about as often as it was right, and I would not be able to tell which had happened.
+
+I will hand you the same symbol twice without meaning to, since two funds hold the same stock and I have piped both in.
+I want it back once.
+
+If I give a symbol and nothing comes back for it, that fails the run and tells me which one, the same way one unknown index fails `trade index get-symbols`.
+A short table is the dangerous outcome, because nothing downstream can tell it apart from a stock that genuinely stopped trading.
+This holds for `get-candles` and for `get-info` alike.
+
+`look-up` is the exception to all of it: what it takes is the thing I am searching for, which is not a symbol and does not arrive any of those ways.
+A search that matches nothing is an answer rather than a failure, since not finding something is what searching for it risks.
 
 ## Commands
 

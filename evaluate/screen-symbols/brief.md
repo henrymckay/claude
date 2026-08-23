@@ -31,11 +31,6 @@ Give me none at all and the screen is every symbol I asked about, which is a slo
 `--where` decides which timeframes are worth fetching.
 I never want to say that twice, so there is no separate option for it here.
 
-## Symbols
-
-Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-i`, or on standard input.
-They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen find …` is how I point one at an index.
-
 ## Dates
 
 Two bounds, spelled and defaulting exactly as they do in the `demark` group: inclusive, `--end` today, `--start` that same day alone.
@@ -43,6 +38,11 @@ Two bounds, spelled and defaulting exactly as they do in the `demark` group: inc
 They bound what I am shown, not what has to be fetched.
 An indicator on a date is only right if the candles before it were counted too, so screening one day still needs a run of candles behind it, and screening a year needs that year and more.
 Work out how much for yourself — I am telling you the dates I care about, not the dates you need.
+
+## Symbols
+
+Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-i`, or on standard input.
+They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen find …` is how I point one at an index.
 
 ## Reusing counts
 

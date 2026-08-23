@@ -30,6 +30,13 @@ Only the named indicators are wanted, so the projection is decided before the pi
 `use-polars` names the fix: concatenate a zero-row frame carrying the full schema, `how="diagonal"`.
 That concatenation appends the restored columns rather than ordering them, so the alphabetical order the brief asks for is a `select` after it — the one place in the tool where the column order cannot come from a declared schema, because the columns are whatever was asked for.
 
+## What should not exist yet
+
+- **No indicator registry.** Nine names from one indicator is a closed set the type checker can hold, which `write-python` calls data rather than a mechanism. The plugin system is for when something outside the code has to join the set.
+- **No expression language.** The brief asks for a name and two bounds; an operator tree over domain concepts models the input grammar rather than the problem.
+- **No caching.** `--load` is not a cache: the caller names the file, decides when it is stale, and can diff it. A cache decides all three for them and has to be invalidated.
+- **No screen library, no saved screens, no naming a screen.** Three conditions on a command line is not a thing to be managed.
+
 ## What this build declares
 
 **No new port.** Screening needs candles, which `port.Candles` already provides — and that is the third build running to need nothing new, which is the evidence the ports were drawn at the right size.
@@ -80,13 +87,6 @@ The rule generalises, and a build that sees it has understood the pipeline rathe
 
 **A reader, not a port, for `--load`.** Reading a file the tool itself wrote is IO, so it belongs at the edge; but it is not a *port*, because the core does not call outward for it — the driver reads the file and passes the frame in, exactly as it passes symbols in.
 A build that invents `port.Saved` has made a port out of the driver's own input.
-
-## What should not exist yet
-
-- **No indicator registry.** Nine names from one indicator is a closed set the type checker can hold, which `write-python` calls data rather than a mechanism. The plugin system is for when something outside the code has to join the set.
-- **No expression language.** The brief asks for a name and two bounds; an operator tree over domain concepts models the input grammar rather than the problem.
-- **No caching.** `--load` is not a cache: the caller names the file, decides when it is stale, and can diff it. A cache decides all three for them and has to be invalidated.
-- **No screen library, no saved screens, no naming a screen.** Three conditions on a command line is not a thing to be managed.
 
 ## The boundary
 

@@ -78,6 +78,21 @@ Every frame-to-frame step carries its `map_`/`amap_` prefix and is reached with 
 `granny_shots` and `market_cap`, not `grannyshots` and `companiesmarketcap`, spelled from what the thing is *called* rather than from however its domain name ran it together.
 Take the shortest name that still identifies it, since the layer supplies the rest, and name an adapter for the source it reads rather than whose data it is: `info_13f` says which site breaks, where `sec` names a regulator the code never contacts.
 
+## What the build earns
+
+**A `port`.** Expanding several indices, stacking their holdings and failing the run if any one of them fails is an operation, and it calls outward for holdings while staying pure — which is what a port is for.
+The payoff is that the whole expansion becomes testable against a fake source with no network, rather than only through the driver.
+
+Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
+
+**An `operate` layer.** There are two use cases here, not one: expanding names and listing them.
+Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
+The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.
+
+## What should not exist yet
+
+- **No caching, no configuration layer**, and no registry that publishers sign up to — fifty-three indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
+
 ## What this build declares
 
 **Two ports and two operations**, and every later build adds to these rather than restating them:
@@ -138,21 +153,6 @@ That is not the composition root moving: the driver still chooses to use the set
 
 One language detail neither `write-python` nor `structure-python` mentions: a protocol method's body needs a bare `...` **after** its docstring.
 A docstring alone returns `None`, which `pyright` rejects against the declared return type.
-
-## What the build earns
-
-**A `port`.** Expanding several indices, stacking their holdings and failing the run if any one of them fails is an operation, and it calls outward for holdings while staying pure — which is what a port is for.
-The payoff is that the whole expansion becomes testable against a fake source with no network, rather than only through the driver.
-
-Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
-
-**An `operate` layer.** There are two use cases here, not one: expanding names and listing them.
-Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
-The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.
-
-## What should not exist yet
-
-- **No caching, no configuration layer**, and no registry that sources sign up to — fifty-three indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
 
 ## The boundary
 

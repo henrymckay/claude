@@ -60,6 +60,22 @@ That rule is what the screening build is judged against when it gets there, and 
 The option surface is the driver's problem, not the core's: parse each bound straight to the value the core needs.
 A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
 
+## What the build earns
+
+**A `transform` layer with real computation in it**, and that is the only thing new here.
+
+The first two builds already have a core, ports and an `operate`; what their core holds is reshaping, normalisation and a tradeability rule — work that is easy to check by eye.
+This one is the first whose core can be *subtly* wrong: a run length that wraps a candle early, a countdown that survives a cancellation it should not.
+That is what the reference implementation and the property tests below are for, and neither was worth building before there was something they could catch.
+
+Nothing else is new.
+The port and the operation this group needs are ones the last two builds already declared, and whether that is true is the real test of how well they were declared.
+
+## What should not exist yet
+
+Absent unless the brief asks for it: a caching layer, a configuration system, a plugin or registry mechanism for counts, and any abstraction over "indicators" of which DeMark is imagined to be the first.
+Three counts named in a brief are three counts, not a family to build a framework around.
+
 ## What this build declares
 
 **Three ways in are not three inputs.**
@@ -164,22 +180,6 @@ A sum type over the two inputs would make the exclusion structural inside the co
 The reader needs column names and dtypes, and they come from the declared schema the adapter already returns and the renderer already takes its column order from: one constant per shape in `transform`, three consumers, and the round trip true by construction rather than by two lists agreeing.
 
 **Nothing is left open here.** Both forms are long, the pivot belongs to the screening build, and both signatures follow from the brief without waiting on anything.
-
-## What the build earns
-
-**A `transform` layer with real computation in it**, and that is the only thing new here.
-
-The first two builds already have a core, ports and an `operate`; what their core holds is reshaping, normalisation and a tradeability rule — work that is easy to check by eye.
-This one is the first whose core can be *subtly* wrong: a run length that wraps a candle early, a countdown that survives a cancellation it should not.
-That is what the reference implementation and the property tests below are for, and neither was worth building before there was something they could catch.
-
-Nothing else is new.
-The port and the operation this group needs are ones the last two builds already declared, and whether that is true is the real test of how well they were declared.
-
-## What should not exist yet
-
-Absent unless the brief asks for it: a caching layer, a configuration system, a plugin or registry mechanism for counts, and any abstraction over "indicators" of which DeMark is imagined to be the first.
-Three counts named in a brief are three counts, not a family to build a framework around.
 
 ## The boundary
 

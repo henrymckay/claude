@@ -77,8 +77,10 @@ Drive the whole run from [`prompt.md`](evaluate/prompt.md), with its three place
 
 Order every brief and every answers file the same way.
 
-- Briefs run from the domain to commands, output, options, examples and working style.
-- Answers run from the shape to declarations, boundary, failure, surface, verification and wrong turns.
+- Briefs open with the domain, then what varies about it, then how the input arrives.
+- Briefs close with commands, output, options, examples and working style.
+- Answers argue before they declare.
+- Answers run shape, what the build earns, what should not exist yet, the declarations, the boundary, failure, the surface, verification and wrong turns.
 - Omit a section a file has nothing to say about rather than padding it out.
 
 Each build below carries on from the last, adding a group to one `trade` command, so structure scaffolded too early shows up as a failure rather than a defensible choice.

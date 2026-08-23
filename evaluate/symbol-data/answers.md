@@ -39,6 +39,15 @@ The adapter declares its output in that order once and every renderer selects it
 A renderer reordering columns is doing at the edge what the shape should already guarantee, and it has to be written again in the next group.
 It is one constant per shape rather than a list per consumer, which is what makes the plain form readable back: the next group loads a saved file with no heading row, and the names and dtypes it parses with are this same declaration.
 
+## What should not exist yet
+
+- **No caching.** Candles change daily and the brief says nothing about storing them, so a build that adds a cache has invented a requirement and a cache invalidation problem with it.
+- **No abstraction over price sources.** The core needs candles from outside, which is a port; one named source behind it is not a family, and a registry, a provider protocol or a `--source` flag is machinery for a set that has one member and no way to gain another.
+- **No adjustment option.** The brief settles that prices are split-adjusted and not dividend-adjusted, so a `--adjust` flag offers a choice nobody asked for and puts back the decision the adapter exists to make.
+- **No filtering, and no counts.** The bounds size the *fetch*; they are not a general row filter, and the moment one is written the next build's filter has to be reconciled with it.
+- **No paging.** `--count` is the most the caller wants, which is not the same as a number to go and reach.
+- **No index resolution in this group.** The brief is explicit that these commands take symbols, so an operation reaching for the holdings port to expand a name it was handed has added a stage nobody asked for — and made half the catalogue unchartable, since most of what it names is tradeable itself.
+
 ## What this build declares
 
 **On top of the two ports and two operations the index build already has:**
@@ -104,15 +113,6 @@ That is also the second cost of currying the bounds into the adapter: the next b
 **Nothing here composes with `get_symbols`.**
 The brief makes this group take symbols, so no operation in it resolves an index, and the pipe that expands one runs between two processes rather than inside the driver.
 A driver calling `get_symbols` and then `get_candles` has rebuilt the stage the brief removed.
-
-## What should not exist yet
-
-- **No caching.** Candles change daily and the brief says nothing about storing them, so a build that adds a cache has invented a requirement and a cache invalidation problem with it.
-- **No abstraction over price sources.** The core needs candles from outside, which is a port; one named source behind it is not a family, and a registry, a provider protocol or a `--source` flag is machinery for a set that has one member and no way to gain another.
-- **No adjustment option.** The brief settles that prices are split-adjusted and not dividend-adjusted, so a `--adjust` flag offers a choice nobody asked for and puts back the decision the adapter exists to make.
-- **No filtering, and no counts.** The bounds size the *fetch*; they are not a general row filter, and the moment one is written the next build's filter has to be reconciled with it.
-- **No paging.** `--count` is the most the caller wants, which is not the same as a number to go and reach.
-- **No index resolution in this group.** The brief is explicit that these commands take symbols, so an operation reaching for the holdings port to expand a name it was handed has added a stage nobody asked for — and made half the catalogue unchartable, since most of what it names is tradeable itself.
 
 ## The boundary
 
