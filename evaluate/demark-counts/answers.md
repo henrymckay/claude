@@ -45,7 +45,7 @@ That is the test of whether the last build declared it well, and it passes only 
 **One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do.
 It takes symbols and the same bounds and intervals `get_candles` takes, calls that port, and hands the frame to the counting transform.
 
-**Still a placeholder.** The filtering is unsettled in the brief and so is whether the `rich` table widens; the operation's final signature waits on the first of those, since a predicate that selects symbols rather than rows may not be a parameter of this operation at all.
+**Still open:** whether the `rich` table widens. The plain form is long and that is fixed; the pivot, if it ever arrives here, is the one the screening build owns.
 
 ## What the build earns
 
@@ -81,11 +81,11 @@ Logs go to standard error, or they land in the middle of piped data — `RichHan
 The three groups are three sub-applications under one root, and the third arrives by registering a fourth thing on the root rather than by editing what the first two exposed — which is the test of whether the second build nested them or merely prefixed them.
 Every command spells a shared idea the same way — the file it writes to, the way symbols arrive — because a tool whose second command renames its first command's options is one nobody can use from memory.
 
-Filters are one option per column taking a bound pair, so the surface grows by a column rather than by three flags a column.
-Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity, and the pair is what keeps both.
+The bounds are two options, not a pair of them per column, so the surface grows by a timeframe rather than by three flags a timeframe.
+Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity.
 
-**Where a good build should push back.** The brief defers the filtering and explains what it is for, which is an invitation to argue rather than to guess.
-The argument worth making is that a condition per timeframe and count is a claim about a *symbol*, so it cannot be a bound on a column of a long frame; the argument not worth making is a proposal for the option spelling, which the brief has deliberately not asked for.
+**Where a good build should push back.** The brief says the filtering is not here and says what it is for, which is an invitation to agree rather than to guess.
+The argument worth making is *why* it cannot live here — a condition per timeframe and count is a claim about a symbol, and the symbol's rows are not on one row to be conjoined — which is the same reason the build after this one has to widen before it can screen.
 
 ## The window trap
 
@@ -100,7 +100,7 @@ Chaining a second one onto an already-windowed expression silently discards the 
 
 One function, bounding a named column, knowing nothing about setups — and the date is just another column it bounds.
 Two mechanisms for the same operation, a date bounded by its own parameters beside a general bound for everything else, means the general one was not general enough.
-That rule is what the deferred filtering will be judged against when it arrives, and it is why guessing at it now is expensive: a mechanism built per condition cannot be made generic afterwards without changing every caller.
+That rule is what the screening build is judged against when it gets there, and it is why guessing at it here is expensive: a mechanism built per condition cannot be made generic afterwards without changing every caller.
 
 The option surface is the driver's problem, not the core's: parse each bound straight to the value the core needs.
 A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
@@ -129,8 +129,8 @@ Bias the walk and measure where it lands before trusting the result.
 - **Chained `.over()`**, above — the failure is silent, so only the reference catches it.
 - **Optimising before there is a correct simple version.** An optimisation that changes what a function takes has leaked into the interface.
 - **Pivoting at all**, when the brief fixes the output long — and, should the `rich` table later want columns, hand-rolling that pivot as a `reduce` over per-timeframe joins.
-- **Building the filtering anyway.** The brief defers it and says why: the thing wanted is a symbol satisfying several conditions across different rows, which bounds on one column cannot express.
-Guessing at a mechanism now means the real one arrives as a breaking change to a published surface.
+- **Building the filtering anyway.** The brief puts it in the next build and says why: the thing wanted is a symbol satisfying several conditions across different rows, which bounds on one column cannot express.
+Guessing at a mechanism here means the real one arrives as a breaking change to a published surface.
 - **Dates as their own type hierarchy.** A latest/on/span sum type, when a date is a bound like any other and "latest" is a default of today.
 - **Filtering the dates before counting**, which starves the run counter of the history it needs.
 The bound selects rows at the end and sizes the fetch at the start, and does nothing in between.

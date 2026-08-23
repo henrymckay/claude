@@ -30,16 +30,10 @@ On a day the market has not traded, today means the most recent day it did.
 
 ## Filtering
 
-**Not settled — leave it out of this build.**
+**Not here.**
 
-What I am actually doing is looking for a **symbol**, not a row: something with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once, on the same day.
-Any mechanism has to let me say several such conditions and give me back only the symbols where every one of them holds.
-
-Bounds on a single column are not that, because each of my conditions is about a different timeframe and a different count, and in the layout below those live on different rows.
-Whatever this turns into, it has to reach across rows and answer at the level of the symbol.
-
-I will settle it separately.
-Until I do, build the commands without it, so no option, no column of its own and no filtering behind the fetch bounds above.
+What I am ultimately after is a symbol with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once — a claim about a symbol across several rows rather than a bound on any one column, and a build of its own.
+It comes in the build after this one, so leave it out entirely: no option, no column of its own, and no filtering behind the fetch bounds above.
 
 ## Commands
 
@@ -65,14 +59,8 @@ It goes out the same ways `trade symbol get-candles` already goes, spelled the s
 The `rich` one differs in more than styling.
 Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
 
-**Whether the `rich` table stays long or turns a column per count is not settled**, and it depends on what the filtering above turns into.
-Build the plain form long; take the `rich` one long too until I say otherwise.
-
-## Also not in this build
-
-Separately from the filtering above, I want to re-render or re-select from a table I have already produced, without paying to fetch the prices again.
-I have not settled how that should reach me, so leave it out — no option, no command and no file format decided for it.
-It is written down here so that neither of us forgets it, not so that you build it.
+The `rich` table is long too.
+A column per count on each timeframe is what a screen wants, and a screen is its own build.
 
 ## Counts
 
