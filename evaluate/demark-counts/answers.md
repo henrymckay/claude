@@ -44,10 +44,15 @@ The selection the brief defers is a different thing entirely: it answers about a
 
 ## What this build declares
 
-**No new port.** The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it.
-That is the test of whether the last build declared it well, and it passes only because the bounds and timeframes stayed on the port rather than being bound into an adapter one group had curried for itself.
+**Three ways in are not three inputs.**
+Arguments, `--input` and standard input are one value reached by three transports — the same list of symbols, differing only in where the bytes came from — so they resolve to a single value at the edge and nothing inward learns which won.
+`--load` is not a fourth transport.
+It supplies a *different value at a different stage*, and the whole design of this group turns on keeping those two ideas apart.
 
-**One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do:
+**Skipping a stage changes the type of what goes in, so it cannot be a parameter.**
+It has to be a choice of function, made where the input is known — which is the composition root's job, and the only question worth arguing is whether both functions it chooses between are named in the core.
+
+**So the group declares two operations, and the fetching one is defined in terms of the other:**
 
 ```python
 def get_counts(
@@ -59,10 +64,41 @@ def get_counts(
     start: datetime.date,
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
+
+
+def count_candles(
+    candles: polars.DataFrame,
+    *,
+    end: datetime.date,
+    indicators: collections.abc.Iterable[transform.Indicator],
+    start: datetime.date,
+    timeframes: collections.abc.Iterable[transform.Timeframe],
+) -> polars.DataFrame: ...
 ```
 
-**It takes symbols, not candles.**
-An operation handed a frame and calling no port is a transform wearing the wrong layer's name, and the fetch it dropped has to be written again in every driver — which is the objection that already ruled out currying the bounds into the adapter, arriving from the other side.
+The two signatures differ by exactly `symbols` and `fetch` against `candles`, which is the skipped stage spelled out.
+Both serve all four commands, which differ by which counts reach the output rather than by what they do.
+
+**`get_counts` is `count_candles` composed over the fetch, and the warm-up is all it adds.**
+It fetches from a widened start and `count_candles` bounds back to the one that was asked for, so the widening lives in the one operation that fetches and the other never learns that a margin exists.
+
+**`count_candles` calls no port and still belongs in `operate`.**
+The test is who a function is for: a `transform` serves whoever needs that computation, an operation serves a driver.
+"Count the candles I already have" is a use case the brief names and four commands offer, so it is an operation that happens to need no IO — which is a property of this use case, not a demotion.
+
+**Assembling that path out of transforms in the driver is the mistake worth naming**, because it very nearly reads as correct: the driver calls the counting transform, then the date bound, then the indicator filter, and the answer comes out right.
+What it has done is put the composition in the edge, so the day a loaded frame needs something a fetched one does not — a dtype coerced after the round trip, a column checked — the two paths stop looking alike and the second entry point assembles a third version.
+
+**No new port**, and `--load` is not one either.
+The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it — the test of whether the last build declared that port well, and it passes only because the bounds and timeframes stayed on the port rather than being curried into an adapter.
+Reading candles the tool itself wrote is IO and belongs to the driver, but it is not an outward call the core makes, so the core never learns the file exists.
+
+**Dependency injection cannot do this, and the reason is not the signature.**
+A reader satisfying `port.Candles` typechecks exactly: same parameters, same return.
+But `--load` replaces the symbols, so that reader has to read an empty `symbols` as *everything the file holds*, where the live adapter reads the same emptiness as *nothing* — and a port whose primary argument means two things to two adapters is not a contract, only a shape they share.
+Making the reader honour `symbols` properly does not rescue it either: the driver would have to read the file to learn which symbols are in it, then hand them back to the reader to read it again.
+The port that would line up is one with no `symbols` at all, which the live adapter can satisfy only with the symbols curried in — the same `functools.partial` fusing of a startup dependency with per-invocation data that the bounds already ruled out.
+**Injection is for choosing a source; `--load` is entering the pipeline at a different stage.**
 
 **It calls `operate.get_candles` rather than the port directly.**
 Fetching candles for a list of symbols is a use case the last build already named, and reaching past it to `fetch` is this group deciding for itself what that stage means.
@@ -76,21 +112,14 @@ Reading the clock stays the driver's, being the one piece of IO in the defaultin
 The four commands differ by a set of indicators, and the indicator is a column, so `count-setup` is a filter on `indicator` exactly as `--start` is a filter on `date`.
 Four operations, or a branch per command, is that filter written as control flow.
 
-**`--load` needs a reader at the edge, and not a port.**
-Reading candles the tool itself wrote is IO, so it belongs to the driver; it is not an outward call the core makes, so the core never learns about it.
+**The mutual exclusion stops needing enforcement in the core.**
+Symbols cannot be handed to `count_candles`, so the illegal combination is unreachable rather than rejected; the driver's check exists only to turn a mistyped command into a decent message, which is a fact about the option surface and nothing else.
+A sum type over the two inputs would make the exclusion structural inside the core instead, at the price of a port injected and never called on half of them — the same lie as an adapter ignoring an argument, moved into the signature.
 
-**It enters at the transform the operation would have reached next**, which is the whole rule and the one that generalises.
-The operation is fetch-then-count, so the loaded path is count alone — one call in the driver's branch rather than a re-run of the operation's tail — and the screening build's `--load` enters at its own next transform the same way.
-That works only because the counting transform is a composite: count, bound the dates, keep the indicators asked for.
-Piping those three steps in the driver instead puts the operation's tail in every entry point, which is the thing the operation exists to prevent.
-The branch belongs beside the check that the two options are mutually exclusive, which is unarguably the driver's.
+**`--output` and `--load` are one decision, because the plain form has no heading row.**
+The reader needs column names and dtypes, and they come from the declared schema the adapter already returns and the renderer already takes its column order from: one constant per shape in `transform`, three consumers, and the round trip true by construction rather than by two lists agreeing.
 
-**A reading adapter satisfying `port.Candles` is the tempting alternative, and it does not survive the next rung.**
-It is genuinely neater here — the branch moves out of the flow and into the wiring, the warm-up widening reaches the reader as a filter and still comes out right, and the operation is called identically either way.
-But the screening build's `--load` reads *counts*, and the live implementation of a counts port would be this group's own operation, so the core would be reaching outward to arrive back at itself.
-One rule across both rungs beats a better rule covering one.
-
-**Nothing is left open here.** Both forms are long, the pivot belongs to the screening build, and the operation's signature follows from the brief without waiting on anything.
+**Nothing is left open here.** Both forms are long, the pivot belongs to the screening build, and both signatures follow from the brief without waiting on anything.
 
 ## What the build earns
 
@@ -175,7 +204,9 @@ Bias the walk and measure where it lands before trusting the result.
 - **A cancellation rule expressed circularly**, depending on the countdown state it is supposed to end.
 - **Chained `.over()`**, above — the failure is silent, so only the reference catches it.
 - **Optimising before there is a correct simple version.** An optimisation that changes what a function takes has leaked into the interface.
-- **An operation taking candles instead of symbols**, which is a transform under another layer's name and leaves fetch-then-count to be written in every driver.
+- **One operation, with the loaded path assembled from transforms in the driver**, which answers correctly and puts the composition in the edge, so the two paths drift the first time a loaded frame needs something a fetched one does not.
+- **Folding `--load` in with `--input`**, which are a stage and a transport, so one supplies what the other still has to be turned into.
+- **A reading adapter behind `port.Candles`**, which typechecks and quietly makes an empty `symbols` mean "everything" to one adapter and "nothing" to the other.
 - **Reaching past `operate.get_candles` to the port**, so this group re-decides what fetching candles means and inherits none of the last build's answer.
 - **Deriving the warm-up margin in the driver**, so a second entry point fetches too little and the first counts of every run are quietly wrong.
 - **Pivoting at all**, when the brief fixes both forms long.

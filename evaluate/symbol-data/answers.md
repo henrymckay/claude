@@ -36,6 +36,7 @@ Rename through `polars.all().name.map(...)` rather than a dict naming every colu
 
 **Alphabetical column order is the declared schema, not a sort at the end.**
 The adapter declares its output in that order once and every renderer selects it unchanged, so nothing sorts column names on the way out.
+It is one constant per shape rather than a list per consumer, which is what makes the plain form readable back: the next group loads a saved file with no heading row, and the names and dtypes it parses with are this same declaration.
 A renderer reordering columns is doing at the edge what the shape should already guarantee, and it has to be written again in the next group.
 
 ## What the build earns
@@ -239,6 +240,10 @@ That last one is the whole point of the build — it is what makes `trade index 
 
 Read standard input when no symbols are given, rather than behind a flag that says to.
 A flag would mean the pipeline only composes for someone who already knows the flag exists.
+
+**Three transports, one input.**
+The value is the same list of symbols whichever way it arrived, so the three resolve to one value at the edge and nothing inward ever learns which won — no parameter saying where it came from, and no second path through the operation.
+That is what leaves room for a later group's `--load` to mean something genuinely different: a value at a different stage rather than a fourth spelling of this one.
 
 **Normalise the symbols once, where they arrive.**
 Three input routes are three chances for whitespace, case and repetition to differ, and the brief asks for a symbol back once however many times it was given.

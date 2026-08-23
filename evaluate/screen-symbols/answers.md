@@ -34,7 +34,7 @@ That concatenation appends the restored columns rather than ordering them, so th
 
 **No new port.** Screening needs candles, which `port.Candles` already provides — and that is the third build running to need nothing new, which is the evidence the ports were drawn at the right size.
 
-**One operation**, and it calls the last build's rather than the port:
+**Two operations, the same pair the last build declared**, one per entry point into the pipeline:
 
 ```python
 def find_matches(
@@ -45,9 +45,20 @@ def find_matches(
     fetch: port.Candles,
     start: datetime.date,
 ) -> polars.DataFrame: ...
+
+
+def screen_counts(
+    counts: polars.DataFrame,
+    *,
+    conditions: collections.abc.Iterable[transform.Condition],
+    end: datetime.date,
+    start: datetime.date,
+) -> polars.DataFrame: ...
 ```
 
-`get_counts` already fetches, widens for warm-up and counts, so this operation reads the indicators and timeframes out of the conditions, hands them over, and pipes what comes back through the pivot and the filter.
+`find_matches` is `screen_counts` composed over `get_counts`: it reads the indicators and timeframes out of the conditions, hands them to the operation that fetches, and pipes what comes back through the pivot and the filter.
+That the shape repeats is the point — **every group with a `--load` declares two operations, and the fetching one is defined in terms of the other** — and a build that reaches this rung having invented a second mechanism has missed a rule the last rung already paid for.
+
 Reaching for `port.Candles` directly instead rebuilds the stage the last build named, warm-up margin and all — and gets it subtly wrong, since the margin is the one part of that stage nothing downstream can see.
 
 **No `--timeframe` and no `--indicator` on the signature**, because the conditions carry both.
@@ -125,6 +136,7 @@ A build that notices the tension and follows the brief has read it properly; one
 - **Fetching every timeframe regardless of the conditions**, tripling the slowest part of the run to compute columns nobody asked for.
 - **Deriving the fetch window from the dates but not the timeframes**, or the reverse — both are half the composition root's job, and the half that is missing is invisible.
 - **A `port` for `--load`**, turning the driver's own file into an outward call the core makes — and here it cannot even be built, since the live source of counts is this program's own operation.
+- **One operation, with the loaded path assembled from transforms in the driver**, which is the last rung's mistake arriving one stage later.
 - **Fetching candles directly rather than through `get_counts`**, which rebuilds the last build's stage and drops the warm-up margin nothing downstream can see is missing.
 - **A driver that builds the conditions frame itself**, so the operation's input is an untyped frame whose column names every entry point has to know.
 - **An `if` around the filter for the no-condition case**, where seeding the fold covers it with no branch at all.
