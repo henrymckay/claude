@@ -36,16 +36,15 @@ Rename through `polars.all().name.map(...)` rather than a dict naming every colu
 
 **Alphabetical column order is the declared schema, not a sort at the end.**
 The adapter declares its output in that order once and every renderer selects it unchanged, so nothing sorts column names on the way out.
-It is one constant per shape rather than a list per consumer, which is what makes the plain form readable back: the next group loads a saved file with no heading row, and the names and dtypes it parses with are this same declaration.
 A renderer reordering columns is doing at the edge what the shape should already guarantee, and it has to be written again in the next group.
+It is one constant per shape rather than a list per consumer, which is what makes the plain form readable back: the next group loads a saved file with no heading row, and the names and dtypes it parses with are this same declaration.
 
-## What the build earns
+## What this build declares
 
-**What this build declares**, on top of the two ports and two operations the index build already has:
+**On top of the two ports and two operations the index build already has:**
 
 ```python
 Info = collections.abc.Callable[[collections.abc.Iterable[str]], polars.DataFrame]
-
 
 class Candles(typing.Protocol):
     def __call__(
@@ -57,12 +56,10 @@ class Candles(typing.Protocol):
         timeframes: collections.abc.Iterable[transform.Timeframe],
     ) -> polars.DataFrame: ...
 
-
 class Lookup(typing.Protocol):
     def __call__(
         self, query: str, *, count: int, kind: transform.Kind | None
     ) -> polars.DataFrame: ...
-
 
 def get_candles(
     symbols: collections.abc.Iterable[str],
@@ -73,11 +70,9 @@ def get_candles(
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
 
-
 def get_info(
     symbols: collections.abc.Iterable[str], *, fetch: port.Info
 ) -> polars.DataFrame: ...
-
 
 def look_up(
     query: str, *, count: int, fetch: port.Lookup, kind: transform.Kind | None
@@ -109,10 +104,6 @@ That is also the second cost of currying the bounds into the adapter: the next b
 **Nothing here composes with `get_symbols`.**
 The brief makes this group take symbols, so no operation in it resolves an index, and the pipe that expands one runs between two processes rather than inside the driver.
 A driver calling `get_symbols` and then `get_candles` has rebuilt the stage the brief removed.
-
-**One pair of renderers for the whole tool, not a pair per group.**
-The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.
-The tell that this was missed is a second `rich.Table` construction appearing in the next build: the table differs by which frame it is handed, and nothing else.
 
 ## What should not exist yet
 
@@ -147,22 +138,6 @@ Select the columns you declared rather than keeping what arrived.
 It comes back as a block of columns full of `NaN` — an empty frame if it was the only one asked for — and the only sign is a line on the library's own logger.
 So the adapter compares what came back against what it asked for, because nothing else in the program can: once the nulls are gone the symbol has simply vanished, and the short table that results is indistinguishable from a stock that stopped trading.
 This is the previous rung's all-or-nothing rule arriving from a source that will not raise for you.
-
-**Nothing new is needed to report it.**
-The `error` package the last build declared already holds the classes and `handle`, so this group adds one class and one decorator and invents no mechanism:
-
-```python
-class UnknownSymbolError(TradeError):
-    """Raised when the price source has nothing for the symbol asked for."""
-```
-
-**`check_complete` is that decorator, and it lives in `yfinance_`.**
-A decorator sees the arguments and the return value together, which is exactly what this check needs — the symbols that were asked for, against the symbols the frame came back with — so the comparison is a decorator on `get_candles` and `get_info` rather than a check written into both.
-It imports nothing from `yfinance`, which makes it the same case as a driver's own helper sitting in a framework package: both its callers are here, so it stays beside them and lifts out the day a third source needs it.
-
-That it applies to two functions in one package is the whole argument for it being shared, and the argument against a third adapter package per call — one boundary, one failure vocabulary, one check.
-
-The three ports carry their own `:raises:` for the same reason `Publisher` does, and `Info` carries it in a string literal beneath the assignment, being an alias with no docstring to hang it on.
 
 **The download is a dense grid over the union of every symbol's trading days**, not one row per candle.
 Ask for a London stock and a New York one and every day either market was shut carries a row for the other.
@@ -249,6 +224,26 @@ A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a stri
 
 **A search matching nothing is an answer, not a failure**, which is where the declared-dtype rule bites a third time: the empty frame still has to carry `String` columns, or it will not concat or join and the emptiness surfaces as a schema error somewhere else entirely.
 
+## Failure
+
+One more class and one more decorator, over the machinery the index build already declared.
+
+**Nothing new is needed to report it.**
+The `error` package the last build declared already holds the classes and `handle`, so this group adds one class and one decorator and invents no mechanism:
+
+```python
+class UnknownSymbolError(TradeError):
+    """Raised when the price source has nothing for the symbol asked for."""
+```
+
+**`check_complete` is that decorator, and it lives in `yfinance_`.**
+A decorator sees the arguments and the return value together, which is exactly what this check needs — the symbols that were asked for, against the symbols the frame came back with — so the comparison is a decorator on `get_candles` and `get_info` rather than a check written into both.
+It imports nothing from `yfinance`, which makes it the same case as a driver's own helper sitting in a framework package: both its callers are here, so it stays beside them and lifts out the day a third source needs it.
+
+That it applies to two functions in one package is the whole argument for it being shared, and the argument against a third adapter package per call — one boundary, one failure vocabulary, one check.
+
+The three ports carry their own `:raises:` for the same reason `Publisher` does, and `Info` carries it in a string literal beneath the assignment, being an alias with no docstring to hang it on.
+
 ## The surface
 
 Symbols arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
@@ -279,6 +274,10 @@ A build that fetches everything and filters afterwards is correct and grows with
 **`look-up` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a symbol rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
 What must stay identical across all three is the *output* — the same plain form, the same `-o`, the same `-p` — because that is the half a caller composes with.
+
+**One pair of renderers for the whole tool, not a pair per group.**
+The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.
+The tell that this was missed is a second `rich.Table` construction appearing in the next build: the table differs by which frame it is handed, and nothing else.
 
 **The group is a sub-application, not a prefix.**
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.

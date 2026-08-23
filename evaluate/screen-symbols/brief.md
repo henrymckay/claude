@@ -18,11 +18,6 @@ Neither on its own tells me anything, which is the whole point — a condition I
 A screen matching nothing is an answer, not a failure.
 Most days most screens match nothing, and that is what I am asking.
 
-## Symbols
-
-Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-i`, or on standard input.
-They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen find …` is how I point one at an index.
-
 ## Conditions
 
 Each is a name and two bounds, given once per condition I want.
@@ -35,6 +30,11 @@ Give me none at all and the screen is every symbol I asked about, which is a slo
 
 `--where` decides which timeframes are worth fetching.
 I never want to say that twice, so there is no separate option for it here.
+
+## Symbols
+
+Any number of them, the same three ways the other groups take them: as arguments, from a file I name with `-i`, or on standard input.
+They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen find …` is how I point one at an index.
 
 ## Dates
 
@@ -55,6 +55,12 @@ Don't take both and guess which I meant.
 
 A condition naming an indicator the file does not carry is an error saying so, not an empty screen.
 The two read very differently and only one of them is my mistake.
+
+## Commands
+
+One in the group for now.
+
+- `trade screen find` gives me the symbols matching every condition.
 
 ## Output
 
@@ -82,12 +88,6 @@ Every option has a long form and a single-letter short form, and an option meani
 - `-w`, `--where NAME LOWER UPPER`, given once per condition.
 
 No `--timeframe` here: the conditions already name the timeframes they are about, and I am not saying that twice.
-
-## Commands
-
-One in the group for now.
-
-- `trade screen find` gives me the symbols matching every condition.
 
 ## Examples
 

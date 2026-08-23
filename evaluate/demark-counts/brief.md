@@ -11,82 +11,6 @@ Nothing in either of them moves or is renamed to make room for it.
 Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input, and a symbol I have handed you twice coming back once.
 They are symbols, not indices: an index reaches this group the same way it reaches `trade symbol get-candles`, by being expanded first.
 
-## Dates and timeframes
-
-Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells them.
-
-Both bounds are inclusive, and naming the same date twice asks for that one day.
-Leave `--end` off and it **defaults to today**; leave `--start` off and it means that same day alone, since a single day is what I want most of the time.
-Leave `--timeframe` off and I get all three.
-
-The dates decide which candles I am reported on, and they are not the whole story of what has to be fetched — a count is only right if the candles before it were counted too.
-
-I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
-On a day the market has not traded, today means the most recent day it did.
-
-## Filtering
-
-**Not here.**
-
-What I am ultimately after is a symbol with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once — a claim about a symbol across several rows rather than a bound on any one column, and a build of its own.
-It comes in the build after this one, so leave it out entirely: no option, no column of its own, and no filtering behind the fetch bounds above.
-
-## Reusing candles
-
-I can hand it candles I already have instead of symbols to go and fetch.
-What it reads is what `trade symbol get-candles` writes, so the two are ends of one file.
-Fetching a whole index is the slow part and the counting is free, so let me pay for the candles once and count them as often as I like.
-
-It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-i` or anything on standard input — the file already says which symbols it holds.
-Don't take both and guess which I meant.
-
-`--start`, `--end` and `--timeframe` still say what I want back, they just have nothing left to fetch.
-The file has to carry enough history behind my dates for the counts to be right; that is my problem when I save it, not yours when you read it.
-
-## Arguments and options
-
-Every command in the group takes any number of symbols as arguments, or none at all where they arrive on standard input, from `--input`, or already fetched in `--load`.
-
-Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
-
-- `-o`, `--output PATH` writes to that file instead of standard output.
-- `-p`, `--pretty` shows a `rich` table instead of the plain default.
-- `-i`, `--input PATH` reads the symbols from that file rather than from standard input.
-- `-l`, `--load PATH` reads candles instead, as above.
-- `-s`, `--start DATE` and `-e`, `--end DATE` bound what comes back.
-- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want.
-
-## Commands
-
-Four in the group.
-
-- `trade demark count` reports all three counts together.
-- `trade demark count-setup`, `trade demark count-sequential` and `trade demark count-combo` each report one on its own.
-
-Every one of them takes symbols the three ways above, carries the same options, and answers the same way.
-
-## Output
-
-One row per date, symbol, timeframe and count, carrying that count.
-Five columns, the same five every run: `date`, `indicator`, `symbol`, `timeframe` and `value`, alphabetically as everywhere else.
-
-`value` rather than `count`, and a number that can carry a fraction rather than a whole one, because a DeMark count is not the last indicator I will want.
-When there is a second, I want to stack the two tables with `cat` and screen across both, and that only works if every indicator writes the same five columns with the same types.
-It means my counts come back reading `-9.0` where `-9` would have done, and I would rather have that than two shapes that will not stack.
-
-`indicator` says which count the row is — `setup`, `sequential` or `combo`.
-`timeframe` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
-
-Long rather than a column per count on each timeframe, because I am asking for one timeframe as often as three and I do not want the shape of what comes back to depend on which options I gave.
-
-It goes out the same ways `trade symbol get-candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
-
-The `rich` one differs in more than styling.
-Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
-
-The `rich` table is long too, because `--pretty` never reshapes anything.
-A column per count on each timeframe is what a screen wants, and a screen is its own build.
-
 ## Counts
 
 Three counts for every candle, on every timeframe.
@@ -135,10 +59,86 @@ A countdown that reaches 13 is finished, so the candles after it read zero until
 
 The `rich` table is the one exception, showing every count positive and leaving the colour to carry the direction.
 
+## Dates and timeframes
+
+Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells them.
+
+Both bounds are inclusive, and naming the same date twice asks for that one day.
+Leave `--end` off and it **defaults to today**; leave `--start` off and it means that same day alone, since a single day is what I want most of the time.
+Leave `--timeframe` off and I get all three.
+
+The dates decide which candles I am reported on, and they are not the whole story of what has to be fetched — a count is only right if the candles before it were counted too.
+
+I only ever want rows for days the market actually traded, so a weekend or a holiday is not a row.
+On a day the market has not traded, today means the most recent day it did.
+
 ## Dates on a coarser candle
 
 A date in the past reports the count of the **completed** candle covering it.
 Ask about a Wednesday and the weekly column gives me that whole week as it finished, never the week rebuilt as it stood partway through.
+
+## Filtering
+
+**Not here.**
+
+What I am ultimately after is a symbol with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once — a claim about a symbol across several rows rather than a bound on any one column, and a build of its own.
+It comes in the build after this one, so leave it out entirely: no option, no column of its own, and no filtering behind the fetch bounds above.
+
+## Reusing candles
+
+I can hand it candles I already have instead of symbols to go and fetch.
+What it reads is what `trade symbol get-candles` writes, so the two are ends of one file.
+Fetching a whole index is the slow part and the counting is free, so let me pay for the candles once and count them as often as I like.
+
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-i` or anything on standard input — the file already says which symbols it holds.
+Don't take both and guess which I meant.
+
+`--start`, `--end` and `--timeframe` still say what I want back, they just have nothing left to fetch.
+The file has to carry enough history behind my dates for the counts to be right; that is my problem when I save it, not yours when you read it.
+
+## Commands
+
+Four in the group.
+
+- `trade demark count` reports all three counts together.
+- `trade demark count-setup`, `trade demark count-sequential` and `trade demark count-combo` each report one on its own.
+
+Every one of them takes symbols the three ways above, carries the same options, and answers the same way.
+
+## Output
+
+One row per date, symbol, timeframe and count, carrying that count.
+Five columns, the same five every run: `date`, `indicator`, `symbol`, `timeframe` and `value`, alphabetically as everywhere else.
+
+`value` rather than `count`, and a number that can carry a fraction rather than a whole one, because a DeMark count is not the last indicator I will want.
+When there is a second, I want to stack the two tables with `cat` and screen across both, and that only works if every indicator writes the same five columns with the same types.
+It means my counts come back reading `-9.0` where `-9` would have done, and I would rather have that than two shapes that will not stack.
+
+`indicator` says which count the row is — `setup`, `sequential` or `combo`.
+`timeframe` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
+
+Long rather than a column per count on each timeframe, because I am asking for one timeframe as often as three and I do not want the shape of what comes back to depend on which options I gave.
+
+It goes out the same ways `trade symbol get-candles` already goes, spelled the same way — plainly to standard output for piping, to a file I name, or rendered down the page with `rich` when I want to read it myself.
+
+The `rich` one differs in more than styling.
+Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
+
+The `rich` table is long too, because `--pretty` never reshapes anything.
+A column per count on each timeframe is what a screen wants, and a screen is its own build.
+
+## Arguments and options
+
+Every command in the group takes any number of symbols as arguments, or none at all where they arrive on standard input, from `--input`, or already fetched in `--load`.
+
+Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.
+
+- `-o`, `--output PATH` writes to that file instead of standard output.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default.
+- `-i`, `--input PATH` reads the symbols from that file rather than from standard input.
+- `-l`, `--load PATH` reads candles instead, as above.
+- `-s`, `--start DATE` and `-e`, `--end DATE` bound what comes back.
+- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want.
 
 ## Examples
 

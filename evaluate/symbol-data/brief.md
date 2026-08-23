@@ -5,18 +5,12 @@ If you are starting without it, build that much first, since I still want to giv
 
 Now I want the tool to say things about the symbols themselves — what they cost, what they are, and how to find one when I do not know its symbol.
 
-## Commands
-
 A second group, `symbol`, beside the `index` group already there.
 Nothing in the first group moves or is renamed to make room for it.
 
-- `trade symbol get-candles [SYMBOL...]` gives me the price candles behind those symbols.
-- `trade symbol get-info [SYMBOL...]` gives me what each symbol is.
-- `trade symbol look-up QUERY` finds symbols I could then ask about.
-
 ## Symbols
 
-`get-candles` and `get-info` take any number of them, given whichever way suits what I am doing at the time.
+`get-candles` and `get-info` take any number of symbols, given whichever way suits what I am doing at the time.
 
 - Written out as arguments.
 - Read from a file I name.
@@ -95,6 +89,14 @@ A hundred matches unless I ask for more, since I am looking for something rather
 
 Searching is also how I enumerate a whole asset class, because Yahoo spells the kind into the symbol: `^` finds indices, `=X` currencies, `=F` futures and `-USD` coins.
 That is a fact about Yahoo rather than something to build around, but it is why the count is mine to raise and why the kind is a filter I set rather than something guessed from what I typed.
+
+## Commands
+
+Three in the group.
+
+- `trade symbol get-candles [SYMBOL...]` gives me the price candles behind those symbols.
+- `trade symbol get-info [SYMBOL...]` gives me what each symbol is.
+- `trade symbol look-up QUERY` finds symbols I could then ask about.
 
 ## Output
 

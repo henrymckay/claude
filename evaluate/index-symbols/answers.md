@@ -78,28 +78,20 @@ Every frame-to-frame step carries its `map_`/`amap_` prefix and is reached with 
 `granny_shots` and `market_cap`, not `grannyshots` and `companiesmarketcap`, spelled from what the thing is *called* rather than from however its domain name ran it together.
 Take the shortest name that still identifies it, since the layer supplies the rest, and name an adapter for the source it reads rather than whose data it is: `info_13f` says which site breaks, where `sec` names a regulator the code never contacts.
 
-## What the build earns
+## What this build declares
 
-**A `port`.** Expanding several indices, stacking their holdings and failing the run if any one of them fails is an operation, and it calls outward for holdings while staying pure — which is what a port is for.
-The payoff is that the whole expansion becomes testable against a fake source with no network, rather than only through the driver.
-
-Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
-
-**What this build declares.** Two ports and two operations, and every later build adds to these rather than restating them:
+**Two ports and two operations**, and every later build adds to these rather than restating them:
 
 ```python
 Holdings = collections.abc.Callable[[str], polars.DataFrame]
-
 
 class Publisher(typing.Protocol):
     def get_holdings(self, index: str) -> polars.DataFrame: ...
     def get_indices(self) -> polars.DataFrame: ...
 
-
 def catalogue_indices(
     *, publishers: collections.abc.Iterable[port.Publisher]
 ) -> polars.DataFrame: ...
-
 
 def get_symbols(
     indices: collections.abc.Iterable[str],
@@ -141,17 +133,22 @@ Left in the operation it gets written twice — once to route an index to its pu
 The set is a fact about what the adapter layer ships, so `adapt` returns it and the composition root injects it: `operate.catalogue_indices(publishers=adapt.publishers())`.
 It is neither a port nor an operation — the core never calls it — which is why it sits outside the declarations above.
 Name it with a bare noun: it returns a tuple of modules and touches nothing, and `write-python` reserves noun-only names for exactly that, so the contrast with every `get_` beside it says which calls cost a request.
+Enumerate them in a driver instead and the next driver copies the list, so adding a publisher edits every entry point rather than the package that gained it.
+That is not the composition root moving: the driver still chooses to use the set and still injects it into the operation.
 
 One language detail neither `write-python` nor `structure-python` mentions: a protocol method's body needs a bare `...` **after** its docstring.
 A docstring alone returns `None`, which `pyright` rejects against the declared return type.
 
+## What the build earns
+
+**A `port`.** Expanding several indices, stacking their holdings and failing the run if any one of them fails is an operation, and it calls outward for holdings while staying pure — which is what a port is for.
+The payoff is that the whole expansion becomes testable against a fake source with no network, rather than only through the driver.
+
+Two adapters sharing a signature is *not* what earns it, and a build that says so has the right answer for the wrong reason: one adapter and the same operation would earn it just as much.
+
 **An `operate` layer.** There are two use cases here, not one: expanding names and listing them.
 Both orchestrate the same sources and both call outward through the port while staying pure, so the layer has something to hold and a second caller to hold it for.
 The count is what decides it, not the ceremony — one use case would be a function beside the transforms; two that share how the sources are gathered are a layer, and the shared gathering is the thing a later build inherits.
-
-**`adapt` naming its own members.** Which sources exist is a fact about what the adapter layer ships, so it returns the mapping and every driver reads the same one.
-Enumerate them in a driver instead and the next driver copies the list, so adding a source edits every entry point rather than the package that gained it.
-That is not the composition root moving: the driver still chooses to use the set and still injects it into the operation.
 
 ## What should not exist yet
 
@@ -220,18 +217,14 @@ Inside it, one module rather than one per function — the classes and the decor
 class TradeError(Exception):
     """Base class for this tool's errors."""
 
-
 class AbsentError(TradeError):
     """Raised when a source has no such document, for each adapter to reinterpret."""
-
 
 class SourceError(TradeError):
     """Raised when a source answered with something that could not be read."""
 
-
 class UnavailableError(TradeError):
     """Raised when a source could not be reached, and might be shortly."""
-
 
 class UnknownIndexError(TradeError):
     """Raised when no publisher offers the index asked for."""
@@ -316,29 +309,12 @@ Resolving a name is the tool's job, so `get-symbols` takes the name alone; findi
 The brief says more groups follow, so `index` is a `typer` sub-application registered on the root — which is what lets the next group be added without the root command being touched, and what makes `trade index --help` list this group alone.
 Spelling the commands `index-expand` and `index-catalogue` at the root reaches the same invocation and gives up both.
 
-### The driver is three packages, not one
-
-A hollow `cli/` naming what the entry point *is*, over `typer_/` for the parsing and `rich_/` for the presentation.
-Swapping either library then touches one package and never the console script, which points at `cli` and so never names the framework behind it.
-Collapsing all three into one `cli.py` is the right call for a one-command tool and the wrong one here, because the brief says two more groups follow.
-
-**The app object goes in `typer_/driver.py`, not at the top of the commands module.**
-A framework anchor has to exist before anything decorates it, so leaving it beside the commands fixes that file's order and pushes the callback ahead of the thing a reader opened the file for.
-Given its own module, the commands stay a flat alphabetical list.
-
-**Every argument and option is a function returning its configuration**, in `argument.py` and `option.py`, referenced from the signature rather than inlined.
-At two commands that looks like ceremony; it is the shape that survives the group after this one, where one option set is spelled across seven commands.
-It pays immediately too: because every option here carries a short form, each factory names its own flags — so the parameter behind `--input` can be `input_` without the CLI ever seeing the underscore, and no option has to be renamed around a builtin.
-
-**A command's name is its function's name.**
-`typer` turns `get_symbols` into `get-symbols`, so passing `name=` is a second place the name lives and the reason someone greps for the command a user typed and finds nothing.
-
 `catalogue` is what makes a bare error acceptable on an unmatched index — without it the tool would owe the caller near matches, since an index it ships is not otherwise discoverable.
 
 - Two renders, not one styled two ways.
 `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
 - **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.
-- `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -t` saves the table.
+- `-o` writes whichever form is in force, so `-o` alone saves lines and `-o -p` saves the table.
 A path does not silently override the flag.
 - One symbol per line is right here because there is one column, and it is what `grep`, `xargs` and `wc -l` all expect.
 The brief reaches it by fixing the plain form as headerless comma-separated values rather than by describing a list, which is the same thing over one column and still a thing over eight — so the renderer written here is the one every later group inherits.
@@ -359,6 +335,23 @@ Saying so and building it anyway is the right answer; refusing it is not, and ne
 The form-versus-destination question reads like a second one and is not.
 `write-entry-points` and the brief agree — fix the form, let an option change it, never let the destination decide — so a build presenting this as a disagreement has misread the skill rather than found one.
 `ls` is the exception that skill names, not the pattern it teaches, and it gets away with varying by destination only because both its forms are parseable where a bordered table is not.
+
+### The driver is three packages, not one
+
+A hollow `cli/` naming what the entry point *is*, over `typer_/` for the parsing and `rich_/` for the presentation.
+Swapping either library then touches one package and never the console script, which points at `cli` and so never names the framework behind it.
+Collapsing all three into one `cli.py` is the right call for a one-command tool and the wrong one here, because the brief says two more groups follow.
+
+**The app object goes in `typer_/driver.py`, not at the top of the commands module.**
+A framework anchor has to exist before anything decorates it, so leaving it beside the commands fixes that file's order and pushes the callback ahead of the thing a reader opened the file for.
+Given its own module, the commands stay a flat alphabetical list.
+
+**Every argument and option is a function returning its configuration**, in `argument.py` and `option.py`, referenced from the signature rather than inlined.
+At two commands that looks like ceremony; it is the shape that survives the group after this one, where one option set is spelled across seven commands.
+It pays immediately too: because every option here carries a short form, each factory names its own flags — so the parameter behind `--input` can be `input_` without the CLI ever seeing the underscore, and no option has to be renamed around a builtin.
+
+**A command's name is its function's name.**
+`typer` turns `get_symbols` into `get-symbols`, so passing `name=` is a second place the name lives and the reason someone greps for the command a user typed and finds nothing.
 
 ## Verification
 

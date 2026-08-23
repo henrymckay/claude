@@ -72,17 +72,19 @@ Test how well the skills guide a build.
 Have Claude build from a `brief.md` using the skills alone.
 Then have it grade itself against `answers.md`.
 Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
-Drive the whole run from [`prompt.md`](evaluate/prompt.md), with the evaluation and repository filled in.
+Finish by bringing the build into line with those fixes.
+Drive the whole run from [`prompt.md`](evaluate/prompt.md), with its three placeholders filled in.
 
 Order every brief and every answers file the same way.
 
-- Briefs by input, output, uses, rules and working style.
-- Answers files by shape, structure, boundary, surface, tests and wrong turns.
+- Briefs run from the domain to commands, output, options, examples and working style.
+- Answers run from the shape to declarations, boundary, failure, surface, verification and wrong turns.
+- Omit a section a file has nothing to say about rather than padding it out.
 
 Each build below carries on from the last, adding a group to one `trade` command, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
-- [`index-symbols`](evaluate/index-symbols) builds `trade index`, expanding the name of an index or a fund into the symbols it holds.
-- [`symbol-data`](evaluate/symbol-data) adds `trade symbol`, fetching candles on three timeframes, describing a ticker, and searching for one.
+- [`index-symbols`](evaluate/index-symbols) builds `trade index`, expanding an index or a fund into the symbols it holds.
+- [`symbol-data`](evaluate/symbol-data) adds `trade symbol`, fetching candles on three timeframes, describing a symbol and searching for one.
 - [`demark-counts`](evaluate/demark-counts) adds `trade demark`, counting setups, sequentials and combos over those candles.
 - [`screen-symbols`](evaluate/screen-symbols) adds `trade screen`, pivoting those counts wide and returning the symbols matching every condition.
 

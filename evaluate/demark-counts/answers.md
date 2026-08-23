@@ -42,6 +42,24 @@ A previous run spent its whole core design on that machinery, for a requirement 
 **The date bounds are not a seam.** They drop rows without changing what a row is, so they earn their own function by being independently useful rather than because the flow demands one, and they come last.
 The selection the brief defers is a different thing entirely: it answers about a symbol rather than a row, so when it arrives it will change the grain and *will* be a seam.
 
+### The window trap
+
+The counts are sequential per series, which invites a Python state machine, and they do not need one — a setup is a run length, and a countdown is a tally within a segment, both window expressions over the whole frame.
+
+The cancellation rules are what make it delicate: a rule that depends on the running count cannot be a window function, so measure the break against the most recently completed setup instead, which is knowable without it.
+
+`.over()` does not compose.
+Chaining a second one onto an already-windowed expression silently discards the inner partition and returns a plausible wrong answer, so each windowed step goes in its own column before the next one windows it.
+
+### Bounding is generic over columns
+
+One function, bounding a named column, knowing nothing about setups — and the date is just another column it bounds.
+Two mechanisms for the same operation, a date bounded by its own parameters beside a general bound for everything else, means the general one was not general enough.
+That rule is what the screening build is judged against when it gets there, and it is why guessing at it here is expensive: a mechanism built per condition cannot be made generic afterwards without changing every caller.
+
+The option surface is the driver's problem, not the core's: parse each bound straight to the value the core needs.
+A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
+
 ## What this build declares
 
 **Three ways in are not three inputs.**
@@ -63,9 +81,7 @@ def count_candles(
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
 
-
 # count_combo, count_sequential and count_setup repeat that signature exactly.
-
 
 def get_counts(
     symbols: collections.abc.Iterable[str],
@@ -76,9 +92,7 @@ def get_counts(
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame: ...
 
-
 # get_combo, get_sequential and get_setup repeat that one.
-
 
 def _count(
     candles: polars.DataFrame,
@@ -89,7 +103,6 @@ def _count(
     timeframes: collections.abc.Iterable[transform.Timeframe],
 ) -> polars.DataFrame:
     """Return the named counts on those candles, bounded to the dates asked for."""
-
 
 def _get_history(
     symbols: collections.abc.Iterable[str],
@@ -179,6 +192,13 @@ A second entry point then inherits a correct fetch instead of re-deriving one, w
 The filter stays generic and knows nothing about warm-up, and the core cannot ask for data it was not given.
 Size the margin from evidence — measure how far back a pending countdown actually reaches over real data — rather than guessing, and prefer an unbounded fetch to a margin that is too small, because too small fails silently.
 
+## Failure
+
+No new error type, and one more decorated entry point.
+
+**It fails the way every other boundary does**, with `@error.handle` over the frame library's own exceptions reporting a `SourceError` that names the path.
+A file the tool wrote is still somebody else's input by the time it is read back — edited, truncated, or written by a version whose schema has since moved — so the group adds no error type and no new handling, only one more decorated entry point.
+
 ## The surface
 
 `rich` drops colour by itself when standard output is not a terminal, which is not enough: a boxed table is still unparseable, so the plain form is a second render rather than the same one unstyled.
@@ -190,6 +210,9 @@ Every command spells a shared idea the same way — the file it writes to, the w
 
 The bounds are two options, not a pair of them per column, so the surface grows by a timeframe rather than by three flags a timeframe.
 Thirty options each doing one job is what happens when comprehensiveness is pursued without brevity.
+
+**Where a good build should push back.** The brief says the filtering is not here and says what it is for, which is an invitation to agree rather than to guess.
+The argument worth making is *why* it cannot live here — a condition per timeframe and count is a claim about a symbol, and the symbol's rows are not on one row to be conjoined — which is the same reason the build after this one has to widen before it can screen.
 
 ### What the driver holds
 
@@ -234,30 +257,6 @@ Every one of those is IO or a fact about the option surface.
 **The `--load` reader is a driver module that imports nothing from `typer`.**
 It reads the plain form with the schema `transform` declares, so it sits beside its one caller rather than in a package of its own — and it is the first thing to lift into a shared `drive/` module the day a second entry point wants the same file.
 The `--output` writer is its mirror and lives in `rich_`, because the bytes it writes are the plain *render*; the two are one decision held together by that shared schema rather than by sitting in one place.
-
-**It fails the way every other boundary does**, with `@error.handle` over the frame library's own exceptions reporting a `SourceError` that names the path.
-A file the tool wrote is still somebody else's input by the time it is read back — edited, truncated, or written by a version whose schema has since moved — so the group adds no error type and no new handling, only one more decorated entry point.
-
-**Where a good build should push back.** The brief says the filtering is not here and says what it is for, which is an invitation to agree rather than to guess.
-The argument worth making is *why* it cannot live here — a condition per timeframe and count is a claim about a symbol, and the symbol's rows are not on one row to be conjoined — which is the same reason the build after this one has to widen before it can screen.
-
-## The window trap
-
-The counts are sequential per series, which invites a Python state machine, and they do not need one — a setup is a run length, and a countdown is a tally within a segment, both window expressions over the whole frame.
-
-The cancellation rules are what make it delicate: a rule that depends on the running count cannot be a window function, so measure the break against the most recently completed setup instead, which is knowable without it.
-
-`.over()` does not compose.
-Chaining a second one onto an already-windowed expression silently discards the inner partition and returns a plausible wrong answer, so each windowed step goes in its own column before the next one windows it.
-
-## Bounding is generic over columns
-
-One function, bounding a named column, knowing nothing about setups — and the date is just another column it bounds.
-Two mechanisms for the same operation, a date bounded by its own parameters beside a general bound for everything else, means the general one was not general enough.
-That rule is what the screening build is judged against when it gets there, and it is why guessing at it here is expensive: a mechanism built per condition cannot be made generic afterwards without changing every caller.
-
-The option surface is the driver's problem, not the core's: parse each bound straight to the value the core needs.
-A record per accepted phrasing, or a condition and operator tree over domain concepts, is modelling the input grammar rather than the problem.
 
 ## Verification
 

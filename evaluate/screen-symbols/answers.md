@@ -46,7 +46,6 @@ def find_matches(
     start: datetime.date,
 ) -> polars.DataFrame: ...
 
-
 def screen_counts(
     counts: polars.DataFrame,
     *,
@@ -102,6 +101,25 @@ Both apply at once here, which is the trap — the fetch window is the date boun
 The saved form is the plain form, so it is read back with the same column names and dtypes it was written with, and a build that writes floats and reads strings has broken its own round trip.
 Worth a test that writes a frame, reads it back, and asserts they match — the cheapest property test in the suite and the one that catches a schema drifting.
 
+## Failure
+
+One class, and the brief asks for it directly: a condition naming an indicator the file does not carry is an error, not an empty screen.
+
+```python
+class UnknownIndicatorError(TradeError):
+    """Raised when a condition names an indicator the counts do not carry."""
+```
+
+**The check runs before the pivot, and that is the whole of the design.**
+After it, the same mistake surfaces as `ColumnNotFoundError` naming a column the caller never typed — which is the empty-result bug wearing a different hat, and indistinguishable from it at the point it fires.
+Before it, the conditions and the frame are both to hand and the message can say which condition and which file.
+
+**It is `check_conditions`, a decorator on `screen_counts`**, in the core beside the screening transform rather than at an edge — it compares two arguments and raises, touching nothing outside, so it is the third of the same shape as `check_response` and `check_complete` and needs no `try` either.
+
+**Not finding a match and not being able to look are different answers**, which is why this cannot be left to fall out as an empty screen.
+Most days most screens match nothing, so a build that reports the two the same way has made its commonest result unreadable: the caller cannot tell a screen that ran from a screen that never could.
+That is the same distinction the first build drew between an unknown index and a publisher that would not answer, and it arrives here from the caller's own file rather than from a service.
+
 ## The surface
 
 **`--where` repeated is a conjunction, and nothing spells `or`.**
@@ -145,3 +163,5 @@ A build that notices the tension and follows the brief has read it properly; one
 - **A driver that builds the conditions frame itself**, so the operation's input is an untyped frame whose column names every entry point has to know.
 - **An `if` around the filter for the no-condition case**, where seeding the fold covers it with no branch at all.
 - **An `or`, a `not`, or parentheses**, none of which the brief asks for and all of which need the grammar it rules out.
+- **Letting an unknown indicator fall out as an empty screen**, so the commonest correct result and a mistyped condition read identically.
+- **Checking the conditions after the pivot**, where the same mistake arrives as a missing column the caller never named.
