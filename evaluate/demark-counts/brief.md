@@ -47,7 +47,11 @@ Every one of them takes symbols the three ways above, carries the same options, 
 ## Output
 
 One row per date, symbol, timeframe and count, carrying that count.
-Five columns, the same five every run: `count`, `date`, `indicator`, `interval` and `symbol`, alphabetically as everywhere else.
+Five columns, the same five every run: `date`, `indicator`, `interval`, `symbol` and `value`, alphabetically as everywhere else.
+
+`value` rather than `count`, and a number that can carry a fraction rather than a whole one, because a DeMark count is not the last indicator I will want.
+When there is a second, I want to stack the two tables with `cat` and screen across both, and that only works if every indicator writes the same five columns with the same types.
+It means my counts come back reading `-9.0` where `-9` would have done, and I would rather have that than two shapes that will not stack.
 
 `indicator` says which count the row is — `setup`, `sequential` or `combo`.
 `interval` is spelled the way `trade symbol get-candles` spells it, `daily`, `weekly` or `monthly`.
@@ -129,7 +133,7 @@ trade demark count < symbols.txt
 trade demark count -f symbols.txt -t
 trade index get-symbols sp-500 | trade demark count
 trade index get-symbols dow-jones | trade demark count -o counts.csv
-trade index get-symbols sp-500 | trade demark count-setup -i daily | awk -F, '$1 >= 8'
+trade index get-symbols sp-500 | trade demark count-setup -i daily | awk -F, '$5 >= 8'
 ```
 
 ## Working style

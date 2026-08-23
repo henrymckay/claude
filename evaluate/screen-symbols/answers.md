@@ -10,7 +10,7 @@ The rung the pivot was being saved for.
 | shape | one row is | how it is reached |
 |---|---|---|
 | candles | a symbol's candle in one timeframe | the symbol build, unchanged |
-| counts | one count on one candle | the demark build, unchanged |
+| counts | one indicator's value on one candle | the demark build, unchanged |
 | wide | a symbol on a day | `pivot` the indicator and interval out together |
 | matches | a symbol on a day that passed | one predicate per condition, all conjoined |
 
@@ -37,6 +37,11 @@ That concatenation appends the restored columns rather than ordering them, so th
 **One operation**, `find_matches`, taking the symbols, the bounds and the conditions, calling the candles port, then the demark transform, then the pivot and the filter.
 
 **A `transform` for the conditions themselves**, turning what the driver parsed into the frame the filter is built from — pure, and the only part with any subtlety in it.
+
+**`--load` narrows and cannot broaden, and that falls out of `-o` writing the plain form.**
+The saved file is the filtered result, so the rows that failed are gone and the columns nobody asked about were never computed.
+Saving the unfiltered frame instead would fix it and break something worth more — the file `-o` writes would stop being the bytes standard output carries, which every brief has insisted on since the first.
+So the limit is the right trade, and the build's job is to fail clearly on a condition naming an absent column rather than to return nothing and let it read as no matches.
 
 **A reader, not a port, for `--load`.** Reading a file the tool itself wrote is IO, so it belongs at the edge; but it is not a *port*, because the core does not call outward for it — the driver reads the file and passes the frame in, exactly as it passes symbols in.
 A build that invents `port.Saved` has made a port out of the driver's own input.

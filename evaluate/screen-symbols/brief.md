@@ -58,6 +58,11 @@ This is the thing I said I would come back to.
 Screening the S&P is slow and I will want to try three sets of conditions against one run of it, so let me save what came back and screen that.
 What it reads is what this group writes, so `-o` and `-l` are two ends of the same file.
 
+That bounds what it can do, and I would rather live with the bound than have two output shapes.
+A saved run holds only the columns I asked for and only the rows that passed, so loading one lets me **tighten** a condition and never loosen one or add an indicator I did not ask for the first time.
+When I mean to try several sets against one run, I save it wide open — every indicator I might want, with bounds that exclude nothing — and narrow from there.
+A condition naming a column the file does not have is an error saying so, not an empty screen.
+
 ## Output
 
 One row per date and symbol that matched, carrying a column for each condition I set, named after that condition.
@@ -65,6 +70,8 @@ So `--where daily_setup 7 9 --where weekly_setup -3 -1` gives me `daily_setup`, 
 
 Wide here, where the `demark` group is long, because a screen answers about a symbol and I want its answer on one line.
 That the columns depend on the conditions is the point rather than a problem: the conditions are what I asked, and they are what I want to see.
+
+The values in those columns are the indicator's own, carried across unchanged, so they read the way the `demark` group writes them.
 
 It goes out the same two ways as everything else, and `-t` gives me the `rich` table, with the same colour for the sign that the `demark` group uses.
 

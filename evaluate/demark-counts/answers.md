@@ -22,6 +22,10 @@ A loop over any of them is the same mistake, and three count *columns* produced 
 Setup and the two countdowns share a shape: a condition per candle, then a run or a tally over it.
 Write one counting function parameterised by the condition rather than three near-copies.
 
+**The value column is a float, and that is a decision about the tool rather than about counts.**
+A DeMark count is a whole number, so the type only makes sense once you know the brief means the column to hold an EMA or an RSI later and `cat` to stack them.
+A build that narrows it to an integer because these particular values are whole has optimised away the one thing the column was widened for, and the next indicator finds two shapes that will not concatenate.
+
 **Signed counts remove the direction column.** The sign carries the direction and the magnitude the position, so `Direction` never becomes a column or a type — it survives only as a rendering concern.
 
 **`aligned` is what leaves the tool, so there is no fourth shape.**
