@@ -15,10 +15,6 @@ They are symbols, not indices: an index reaches this group the same way it reach
 
 Two bounds and a timeframe, spelled exactly as `trade symbol get-candles` spells them.
 
-- `-s`, `--start DATE` is the earliest date I want back.
-- `-e`, `--end DATE` is the latest.
-- `-t`, `--timeframe` picks a timeframe, given once per timeframe I want.
-
 Both bounds are inclusive, and naming the same date twice asks for that one day.
 Leave `--end` off and it **defaults to today**; leave `--start` off and it means that same day alone, since a single day is what I want most of the time.
 Leave `--timeframe` off and I get all three.
@@ -37,8 +33,7 @@ It comes in the build after this one, so leave it out entirely: no option, no co
 
 ## Reusing candles
 
-- `-l`, `--load PATH` counts candles I have already fetched, instead of fetching them again.
-
+I can hand it candles I already have instead of symbols to go and fetch.
 What it reads is what `trade symbol get-candles` writes, so the two are ends of one file.
 Fetching a whole index is the slow part and the counting is free, so let me pay for the candles once and count them as often as I like.
 

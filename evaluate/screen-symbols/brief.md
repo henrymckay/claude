@@ -25,7 +25,7 @@ They are symbols, not indices, so `trade index get-symbols sp-500 | trade screen
 
 ## Conditions
 
-- `-w`, `--where NAME LOWER UPPER`, given once per condition I want.
+Each is a name and two bounds, given once per condition I want.
 
 `NAME` is an indicator on a timeframe, spelled as the column it produces: `daily_setup`, `weekly_sequential`, `monthly_combo` and the rest of the nine.
 Both bounds are inclusive, and naming the same value twice asks for exactly that one.
@@ -38,10 +38,7 @@ I never want to say that twice, so there is no separate option for it here.
 
 ## Dates
 
-- `-s`, `--start DATE` is the earliest date I want back.
-- `-e`, `--end DATE` is the latest.
-
-Spelled and defaulting exactly as they do in the `demark` group: inclusive, `--end` today, `--start` that same day alone.
+Two bounds, spelled and defaulting exactly as they do in the `demark` group: inclusive, `--end` today, `--start` that same day alone.
 
 They bound what I am shown, not what has to be fetched.
 An indicator on a date is only right if the candles before it were counted too, so screening one day still needs a run of candles behind it, and screening a year needs that year and more.
@@ -49,8 +46,7 @@ Work out how much for yourself — I am telling you the dates I care about, not 
 
 ## Reusing counts
 
-- `-l`, `--load PATH` screens indicator values I have already worked out, instead of fetching and counting again.
-
+I can hand it indicator values I already have instead of symbols to go and fetch and count.
 What it reads is what a `trade demark` command writes, so the two are ends of one file.
 Screening the S&P is slow in the fetching and free in the screening, so let me pay once and try as many sets of conditions against it as I like.
 
