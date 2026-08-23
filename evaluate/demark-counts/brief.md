@@ -84,7 +84,7 @@ It goes out the same ways `trade symbol get-candles` already goes, spelled the s
 The `rich` one differs in more than styling.
 Plain output carries the sign, where the `rich` table shows every count positive and lets the colour say which it is, red for a sell and green for a buy.
 
-The `rich` table is long too.
+The `rich` table is long too, because `--pretty` never reshapes anything.
 A column per count on each timeframe is what a screen wants, and a screen is its own build.
 
 ## Counts

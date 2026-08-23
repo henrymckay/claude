@@ -148,6 +148,10 @@ Two are common to every command in the tool:
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-p`, `--pretty` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
 
+`--pretty` never changes the shape of what comes back — same rows, same columns, in the same order.
+It is the plain answer made readable, and that holds in every group added later.
+Where a group has something a colour can say better than a character, it may say it that way, but it may not add, drop or rearrange a thing.
+
 ## Examples
 
 ```bash

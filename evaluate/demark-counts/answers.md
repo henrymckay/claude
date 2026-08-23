@@ -32,7 +32,8 @@ A build that narrows it to an integer because these particular values are whole 
 The brief fixes the output long — five columns whatever the options — which deletes the pivot this rung would otherwise have needed and the argument about whose job it is.
 That is the option surface deciding a core shape, and rightly: `--timeframe` means a wide frame's columns would depend on what was asked for, and a schema that varies with the flags is not a schema.
 
-Should the `rich` table later widen, the pivot is a **transform** the driver calls before rendering, not something the renderer does — a change of grain is a seam, and an API serving the same report wants the same pivot with a different renderer.
+Nor does `--pretty` bring one back: the brief fixes it as the same rows and columns made readable, so there is no shape in this group for a renderer to change.
+That is what makes the rule enforceable rather than a matter of taste — a pivot is a change of grain and therefore a seam, and a seam in a renderer is one a second entry point has to write again.
 
 **Alignment is a containment join, nothing more.** A weekly count attaches to a weekly candle and has to be spread across the days that candle covers before it can sit beside a daily count on the same row.
 Nothing is reconstructed as of a past date — there is no "the weekly candle as it stood last Wednesday", so there is no per-date rebuild and none of the machinery that would make one fast.
@@ -54,7 +55,7 @@ That is the test of whether the last build declared it well, and it passes only 
 **One operation, shared by all four commands**, because they differ by which counts reach the output rather than by what they do.
 It takes symbols and the same bounds and timeframes `get_candles` takes, calls that port, and hands the frame to the counting transform.
 
-**Still open:** whether the `rich` table widens. The plain form is long and that is fixed; the pivot, if it ever arrives here, is the one the screening build owns.
+**Nothing is left open here.** Both forms are long, the pivot belongs to the screening build, and the operation's signature follows from the brief without waiting on anything.
 
 ## What the build earns
 
@@ -137,11 +138,11 @@ Bias the walk and measure where it lands before trusting the result.
 - **A cancellation rule expressed circularly**, depending on the countdown state it is supposed to end.
 - **Chained `.over()`**, above — the failure is silent, so only the reference catches it.
 - **Optimising before there is a correct simple version.** An optimisation that changes what a function takes has leaked into the interface.
-- **Pivoting at all**, when the brief fixes the output long — and, should the `rich` table later want columns, hand-rolling that pivot as a `reduce` over per-timeframe joins.
+- **Pivoting at all**, when the brief fixes both forms long.
 - **Building the filtering anyway.** The brief puts it in the next build and says why: the thing wanted is a symbol satisfying several conditions across different rows, which bounds on one column cannot express.
 Guessing at a mechanism here means the real one arrives as a breaking change to a published surface.
 - **Dates as their own type hierarchy.** A latest/on/span sum type, when a date is a bound like any other and "latest" is a default of today.
 - **Filtering the dates before counting**, which starves the run counter of the history it needs.
 The bound selects rows at the end and sizes the fetch at the start, and does nothing in between.
-- **Widening in the renderer**, which puts a change of grain in the driver and leaves a second entry point to repeat it — the trap waiting if the `rich` table is ever given columns.
+- **Reshaping under `--pretty`**, which makes the readable form a different answer rather than the same one, so what you check by eye is never what a script receives.
 - **A `--format` flag that only changes colour**, leaving the piped output as unparseable as the pretty one.
