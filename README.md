@@ -83,7 +83,8 @@ Each build below carries on from the last, adding a group to one `trade` command
 
 - [`index-symbols`](evaluate/index-symbols) builds `trade index`, expanding the name of an index or a fund into the symbols it holds.
 - [`symbol-data`](evaluate/symbol-data) adds `trade symbol`, fetching candles on three timeframes, describing a ticker, and searching for one.
-- [`demark-counts`](evaluate/demark-counts) adds `trade demark`, counting setups and countdowns into a filtered table.
+- [`demark-counts`](evaluate/demark-counts) adds `trade demark`, counting setups, sequentials and combos over those candles.
+- [`screen-symbols`](evaluate/screen-symbols) adds `trade screen`, pivoting those counts wide and returning the symbols matching every condition.
 
 ## 📚 Learn more
 
