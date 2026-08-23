@@ -38,10 +38,11 @@ That concatenation appends the restored columns rather than ordering them, so th
 
 **A `transform` for the conditions themselves**, turning what the driver parsed into the frame the filter is built from — pure, and the only part with any subtlety in it.
 
-**`--load` narrows and cannot broaden, and that falls out of `-o` writing the plain form.**
-The saved file is the filtered result, so the rows that failed are gone and the columns nobody asked about were never computed.
-Saving the unfiltered frame instead would fix it and break something worth more — the file `-o` writes would stop being the bytes standard output carries, which every brief has insisted on since the first.
-So the limit is the right trade, and the build's job is to fail clearly on a condition naming an absent column rather than to return nothing and let it read as no matches.
+**`--load` reads the stage before, not this stage's own output.**
+That is what makes it useful rather than merely symmetrical: a `demark` file is unfiltered and carries every indicator computed, so any set of conditions can be tried against it.
+Had it read a saved screen instead, the file would already be filtered down to the columns and rows one set of conditions left, and loading it could only ever tighten what was asked the first time.
+
+The rule generalises, and a build that sees it has understood the pipeline rather than the command: every stage past the first can be handed the previous stage's output instead of doing that work again, and the interchange format is the plain form each already writes.
 
 **A reader, not a port, for `--load`.** Reading a file the tool itself wrote is IO, so it belongs at the edge; but it is not a *port*, because the core does not call outward for it — the driver reads the file and passes the frame in, exactly as it passes symbols in.
 A build that invents `port.Saved` has made a port out of the driver's own input.
@@ -79,7 +80,7 @@ The reflex is an `if` around the filter instead, which is exactly the Python con
 **`--load` makes the group's own output an input**, which is what makes the surface composable rather than merely pipe-friendly — and it is the pair `write-entry-points` describes, where the stage boundary already exists so the file is writable at all.
 
 **It is not `--file` under another name**, and a build that folds them together has broken both.
-`--file` names a list of symbols and `--load` names a saved wide table: different shapes, and one supplies what the other has already consumed.
+`--file` names a list of symbols and `--load` names the previous stage's table: different shapes, entering the pipeline at different points, and one supplies what the other still has to be turned into.
 They are mutually exclusive, and the brief says to refuse rather than guess — which is the same instruction as reading standard input only when nothing was named, arriving from the other side.
 
 **Where a good build should push back.** The columns depend on the options, which every earlier brief went out of its way to prevent, and this one asks for on purpose.

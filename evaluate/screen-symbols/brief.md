@@ -47,21 +47,18 @@ They bound what I am shown, not what has to be fetched.
 An indicator on a date is only right if the candles before it were counted too, so screening one day still needs a run of candles behind it, and screening a year needs that year and more.
 Work out how much for yourself — I am telling you the dates I care about, not the dates you need.
 
-## Reusing a run
+## Reusing counts
 
-- `-l`, `--load PATH` screens a table I have already produced instead of fetching anything.
+- `-l`, `--load PATH` screens indicator values I have already worked out, instead of fetching and counting again.
 
-It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the table already says which symbols and which dates it holds.
+What it reads is what a `trade demark` command writes, so the two are ends of one file.
+Screening the S&P is slow in the fetching and free in the screening, so let me pay once and try as many sets of conditions against it as I like.
+
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the file already says which symbols and which dates it holds.
 Don't take both and guess which I meant.
 
-This is the thing I said I would come back to.
-Screening the S&P is slow and I will want to try three sets of conditions against one run of it, so let me save what came back and screen that.
-What it reads is what this group writes, so `-o` and `-l` are two ends of the same file.
-
-That bounds what it can do, and I would rather live with the bound than have two output shapes.
-A saved run holds only the columns I asked for and only the rows that passed, so loading one lets me **tighten** a condition and never loosen one or add an indicator I did not ask for the first time.
-When I mean to try several sets against one run, I save it wide open — every indicator I might want, with bounds that exclude nothing — and narrow from there.
-A condition naming a column the file does not have is an error saying so, not an empty screen.
+A condition naming an indicator the file does not carry is an error saying so, not an empty screen.
+The two read very differently and only one of them is my mistake.
 
 ## Output
 
@@ -88,8 +85,9 @@ trade screen find AAPL --where daily_setup 7 9
 trade screen find -f sp500.txt --where daily_setup 7 9 --where weekly_setup -3 -1
 trade index get-symbols sp-500 | trade screen find --where daily_setup 9 9
 trade index get-symbols ftse-100 | trade screen find --where weekly_combo 11 13 -t
-trade screen find -f sp500.txt --where daily_setup 7 9 -o hits.csv
-trade screen find --load hits.csv --where daily_setup 9 9
+trade demark count -f sp500.txt -o counts.csv
+trade screen find --load counts.csv --where daily_setup 7 9
+trade screen find --load counts.csv --where weekly_combo 11 13 --where daily_setup -9 -9
 trade screen find -f sp500.txt --where daily_setup 8 9 -s 2026-01-01 -e 2026-03-01
 trade screen find -f sp500.txt --where daily_setup 9 9 | cut -d, -f3 | trade symbol get-candles
 ```

@@ -35,6 +35,19 @@ On a day the market has not traded, today means the most recent day it did.
 What I am ultimately after is a symbol with an early sell setup on the weekly *and* a late buy setup on the daily, both true at once — a claim about a symbol across several rows rather than a bound on any one column, and a build of its own.
 It comes in the build after this one, so leave it out entirely: no option, no column of its own, and no filtering behind the fetch bounds above.
 
+## Reusing candles
+
+- `-l`, `--load PATH` counts candles I have already fetched, instead of fetching them again.
+
+What it reads is what `trade symbol get-candles` writes, so the two are ends of one file.
+Fetching a whole index is the slow part and the counting is free, so let me pay for the candles once and count them as often as I like.
+
+It replaces the symbols entirely rather than narrowing them, so it does not go with arguments, `-f` or anything on standard input — the file already says which symbols it holds.
+Don't take both and guess which I meant.
+
+`--start`, `--end` and `--interval` still say what I want back, they just have nothing left to fetch.
+The file has to carry enough history behind my dates for the counts to be right; that is my problem when I save it, not yours when you read it.
+
 ## Commands
 
 Four in the group.
@@ -131,6 +144,9 @@ trade demark count AAPL -i daily -i weekly
 trade demark count AAPL -s 2026-01-01 -e 2026-03-01
 trade demark count < symbols.txt
 trade demark count -f symbols.txt -t
+trade symbol get-candles -f sp500.txt -o candles.csv
+trade demark count --load candles.csv
+trade demark count-setup --load candles.csv -i daily
 trade index get-symbols sp-500 | trade demark count
 trade index get-symbols dow-jones | trade demark count -o counts.csv
 trade index get-symbols sp-500 | trade demark count-setup -i daily | awk -F, '$5 >= 8'

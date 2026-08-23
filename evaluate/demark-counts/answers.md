@@ -43,6 +43,11 @@ The selection the brief defers is a different thing entirely: it answers about a
 
 ## What this build declares
 
+**`--load` needs a reader at the edge, and not a port.**
+Reading candles the tool itself wrote is IO, so it belongs to the driver; it is not an outward call the core makes, so the core never learns about it.
+The operation takes candles either way — fetched through the port, or read from the file — which is why one operation serves both paths and neither knows which happened.
+That is the whole payoff of the operation taking candles rather than symbols, and it is why the option costs a branch in the driver and nothing anywhere else.
+
 **No new port.** The counting is pure, so what this group needs from outside is candles, which `port.Candles` already gives it.
 That is the test of whether the last build declared it well, and it passes only because the bounds and intervals stayed on the port rather than being bound into an adapter one group had curried for itself.
 
