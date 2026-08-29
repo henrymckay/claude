@@ -44,7 +44,7 @@ Give them to me in a settled order, so I can diff two runs and read what changed
 What each symbol *is*, rather than what it costs.
 It comes from `yfinance` too, the same as the candles do.
 
-One row per symbol, carrying that symbol, its short name and its long name, the exchange and the market it trades on, its currency, what kind of instrument it is, its market capitalisation, and its sector and industry.
+One row per symbol, carrying that symbol, its short name and its long name, the exchange and the market it trades on, the country it is in, its currency, what kind of instrument it is, its market capitalisation, and its sector and industry.
 Eleven columns, the same eleven every run.
 
 Yahoo hands back a couple of hundred fields per symbol and I want those eleven.
@@ -106,13 +106,13 @@ Three in the group.
 
 ## Output
 
-The same table the `index` group already answers with, and the same two options — several columns now where the symbols had one.
+The same table the `index` group already answers with, and the same `-o` and `-p` — several columns now where the symbols had one.
 
 - `get-candles` has `close`, `date`, `high`, `low`, `open`, `symbol`, `timeframe` and `volume`.
 - `get-info` has `country`, `currency`, `full_exchange_name`, `industry`, `long_name`, `market`, `market_cap`, `quote_type`, `sector`, `short_name` and `symbol`.
 - `look-up` has `exchange`, `quote_type`, `rank`, `short_name` and `symbol`.
 
-Alphabetical, as they already are.
+Those columns come back alphabetically, as the `index` group's already do.
 
 Yahoo spells its fields in camel case and I do not want to read them that way, so `fullExchangeName` reaches me as `full_exchange_name`.
 

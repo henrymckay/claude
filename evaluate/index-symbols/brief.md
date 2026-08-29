@@ -126,7 +126,7 @@ Two commands in the group, because finding out what I can expand is a different 
 - `trade index catalogue` gives me the indices I follow.
 
 `catalogue` is how I remind myself which indices I have set up rather than a list of everything that works, since any ETF symbol expands whether it appears there or not.
-Everything this brief lists belongs in it, the packaged ones and the funds and the investors and the rankings alike.
+Everything this brief lists belongs in it — the funds, the investors and the rankings — and so does every index the packaged dataset ships, which I have not listed because the package already has.
 It writes one index per line, sorted, the same as the symbols do, so I can grep it.
 
 Every index in it has to expand, and expand to something.
