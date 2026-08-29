@@ -106,13 +106,13 @@ Three in the group.
 
 ## Output
 
-The same table, the same two options and the same plain form `trade index get-symbols` already answers with — comma-separated, no heading row, columns in alphabetical order.
-`-o` writes to a file I name and `-p` shows a `rich` table, spelled exactly as they already are.
-Several columns now where the symbols had one, and that is the only thing that changes.
+The same table the `index` group already answers with, and the same two options — several columns now where the symbols had one.
 
 - `get-candles` has `close`, `date`, `high`, `low`, `open`, `symbol`, `timeframe` and `volume`.
 - `get-info` has `country`, `currency`, `full_exchange_name`, `industry`, `long_name`, `market`, `market_cap`, `quote_type`, `sector`, `short_name` and `symbol`.
 - `look-up` has `exchange`, `quote_type`, `rank`, `short_name` and `symbol`.
+
+Alphabetical, as they already are.
 
 Yahoo spells its fields in camel case and I do not want to read them that way, so `fullExchangeName` reaches me as `full_exchange_name`.
 
@@ -121,13 +121,18 @@ That spelling is between you and the library and I should never see it.
 
 `date` is the day the candle's period **begins**: the Monday for a weekly row and the first of the month for a monthly one, not a day somewhere inside the period and not the day it ended.
 
-`--pretty` has more to say here than it had in the first group.
+That table comes back the same two ways it does in the `index` group.
+
+**Plain, and that is the default.** Comma-separated with **no heading row**, so it pipes straight into whatever comes next.
+
+**Formatted, when I ask for it with `-p`.** The `rich` table, with the heading row the plain form leaves off and a count at the end.
+It has more to say here than it had in the first group.
 
 - A candle reads **green** where it closed at or above its open and **red** where it closed below, so I see the direction without comparing two columns myself.
 - `volume` carries a bar beside the number, scaled against the other candles for that same symbol, so a heavy day shows up without my counting digits.
 - Numbers group their digits in threes and line up on the right, since a market capitalisation I have to count my way along is not readable.
 
-Same rows, same columns, same order as the plain form, exactly as the first group fixed it.
+Still the same rows, the same columns and the same order as the plain form, exactly as the first group fixed it.
 None of that is a column: everything the colour and the bar say is already in the row, said better.
 
 ## Arguments and options
