@@ -146,7 +146,10 @@ It is one less thing to remember, and it means a column added later lands somewh
 The plain form is comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
 Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
 
-`--pretty` is the only place a heading appears, and it is the column's own name — the same word the plain form would have put there had it carried a heading row.
+`--pretty` is the other form of the same answer, never a different one — same rows, same columns, in the same order, and that holds in every group added later.
+Where a group has something a colour can say better than a character, it may say it that way, but it may not add, drop or rearrange a thing.
+
+It is the only place a heading appears, and the heading is the column's own name, the same word the plain form would have put there had it carried a heading row.
 I read one and script against the other, so I do not want to translate between two spellings of one column.
 
 ## Arguments and options
@@ -165,10 +168,6 @@ Two are common to every command in the tool:
 One belongs to `get-symbols` alone, and keeps its spelling wherever a later group takes an input:
 
 - `-i`, `--input PATH` reads the indices from that file rather than from standard input.
-
-`--pretty` never changes the shape of what comes back — same rows, same columns, in the same order.
-It is the plain answer made readable, and that holds in every group added later.
-Where a group has something a colour can say better than a character, it may say it that way, but it may not add, drop or rearrange a thing.
 
 ## Examples
 
