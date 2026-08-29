@@ -181,8 +181,10 @@ trade index get-symbols TAN
 trade index get-symbols ARKK -p
 trade index get-symbols ARKK -o ark.txt
 trade index get-symbols sp-500 > sp-500.txt
-trade index get-symbols ftse-100 | grep '\.L$'
 trade index get-symbols -i indices.csv
+trade index get-symbols < indices.csv
+trade index get-symbols ftse-100 | grep '\.L$'
+comm -12 <(trade index get-symbols ARKK) <(trade index get-symbols ARKW)
 diff <(trade index get-symbols SMH) <(trade index get-symbols SMH.L)
 ```
 
