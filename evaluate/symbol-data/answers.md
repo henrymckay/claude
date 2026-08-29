@@ -3,7 +3,7 @@
 The design a good build reaches, and the wrong turns that miss it.
 None of it appears in the brief — each line is something the skills alone should produce.
 
-**Grade against [`../index-symbols/answers.md`](../index-symbols/answers.md) as well as this file.**
+**Grade against `../index-symbols/answers.md` as well as this file.**
 Everything that one declares still stands: the two ports and two operations, the `error` package and its decorators, the three driver packages, the pair of renderers, and the transports resolving to one input.
 This file records only what this build adds to them or changes about them, so a build diverging from that file diverges here too, and nothing in it is repeated for being still true.
 

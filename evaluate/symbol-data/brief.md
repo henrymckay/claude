@@ -1,7 +1,7 @@
 # Symbol data brief
 
 Carry on from the `trade` tool, the one whose `index` group expands an index into the symbols it holds.
-That group is specified in [`../index-symbols/brief.md`](../index-symbols/brief.md).
+That group is specified in `../index-symbols/brief.md`, beside this file.
 **Read it before this one.**
 Everything it fixes still holds here and is not repeated: the plain output form and its two options, how input reaches a command, how a failure is reported, and how an option is spelled.
 Where this brief says a thing is spelled as it already is, that file is what it means.
