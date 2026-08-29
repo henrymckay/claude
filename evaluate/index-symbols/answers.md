@@ -168,9 +168,9 @@ What the decorators cannot do is **classify**: which status the far end answered
 - Say who you are, and expect to be refused unevenly where you do not.
 A tool name, a version and an address a publisher could reply to is the honest default and what these publishers accept; `www.sec.gov` refuses any user agent carrying no address, and some CDN-fronted services refuse anything that is not a browser string.
 Which is which is found by trying, so what matters is setting the header deliberately rather than any one string being right — never setting one works against some publishers and not others, which is worse than failing everywhere because it looks like it works.
-- **The address in it is read from the environment**, since the brief makes it the caller's to give and change, which rules out a constant in the source.
-One variable read at the composition root and passed to the fetch's `headers()` is where `structure-python` puts configuration arriving at an edge, and it is not the configuration layer ruled out above: one value with one reader is not a layer.
-A `--user-agent` option is the other tempting answer and is worse, since it makes every invocation carry a value that changes about once a year.
+- **The address is a constant the tool ships**, so `headers()` needs nothing injected into it.
+It identifies the program rather than whoever is running it, and it changes about once a year, so an environment variable, a settings file or a `--user-agent` option are each the configuration layer ruled out above dressed as one value.
+Reaching for one is the same over-build as the registry, arriving through a header instead of a publisher.
 - Set a timeout.
 A published holdings file is somebody else's server, and a hung request with no deadline is the failure that wastes the most time.
 - Retry the transient and only the transient.

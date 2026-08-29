@@ -32,7 +32,7 @@ A request that times out, is refused, or comes back complaining about the far en
 A refusal that tells me the thing does not exist is a real answer, and I want that one straight away rather than after a wait.
 
 Some of these places will not answer unless a caller leaves them a way to reply to it.
-Let me set that address myself rather than shipping one inside the tool, since it is mine to give and mine to change.
+Ship one inside the tool rather than asking me for it, since it is the tool identifying itself rather than me, and I would set it once and never touch it again.
 
 They reach the command whichever way suits what I am doing at the time.
 
