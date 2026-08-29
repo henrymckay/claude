@@ -210,6 +210,8 @@ The month comes back only when the range starts on or before its first calendar 
 For the month still in progress it is worse than empty: a start after the first returns a row stamped `2026-08-28`, the last trading day rather than the period's first, carrying values that match no calendar month and do not change with the start asked for.
 A build that trusts the stamp has a monthly candle dated to a Friday.
 
+None of it is documented: `start` is described as inclusive and `end` as exclusive, with no mention of alignment anywhere, and the weekly interval does not even honour the exclusivity — so this is found by measuring or it is not found at all.
+
 So each timeframe's bounds are widened to the periods containing them before the request is built, and daily is that same derivation returning the dates it was given rather than a branch that skips it.
 Widening the end makes the extra day added for exclusivity harmless here — a weekly request ending on the following Monday still returns only the week asked for — so the two corrections compose rather than fighting.
 

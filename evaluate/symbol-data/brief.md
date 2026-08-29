@@ -141,9 +141,12 @@ On `get-candles`:
 Both bounds are **inclusive**, so naming the same date twice asks for that one day and gets it back rather than nothing.
 
 A candle is in range when the period it covers is, not when the day it is stamped with is.
-Start me on a Wednesday, end me on the Friday and ask for daily and weekly, and I want three daily candles and one weekly — the week those three days sit inside, whole, stamped on its Monday.
+
+- **Daily** gives me every day the symbol traded between the two dates, inclusive.
+- **Weekly and monthly** give me every week and every month the range touches, each one whole.
+
+So a Wednesday to the Friday, asked for daily and weekly, is three daily candles and one weekly: the whole week those three days sit inside, stamped on its Monday.
 Not a week rebuilt out of the three days I named, and not no week at all because its Monday fell before the date I gave.
-The same holds for a month.
 
 So the dates I give are not the dates you need to fetch.
 Work out the rest for yourself — I am telling you the candles I want, not the range they have to be built from.
