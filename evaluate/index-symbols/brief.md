@@ -20,6 +20,8 @@ Tell me which of the two went wrong, since an index that is no ETF and a request
 
 I will not be careful about case, spacing or punctuation when I type one.
 `S&P 500`, `S&P-500`, `SP500` and `sp-500` are all the same index to me, and `dow-jones` is the same as `DOW JONES`.
+The full stop is the exception, since it separates a London listing from its symbol rather than being punctuation I was careless with.
+`SMGB.L` and `SMGBL` are two different things and must never collapse into one.
 I do want them written back the way they are properly spelled, a symbol in capitals and an index as it is usually written.
 
 When I give several, one failure fails the whole run, whether that index was unknown or its holdings would not come.
@@ -46,8 +48,8 @@ Work out where each of them publishes.
 VanEck's two ranges are separate funds under one manager, so expect to find them in different places.
 
 Every London fund takes a `.L` suffix and every US one stays bare, which is how the tool already spells a London listing when it hands me symbols back.
-Six symbols are claimed by both ranges and a London fund never holds the same stocks as the US fund sharing its symbol.
-I still want the suffix on all eighteen rather than only on those six, because an index I have put in a script should not change the day VanEck lists something that collides with it.
+Six of those symbols appear in both ranges, where the London fund and the US fund sharing one are separate funds with separate books.
+The suffix is what tells the two apart, and I want it on all eighteen rather than only on those six, because an index I have put in a script should not change the day VanEck lists something that collides with it.
 
 Each answers to its own symbol, so `trade index get-symbols ARKK` and `trade index get-symbols IVES` work where `trade index get-symbols ARK` does not.
 All forty-eight appear in `catalogue` beside the packaged ones, each under the spelling that reaches it.
@@ -64,10 +66,11 @@ A fund whose holdings I cannot retrieve is an error saying so, not a fund that c
 
 ## Investors
 
-Three investors who disclose what they hold rather than running a fund whose book is published.
+Four investors who disclose what they hold rather than running a fund whose book is published.
 
 - Berkshire Hathaway.
 - Duquesne Family Office.
+- NVIDIA.
 - Situational Awareness.
 
 Each reports its US positions to the SEC once a quarter, so give me the most recent report and never an older one.
@@ -80,8 +83,8 @@ They answer to what they are called rather than to a symbol, so `trade index get
 
 Two lists that rank companies rather than hold them, and I want to expand them the same way as everything else.
 
-- `largest-companies`, the listed companies ranked by market capitalisation.
-- `largest-etfs`, the ETFs ranked the same way.
+- `large-companies`, the listed companies ranked by market capitalisation.
+- `large-etfs`, the ETFs ranked the same way.
 
 These are far longer than any fund, thousands of rows rather than tens, and they are worldwide rather than one country's market.
 Give me the top thousand of each and no more, since below that they are too small to be worth scanning.
@@ -154,28 +157,28 @@ Where a group has something a colour can say better than a character, it may say
 
 ## Examples
 
+Expanding an index.
+
 ```bash
-trade index get-symbols dow-jones
 trade index get-symbols sp-500
 trade index get-symbols "S&P 500"
-trade index get-symbols ARKK
 trade index get-symbols ARKK ARKW ARKG
-trade index get-symbols SMH
-trade index get-symbols SMH.L
 trade index get-symbols berkshire-hathaway
-trade index get-symbols largest-etfs
-trade index get-symbols dow-jones > dow-jones.txt
-trade index get-symbols ARKK -o ark.txt
-xargs trade index get-symbols < indices.csv
+trade index get-symbols large-companies
 trade index get-symbols TAN
-trade index get-symbols largest-companies
-trade index catalogue
-trade index catalogue | grep ARK
-trade index catalogue | grep ARK | xargs trade index get-symbols
 trade index get-symbols ARKK -p
+trade index get-symbols ARKK -o ark.txt
+trade index get-symbols sp-500 > sp-500.txt
 trade index get-symbols ftse-100 | grep '\.L$'
-comm -12 <(trade index get-symbols ARKK) <(trade index get-symbols ARKW)
+xargs trade index get-symbols < indices.csv
 diff <(trade index get-symbols SMH) <(trade index get-symbols SMH.L)
+```
+
+Finding out what I can expand.
+
+```bash
+trade index catalogue
+trade index catalogue | grep ARK | xargs trade index get-symbols
 ```
 
 ## Working style

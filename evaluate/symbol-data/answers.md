@@ -208,7 +208,7 @@ A list in the module fails that requirement outright rather than merely being un
 **A symbol Yahoo has nothing for returns a one-key dict.**
 It does not raise, exactly as the download does not, so `get-info` needs the same check of what came back against what was asked for — written once and shared, since it is the same rule twice.
 
-**There is no batch call.** `Ticker(...).get_info()` is one request per symbol, so `trade index get-symbols largest-companies | trade symbol get-info` is a thousand of them.
+**There is no batch call.** `Ticker(...).get_info()` is one request per symbol, so `trade index get-symbols large-companies | trade symbol get-info` is a thousand of them.
 That is the one-call-per-group case `use-polars` blesses, and it is where a rate limit is met.
 
 ### What `look-up` returns

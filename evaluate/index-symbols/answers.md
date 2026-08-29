@@ -30,6 +30,8 @@ Take a `polars.Expr` and both are one `.pipe()` over one function; leave the `.a
 
 **Names are matched loosely but written back canonically.**
 Case, spacing and punctuation are all things a caller gets wrong and none of them tell one index from another, so `sp-500`, `SP500` and `S&P 500` all reach the same index.
+**The full stop is the one that carries meaning**, since it separates a listing suffix from the symbol it qualifies, so it survives the normalisation every other mark is stripped by.
+Stripping every non-alphanumeric character is the reflex and it silently merges `SMGBL` into `SMGB.L` — a collision the catalogue cannot show you, because both spellings resolve and only one of them is the fund you meant.
 An ETF symbol and an index are both just text to the lookup, so one normalisation covers matching for both rather than each source inventing its own.
 The canonical spelling is what `catalogue` prints, a symbol in capitals and an index as it is usually written.
 
@@ -91,7 +93,7 @@ The count is what decides it, not the ceremony — one use case would be a funct
 
 ## What should not exist yet
 
-- **No caching, no configuration layer**, and no registry that publishers sign up to — fifty-three indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
+- **No caching, no configuration layer**, and no registry that publishers sign up to — fifty-four indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
 
 ## What this build declares
 
@@ -359,12 +361,12 @@ This is where the test suite is founded, and the next two builds inherit whateve
 
 - The suite lives apart from the source, with its own directory for the cases, its shared helpers and any data files it loads.
 - A recorded response proves the parse and not the source, so the build is not done until the declared surface has been run once against the real thing and the **counts** read.
-Seventy-three catalogued indices is seventy-three expansions, and the one returning nothing has passed every check the program can make on itself — which is how a packaged index with no symbols in it ships.
+Seventy-four catalogued indices is seventy-four expansions, and the one returning nothing has passed every check the program can make on itself — which is how a packaged index with no symbols in it ships.
 - Tests of a dependency's own behaviour sit a level apart from tests of your code, because they fail for a different reason and on somebody else's schedule.
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.
 
-Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, an index typed with the wrong case, spacing and punctuation, one only the fallback resolves, one nothing resolves, and a fund whose request fails.
+Worth their own cases: a US stock whose bare symbol appears among its listings and a foreign one where it does not, an index typed with the wrong case, spacing and punctuation, a bare symbol that differs from a London one only by its full stop, one only the fallback resolves, one nothing resolves, and a fund whose request fails.
 
 ## Wrong turns
 
@@ -390,5 +392,6 @@ The seam an adapter closes is every library it touches, and a packaged dataset i
 - **Naming a port's call with a bare noun.** `holdings(name)` reads as an attribute, so it gets called wherever convenient and the same document is fetched twice in one run with nothing in the name to suggest it would be.
 - **Building an address with `+`.** It works until a base gains or loses its trailing slash, and then it fails as a 404 that looks like the publisher moved the file.
 - **Sending a named fund to the general ETF source** because it answers, when its own issuer publishes the whole book and the general source publishes the top of it.
+- **Normalising the full stop away with the rest of the punctuation**, so a bare symbol and a London listing spelled alike become one index and the wrong book comes back.
 - **Silently dropping an unmatched index**, which turns a typo into an empty report much later.
 The brief asks for an error, and an empty frame written to standard output is not one.

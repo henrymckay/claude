@@ -165,7 +165,7 @@ trade index get-symbols ftse-100 | trade symbol get-candles > ftse.csv
 trade symbol get-info NVDA
 trade symbol get-info NVDA SMH '^NDX' 'GC=F' 'BTC-USD' 'GBP=X'
 trade index get-symbols ARKK | trade symbol get-info
-trade index get-symbols largest-companies | trade symbol get-info -o scan.csv
+trade index get-symbols large-companies | trade symbol get-info -o scan.csv
 
 trade symbol look-up nvidia
 trade symbol look-up '^' --kind index
