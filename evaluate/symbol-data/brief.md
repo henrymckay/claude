@@ -1,12 +1,14 @@
 # Symbol data brief
 
 Carry on from the `trade` tool, the one whose `index` group expands an index into the symbols it holds.
-If you are starting without it, build that much first, since I still want to give an index rather than list its symbols out.
+If you are starting without it, read that brief alongside this one and build the two together rather than finishing the first and coming back.
+I still want to give an index rather than list its symbols out, and a tool built as though `index` were all there would ever be has to be taken apart to make room for this.
 
 Now I want the tool to say things about the symbols themselves — what they cost, what they are, and how to find one when I do not know its symbol.
 
 A second group, `symbol`, beside the `index` group already there.
-Nothing in the first group moves or is renamed to make room for it.
+Nothing about how I use the first group changes: the same commands, the same options, the same output.
+Behind that, move whatever this build needs moved — if the first group was written as though it would be the only one, this is where that gets put right rather than worked around.
 
 ## Candles
 
@@ -137,9 +139,15 @@ On `get-candles`:
 - `-t`, `--timeframe` picks a timeframe, given once per timeframe I want: `-t daily -t weekly`.
 
 Both bounds are **inclusive**, so naming the same date twice asks for that one day and gets it back rather than nothing.
-A candle is in range when its `date` is, so a weekly row is in or out by the Monday its week began.
+
+A candle is in range when the period it covers is, not when the day it is stamped with is.
+Start me on a Wednesday, end me on the Friday and ask for daily and weekly, and I want three daily candles and one weekly — the week those three days sit inside, whole, stamped on its Monday.
+Not a week rebuilt out of the three days I named, and not no week at all because its Monday fell before the date I gave.
+The same holds for a month.
+
+So the dates I give are not the dates you need to fetch.
+Work out the rest for yourself — I am telling you the candles I want, not the range they have to be built from.
 Leave `--start` off and I get as far back as Yahoo will go; leave `--end` off and I get everything up to today.
-Here they are the whole of what gets fetched, since there is nothing to work out that needs more than I asked for.
 Leave `--timeframe` off and I get daily alone.
 
 On `look-up`:

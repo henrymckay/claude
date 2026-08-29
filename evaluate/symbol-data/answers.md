@@ -198,6 +198,16 @@ An index expansion is five hundred symbols in a single `download`, which is wher
 So the adapter adds a day to the bound it was handed, in the one place that knows the two conventions differ.
 Passing it straight through loses the last candle of every run without saying so, and answers nothing at all for a single day.
 
+**A coarse candle is fetched by its period, not by the caller's dates**, and getting that wrong fails two ways without a word either time.
+`AAPL` from a Wednesday to the Friday at `1wk` comes back as one row stamped on the Monday — the right stamp — whose open and low are built from those three days alone: 309.36 and 305.67 against the whole week's 309.58 and 301.32.
+It is the partial week the brief forbids, wearing a complete week's date, and nothing downstream can tell.
+The same request at `1mo` returns an **empty frame**, so the month vanishes instead of arriving wrong.
+So each timeframe's bounds are widened to the periods containing them before the request is built, and daily is that same derivation returning the dates it was given rather than a branch that skips it.
+
+**Widening per timeframe is what keeps the bounds parameters of the fetch rather than a filter.**
+Each request then returns exactly the periods intersecting what the caller asked for, with nothing to trim afterwards — where widening once to the coarsest timeframe would drag extra daily rows in and need a filter to take them out again.
+Which day a week begins on is the domain's knowledge and not the library's, so the derivation is a core function the request is built from, and it is the shape the next rung's warm-up margin takes on top of it.
+
 **`--count` is a ceiling, not a target.**
 A search for `nvidia` capped at 250 comes back with 56, because that is what Yahoo matched.
 A build that pages to make up the difference has invented a requirement out of a number that was always an upper bound.
@@ -326,6 +336,7 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 - That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
 - That each of them caps at 25 unless told otherwise, which is the default that makes a search look answered.
 - That `end` excludes its own date on every interval, and that an equal `start` and `end` return nothing — the two facts the inclusive bounds are built on.
+- That a `1wk` request starting mid-week returns a week built from the days asked for, and a `1mo` one returns nothing at all — the two failures the widening exists to prevent, and neither raises.
 
 **The default run must not touch the network.**
 Record one response covering two symbols on different exchanges, keep it beside the tests as a data file, and parse that.
@@ -338,6 +349,7 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 ## Wrong turns
 
 - **Resampling dailies into weeks and months**, a transform invented for a problem the data source already solves.
+- **Passing the caller's dates straight into a weekly or monthly request**, which answers with a partial week wearing a whole week's date, or with no month at all.
 - **A call per timeframe stitched together by the caller**, leaving the core to concatenate what the adapter should have returned whole.
 - **Taking `yfinance`'s defaults**, so the closes are dividend-adjusted and the history is one month, and every test still passes.
 - **Keeping `Adj Close`**, which leaves the number the brief rejected in the frame beside the one it asked for.
