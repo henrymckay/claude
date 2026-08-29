@@ -118,6 +118,17 @@ A driver calling `get_symbols` and then `get_candles` has rebuilt the stage the 
 
 This is where `pandas` meets `polars` and the rung is mostly judged on it.
 
+**One `yfinance` call serves each command**, and finding which is the first work of the rung:
+
+| command | call | what comes back |
+|---|---|---|
+| `get-candles` | `yfinance.download` | one frame carrying every symbol, its columns a `MultiIndex` of `Price` over `Ticker` |
+| `get-info` | `yfinance.Ticker(symbol).get_info()` | a `dict` per symbol, so one request each |
+| `look-up` | `yfinance.Lookup(query).get_<kind>(count)` | a frame indexed by symbol, one method per kind |
+
+A wide frame, a dict and a narrow frame: the three agree on nothing but their library, so the adapter is three parses sharing a package rather than one parse generalised over them.
+Each also carries defaults that are wrong for this brief and quiet about it, which is what the rest of this section is.
+
 **Every default `yfinance.download` carries is wrong for this build, and each one fails quietly.**
 
 - `auto_adjust` defaults to **`True`**, which is the dividend-adjusted close — precisely what the brief rules out.
@@ -213,6 +224,14 @@ That is the one-call-per-group case `use-polars` blesses, and it is where a rate
 
 ### What `look-up` returns
 
+**`Lookup` rather than `Search`, and the brief's own options say which.**
+`yfinance.Search` takes a `max_results` and hands back quotes mixed with news, lists and navigation links, with no way to ask for one kind of instrument.
+`yfinance.Lookup` has a method per kind and a `count` on each — which is `--kind` and `--count` exactly, so the option surface the brief describes is the tell for which call was meant.
+A build reaching for `Search` because the command searches has matched the English rather than the requirement, and then has to filter the kind itself out of a field the results may not carry.
+
+**`count` defaults to 25 where the brief says a hundred.**
+Every one of those methods takes `count=25`, so an adapter that omits it answers a quarter of what was asked for — the same quiet default as `auto_adjust`, arriving in the one command where a short answer is indistinguishable from a genuine result.
+
 **Do not reach the method by an interpolated name.**
 `yfinance.Lookup` spells them `get_all`, `get_cryptocurrency`, `get_currency`, `get_etf`, `get_future`, `get_index`, `get_mutualfund` and `get_stock` — note it is `get_cryptocurrency`, not `get_crypto`.
 A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a string nothing checks, so the wrong guess is an `AttributeError` in front of the user rather than an error at import.
@@ -305,6 +324,7 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 - That the index converts to a `Datetime` rather than a `Date`.
 - That `get_info()` omits keys rather than nulling them, on an ETF and an index as well as a stock, and returns a near-empty dict for a symbol that does not exist.
 - That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
+- That each of them caps at 25 unless told otherwise, which is the default that makes a search look answered.
 - That `end` excludes its own date on every interval, and that an equal `start` and `end` return nothing — the two facts the inclusive bounds are built on.
 
 **The default run must not touch the network.**
