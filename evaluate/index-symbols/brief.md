@@ -135,6 +135,8 @@ I care what each gives back, not that the command exited cleanly.
 
 ## Output
 
+Every command answers with a table.
+
 - `trade index catalogue` has one column, `index`.
 - `trade index get-symbols` has one column, `symbol`.
 
