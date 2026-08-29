@@ -5,7 +5,7 @@ This is the first piece of a bigger tool for scanning stocks, so I will keep add
 
 ## Indices
 
-One or more indices, given as arguments to `get-symbols`.
+Any number of indices, expanded by `get-symbols`.
 Some are indices proper and others are a fund, an ETF, an investor or a ranking — anything standing for a set of symbols.
 I call them all indices, since the tool treats them alike and the difference never reaches me.
 
@@ -33,6 +33,14 @@ A refusal that tells me the thing does not exist is a real answer, and I want th
 
 Some of these places will not answer unless a caller leaves them a way to reply to it.
 Let me set that address myself rather than shipping one inside the tool, since it is mine to give and mine to change.
+
+They reach the command whichever way suits what I am doing at the time.
+
+- Written out as arguments.
+- Read from a file I name.
+- Piped or redirected in on standard input, so `trade index catalogue | grep ARK | trade index get-symbols` just works.
+
+Nothing at all by any of the three is an error rather than an empty list, since an index is what the command is for.
 
 ## Funds
 
@@ -140,8 +148,8 @@ Same bytes whether I am at a terminal, in a pipe or in a script — I would rath
 
 ## Arguments and options
 
-`get-symbols` takes one or more indices as arguments and is an error given none.
-`catalogue` takes none at all.
+`get-symbols` takes any number of indices as arguments, or none at all where they arrive on standard input or from `--input`.
+`catalogue` takes no input of any kind, since there is nothing to give it.
 
 Every option has a long form and a single-letter short form.
 An option meaning the same thing keeps the same spelling everywhere it appears — in both commands here, and in every group added after this one.
@@ -150,6 +158,10 @@ Two are common to every command in the tool:
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
 - `-p`, `--pretty` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
+
+One belongs to `get-symbols` alone, and keeps its spelling wherever a later group takes an input:
+
+- `-i`, `--input PATH` reads the indices from that file rather than from standard input.
 
 `--pretty` never changes the shape of what comes back — same rows, same columns, in the same order.
 It is the plain answer made readable, and that holds in every group added later.
@@ -170,7 +182,7 @@ trade index get-symbols ARKK -p
 trade index get-symbols ARKK -o ark.txt
 trade index get-symbols sp-500 > sp-500.txt
 trade index get-symbols ftse-100 | grep '\.L$'
-xargs trade index get-symbols < indices.csv
+trade index get-symbols -i indices.csv
 diff <(trade index get-symbols SMH) <(trade index get-symbols SMH.L)
 ```
 
@@ -178,7 +190,7 @@ Finding out what I can expand.
 
 ```bash
 trade index catalogue
-trade index catalogue | grep ARK | xargs trade index get-symbols
+trade index catalogue | grep ARK | trade index get-symbols
 ```
 
 ## Working style

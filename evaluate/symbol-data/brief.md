@@ -67,7 +67,7 @@ That is a fact about Yahoo rather than something to build around, but it is why 
 
 ## Symbols
 
-`get-candles` and `get-info` take any number of symbols, given whichever way suits what I am doing at the time.
+`get-candles` and `get-info` take any number of symbols, given the same three ways `trade index get-symbols` takes indices.
 
 - Written out as arguments.
 - Read from a file I name.

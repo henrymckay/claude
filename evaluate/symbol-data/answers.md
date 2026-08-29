@@ -246,13 +246,13 @@ The three ports carry their own `:raises:` for the same reason `Publisher` does,
 
 ## The surface
 
-Symbols arrive three ways and the tool must not care which: as arguments, from a named file, or on standard input.
-That last one is the whole point of the build — it is what makes `trade index get-symbols dow-jones | trade symbol get-candles` work, and a tool that only reads arguments has to be wrapped by the caller to get there.
+Symbols arrive the three ways indices already do — as arguments, from a named file, or on standard input — so the resolution is inherited rather than invented here, and a build writing a second one has missed that it already owns one.
+What is new is the pipe it spans: `trade index get-symbols dow-jones | trade symbol get-candles` is two groups composing, which is what the three ways were for and what neither group could show alone.
 
 Read standard input when no symbols are given, rather than behind a flag that says to.
 A flag would mean the pipeline only composes for someone who already knows the flag exists.
 
-**Three transports, one input.**
+**Three transports, one input, and the rule now holds across two groups.**
 The value is the same list of symbols whichever way it arrived, so the three resolve to one value at the edge and nothing inward ever learns which won — no parameter saying where it came from, and no second path through the operation.
 That is what leaves room for a later group's `--load` to mean something genuinely different: a value at a different stage rather than a fourth spelling of this one.
 
@@ -291,7 +291,7 @@ This is the one place the skill reads two ways, saying both that `driver.py` hol
 Arguments, `--input` and standard input become a list of symbols before any operation is called, so `get-candles` and `get-info` share the resolution rather than each growing its own precedence — and the next group inherits it instead of writing a third.
 It imports nothing from `typer`, which makes it driver work rather than library work: it sits beside its one caller now and lifts into a shared `drive/` module the day a second entry point wants it.
 
-**Where a good build should push back.** A named input file does nothing that `< file` does not, exactly as `-o` mirrors `>` in the previous build — worth saying, worth building anyway.
+**Where a good build should push back.** Nothing new here: `-i` mirroring `< file` and `-o` mirroring `>` were both argued in the previous build and settled there, so a build reopening either has not read what it inherited.
 
 ## Verification
 

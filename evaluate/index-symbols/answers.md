@@ -307,6 +307,18 @@ That is the program's other `try`, and it is the boundary `write-python` means w
 Two commands, split by what they do rather than by where the symbols come from.
 Resolving a name is the tool's job, so `get-symbols` takes the name alone; finding out which names exist is a different question, so `catalogue` is its own command rather than a flag that switches what `get-symbols` does.
 
+**Three transports, one input.**
+Arguments, `--input` and standard input are the same list of indices differing only in where the bytes came from, so they resolve to one value at the edge and nothing inward ever learns which won — no parameter saying where it arrived from, and no second path through the operation.
+That is what leaves room for a later group to mean something genuinely different by a fourth option: a value at a different stage rather than a fourth spelling of this one.
+
+**Read standard input when no indices are given, rather than behind a flag that says to.**
+A flag would mean the pipeline only composes for a caller who already knows the flag exists, and the command that has to be told to read a pipe is the one nobody pipes into.
+It also settles what an empty run is: nothing on any of the three routes is the error the brief asks for, reached in one place rather than argued per route.
+
+**The resolution is one driver function, not one per command.**
+`catalogue` takes no input, so at this build the function has a single caller and looks like ceremony — it is the shape the next group inherits rather than writes again, and it imports nothing from `typer`, which is what makes it driver work rather than library work.
+Giving `catalogue` an `--input` for symmetry is the opposite mistake: an option with nothing to read is a surface that has to be explained away in `--help`.
+
 **The group is a package, not a prefix on two command names.**
 The brief says more groups follow, so `index` is a `typer` sub-application registered on the root — which is what lets the next group be added without the root command being touched, and what makes `trade index --help` list this group alone.
 Spelling the commands `index-expand` and `index-catalogue` at the root reaches the same invocation and gives up both.
@@ -329,10 +341,10 @@ A short list is the dangerous outcome, because nothing downstream can tell it ap
 - A `--help` that explains the tool without recourse to a README.
 - `catalogue` writing one index per line, so `trade index catalogue | grep ARK` answers "what can I expand that looks like this".
 
-**Where a good build should push back.** One thing, and it should end in the brief being followed.
+**Where a good build should push back.** Two, and both should end in the brief being followed.
 
-`-o PATH` does nothing that `> PATH` does not already do, so it earns its place only by convention — `curl` and `sort` carry it, and a caller who expects it will look for it.
-Saying so and building it anyway is the right answer; refusing it is not, and neither is building it without noticing.
+`-o PATH` does nothing that `> PATH` does not already do, and `-i PATH` does nothing that `< PATH` does not, so each earns its place only by convention — `curl` and `sort` carry them, and a caller who expects one will look for it.
+Saying so and building them anyway is the right answer; refusing is not, and neither is building them without noticing.
 
 The form-versus-destination question reads like a second one and is not.
 `write-entry-points` and the brief agree — fix the form, let an option change it, never let the destination decide — so a build presenting this as a disagreement has misread the skill rather than found one.
@@ -376,6 +388,7 @@ Worth their own cases: a US stock whose bare symbol appears among its listings a
 - **Treating a 403 as an empty fund.** A refused request and a fund with no holdings are different outcomes and only one of them is the caller's problem.
 - **A network call for a name the packaged dataset already holds.** `pytickersymbols` ships its data; reaching for HTTP means the adapter was written before the library was read.
 - **Two shapes out of two adapters**, leaving the driver or the transform to reconcile them.
+- **Reading standard input only when a flag says so**, so the command a caller wants to pipe into is the one that has to be told it is being piped into.
 - **Making the caller say where to look.** The tool knows which indices it ships and which it fetches, so a command or a required flag per source asks the user to hold knowledge the program already has.
 - **String-wrangling the holdings file** into lists and dicts before it reaches a frame.
 - **Letting a request failure surface as `httpx`'s own exception**, which makes the calling code depend on the library the adapter exists to hide.
