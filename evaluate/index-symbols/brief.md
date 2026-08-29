@@ -143,15 +143,16 @@ Every command answers with a table.
 Columns come back in **alphabetical order**, whatever order I have listed them in when describing them.
 It is one less thing to remember, and it means a column added later lands somewhere predictable instead of on the end.
 
-The plain form is comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
+That table comes back one of two ways.
+
+**Plain, and that is the default.** Comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
 Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
 
-`--pretty` is the plain answer made readable, never a different answer — same rows, same columns, in the same order, and that holds in every group added later.
-Where a group has something a colour can say better than a character, it may say it that way, but it may not add, drop or rearrange a thing.
+**Formatted, when I ask for it with `-p`.** A `rich` table, with the heading row the plain form leaves off and a count at the end so I know how many came back.
+Each heading is the column's own name, the same word the plain form would have put there had it carried one — I read this form and script against the other, so I do not want to translate between two spellings of one column.
 
-It is the only place a heading appears, and the heading is the column's own name, the same word the plain form would have put there had it carried a heading row.
-I read one and script against the other, so I do not want to translate between two spellings of one column.
-It also closes with a count, so I know how many came back.
+The second is the first made readable, never a different answer: same rows, same columns, in the same order, and that holds in every group added later.
+Where a group has something a colour can say better than a character, it may say it that way, but it may not add, drop or rearrange a thing.
 
 ## Arguments and options
 
