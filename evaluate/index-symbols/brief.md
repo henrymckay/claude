@@ -135,7 +135,7 @@ I care what each gives back, not that the command exited cleanly.
 
 ## Output
 
-Every command in the tool answers with a table, and this is where that starts.
+Every command in the tool answers with rows and columns, so what this group settles is what every group added later answers with too.
 
 - `trade index catalogue` has one column, `index`.
 - `trade index get-symbols` has one column, `symbol`.
