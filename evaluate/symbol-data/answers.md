@@ -198,11 +198,20 @@ An index expansion is five hundred symbols in a single `download`, which is wher
 So the adapter adds a day to the bound it was handed, in the one place that knows the two conventions differ.
 Passing it straight through loses the last candle of every run without saying so, and answers nothing at all for a single day.
 
-**A coarse candle is fetched by its period, not by the caller's dates**, and getting that wrong fails two ways without a word either time.
-`AAPL` from a Wednesday to the Friday at `1wk` comes back as one row stamped on the Monday — the right stamp — whose open and low are built from those three days alone: 309.36 and 305.67 against the whole week's 309.58 and 301.32.
-It is the partial week the brief forbids, wearing a complete week's date, and nothing downstream can tell.
-The same request at `1mo` returns an **empty frame**, so the month vanishes instead of arriving wrong.
+**A coarse candle is fetched by its period, not by the caller's dates**, and the two coarse intervals fail differently, neither of them loudly.
+
+`1wk` aggregates the daily candles inside the range and stamps the result with the week's Monday whatever it actually covered.
+Asked for the week of 13 July 2026 from the Wednesday to the Friday, `AAPL` comes back stamped `2026-07-13` — the right date — opening at 317.62 and bottoming at 317.32, where the whole week opened at 317.02 and bottomed at 311.91.
+It is the partial week the brief forbids wearing a complete week's date, and no field on the row says so.
+The week is returned however little of it the range touches: a start on the Friday still yields a row stamped on the Monday.
+
+`1mo` does not truncate, it disappears.
+The month comes back only when the range starts on or before its first calendar day — `2026-07-01` returns July and `2026-07-02` returns an empty frame, with nothing to distinguish that from a symbol having no data.
+For the month still in progress it is worse than empty: a start after the first returns a row stamped `2026-08-28`, the last trading day rather than the period's first, carrying values that match no calendar month and do not change with the start asked for.
+A build that trusts the stamp has a monthly candle dated to a Friday.
+
 So each timeframe's bounds are widened to the periods containing them before the request is built, and daily is that same derivation returning the dates it was given rather than a branch that skips it.
+Widening the end makes the extra day added for exclusivity harmless here — a weekly request ending on the following Monday still returns only the week asked for — so the two corrections compose rather than fighting.
 
 **Widening per timeframe is what keeps the bounds parameters of the fetch rather than a filter.**
 Each request then returns exactly the periods intersecting what the caller asked for, with nothing to trim afterwards — where widening once to the coarsest timeframe would drag extra daily rows in and need a filter to take them out again.
@@ -336,7 +345,7 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 - That `Lookup` spells its methods as it does, since the one the domain word suggests is not the one that exists.
 - That each of them caps at 25 unless told otherwise, which is the default that makes a search look answered.
 - That `end` excludes its own date on every interval, and that an equal `start` and `end` return nothing — the two facts the inclusive bounds are built on.
-- That a `1wk` request starting mid-week returns a week built from the days asked for, and a `1mo` one returns nothing at all — the two failures the widening exists to prevent, and neither raises.
+- That a `1wk` request starting mid-week returns a week built from the days asked for and stamped as though it were whole, and that a `1mo` one starting after the first returns nothing for a completed month and a row stamped on the last trading day for the current one. Neither raises, and the monthly stamp is the one fact that breaks the tool's own rule about what a `date` means.
 
 **The default run must not touch the network.**
 Record one response covering two symbols on different exchanges, keep it beside the tests as a data file, and parse that.

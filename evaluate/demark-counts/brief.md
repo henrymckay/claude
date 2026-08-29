@@ -1,12 +1,14 @@
 # DeMark counts brief
 
 Carry on from the `trade` tool, the one whose `symbol` group fetches daily, weekly and monthly candles for a list of symbols.
-If you are starting without it, build that much first, since the counts have nothing to run over otherwise.
+If you are starting without it, read those briefs alongside this one and build them together rather than finishing each and coming back.
+The counts have nothing to run over otherwise, and a tool built as though each group were the last has to be taken apart to make room for the next.
 
 Now I want DeMark counts over those candles, so I can start scanning a whole index with them.
 
 A third group, `demark`, beside the `index` and `symbol` groups already there.
-Nothing in either of them moves or is renamed to make room for it.
+Nothing about how I use either of them changes: the same commands, the same options, the same output.
+Behind that, move whatever this build needs moved — if a group was written as though it would be the last, this is where that gets put right rather than worked around.
 
 Symbols reach it exactly the way `trade symbol get-candles` already takes them, as arguments, from a file I name, or on standard input, and a symbol I have handed you twice coming back once.
 They are symbols, not indices: an index reaches this group the same way it reaches `trade symbol get-candles`, by being expanded first.
