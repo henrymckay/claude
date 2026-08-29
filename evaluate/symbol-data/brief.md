@@ -10,20 +10,10 @@ Nothing in the first group moves or is renamed to make room for it.
 
 ## Candles
 
-One row per symbol, timeframe and date, carrying the open, high, low and close.
+One row per symbol, timeframe and date, carrying the open, high, low, close and volume.
 
-All three timeframes come back unless I ask for fewer.
-I am usually reading them against each other, so a run that served me one of them by default would be a run I have to do three times.
-
-Give me the prices at the precision a price chart shows rather than whatever tail a float carries.
-Four decimal places is more than I need and everything past it is noise I have to read around.
-
-A day a symbol did not trade is not a row.
-Markets keep different holidays, so asking for a London stock and a New York one together covers days one of them was shut, and I want that gap absent rather than sitting there empty.
-
-Give them to me in a settled order, so I can diff two runs and read what changed.
-
-## Prices
+Daily unless I ask for more.
+Weekly and monthly are a second question I ask deliberately, and a run that fetched all three every time would pay for two timeframes I did not want.
 
 Fetch them with `yfinance`, at each timeframe directly.
 It serves daily, weekly and monthly, so there is no need to derive one from another.
@@ -34,9 +24,18 @@ Candles follow what a chart shows.
 Every past week and month is a **completed** candle, and only the most recent one is still in progress.
 I never want a week rebuilt as it stood partway through.
 
+Give me the prices at the precision a price chart shows rather than whatever tail a float carries.
+Four decimal places is more than I need and everything past it is noise I have to read around.
+
+A day a symbol did not trade is not a row.
+Markets keep different holidays, so asking for a London stock and a New York one together covers days one of them was shut, and I want that gap absent rather than sitting there empty.
+
+Give them to me in a settled order, so I can diff two runs and read what changed.
+
 ## Info
 
 What each symbol *is*, rather than what it costs.
+It comes from `yfinance` too, the same as the candles do.
 
 One row per symbol, carrying that symbol, its short name and its long name, the exchange and the market it trades on, its currency, what kind of instrument it is, its market capitalisation, and its sector and industry.
 Eleven columns, the same eleven every run.
@@ -54,7 +53,7 @@ I ask about six kinds of thing and expect the same shape back from all of them: 
 
 Finding a symbol when I do not know it.
 
-Give it something to search for and it gives me back what Yahoo matches: the symbol, the short name, the exchange it trades on, what kind of instrument it is, and where Yahoo ranked it.
+Give it something to search for and `yfinance` gives me back what Yahoo matches: the symbol, the short name, the exchange it trades on, what kind of instrument it is, and where Yahoo ranked it.
 Leave them in Yahoo's ranking, since that ranking is most of what a search is for.
 
 Let me narrow it to one kind of instrument, or leave it alone and take every kind.
@@ -141,7 +140,7 @@ Both bounds are **inclusive**, so naming the same date twice asks for that one d
 A candle is in range when its `date` is, so a weekly row is in or out by the Monday its week began.
 Leave `--start` off and I get as far back as Yahoo will go; leave `--end` off and I get everything up to today.
 Here they are the whole of what gets fetched, since there is nothing to work out that needs more than I asked for.
-Leave `--timeframe` off and I get all three.
+Leave `--timeframe` off and I get daily alone.
 
 On `look-up`:
 
@@ -150,26 +149,35 @@ On `look-up`:
 
 ## Examples
 
+Asking what a symbol costs.
+
 ```bash
 trade symbol get-candles AAPL
 trade symbol get-candles AAPL MSFT NVDA
-trade index get-symbols dow-jones | trade symbol get-candles
+trade symbol get-candles -i symbols.txt
 trade symbol get-candles < symbols.txt
-trade symbol get-candles AAPL -o aapl.csv
 trade symbol get-candles AAPL -t daily -t weekly
 trade symbol get-candles AAPL --timeframe monthly --start 2020-01-01
 trade symbol get-candles AAPL MSFT -s 2026-06-01 -e 2026-06-30
-trade symbol get-candles -i symbols.txt -t daily
+trade symbol get-candles AAPL -p
+trade symbol get-candles AAPL -o aapl.csv
+trade index get-symbols dow-jones | trade symbol get-candles
 trade index get-symbols ftse-100 | trade symbol get-candles > ftse.csv
+```
 
+Asking what a symbol is.
+
+```bash
 trade symbol get-info NVDA
 trade symbol get-info NVDA SMH '^NDX' 'GC=F' 'BTC-USD' 'GBP=X'
-trade index get-symbols ARKK | trade symbol get-info
 trade index get-symbols large-companies | trade symbol get-info -o scan.csv
+```
 
+Finding a symbol I do not know.
+
+```bash
 trade symbol look-up nvidia
 trade symbol look-up '^' --kind index
-trade symbol look-up '=X' --kind currency
 trade symbol look-up 'VANECK UCITS' --kind etf --count 200
 trade symbol look-up nvidia --kind stock | cut -d, -f5 | trade symbol get-candles
 ```

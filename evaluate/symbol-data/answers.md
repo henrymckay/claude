@@ -311,7 +311,7 @@ Pin the `yfinance` behaviours the adapter leans on, in a dependency test kept ap
 Record one response covering two symbols on different exchanges, keep it beside the tests as a data file, and parse that.
 One exchange is the fixture that never has a null in it, so it is the fixture under which the dense grid, the drop rule and the missing-symbol check all pass by accident.
 
-**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — three timeframes against the symbols asked for, eleven columns against every kind of instrument.
+**A recorded response is by definition one that worked**, so run the real surface once before calling the build done and read the **counts** — the three timeframes against the symbols asked for when all three are named, eleven columns against every kind of instrument.
 A symbol that came back empty has passed every check the program can make on itself.
 The six the brief names — a stock, an ETF, an index, a future, a coin and a currency pair — are the run that matters, because five of them are missing fields the sixth has.
 
