@@ -46,8 +46,8 @@ Give it nothing by any of the three and that is an error, not an empty list, sin
 
 Forty-nine funds across four families, none of them in the packaged dataset, all publishing their holdings online.
 
-- **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
-- **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
+- **ARK Invest.** `ARKF`, `ARKG`, `ARKK`, `ARKQ`, `ARKW` and `ARKX`.
+- **Fundstrat Granny Shots.** `GRNI`, `GRNJ` and `GRNY`.
 - **VanEck, listed in London.** `CURE.L`, `CYBO.L`, `DAPP.L`, `DFNS.L`, `ESPO.L`, `GDIG.L`, `GDX.L`, `GDXJ.L`, `HDRO.L`, `JEDI.L`, `NUCL.L`, `OIHV.L`, `PIKA.L`, `QNTM.L`, `REMX.L`, `REUS.L`, `SMH.L` and `VEGI.L`.
 - **VanEck, listed in the US.** `BBH`, `CRAK`, `DAPP`, `EMET`, `ESPO`, `GDX`, `GDXJ`, `IBOT`, `MOAT`, `MOTI`, `MVAL`, `NLR`, `OIH`, `PPH`, `REMX`, `SMH`, `SMHC`, `SMHX`, `SMOT` and `WARP`.
 - **Wedbush.** `IVEP` and `IVES`.
@@ -122,7 +122,7 @@ More groups follow in the builds after this one, so the shape has to take them w
 
 Two commands in the group, because finding out what I can expand is a different question from expanding one.
 
-- `trade index get-symbols INDEX...` gives me the symbols those indices hold.
+- `trade index get-symbols [INDEX...]` gives me the symbols those indices hold.
 - `trade index catalogue` gives me the indices I follow.
 
 `catalogue` is how I remind myself which indices I have set up rather than a list of everything that works, since any ETF symbol expands whether it appears there or not.
