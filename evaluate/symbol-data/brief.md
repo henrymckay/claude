@@ -1,7 +1,12 @@
 # Symbol data brief
 
 Carry on from the `trade` tool, the one whose `index` group expands an index into the symbols it holds.
-If you are starting without it, read that brief alongside this one and build the two together rather than finishing the first and coming back.
+That group is specified in [`../index-symbols/brief.md`](../index-symbols/brief.md).
+**Read it before this one.**
+Everything it fixes still holds here and is not repeated: the plain output form and its two options, how input reaches a command, how a failure is reported, and how an option is spelled.
+Where this brief says a thing is spelled as it already is, that file is what it means.
+
+If the `index` group does not exist yet, build both groups from the two briefs together rather than finishing the first and coming back.
 I still want to give an index rather than list its symbols out, and a tool built as though `index` were all there would ever be has to be taken apart to make room for this.
 
 Now I want the tool to say things about the symbols themselves — what they cost, what they are, and how to find one when I do not know its symbol.
@@ -26,8 +31,8 @@ Candles follow what a chart shows.
 Every past week and month is a **completed** candle, and only the most recent one is still in progress.
 I never want a week rebuilt as it stood partway through.
 
-Give me the prices at the precision a price chart shows rather than whatever tail a float carries.
-Four decimal places is more than I need and everything past it is noise I have to read around.
+Round every price to four decimal places.
+A float's tail past that is noise I have to read around, and I would rather the column held one precision than whichever one the source thought suited each symbol.
 
 A day a symbol did not trade is not a row.
 Markets keep different holidays, so asking for a London stock and a New York one together covers days one of them was shut, and I want that gap absent rather than sitting there empty.
@@ -127,7 +132,7 @@ None of that is a column: everything the colour and the bar say is already in th
 
 ## Arguments and options
 
-`get-candles` and `get-info` take any number of symbols as arguments, or none at all where the symbols arrive on standard input or from a file.
+`get-candles` and `get-info` take any number of symbols as arguments, or none at all where they arrive on standard input or from `--input`.
 `look-up` takes exactly one thing to search for.
 
 Every option has a long form and a single-letter short form, and an option meaning the same thing keeps the same spelling in every command of the tool.

@@ -3,13 +3,17 @@
 The design a good build reaches, and the wrong turns that miss it.
 None of it appears in the brief — each line is something the skills alone should produce.
 
+**Grade against [`../index-symbols/answers.md`](../index-symbols/answers.md) as well as this file.**
+Everything that one declares still stands: the two ports and two operations, the `error` package and its decorators, the three driver packages, the pair of renderers, and the transports resolving to one input.
+This file records only what this build adds to them or changes about them, so a build diverging from that file diverges here too, and nothing in it is repeated for being still true.
+
 ## The shape
 
 A second source, three shapes out of it, and the first shapes the core genuinely owns.
 
 | shape | one row is | how it is reached |
 |---|---|---|
-| symbols | one symbol | rung 1, unchanged |
+| symbols | one symbol | the index build, unchanged |
 | candles | a symbol's candle in one timeframe | fetch each timeframe directly |
 | descriptions | one symbol's description | one call per symbol, a declared schema over each response |
 | matches | one instrument a search found | one call, already a frame |
@@ -21,13 +25,14 @@ Splitting them into three adapter packages triples the decorator, the naming and
 What they do **not** share is the parse: a `MultiIndex` frame, a dict of a couple of hundred keys and a frame indexed by symbol have nothing in common past the library that returned them.
 
 **There is no resample step.** `yfinance` serves daily, weekly and monthly, so the adapter returns one long frame already carrying a timeframe column, and Yahoo's own week and month alignment is used rather than a reinvented one.
-Deriving coarser candles from dailies is a transform the problem does not need, and it adds a seam that then has to be threaded through every later rung.
+Deriving coarser candles from dailies is a transform the problem does not need, and it adds a seam that then has to be threaded through every later build.
 
 **Timeframe is a column, not something the caller stitches together.** The adapter makes one call per timeframe because the API has no other shape, concatenates them itself, and hands back a single frame.
 A `concat` over a comprehension is only the per-group-loop mistake when the groups are computation; here each group is its own network call.
 
 **The date the brief asks for is the one Yahoo already gives, so nothing re-stamps it.**
-A weekly candle arrives stamped on the Monday and a monthly one on the first, which is exactly what the brief says the column means — so the adapter carries the value across and the completed-candle rule holds by construction.
+A weekly candle arrives stamped on the Monday and a monthly one on the first, which is exactly what the brief says the column means — so the adapter carries the value across rather than computing it.
+That holds only once the request is aligned to the period, as the boundary section works out: ask across a period boundary and the stamp can arrive on a day the period did not begin.
 The failure is a build that reads "date" as a day the row is *about* and shifts the stamp to the period's end, or spreads a weekly row over its five days, either of which invents a transform to satisfy a requirement already met.
 
 **The adapter spells the columns in the domain's words, in one expression over the whole schema.**
@@ -116,9 +121,9 @@ A driver calling `get_symbols` and then `get_candles` has rebuilt the stage the 
 
 ## The boundary
 
-This is where `pandas` meets `polars` and the rung is mostly judged on it.
+This is where `pandas` meets `polars`, and it is most of what this build is judged on.
 
-**One `yfinance` call serves each command**, and finding which is the first work of the rung:
+**One `yfinance` call serves each command**, and finding which is the first work of the build:
 
 | command | call | what comes back |
 |---|---|---|
@@ -136,11 +141,13 @@ Pass `False`.
 Measured over one month of `AAPL`, the two closes differ by up to 0.95, so a build that leaves the default is not slightly off; it is answering a different question with numbers that look right.
 - `period` defaults to **one month** when no `start`/`end` is given.
 Not naming it returns twenty-odd daily candles and looks exactly like a fetch that worked.
-With no date range on the surface, the adapter asks for the source's full history and says so.
+Where the caller named no bounds, the adapter asks for the source's full history rather than letting that default stand.
 - `progress` defaults to **on**, writing a bar to standard error — a library narrating on a channel the driver owns, which is the same objection `structure-python` makes to a library calling `logging.basicConfig`.
 Off.
-- `timeout` is already ten seconds and `rounding` already exists.
-Both are things `structure-python` and `write-python` would have you add; go and look before writing either yourself.
+- `timeout` is already ten seconds, so `structure-python`'s instruction to set one is met by the library rather than by a wrapper — go and look before writing what is already there.
+- `rounding` exists and is **not** the brief's four decimal places.
+It rounds to the precision Yahoo suggests for the instrument, which is two for `AAPL` and two for `BTC-USD`, so the same column carries a different precision depending on who was asked.
+Round in the frame, to the figure the brief named, for the same reason the schema is declared rather than inferred.
 
 **`auto_adjust=False` also brings `Adj Close` back**, sitting in the frame beside `Close` and holding the rejected number under a name nobody will question.
 Select the columns you declared rather than keeping what arrived.
@@ -148,7 +155,7 @@ Select the columns you declared rather than keeping what arrived.
 **A symbol Yahoo has nothing for does not raise.**
 It comes back as a block of columns full of `NaN` — an empty frame if it was the only one asked for — and the only sign is a line on the library's own logger.
 So the adapter compares what came back against what it asked for, because nothing else in the program can: once the nulls are gone the symbol has simply vanished, and the short table that results is indistinguishable from a stock that stopped trading.
-This is the previous rung's all-or-nothing rule arriving from a source that will not raise for you.
+This is the index build's all-or-nothing rule arriving from a source that will not raise for you.
 
 **The download is a dense grid over the union of every symbol's trading days**, not one row per candle.
 Ask for a London stock and a New York one and every day either market was shut carries a row for the other.
@@ -168,7 +175,7 @@ Melting all the way to long and pivoting back on the `polars` side reaches the s
 
 **The stamp arrives as a timestamp, not a date.**
 The index is `datetime64[s]` and converts to a `polars` `Datetime`, so a midnight value that prints like a date is not equal to one.
-Cast it at the boundary; the next rung joins a daily row against a weekly one on exactly this column.
+Cast it at the boundary; the next build joins a daily row against a weekly one on exactly this column.
 
 **`polars.from_pandas` needs `pyarrow`, and not only in a corner case.**
 Recent `pandas` backs a string column with arrow, so the one string column it carries is enough to raise `ImportError` without it.
@@ -187,7 +194,7 @@ Everything after the `stack` is an expression.
 **The adapter declares its own output shape and returns it whatever happens**, including when the download comes back empty or `None`, so no later code branches on what the library felt like returning.
 
 **Sorting is correctness, not presentation.**
-The frame leaves the adapter sorted by symbol and date, because every window the next rung writes reads the frame in its current row order and nothing raises on an unsorted input.
+The frame leaves the adapter sorted by symbol and date, because every window the next build writes reads the frame in its current row order and nothing raises on an unsorted input.
 The brief asking for a settled order is the same requirement arriving from the other end, and satisfying it in the renderer satisfies only the half that shows.
 
 **`threads` is on by default, so one call is many requests.**
@@ -217,18 +224,15 @@ Widening the end makes the extra day added for exclusivity harmless here — a w
 
 **Widening per timeframe is what keeps the bounds parameters of the fetch rather than a filter.**
 Each request then returns exactly the periods intersecting what the caller asked for, with nothing to trim afterwards — where widening once to the coarsest timeframe would drag extra daily rows in and need a filter to take them out again.
-Which day a week begins on is the domain's knowledge and not the library's, so the derivation is a core function the request is built from, and it is the shape the next rung's warm-up margin takes on top of it.
-
-**`--count` is a ceiling, not a target.**
-A search for `nvidia` capped at 250 comes back with 56, because that is what Yahoo matched.
-A build that pages to make up the difference has invented a requirement out of a number that was always an upper bound.
+Which day a week begins on is the domain's knowledge and not the library's, so the widening is a core function — but it is *called* from the adapter, because the port carries one pair of bounds for every timeframe asked for and only the adapter has fanned them out into a request each.
+That is the port's declared shape deciding where a derivation lives, and it is the shape the next build's warm-up margin takes on top of it.
 
 ### What `get-info` returns
 
 **The key set varies by instrument, so a field is *absent* rather than empty.**
 `get_info()` gives 187 keys for `NVDA` and 71 for `^NDX`, and four of the eleven the brief asks for — country, industry, sector and market capitalisation — are simply not in the dict for an ETF, an index, a future or a currency pair.
 Subscripting raises `KeyError` on the symbols the brief explicitly says it checks with.
-This is the previous rung's packaged-record trap arriving from a different library, which is the point: an adapter's seam is every library it touches, and a dict one hands back is a record like any other.
+This is the index build's packaged-record trap arriving from a different library, which is the point: an adapter's seam is every library it touches, and a dict one hands back is a record like any other.
 
 **Declare the schema, and declare market capitalisation a float.**
 Let `polars` infer it and the same column comes back a different type depending on who was asked: a batch of indices infers `Null`, a batch of stocks infers `Int64`, and concatenating two such runs raises `SchemaError`.
@@ -250,12 +254,17 @@ That is the one-call-per-group case `use-polars` blesses, and it is where a rate
 `yfinance.Lookup` has a method per kind and a `count` on each — which is `--kind` and `--count` exactly, so the option surface the brief describes is the tell for which call was meant.
 A build reaching for `Search` because the command searches has matched the English rather than the requirement, and then has to filter the kind itself out of a field the results may not carry.
 
+**`--count` is a ceiling, not a target.**
+A search for `nvidia` capped at 250 comes back with 56, because that is what Yahoo matched.
+A build that pages to make up the difference has invented a requirement out of a number that was always an upper bound.
+
 **`count` defaults to 25 where the brief says a hundred.**
 Every one of those methods takes `count=25`, so an adapter that omits it answers a quarter of what was asked for — the same quiet default as `auto_adjust`, arriving in the one command where a short answer is indistinguishable from a genuine result.
 
 **Do not reach the method by an interpolated name.**
 `yfinance.Lookup` spells them `get_all`, `get_cryptocurrency`, `get_currency`, `get_etf`, `get_future`, `get_index`, `get_mutualfund` and `get_stock` — note it is `get_cryptocurrency`, not `get_crypto`.
-A `getattr(lookup, f"get_{kind}")` turns a fixed, known set of seven into a string nothing checks, so the wrong guess is an `AttributeError` in front of the user rather than an error at import.
+That is one method per kind the brief names, plus `get_all` for the caller who names none.
+A `getattr(lookup, f"get_{kind}")` turns that fixed, known set into a string nothing checks, so the wrong guess is an `AttributeError` in front of the user rather than an error at import.
 `write-python` is explicit that a fixed known set is a lookup rather than a mechanism; a mapping from your own kind to the method is the same number of lines and fails where it should.
 
 **The kind is a closed set, so it is an enum** — in the core, in the port and in the option — not a string the driver passes through and the adapter interpolates.
@@ -288,13 +297,7 @@ The three ports carry their own `:raises:` for the same reason `Publisher` does,
 
 Symbols arrive the three ways indices already do — as arguments, from a named file, or on standard input — so the resolution is inherited rather than invented here, and a build writing a second one has missed that it already owns one.
 What is new is the pipe it spans: `trade index get-symbols dow-jones | trade symbol get-candles` is two groups composing, which is what the three ways were for and what neither group could show alone.
-
-Read standard input when no symbols are given, rather than behind a flag that says to.
-A flag would mean the pipeline only composes for someone who already knows the flag exists.
-
-**Three transports, one input, and the rule now holds across two groups.**
-The value is the same list of symbols whichever way it arrived, so the three resolve to one value at the edge and nothing inward ever learns which won — no parameter saying where it came from, and no second path through the operation.
-That is what leaves room for a later group's `--load` to mean something genuinely different: a value at a different stage rather than a fourth spelling of this one.
+It is also what keeps a later group's `--load` meaning something genuinely different: a value at a different stage rather than a fourth spelling of this one.
 
 **Normalise the symbols once, where they arrive.**
 Three input routes are three chances for whitespace, case and repetition to differ, and the brief asks for a symbol back once however many times it was given.
@@ -307,9 +310,8 @@ Spelling the same idea differently between two commands of one tool is the cheap
 The option collects into a list, the adapter makes one call per member and concatenates, and the value lands in the `timeframe` column — so the axis the brief exposes as an option is the same axis `use-polars` insists stays data.
 The failure is a branch per timeframe, or three boolean flags, or a function returning a column per timeframe: each turns a grouping key into control flow, and each is the per-group loop the previous section already ruled out, arriving this time through the option parser.
 
-**The bounds are parameters of the fetch, not of a filter.**
-Nothing here filters rows — the source applies them — and keeping it that way is what lets the next build widen the same bounds by a warm-up margin before they reach this adapter.
-A build that fetches everything and filters afterwards is correct and grows with the data; one that filters what it already narrowed has written the reconciliation the next build then has to undo.
+**The bounds are parameters of the fetch, not of a filter**, which the widening sharpens rather than softens: the adapter changes the bounds it passes on, and still nothing filters rows afterwards.
+A build that fetches everything and filters afterwards is correct and grows with the data; one that filters what it already narrowed has written a reconciliation the next build has to undo when it widens again for its warm-up.
 
 **`look-up` taking a different kind of input is not an inconsistency to iron out.**
 It searches for a symbol rather than being given one, so the three-ways rule does not apply and forcing it to would mean a search reading from standard input.
@@ -320,7 +322,7 @@ The brief fixes the plain form and the two options once and then says every comm
 The tell that this was missed is a second `rich.Table` construction appearing in the next build: the table differs by which frame it is handed, and nothing else.
 
 **So the decoration is a column spec, not a second table builder.**
-The last rung's renderer took a frame; this one has to be told that `close` colours against `open`, that `volume` draws a bar scaled within its symbol, and that `market_cap` groups its digits — so what the driver hands over beside the frame is a per-column description of how to show it, plain for every column that says nothing.
+The index build's renderer took a frame; this one has to be told that `close` colours against `open`, that `volume` draws a bar scaled within its symbol, and that `market_cap` groups its digits — so what the driver hands over beside the frame is a per-column description of how to show it, plain for every column that says nothing.
 Giving `get-candles` its own table because it needs more than `get-symbols` did is the failure the shared renderer exists to prevent, and it arrives here rather than in the next build.
 The heading stays `full_exchange_name` for the same reason it stays a column name at all: the two forms name one set of columns, and a render that retitles them has invented a second vocabulary for the caller to hold.
 
@@ -329,7 +331,7 @@ Scaled across the whole table, a heavy day for a thinly traded symbol vanishes b
 It sits beside the number rather than replacing it — a bar alone is a value nobody can read back, and `--pretty` is the plain answer made readable rather than a different answer.
 
 **Direction is derived at render time, never stored.**
-Green and red come from comparing `close` against `open` where the table is built; a `direction` column computed in the core is the added column `--pretty` may not have, and the next rung makes the same point from the other side when its signed counts refuse to become one.
+Green and red come from comparing `close` against `open` where the table is built; a `direction` column computed in the core is the added column `--pretty` may not have, and the next build makes the same point from the other side when its signed counts refuse to become one.
 
 **The group is a sub-application, not a prefix.**
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
@@ -339,9 +341,8 @@ Two commands spelled `symbol-candles` and `symbol-info` at the root reach the sa
 The root app itself stays in `driver.py`, where every framework package keeps it, so nothing in `command/` is imported by the thing it decorates and no cycle appears.
 This is the one place the skill reads two ways, saying both that `driver.py` holds the app object and that `command/__init__.py` holds the main one; the reading that keeps `driver.py` importing no other driver module is the one that works.
 
-**The three transports resolve in one driver function, not in each command.**
-Arguments, `--input` and standard input become a list of symbols before any operation is called, so `get-candles` and `get-info` share the resolution rather than each growing its own precedence — and the next group inherits it instead of writing a third.
-It imports nothing from `typer`, which makes it driver work rather than library work: it sits beside its one caller now and lifts into a shared `drive/` module the day a second entry point wants it.
+**The driver function resolving the transports gains its second and third callers here**, which is the first evidence it was worth writing as one rather than inlining it into the single command that needed it.
+`get-candles` and `get-info` share it rather than each growing its own precedence, and the next group inherits it instead of writing a third.
 
 **Where a good build should push back.** Nothing new here: `-i` mirroring `< file` and `-o` mirroring `>` were both argued in the previous build and settled there, so a build reopening either has not read what it inherited.
 

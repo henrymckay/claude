@@ -40,7 +40,7 @@ They reach the command whichever way suits what I am doing at the time.
 - Read from a file I name.
 - Piped or redirected in on standard input, so `trade index catalogue | grep ARK | trade index get-symbols` just works.
 
-Nothing at all by any of the three is an error rather than an empty list, since an index is what the command is for.
+Give it nothing by any of the three and that is an error, not an empty list, since an index is the whole of what the command is for.
 
 ## Funds
 
@@ -118,7 +118,7 @@ One symbol per line and nothing else, always, so `grep`, `sort` and `xargs` all 
 
 The tool is `trade`, and its commands are grouped by what they are about rather than sitting flat under it.
 This build fills the first group, `index`.
-More groups follow in the builds after this one, so the shape has to take them without this group moving or being renamed.
+More groups follow in the builds after this one, so the shape has to take them without this group's surface moving or being renamed.
 
 Two commands in the group, because finding out what I can expand is a different question from expanding one.
 
@@ -160,7 +160,7 @@ An option meaning the same thing keeps the same spelling everywhere it appears â
 Two are common to every command in the tool:
 
 - `-o`, `--output PATH` writes to that file instead of standard output.
-- `-p`, `--pretty` shows a `rich` table instead of the plain default, with the column headings and a count at the end so I know how many came back.
+- `-p`, `--pretty` shows a `rich` table instead of the plain default, with a count at the end so I know how many came back.
 
 One belongs to `get-symbols` alone, and keeps its spelling wherever a later group takes an input:
 
@@ -210,7 +210,7 @@ Invoke and follow your skills throughout, for setting the project up, structurin
 **Work only from your skills.**
 Don't draw on anything in your saved memory, and don't open the answers file sitting beside this brief â€” each would hand you what a good build looks like, which is the thing I am trying to find out.
 
-Write it in a functional style.
-
 Where a skill is silent, ambiguous or steers you wrong, note it as you go rather than quietly working around it.
 Tell me when the build is finished.
+
+Write it in a functional style.
