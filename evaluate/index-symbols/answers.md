@@ -325,6 +325,8 @@ Spelling the commands `index-expand` and `index-catalogue` at the root reaches t
 
 `catalogue` is what makes a bare error acceptable on an unmatched index — without it the tool would owe the caller near matches, since an index it ships is not otherwise discoverable.
 
+- The `rich` table's heading is the column's own name, not a title made for it.
+The plain form and the pretty form name one set of columns twice, so retitling a column in the render gives it a second name and makes the caller hold both.
 - Two renders, not one styled two ways.
 `rich` dropping colour when piped does not make a bordered table parseable, so the default form is its own render emitting one symbol and nothing else.
 - **No terminal detection.** The brief asks for the same bytes everywhere, so `Console.is_terminal` decides nothing here — a build that reaches for it has followed a habit past an instruction.

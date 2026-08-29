@@ -146,6 +146,9 @@ It is one less thing to remember, and it means a column added later lands somewh
 The plain form is comma-separated with **no heading row**, so a one-column result is just the values one per line and pipes straight into whatever comes next.
 Same bytes whether I am at a terminal, in a pipe or in a script — I would rather know what I am getting than have it guessed for me.
 
+`--pretty` is the only place a heading appears, and it is the column's own name — the same word the plain form would have put there had it carried a heading row.
+I read one and script against the other, so I do not want to translate between two spellings of one column.
+
 ## Arguments and options
 
 `get-symbols` takes any number of indices as arguments, or none at all where they arrive on standard input or from `--input`.

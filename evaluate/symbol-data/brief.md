@@ -116,6 +116,15 @@ That spelling is between you and the library and I should never see it.
 
 `date` is the day the candle's period **begins**: the Monday for a weekly row and the first of the month for a monthly one, not a day somewhere inside the period and not the day it ended.
 
+`--pretty` has more to say here than it had in the first group.
+
+- A candle reads **green** where it closed at or above its open and **red** where it closed below, so I see the direction without comparing two columns myself.
+- `volume` carries a bar beside the number, scaled against the other candles for that same symbol, so a heavy day shows up without my counting digits.
+- Numbers group their digits in threes and line up on the right, since a market capitalisation I have to count my way along is not readable.
+
+Same rows, same columns, same order as the plain form, exactly as the first group fixed it.
+None of that is a column: everything the colour and the bar say is already in the row, said better.
+
 ## Arguments and options
 
 `get-candles` and `get-info` take any number of symbols as arguments, or none at all where the symbols arrive on standard input or from a file.

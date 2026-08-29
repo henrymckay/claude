@@ -319,6 +319,18 @@ What must stay identical across all three is the *output* — the same plain for
 The brief fixes the plain form and the two options once and then says every command answers the same way, so the plain render and the `rich` render are written here, in the driver layer, and the third group registers commands against them rather than growing its own.
 The tell that this was missed is a second `rich.Table` construction appearing in the next build: the table differs by which frame it is handed, and nothing else.
 
+**So the decoration is a column spec, not a second table builder.**
+The last rung's renderer took a frame; this one has to be told that `close` colours against `open`, that `volume` draws a bar scaled within its symbol, and that `market_cap` groups its digits — so what the driver hands over beside the frame is a per-column description of how to show it, plain for every column that says nothing.
+Giving `get-candles` its own table because it needs more than `get-symbols` did is the failure the shared renderer exists to prevent, and it arrives here rather than in the next build.
+The heading stays `full_exchange_name` for the same reason it stays a column name at all: the two forms name one set of columns, and a render that retitles them has invented a second vocabulary for the caller to hold.
+
+**The bar is scaled within the symbol, which is a domain choice wearing a rendering hat.**
+Scaled across the whole table, a heavy day for a thinly traded symbol vanishes beside a liquid one and the bar answers a question nobody asked; scaled within the symbol it answers *is this a big day for this stock*, which is the only reading that survives five hundred of them in one table.
+It sits beside the number rather than replacing it — a bar alone is a value nobody can read back, and `--pretty` is the plain answer made readable rather than a different answer.
+
+**Direction is derived at render time, never stored.**
+Green and red come from comparing `close` against `open` where the table is built; a `direction` column computed in the core is the added column `--pretty` may not have, and the next rung makes the same point from the other side when its signed counts refuse to become one.
+
 **The group is a sub-application, not a prefix.**
 `index` and `symbol` are two `typer` sub-applications registered on one root, so the third build adds a third by registering it rather than by editing either.
 Two commands spelled `symbol-candles` and `symbol-info` at the root reach the same invocation and give that up, along with a `trade symbol --help` that lists the group alone.
@@ -360,6 +372,8 @@ The six the brief names — a stock, an ETF, an index, a future, a coin and a cu
 ## Wrong turns
 
 - **Resampling dailies into weeks and months**, a transform invented for a problem the data source already solves.
+- **A `direction` or `change` column carrying what the colour says**, which is the one thing `--pretty` is forbidden to do.
+- **One bar scale across the whole table**, so a heavy day for a thinly traded symbol renders as nothing beside a liquid one.
 - **Passing the caller's dates straight into a weekly or monthly request**, which answers with a partial week wearing a whole week's date, or with no month at all.
 - **A call per timeframe stitched together by the caller**, leaving the core to concatenate what the adapter should have returned whole.
 - **Taking `yfinance`'s defaults**, so the closes are dividend-adjusted and the history is one month, and every test still passes.
