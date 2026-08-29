@@ -93,7 +93,7 @@ The count is what decides it, not the ceremony — one use case would be a funct
 
 ## What should not exist yet
 
-- **No caching, no configuration layer**, and no registry that publishers sign up to — fifty-four indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
+- **No caching, no configuration layer**, and no registry that publishers sign up to — fifty-five indices across a handful of publishers is still a mapping with one fallback behind it, not a plugin system.
 
 ## What this build declares
 
@@ -184,7 +184,7 @@ A build with a `try` in every parse has the right behaviour and has hand-written
 Retrieval is a few lines that never change; the parse is where a publisher's quirks live and where the work grows, so fused they lengthen together and the one line saying what the adapter returns sinks under them.
 Apart, a saved response tests the parse with no stub for the fetch.
 - The open ETF source is a third party rather than an issuer, since no issuer publishes anybody else's funds.
-`stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter, and a build that reaches for each issuer in turn can serve the forty-eight named funds and still has nothing to answer `TAN` with.
+`stockanalysis.com` carries US and London listings alike, so the two differ by a path segment rather than by a whole adapter, and a build that reaches for each issuer in turn can serve the forty-nine named funds and still has nothing to answer `TAN` with.
 - **A named fund still goes to its issuer, and the third party answers for everything else.**
 The general source publishes a fund's largest holdings and stops — twenty-two for `GDX.L`, where VanEck's own file lists fifty-eight — so routing the named funds through it trades most of the answer for a smaller adapter.
 That is what makes an issuer worth its price, and VanEck's is real: a workbook rather than a CSV, served only to a caller already holding the cookies its locale's front page sets.
@@ -375,7 +375,7 @@ This is where the test suite is founded, and the next two builds inherit whateve
 
 - The suite lives apart from the source, with its own directory for the cases, its shared helpers and any data files it loads.
 - A recorded response proves the parse and not the source, so the build is not done until the declared surface has been run once against the real thing and the **counts** read.
-Seventy-four catalogued indices is seventy-four expansions, and the one returning nothing has passed every check the program can make on itself — which is how a packaged index with no symbols in it ships.
+Seventy-five catalogued indices is seventy-five expansions, and the one returning nothing has passed every check the program can make on itself — which is how a packaged index with no symbols in it ships.
 - Tests of a dependency's own behaviour sit a level apart from tests of your code, because they fail for a different reason and on somebody else's schedule.
 - Every test names the behaviour it claims rather than the function it calls, and arrives at its starting state through its parameters rather than building it inline.
 - **The default run must not touch the network.** Capture a real holdings response once, keep it as a data file the tests load, and parse that; mark the tests that genuinely reach out so they stay out of the default run.

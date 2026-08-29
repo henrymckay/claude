@@ -44,13 +44,13 @@ Give it nothing by any of the three and that is an error, not an empty list, sin
 
 ## Funds
 
-Forty-eight funds across four families, none of them in the packaged dataset, all publishing their holdings online.
+Forty-nine funds across four families, none of them in the packaged dataset, all publishing their holdings online.
 
 - **ARK Invest.** `ARKK`, `ARKQ`, `ARKW`, `ARKG`, `ARKF` and `ARKX`.
 - **Fundstrat Granny Shots.** `GRNY`, `GRNJ` and `GRNI`.
 - **VanEck, listed in London.** `CURE.L`, `CYBO.L`, `DAPP.L`, `DFNS.L`, `ESPO.L`, `GDIG.L`, `GDX.L`, `GDXJ.L`, `HDRO.L`, `JEDI.L`, `NUCL.L`, `OIHV.L`, `PIKA.L`, `QNTM.L`, `REMX.L`, `REUS.L`, `SMH.L` and `VEGI.L`.
 - **VanEck, listed in the US.** `BBH`, `CRAK`, `DAPP`, `EMET`, `ESPO`, `GDX`, `GDXJ`, `IBOT`, `MOAT`, `MOTI`, `MVAL`, `NLR`, `OIH`, `PPH`, `REMX`, `SMH`, `SMHC`, `SMHX`, `SMOT` and `WARP`.
-- **Wedbush.** `IVES`.
+- **Wedbush.** `IVEP` and `IVES`.
 
 Work out where each of them publishes.
 VanEck's two ranges are separate funds under one manager, so expect to find them in different places.
@@ -60,14 +60,14 @@ Six of those symbols appear in both ranges, where the London fund and the US fun
 The suffix is what tells the two apart, and I want it on all eighteen rather than only on those six, because an index I have put in a script should not change the day VanEck lists something that collides with it.
 
 Each answers to its own symbol, so `trade index get-symbols ARKK` and `trade index get-symbols IVES` work where `trade index get-symbols ARK` does not.
-All forty-eight appear in `catalogue` beside the packaged ones, each under the spelling that reaches it.
+All forty-nine appear in `catalogue` beside the packaged ones, each under the spelling that reaches it.
 
-Those forty-eight are the funds I follow, not the limit of what I can ask for.
+Those forty-nine are the funds I follow, not the limit of what I can ask for.
 Any other ETF symbol should expand as well, so `trade index get-symbols TAN` gives me a solar fund named nowhere in this brief.
 It spells the same way as the rest, bare for a US listing and `.L` for a London one.
 No issuer publishes anybody else's funds, so that one will not come from an issuer — look for somewhere that carries ETFs generally and covers both listings.
 When it is what answers, just give me the symbols; I do not need telling that the index was not one of mine.
-For one of my forty-eight I want the whole book.
+For one of my forty-nine I want the whole book.
 For anything else the largest holdings are enough, so do not pay for completeness there at the cost of the funds I actually follow.
 
 A fund whose holdings I cannot retrieve is an error saying so, not a fund that came back empty.
