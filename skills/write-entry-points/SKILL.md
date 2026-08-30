@@ -119,6 +119,14 @@ The form you check by hand is then never the form a script receives, and nobody 
 
 **Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
 
+**The routes converge on one value, and that value is normalised once.**
+Arguments, a named file and standard input differ only in where the bytes came from, so they resolve to one list at the edge and nothing inward ever learns which won.
+That convergence is also the only sensible place to clean it: trim what a file's line endings added, fold the case a caller was careless about, drop what was given twice.
+
+The failure is quiet, and it is a split rather than an omission.
+Each route gets the part of the cleaning its own bytes obviously needed — the file reader strips whitespace, the operation drops duplicates — and whatever no route made obvious is done by none of them.
+Do the whole of it in one function, so what counts as the same input is stated once and every route inherits it.
+
 **Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.
 Exit non-zero on failure, so `&&` and `set -e` behave.
 
