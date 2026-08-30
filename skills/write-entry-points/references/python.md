@@ -133,6 +133,22 @@ The factory names a noun, so a noun-phrase docstring is the instinct — but it 
 The parameter is then free to be `input_` and the CLI never sees the underscore, so `input`, `id`, `type` and `filter` all take `write-python`'s trailing underscore without the surface moving.
 No option ever has to be renamed around a builtin.
 
+**A repeated option's default is a three-way conflict, and `show_default` is the way out.**
+`list[T] = [X]` is what you want and `ruff`'s B006 rejects it as a mutable default; a tuple satisfies `ruff` and `pyright` rejects it against a `list` annotation; `collections.abc.Sequence[T]` satisfies both and `typer` refuses the type outright with "Type not yet supported".
+What survives all three is `list[T] | None = None`, resolved in the command body — at the cost of a `--help` that no longer states the default.
+
+Buy that back with `show_default="daily"` on the factory.
+The option then says what happens, the body does it, and no tool is fought — which is the trade to take, since the alternative is a lint suppression or a type ignore carried for the life of the surface.
+
+**A default that is a date or a clock reading is never an expression in the signature.**
+It is evaluated once at import, so a long-running process holds a stale one and `--help` prints a literal that ages — the mutable-default trap with a worse failure, since nothing looks wrong.
+Default it to `None` and resolve it where it is used (see `be-functional`).
+
+**Then describe the behaviour in `show_default`, never a value nothing computes.**
+An unbounded upper date is not "today": nobody set today, the source answers with the most recent thing it has, and on a weekend that is Friday.
+Writing `show_default="today"` invents a decision and misleads precisely the reader who acts on it, since passing today's date explicitly is a *different* request.
+Say what the caller gets — "as recent as there is", against "as far back as there is" on the other bound — so the two read as the pair they are.
+
 **Where the options are systematic, parameterise the factory and pass the whole option set on.**
 A command whose surface is one option per column of a report — a bound per count on each timeframe, a threshold per metric — reaches twenty or thirty options, and writing a factory each is as much duplication as inlining them.
 Take the axes as arguments instead, so one factory serves the lot and the help panels fall out of it:
