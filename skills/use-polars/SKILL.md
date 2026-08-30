@@ -172,7 +172,13 @@ result = (
 For data bigger than memory, use the streaming engine: `.collect(engine="streaming")` (the older `.collect(streaming=True)` is deprecated).
 
 **Lazy is also how you read the top of a file whose bottom is broken.** `read_csv` parses the whole document in parallel chunks before returning, so a stray quotation mark thousands of rows below what you want kills the read — and `n_rows` does not save you, since the chunks are parsing already.
-`scan_csv(...).head(n).collect()` stops at `n`.
+`scan_csv(...).head(n).collect()` stops once it *has* `n` rows, which is not the same as stopping at row `n`.
+It still reads in chunks, so it escapes the break only where the break falls outside the chunks it had to parse to get there.
+On a large file that is nearly always true, and is why this works; on a small one the whole document is one chunk and the lazy read fails exactly as the eager one does.
+Treat it as a strong optimisation rather than a guarantee — and note that a fixture small enough to commit will not reproduce the failure it is there to prevent, so pin it with a generated file instead.
+
+**Do not repair it by cutting the bytes into lines first.**
+A quoted field may hold a newline, so `document.splitlines()[: n + 1]` splits records in half and hands back fewer rows than it took lines — a wrong count rather than an error, which is worse than the read that failed.
 Here lazy is about **not looking at data you never asked for** rather than about size, which makes it the default for any source you do not control.
 
 Two more lazy-execution habits: run several independent queries together with `polars.collect_all([frame_a, frame_b])` so the engine shares scans and work across them, and write a lazy frame straight to disk with `.sink_parquet(path)` rather than `.collect().write_parquet(path)`, which streams without materialising the whole frame.
