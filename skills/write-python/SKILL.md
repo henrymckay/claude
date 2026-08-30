@@ -403,6 +403,19 @@ This is the section's last rule applied to placement rather than to parameters �
 Write one shared private converter taking the report type as an argument and call it from each entry point, which is still the one place deciding that the rule was asking for.
 Reach for it only where the meaning genuinely differs; a message that differs is the decorator's case, not this one.
 
+**A decorator is a rule about a call, not only about its exceptions.**
+`handle` catches, so this section reads as exception machinery — but a decorator sees the arguments and the return value together, and both are places the same duplication collects.
+
+- **Classifying an answer is a decorator.** Which status a service replied with is a branch on the *response*, not on an exception type, so the function raising a distinct error per outcome carries no `try` at all and lifts out of every adapter sharing that boundary.
+- **Checking what came back against what was asked for is a decorator.** A source answering for four of the five symbols it was given has not failed in any way a `try` could see, and the comparison needs the arguments and the result in one place — which is what a decorator holds and a helper called from each function does not.
+
+**Stacking `handle` is how one outcome means different things to different adapters.**
+It converts whatever it is given, so it reinterprets your own errors as readily as a library's: a neutral "there is no such document" becomes "no such index" for the source that will try any name, and "the publisher moved it" for the issuer publishing a book you ship.
+Put the narrow conversion **inside** the broad one — the inner decorator has already turned the neutral error into something the outer's `kinds` do not name, so the outer leaves it alone.
+Reversed, the broad one catches first, the distinction is lost, and nothing says so.
+
+That is not the case ruled out above: there the *caller* decides at runtime, so no report type can be bound at decoration; here each adapter decides once, which is exactly what decorating it records.
+
 **The decorator converts a failure; it does not classify one.**
 It maps a set of exception types onto a single error of yours, so it cannot say that one answer from a service means something different from another — that a 404 is "there is no such thing", a 503 is "ask again shortly" and a 401 is neither.
 Where the caller's next move differs by *which* failure it was, that decision is a branch and it belongs at the one boundary that can see the raw outcome: raise a distinct error per outcome there, from a single function.
