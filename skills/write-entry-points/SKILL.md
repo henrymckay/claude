@@ -56,6 +56,14 @@ Resolve it by making options **combine rather than multiply** — orthogonal opt
 That is not a reason to refuse them — callers reach for the flags the tools beside yours carry, and `curl` and `sort` both take `-o` — but it is a reason to say which you are doing and why.
 The failure is adding it without the thought: an option nobody decided to include is one nobody will decide to remove, and a surface grown that way is where the flag count comes from.
 
+**Say it to whoever asked, before you build it.**
+"Notice" and "say why" are easy to satisfy privately and then not do at all, because nothing in a build stops for them.
+Where somebody specified the surface, the noticing is theirs to hear: name the options that duplicate the shell, say you are keeping them for convention, and carry on.
+It costs a sentence, it is the one moment a flag's cost is visible, and it is what turns "adding it without the thought" into something a reader of the diff can check.
+
+Two are worth raising every time, because they are the ones a specification asks for by reflex: an output path against `>`, and an input path against `<`.
+Neither refusing them nor adding them silently is the answer; saying so and building them is.
+
 Two more follow from the surface being public.
 **Spell the same idea the same way everywhere**, so learning one command predicts the next.
 And **treat `--help` as the documentation**: a surface that can only be understood by reading a README is a surface that needs redesigning, not a README.
