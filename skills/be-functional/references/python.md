@@ -67,6 +67,7 @@ def area(shape: Shape) -> float:
 **`match` vs `functools.singledispatch`** — both dispatch on type, so choose by who owns the cases.
 Use `match` for a **closed** set of variants you own (you get exhaustiveness checking); use `singledispatch` when the operation should stay **open** to new types that register their own handler from elsewhere, without editing the function.
 And for plain boolean conditions, a simple `if/elif` still wins over both.
+Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, and it belongs in a mapping read from `data/`.
 For dispatch on **more than one argument's type**, the stdlib has nothing — reach for **`plum`** (annotation-driven multiple dispatch, well-typed and maintained; `multipledispatch` is a simpler older alternative), and only when `singledispatch`/`match` genuinely can't express it.
 
 ## Transformations over loops

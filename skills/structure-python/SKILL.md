@@ -318,6 +318,13 @@ Every example above is a value per row of the domain's own data, so a mapping fr
 It is the same table: your name against their spelling, one row each, edited when the library changes and by nobody reading the code around it.
 Put it in `data/adapt/` with the rest, so the one place the two vocabularies meet is a file somebody can open — and so the library's own spelling has one home rather than being free to leak into an output column.
 
+**A lookup's table is data, and that includes the name of the thing it selects.**
+Once a mapping is a mapping rather than a `match` (see `be-functional`), it goes in `data/` like any other table, and the function doing the lookup shrinks to reading the table and indexing it.
+A method's *name* serialises as readily as a suffix or a URL does, so a mapping from your word to a library's method belongs in the file with the rest rather than as a dict of references in the module — one line per member either way, and only one of them is visible as a set.
+
+The cost is that a name in a file is a name the type checker never reads.
+Buy it back with one test asserting every name in the table resolves on the thing it is looked up against: it covers the whole table at once, and it fails on your machine rather than on somebody's first run.
+
 **Choose the format by the data's shape: CSV only where it is naturally a table, YAML everywhere else.**
 A table means every row carries the same fields and there are enough rows for a header to pay for itself — a suffix per exchange code, a rate per band.
 Configuration is not that.

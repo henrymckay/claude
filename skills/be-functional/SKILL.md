@@ -104,6 +104,17 @@ A variant per accepted phrasing models the grammar rather than the problem — p
 Decompose data by its **shape** rather than a ladder of type checks and attribute access.
 Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
 
+**A `match` whose every branch returns a different value is a lookup, not a match.**
+Pattern matching earns its place by *destructuring* — binding the parts of a variant and doing different work with them.
+Where each case names one member of a closed set and hands back a constant, a name or a row, the branches hold no pattern at all: the construction is a mapping written as control flow, it grows a case per member, and the set it encodes can be read by nobody but a person scrolling it.
+Write the mapping instead and let the key's type carry the exhaustiveness.
+Reach for `match` where the branches differ in what they *do*.
+
+**What breaks is interpolating your word into a library's, not reaching a name dynamically.**
+`getattr(client, f"get_{kind}")` assumes your vocabulary and theirs are one vocabulary, and they are not: a kind you call `coin` may be spelled `cryptocurrency`, and one you call `mutual-fund` carries a hyphen no identifier may — so two members of seven fail, at runtime, in front of whoever asked for them.
+`getattr(client, kinds[kind])` is the same call with the mapping doing the reconciling, which is what a mapping was for.
+Where its values are data — and a method's name is data — `structure-python` has where the mapping itself goes.
+
 ## Derive functions from the data flow
 
 Before writing the core, write down the **sequence of shapes** the data passes through — the type going in, the type coming out, and the forms between.
