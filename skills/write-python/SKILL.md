@@ -283,6 +283,17 @@ Deriving those from the other fields produces a rule that needs a lookup table, 
 So print one whole record and read the keys before writing anything that computes over it, and where a field answers the question directly, take it and fall back only where it is missing.
 This is KISS again rather than a new rule, but it hides where KISS usually does not, because the hand-rolled version *works* — it just answers a fraction of the rows.
 
+**The field being absent is a case, not an edge case — write the fallback.**
+"Take it and fall back where it is missing" is two instructions, and the second is the one that gets dropped, because the field is present on every record you happened to look at.
+
+Its absence bites twice.
+It is *absent* rather than empty, so subscripting raises instead of yielding a null — and it raises for the whole batch, so one record without the key fails an entire group that was otherwise fine.
+Reach for it with `.get`, and the rows survive to be judged.
+
+Then give the fallback a target: the next-best field of the same kind the record carries, taken **only** where the direct one is absent.
+Preferring the fallback wherever it looks more complete is the over-correction and is worse than having none, because it replaces right answers with plausible ones — a company's home listing swapped for whichever exchange happened to be listed first.
+Where the record carries no second field either, that row has no answer and should say so by being empty rather than by being guessed.
+
 **A call's defaults are decisions somebody else made for a different problem.**
 The instinct is to pass the arguments your task names and let the rest stand, because a default reads as the sensible choice — and it is, for the caller its author had in mind.
 It is not a choice *you* made, and nothing in the code records that you saw it.
