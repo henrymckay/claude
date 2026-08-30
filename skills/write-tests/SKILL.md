@@ -93,6 +93,15 @@ Cover the case it was written for **and** the case it was not: a record missing 
 This is also why you **mock sparingly**.
 Prefer real objects and dependency injection to mocks: a mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
 Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
+
+**Where an adapter owns its client on purpose, the seam is one argument, not a patch.**
+An adapter is built to keep its library's objects inside itself, so a test looking for something to inject finds nothing — and that is the boundary working rather than an oversight.
+Most of what you wanted to test does not need it anyway: splitting retrieval from parsing leaves the parse taking a saved response, with no client in it at all.
+
+What remains is genuinely about the client — which answers it treats as failures, what it retries, which page it fetches first.
+Reach that by giving the function that *builds* the client an optional transport defaulting to the real one, which is the injection any impure dependency takes.
+The test then hands it the library's own in-process transport, every layer above the wire stays the library's real code, and nothing private is patched.
+Patching the builder instead replaces the one function the test was about.
 See the test-double taxonomy under Patterns below.
 
 ## Isolation
