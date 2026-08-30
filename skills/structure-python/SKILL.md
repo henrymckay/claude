@@ -81,6 +81,14 @@ That injection is the essential idea (see `be-functional`).
 Add more pure packages beside `transform` as the core grows (a `domain`, a `pricing`), and more edge packages beside `adapt` as the IO grows — an `extract` for input and a `load` for output, say (where `load` means *persist to a store*, not the on-screen presentation a driver owns).
 Each new core package obeys the core's rules (no IO; imported, never importing outward); each new edge package obeys the edge's (does its own IO, imports the core, is never imported by it).
 
+**An app's errors are a core package of their own, and so is what raises them.**
+The exception classes an app reports are neither a transform nor a domain record: every layer raises them and every driver catches them, so they sit beside `transform` in the core as an `error/` package.
+What settles it is that the package imports **nothing** — not the HTTP client, not the frame library — which is exactly why both edges and every entry point can reach it, where a corner of `adapt` could not be imported inward at all.
+
+The decorator converting a library's failures into them goes in that same package, not at the edge (see `write-python`).
+Filing it with the adapters that apply it is the instinct, and it costs the arrangement its point: its `report` argument is one of the classes beside it, the two are read together, and moving it outward files the one thing every layer needs under the one layer nothing inward may import.
+Name the module for the shape it holds rather than the function it exports, so `error.handle` stays free to be the function.
+
 **Within a package, make every member the same kind.** A directory holding `ark.py` beside `httpx_/` tells a reader nothing by the difference — the shapes do not mark scope, importance or anything else, and the import path is identical either way.
 So when one member has to become a package, promote its siblings too.
 The payoff is that adding a second module to any of them is a one-file diff rather than a restructure, and `ls` of a layer reads as a list of peers.
@@ -221,7 +229,7 @@ So it earns its own member of the edge layer, named for what it is, holding both
 Each adapter then says only that it writes in that convention, which is the one fact about it that is true.
 
 That member is not a source, and the layer's own mapping should not pretend otherwise.
-A package of interchangeable adapters names its members so every driver reads the same set (see `write-entry-points`), and what it names is the ones something can be *fetched from* — a shared convention, a shared reader, a settings module are all members of the package and none of them belongs in that mapping.
+A package of interchangeable adapters names its members so every driver reads the same set (see `write-entry-points`), and what it names is the ones something can be *fetched from* — a shared convention, a shared reader, a settings module and the loader that reads the layer's own `data/` files are all members of the package, and none of them belongs in that mapping.
 
 **An adapter calling a service you do not own states a deadline and identifies itself.**
 A request with no timeout hangs the whole program on somebody else's outage, and there is no upper bound on how long that lasts.

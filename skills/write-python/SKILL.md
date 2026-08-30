@@ -309,6 +309,7 @@ The hierarchy above is what a library or an app with several failure modes grows
 **Handle a library's exceptions with a decorator, not a `try` in every function.**
 Where several functions convert the same library failures into the same error of yours, the `try`/`except`/`raise ... from` is identical in each and only the message differs.
 Lift it once.
+It belongs beside the error classes it raises, in the core, rather than with the adapters that apply it — `structure-python` has the reason and the package.
 
 **The trigger is the repetition, not the message.**
 Parameters worth naming are the *best* case, not the entry condition, so a constant message still earns the decorator — a layer of parsers each taking one `document` and raising the same error of yours is the duplication this removes, however little there is to interpolate.
