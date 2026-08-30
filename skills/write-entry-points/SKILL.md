@@ -38,6 +38,15 @@ Presentation belongs to the entry point, never the core: a CLI's table, an API's
 The line is whether the step still yields your own data: a frame in and a frame out is core, and presentation starts where the result stops being data and becomes a `Table`, a response model, a widget.
 Test it by asking what a second driver would do — an API serving the same report wants the same pivot and a completely different renderer, which places the pivot on the core's side of the line.
 
+**One renderer for the whole tool, told what to show rather than guessing.**
+A tool's commands answer with different shapes, so the temptation is a renderer per command — which is the same table built twice, differing only in the frame handed to it.
+One renderer is right.
+What it must not do is work out what it is holding.
+
+A renderer inspecting column names for the ones it recognises — colouring where it finds an open beside a close, drawing a bar where it finds a volume — has put the domain in the one place meant to be domain-free, and it is wrong the first time a later command carries a column of that name meaning something else.
+Pass a **per-column description** beside the frame instead: how to show this column, and plain for every column that says nothing.
+The command already knows what it is rendering, so the renderer never has to.
+
 ## Design the surface
 
 An entry point is a public API — people script against it, so a renamed flag is a broken caller and a missing capability is a fork.
