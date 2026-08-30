@@ -495,6 +495,9 @@ The trap to know is that it reads the base as a *document*: a base missing its t
 - **Use a named method over an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
 A named method also reads in evaluation order and says what a symbol only implies — `polars`'s `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
 Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
+- **Pick one shape for a branch that selects a value, and keep it for the whole function.**
+An early return and a conditional expression say the same thing, so a function using both reads as though the difference meant something — the same fault as a module that splits some calls down the page and not others.
+Choose by the count: two branches read well as a conditional expression, three or more read better as a chain of early returns, since a nested `a if p else b if q else c` has to be parsed rather than read.
 - **Context managers** (`with`) for anything with cleanup — files, locks, connections.
 Write your own with `contextlib.contextmanager` when useful.
 - **f-strings** for formatting.
