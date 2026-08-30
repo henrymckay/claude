@@ -127,6 +127,17 @@ The trade to know: a protocol's method name **is** the contract, so every adapte
 That rules out naming implementations for what distinguishes them — no `fetch_holdings` beside `read_holdings` to mark which costs a network call — and it should: callers reach the port precisely because they do not care which one answers, and a contract whose name changes per implementation is not a contract.
 Put the distinction in the module name, where `pytickersymbols_` already says the data ships with the package.
 
+**A port's parameters are the domain's own values, not the container the core computes in.**
+A port says what the core needs in the domain's words — a sequence of symbols, two dates, the timeframes wanted — so a caller *states* a request rather than assembling one.
+Typing a parameter `polars.DataFrame` or `polars.Series` makes the frame library part of the contract every adapter and every fake has to speak, and it charges twice: a test double unpacks a frame before it can answer, and a second driver builds one before it can ask.
+
+The pull toward the frame is real and comes from the right place.
+"A value matched against the data element by element is input, not a parameter", and a grouping axis belongs in the frame — but both govern the **computation**, not the request.
+A timeframe is an axis of the answer and belongs in a `timeframe` column of what comes back; it is not therefore a frame going in.
+
+The tell is a signature that has stopped reading as a sentence about the problem: `get_candles(symbols, windows)` says nothing about dates, where `get_candles(symbols, *, end, start, timeframes)` *is* the request.
+Keeping it that way also settles where a derivation lives: the port carries one pair of bounds for every timeframe asked for, so the fan-out into a request each happens in the adapter, and the pure rule it calls — which day a week begins on — stays in the core.
+
 **Split the port the moment one adapter can only answer half of it.**
 Bundling two calls into one protocol is right while every adapter has both to give, and wrong once one of them is *open* — a source answering for anything cannot enumerate what it offers, a write-only store cannot be read, a live feed cannot be replayed.
 The forced answer is always an empty frame, a `None` or a `NotImplementedError`, each of them the adapter lying to satisfy a signature.
