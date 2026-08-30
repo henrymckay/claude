@@ -152,6 +152,16 @@ They are **not** exhaustive tests of the library — that's the maintainer's job
 - A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
 - Keep the dependency-behaviour tests a directory level apart from your own — the reference shows the tree.
 
+**Every default you overrode is an assumption, and it is the one most worth pinning.**
+"Assert only what your code assumes" reads as a limit and is really a prompt: go and enumerate them.
+The largest group hides because it is written as arguments — each one you passed because the library's default was wrong for you is a belief about what that default *is*, and the day it changes back you get a wrong answer rather than an error.
+
+Pin them by their effect rather than their name: that the unadjusted close differs from the adjusted one, that a bound excludes its own date, that a search returns more than the default cap when told to.
+Each of those fails loudly on the upgrade that would otherwise change your numbers quietly.
+
+The rest of the enumeration is what you read off a response — the level names of an index you reshape, whether a missing record raises or comes back as nulls, whether a field is absent or empty.
+A test per assumption is not over-testing; the assumptions are what the adapter is made of.
+
 **A network-backed dependency is pinned without a network.**
 "Never touch the network" and "pin the behaviour you rely on" only look opposed: what you rely on is how the client turns a response into what your code reads — the status it raises on, the encoding it picks, how it follows a redirect — and none of that needs a socket.
 Use the client's **own** in-process transport rather than patching it, so every layer above the wire is still the library's real code, and feed it a response you recorded from the real service once and kept beside the test.
