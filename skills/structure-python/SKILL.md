@@ -128,6 +128,11 @@ So count the *ties*, not the imports.
 Where they are tied, one protocol; where they merely share a library, a port each — and one adapter module satisfies all of them at once, which is what makes the split free.
 A module satisfies a structural protocol in `pyright` exactly as an instance does, extra keyword-only parameters and all, so nothing has to be a class — the `Protocol` is a type declaration and no adapter inherits from it.
 
+The support is narrower than the spec, though, so know what you are buying.
+`pyright` implements it; other checkers — PyCharm's among them — flag the module as not satisfying the protocol, so an adapter passed this way carries a squiggle nothing can clear.
+That is a cost of the *bundle* rather than of protocols: a port declaring `__call__`, or a plain callable alias, is satisfied by an ordinary function and every checker agrees.
+So where the calls are genuinely tied, take the noise; where they are not, splitting the port removes it as a side effect of the split you should have made anyway.
+
 Prefer it to a record of callables, which lets a caller build a chimera: `Source(holdings=ark.fetch, names=wedbush.read)` type-checks, and a module cannot be mixed with itself.
 Prefer it to an abstract base class too, which buys the contract being checked in the adapter's own file at the price of a stateless class per adapter and a subclass per test fake.
 
