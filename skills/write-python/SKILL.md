@@ -283,6 +283,19 @@ Deriving those from the other fields produces a rule that needs a lookup table, 
 So print one whole record and read the keys before writing anything that computes over it, and where a field answers the question directly, take it and fall back only where it is missing.
 This is KISS again rather than a new rule, but it hides where KISS usually does not, because the hand-rolled version *works* — it just answers a fraction of the rows.
 
+**A call's defaults are decisions somebody else made for a different problem.**
+The instinct is to pass the arguments your task names and let the rest stand, because a default reads as the sensible choice — and it is, for the caller its author had in mind.
+It is not a choice *you* made, and nothing in the code records that you saw it.
+So read the signature before the first call and decide each default, not only the ones you already meant to change.
+
+The ones that hurt share a shape: silent and plausible.
+A price series adjusting for dividends by default returns numbers that look right and answer a different question.
+A fetch falling back to one month when given no dates returns twenty rows and looks exactly like a fetch that worked.
+A progress bar defaulting to on narrates on the channel a driver owns.
+None of them raises, none appears in a passing test, and each is found by reading the signature or not at all.
+
+It cuts the other way too, which is the cheaper half: a client whose timeout already defaults to ten seconds needs no wrapper setting one, so reading the defaults also stops you writing what is already there.
+
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Error handling
