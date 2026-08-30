@@ -106,6 +106,11 @@ def stations() -> typer.models.ArgumentInfo:
 
 The factory names a noun, so a noun-phrase docstring is the instinct — but it is a function like any other, and `ruff`'s `D401` requires the imperative, so write `Return the …` (see `write-python`).
 
+**A factory naming its own flags frees the parameter's name.**
+`typer` derives `--input` from a parameter called `input` only where the option does not say otherwise, and an option carrying a short form has already named itself: `typer.Option("--input", "-i")`.
+The parameter is then free to be `input_` and the CLI never sees the underscore, so `input`, `id`, `type` and `filter` all take `write-python`'s trailing underscore without the surface moving.
+No option ever has to be renamed around a builtin.
+
 **Where the options are systematic, parameterise the factory and pass the whole option set on.**
 A command whose surface is one option per column of a report — a bound per count on each timeframe, a threshold per metric — reaches twenty or thirty options, and writing a factory each is as much duplication as inlining them.
 Take the axes as arguments instead, so one factory serves the lot and the help panels fall out of it:
@@ -174,6 +179,12 @@ logging.basicConfig(
 
 The same applies to any error or prompt the driver prints: `typer.echo(message, err=True)`, or a second `Console(stderr=True)` held for the purpose.
 Fail with `raise typer.Exit(code=1)` so the shell sees it.
+
+**Catch your own errors in a decorator on each command, not a `try` inside one.**
+A `typer` app is callable, so the console script points straight at the app object and there is no wrapper function to hold a top-level `try`.
+Put it on the commands: one decorator catching your base error, writing the message to a stderr console and raising `typer.Exit(code=1)`.
+It goes **under** `@app.command()` so `typer` still reads the wrapped signature, and it is the one broad catch `write-python` allows — one place, reports and exits, nothing swallowed.
+A `try` in a command body is that code once per command, and the command you forget is the one that shows a traceback.
 
 Presentation config obeys the function-over-constant rule — a `_colour(direction)` function in `rich_`, not a module-level `dict` (see `be-functional`).
 A throwaway one-command tool can collapse `typer_` and `rich_` into a single `cli.py` (KISS) — but keep it out of the core.
