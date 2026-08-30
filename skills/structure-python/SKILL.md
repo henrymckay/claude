@@ -86,7 +86,7 @@ The exception classes an app reports are neither a transform nor a domain record
 What settles it is that the package imports **nothing** — not the HTTP client, not the frame library — which is exactly why both edges and every entry point can reach it, where a corner of `adapt` could not be imported inward at all.
 
 The decorator converting a library's failures into them goes in that same package, not at the edge (see `write-python`).
-Filing it with the adapters that apply it is the instinct, and it costs the arrangement its point: its `report` argument is one of the classes beside it, the two are read together, and moving it outward files the one thing every layer needs under the one layer nothing inward may import.
+Filing it with the adapters that apply it is the instinct, and it costs the arrangement its point: its `report` argument is usually one of the classes beside it, the two are read together, and moving it outward files the one thing every layer needs under the one layer nothing inward may import.
 Name the module for the shape it holds rather than the function it exports, so `error.handle` stays free to be the function.
 
 **Within a package, make every member the same kind.** A directory holding `ark.py` beside `httpx_/` tells a reader nothing by the difference — the shapes do not mark scope, importance or anything else, and the import path is identical either way.

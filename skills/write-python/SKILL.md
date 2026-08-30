@@ -426,7 +426,7 @@ Decorate the entry point that took the name and the same failure comes back nami
 The example above is the shape: `@handle` sits on `get_holdings(name, ...)` and catches what the parse it calls throws.
 This is the section's last rule applied to placement rather than to parameters — the boundary that holds the name is the boundary that reports.
 
-**The one case the decorator cannot take is a report type that varies by caller.**
+**The one case the decorator cannot take is a response that varies by caller.**
 `report` is bound at decoration, so a function whose caller decides what a failure *means* — a 404 that is "no such thing" to one caller and "the publisher moved it" to every other — cannot express that through it.
 Write one shared private converter taking the report type as an argument and call it from each entry point, which is still the one place deciding that the rule was asking for.
 Reach for it only where the meaning genuinely differs; a message that differs is the decorator's case, not this one.
@@ -442,7 +442,7 @@ It converts whatever it is given, so it reinterprets your own errors as readily 
 Put the narrow conversion **inside** the broad one — the inner decorator has already turned the neutral error into something the outer's `kinds` do not name, so the outer leaves it alone.
 Reversed, the broad one catches first, the distinction is lost, and nothing says so.
 
-That is not the case ruled out above: there the *caller* decides at runtime, so no report type can be bound at decoration; here each adapter decides once, which is exactly what decorating it records.
+That is not the case ruled out above: there the *caller* decides at runtime, so nothing can be bound at decoration; here each adapter decides once, which is exactly what decorating it records.
 
 **The decorator converts a failure; it does not classify one.**
 It maps a set of exception types onto a single error of yours, so it cannot say that one answer from a service means something different from another — that a 404 is "there is no such thing", a 503 is "ask again shortly" and a 401 is neither.
