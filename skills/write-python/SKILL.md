@@ -437,6 +437,10 @@ Reach for it only where the meaning genuinely differs; a message that differs is
 - **Classifying an answer is a decorator.** Which status a service replied with is a branch on the *response*, not on an exception type, so the function raising a distinct error per outcome carries no `try` at all and lifts out of every adapter sharing that boundary.
 - **Checking what came back against what was asked for is a decorator.** A source answering for four of the five symbols it was given has not failed in any way a `try` could see, and the comparison needs the arguments and the result in one place — which is what a decorator holds and a helper called from each function does not.
 
+The trigger is the same as for an exception: **repetition**.
+One function checking its own return has already written the check once, so a decorator there is indirection with nothing to lift — and a `be-functional` argument for making that function total instead is worth taking only when a second caller arrives to share the check.
+Two functions needing the same comparison is what earns the decorator, and it is the only thing that does.
+
 **Stacking `handle` is how one outcome means different things to different adapters.**
 It converts whatever it is given, so it reinterprets your own errors as readily as a library's: a neutral "there is no such document" becomes "no such index" for the source that will try any name, and "the publisher moved it" for the issuer publishing a book you ship.
 Put the narrow conversion **inside** the broad one — the inner decorator has already turned the neutral error into something the outer's `kinds` do not name, so the outer leaves it alone.
