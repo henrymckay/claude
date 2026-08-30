@@ -448,6 +448,10 @@ Reserve returning `None` for genuinely expected "not found" cases, and make it o
 Don't nest past two levels.
 - **`pathlib.Path`** for filesystem work, not string paths.
 A string path only looks simple: joining it means guessing at separators, and every question you then ask it — suffix, parent, does it exist — is a different `os.path` function, where `Path` carries them all as methods and handles the separator itself.
+- **`urllib.parse.urljoin` for an address, not string concatenation.**
+A URL carries the same trap a filesystem path does and one more: `base + path` guesses at the separator, so a base that gains or loses its trailing slash silently doubles or drops one, and the failure arrives as a 404 that reads as the publisher having moved the file.
+`urljoin` knows what a scheme, an absolute path and a relative segment each mean.
+The trap to know is that it reads the base as a *document*: a base missing its trailing slash loses its last segment, and a path carrying a leading one resets to the host — so hold the slash on the base and not on the path, which is also what keeps a table of paths readable.
 - **Use a named method over an overloaded operator when both exist — especially when chaining off the result.** `path.joinpath("a/b").read_text()` reads left-to-right, where the operator form needs parens (`(path / "a/b").read_text()`) because attribute access binds tighter than `/`.
 A named method also reads in evaluation order and says what a symbol only implies — `polars`'s `col.mul(2)`/`col.gt(0)` over `*`/`>` (see `use-polars`).
 Keep operators where they're the plain idiom: arithmetic on numbers, and short expressions you don't chain off.
