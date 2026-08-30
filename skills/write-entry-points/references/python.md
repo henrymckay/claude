@@ -28,17 +28,19 @@ cli/
   __init__.py   role, hollow: re-exports app
 typer_/
   __init__.py     re-exports app; imports callback and command
-  driver.py       the typer.Typer() instance — imports no drive module
   argument.py     functions returning a configured typer.Argument
   callback.py     the @app.callback() run before any command
   command.py      the @app.command() functions — the composition root
+  driver.py       the typer.Typer() instance — imports no drive module
+  input_.py       gather(): what a command was given, by any route
   option.py       functions returning a configured typer.Option
+  output.py       display(): the destination and the choice of form
 rich_/
   __init__.py
-  render.py     builds the rich table from the core's plain results
+  render.py     builds the rich table and nothing else
 ```
 
-`command.py` holds the commands and is the **composition root**: each imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `rich_` to render.
+`command.py` holds the commands and is the **composition root**: each imports an operation and a concrete adapter, injects one into the other, and hands the plain result to `output` to display.
 Unlike `fastapi`'s `APIRouter`, `typer` has no flat command *router* to decorate off a separate object — `add_typer` composes sub-apps only as command *groups* (below), not flat commands.
 
 **Give the app object its own module.**
@@ -109,7 +111,9 @@ typer_/
     __init__.py     mounts each group's sub-app on the root app
     users.py        one module per group: its commands, decorating driver
   driver/           every typer.Typer(): the root app and each sub-app
+  input_/           gather(): what a command was given, by any route
   option/           factories returning a configured typer.Option
+  output/           display(): the destination and the choice of form
 ```
 
 **A command's name is its function's name.** `typer` turns `list_names` into `list-names`, so let it and never pass `name=`.
@@ -204,18 +208,22 @@ Keep it to a bare value or two rather than a sentence, since the value itself is
 
 **Serve the terminal and the pipeline from one command** (see Compose with other tools in `SKILL.md`).
 `rich` drops colour by itself when standard output is not a terminal, which is *not* enough — a boxed table is still unparseable — so the machine form has to be a second render rather than the same one unstyled.
-Keep both in `rich_` and let the option decide, never `Console().is_terminal`:
+The option decides which, never `Console().is_terminal` — and `output` decides, where `rich_` only builds the table:
 
 ```python
-def write(report: polars.DataFrame, console: rich.console.Console, table: bool) -> None:
+def display(
+    report: polars.DataFrame, *, path: pathlib.Path | None, pretty: bool
+) -> None:
     """Draw the report as a table, or emit it as CSV."""
-    if table:
-        console.print(_table(report))
-    else:
-        console.file.write(report.write_csv())
+    with contextlib.ExitStack() as open_files:
+        file = sys.stdout if path is None else open_files.enter_context(path.open("w"))
+        if pretty:
+            rich.console.Console(file=file).print(render.table(report))
+        else:
+            file.write(report.write_csv(include_header=False))
 ```
 
-The command stays a one-liner over it, and `--output PATH` just swaps the console's `file`.
+`display` is the name rather than `write` because only one of its two paths writes bytes; the other hands a `rich` object to a console, and the command asked for neither — it asked for the result to be shown.
 Read input the same way: type the argument `pathlib.Path` and treat `-` as standard input, so `demark count - --daily-setup 9` works mid-pipeline.
 
 **Send logs to standard error, or they corrupt the data stream.**

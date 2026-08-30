@@ -205,6 +205,17 @@ Split each shell into a **role** and one or more **framework** parts:
 - The **framework** part holds the library-coupled code: everything that uses or returns that library's objects.
 
 Swap the library and only the framework part changes; the role's name and launch identity stay put.
+
+**The driver owns the destination and the choice of form; the framework package owns only the rendering.**
+A tool answering two ways — a machine form and a readable one — invites a single `display()` taking the flag and branching.
+Put that in the presentation library's package and the package now owns a function that mostly does not use the library: the plain form is a serialisation the data library already does, and the destination is a file handle.
+
+Split them.
+One driver module owns where the output goes and which form was asked for; the framework package builds the library's object and stops.
+Swapping the presentation library then touches one function, and the plain form — the one every pipeline depends on — stops living inside a package named after a library it never calls.
+
+That leaves the driver a pair worth naming: one module for input arriving by any route, one for output leaving by either form.
+A tool reading three ways and writing two has exactly those two concerns, and naming them as a pair is what stops each command growing its own.
 The Python package mechanics — a hollow role package over trailing-underscore framework packages — are in `references/python.md`.
 
 ## Launch
