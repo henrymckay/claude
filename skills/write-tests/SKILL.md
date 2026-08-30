@@ -172,6 +172,17 @@ So exercise the whole declared surface against the real thing and **read the cou
 An input returning zero rows has passed every check a program can make on itself.
 Keep it as a marked test outside the default run, or a documented command, so it lives in the repo rather than someone's memory.
 
+**Zero is the loudest wrong count, not the dangerous one.**
+Checking that nothing came back empty catches a source that moved and a name that no longer resolves, and it is worth having.
+It does not catch the count that is plausible: a request for a full history quietly answered with one month looks exactly like a request that worked, and so does a search capped at a library default a quarter of what was asked for.
+
+So assert the size against something you knew before the run, not against zero.
+The cheapest form is a **relation between two runs** rather than a number — an unbounded fetch returns more than a bounded one, three timeframes return more rows than one, a limit of two hundred returns at least what fifty did.
+Those hold as the data grows, where a literal does not, and each fails on exactly the default that was silently taken.
+
+Assert the **categories** separately from the size, too.
+"All three timeframes appeared" and "as many rows came back as should have" are two claims, and a test making only the first reads as though it made both.
+
 ## Paradigms
 
 Reach beyond example-based unit tests when the problem fits.
