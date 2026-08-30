@@ -129,10 +129,16 @@ Assign the result.
 `.eq_missing()` is the null-safe form, and it counts two nulls as equal.
 - **`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
 
-**Declare a dtype where the data can be empty, and nowhere else.**
-On a non-empty list `polars` infers the type correctly and the declaration is noise.
+**Declare a dtype wherever you did not choose the contents.**
+On a list you wrote out `polars` infers the type correctly and the declaration is noise.
 On an **empty** list, or a column of every-`None`, it infers `Null` — which is not an empty String: `concat` against a real column raises `SchemaError`, as does a join on that key and every `.str` method.
-So declare it exactly where you did not choose the contents — an adapter's output, a filtered result, anything built from a response — since the test that had rows never sees this.
+So declare it exactly where the contents came from somewhere else — an adapter's output, a filtered result, anything built from a response — since the test that had rows never sees this.
+
+**Emptiness is the loudest case, not the only one — the *type* varies with the input too.**
+A column built from a response is typed by whatever that response happened to hold, so the same column returns `Int64` for one batch and `Null` for another, and the two runs will not concatenate.
+The sharpest version is a field an outside record carries for some kinds of thing and not others: ask about stocks and a market capitalisation is an integer, ask about indices and it is absent from every record, so it infers `Null`.
+Nothing about that frame is empty, and no fixture catches it, because a fixture picks its symbols.
+Name the **widest** type the column can hold while you are there, so a float does not come back an integer on the run where every value happened to be whole.
 
 **Build a one-column frame from a `Series`, not a dict and a schema.**
 `polars.Series("symbol", tickers, dtype=polars.String).to_frame()` states the column's name and its type once each, where `polars.DataFrame({"symbol": tickers}, schema={"symbol": polars.String})` states the name twice — so a rename can update one and miss the other, and the frame comes back with a column nothing downstream selects.
