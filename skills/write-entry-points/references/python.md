@@ -149,6 +149,19 @@ An unbounded upper date is not "today": nobody set today, the source answers wit
 Writing `show_default="today"` invents a decision and misleads precisely the reader who acts on it, since passing today's date explicitly is a *different* request.
 Say what the caller gets — "as recent as there is", against "as far back as there is" on the other bound — so the two read as the pair they are.
 
+**What makes `--help` the documentation is a handful of `typer` settings, so set them deliberately.**
+
+- `no_args_is_help=True` on **every** `typer.Typer()`, the group sub-apps included.
+Without it a bare group prints "Missing command" where the root prints its commands, so one surface answers the same question two ways depending how deep you are.
+- `context_settings={"help_option_names": ["-h", "--help"]}` on the root, where every other option carries a short form.
+It propagates to subcommands, and `--help` is the flag a caller tries first.
+- `rich_help_panel` on an option once a command has more than a handful, so the range, the input and the output group rather than running as one list of seven.
+- `metavar` where the derived one reads wrong: `typer` writes the parameter's name, so `[indices]...` appears where the convention says `INDEX...`.
+- `show_default` as a **string** wherever a default has behaviour to describe.
+`False` only hides it, which is right where there is genuinely nothing to say and wrong where the caller needs to know that leaving it off reads standard input — and redundant on a required argument, which shows `[required]` instead.
+
+Read the rest of `typer.Typer`'s signature before adding to this list: `pretty_exceptions_show_locals` is already `False`, so a driver setting it has written what the library does (see `write-python`).
+
 **Where the options are systematic, parameterise the factory and pass the whole option set on.**
 A command whose surface is one option per column of a report — a bound per count on each timeframe, a threshold per metric — reaches twenty or thirty options, and writing a factory each is as much duplication as inlining them.
 Take the axes as arguments instead, so one factory serves the lot and the help panels fall out of it:
