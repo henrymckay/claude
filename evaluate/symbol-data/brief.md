@@ -89,6 +89,9 @@ Most of what my catalogue names is tradeable in its own right, so a guess would 
 I will hand you the same symbol twice without meaning to, since two funds hold the same stock and I have piped both in.
 I want it back once.
 
+I am no more careful typing a symbol than typing an index, so take `aapl` and `AAPL` as the same thing and hand it back the way it is properly spelled.
+The full stop matters here for the same reason it does there, since `SMH` and `SMH.L` are two different things.
+
 If I give a symbol and nothing comes back for it, that fails the run and tells me which one, the same way one unknown index fails `trade index get-symbols`.
 A short table is the dangerous outcome, because nothing downstream can tell it apart from a stock that genuinely stopped trading.
 This holds for `get-candles` and for `get-info` alike.
