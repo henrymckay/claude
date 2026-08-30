@@ -34,7 +34,8 @@ typer_/
   driver.py       the typer.Typer() instance — imports no drive module
   input_.py       gather(): what a command was given, by any route
   option.py       functions returning a configured typer.Option
-  output.py       display(): the destination and the choice of form
+  output.py       display() and report(): where output goes, in which
+                  form, and how a failure reads
 rich_/
   __init__.py
   render.py     builds the rich table and nothing else
@@ -113,7 +114,8 @@ typer_/
   driver/           every typer.Typer(): the root app and each sub-app
   input_/           gather(): what a command was given, by any route
   option/           factories returning a configured typer.Option
-  output/           display(): the destination and the choice of form
+  output/           display() and report(): where output goes, in which
+                    form, and how a failure reads
 ```
 
 **A command's name is its function's name.** `typer` turns `list_names` into `list-names`, so let it and never pass `name=`.

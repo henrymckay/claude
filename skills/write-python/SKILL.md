@@ -101,6 +101,8 @@ Reserve `#` for what has nowhere else to live: tooling directives (`# noqa`, `# 
 **A suppression names what it suppresses** — `# noqa: D103`, `# type: ignore[arg-type]`, never the bare form.
 A bare `# noqa` turns off every rule on that line for good, including ones that did not exist when it was written, so the line stops being checked rather than stops being noisy.
 It reads as a considered exception when it is usually the reverse: forty bare suppressions across a package is a rule nobody decided to disable, disabled.
+A `typing.cast` written to quiet a checker is a suppression too, and a less honest one: it asserts a type rather than admitting a rule was switched off, so nothing marks the line as unchecked.
+Where the cast is not narrowing a genuinely wider type, restructure until the checker agrees — usually by giving each branch its own statement.
 Keep config files (`pyproject.toml`, pre-commit, CI) comment-free the same way, explaining any non-obvious setting in prose in the docs rather than inline.
 
 ## Imports

@@ -47,6 +47,10 @@ A renderer inspecting column names for the ones it recognises — colouring wher
 Pass a **per-column description** beside the frame instead: how to show this column, and plain for every column that says nothing.
 The command already knows what it is rendering, so the renderer never has to.
 
+**Rounding the data does not make a column read as one precision.**
+A float rendered by its own repr drops trailing zeros, so a column held to four places still shows two, one and four down the page and stops being scannable — which is the readability the rounding was for.
+Precision is a property of the *column* rather than of a value, so it belongs in the per-column description the renderer is handed, beside what a colour reads against and where a bar is drawn.
+
 ## Design the surface
 
 An entry point is a public API — people script against it, so a renamed flag is a broken caller and a missing capability is a fork.

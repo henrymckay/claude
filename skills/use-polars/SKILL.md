@@ -134,7 +134,12 @@ Assign the result.
 - **Null is not `NaN`.** `polars` keeps missing (null) apart from float not-a-number (`NaN`), where `pandas` conflates them — so `.fill_null` and `.fill_nan` are different calls, and `.drop_nulls` leaves a `NaN` sitting in the frame.
 - **A null comparison yields null, not false.** `polars.col("a").eq(polars.col("b"))` is null wherever either side is, so a `.filter` on it drops the row instead of keeping it.
 `.eq_missing()` is the null-safe form, and it counts two nulls as equal.
-- **`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
+- **A ratio against an aggregate needs the aggregate's zero case decided.**
+`polars.col("x").truediv(polars.col("x").max().over(group))` is the natural way to scale a value within its group, and it yields `NaN` for any group whose maximum is zero — not null, so `.fill_null` does not catch it and `.drop_nulls` does not remove it.
+It then travels: `NaN` compares false against everything, and the first consumer that rounds or casts it raises somewhere far from here.
+Decide the zero case where you divide, with a `when(max > 0)`, and remember the call is `.fill_nan` rather than `.fill_null`.
+
+**`.sum()` and `.mean()` disagree about an all-null column.** The sum is `0` and the mean is null, so a total reports a confident zero where an average admits it had nothing — check which one you are handing a reader.
 
 **Declare a dtype wherever you did not choose the contents.**
 On a list you wrote out `polars` infers the type correctly and the declaration is noise.
