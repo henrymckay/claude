@@ -313,6 +313,11 @@ So put it in a file whether it is thirty rows or one value.
 Normalise it as you would a table anywhere else: a prefix every row repeats — a base URL, a shared directory — is one value, so hold it once and keep the rows to what differs.
 Six rows carrying the same sixty characters is six places to edit when the host moves, and the diff hides which part actually changed.
 
+**A translation between your words and a library's is a table too.**
+Every example above is a value per row of the domain's own data, so a mapping from your word to a dependency's argument reads as adapter mechanics rather than reference data and stays in a `match` or a dict in the module.
+It is the same table: your name against their spelling, one row each, edited when the library changes and by nobody reading the code around it.
+Put it in `data/adapt/` with the rest, so the one place the two vocabularies meet is a file somebody can open — and so the library's own spelling has one home rather than being free to leak into an output column.
+
 **Choose the format by the data's shape: CSV only where it is naturally a table, YAML everywhere else.**
 A table means every row carries the same fields and there are enough rows for a header to pay for itself — a suffix per exchange code, a rate per band.
 Configuration is not that.
