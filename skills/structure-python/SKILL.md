@@ -108,8 +108,16 @@ Those are naming examples, not a target shape: each of those modules holds every
 
 ### Declare a port
 
-**Where the core needs several calls from the *same* outside thing, make the port a `Protocol` and let the adapter module satisfy it.**
-A source that lists what it offers and then expands one of them, a store that reads and writes — declare the pair as a `typing.Protocol` and pass the adapter **module** where one is wanted: `{"ark": ark}`, not `Source(holdings=ark.fetch, names=ark.read)`.
+**Where two calls must come from the *same place*, make the port a `Protocol` and let the adapter module satisfy it.**
+The test is whether the calls are **tied** — whether the answer to one decides who answers the next.
+A source that lists what it offers and then expands one of them is tied, because you ask who claims a name and then ask *that* source for it; a store that reads and writes is tied to the thing it stores.
+Declare the pair as a `typing.Protocol` and pass the adapter **module** where one is wanted: `{"ark": ark}`, not `Source(holdings=ark.fetch, names=ark.read)`.
+
+**One library serving several calls is not that test.**
+A client answering three unrelated questions — what a symbol costs, what it is, which ones exist — has one import and three ports, because nothing says the three must come from one place and a second source could answer any of them alone.
+Bundling them buys nothing and charges for it at every seam: a fake for one call has to implement the other two, so a test that cares about descriptions grows a stub for search.
+So count the *ties*, not the imports.
+Where they are tied, one protocol; where they merely share a library, a port each — and one adapter module satisfies all of them at once, which is what makes the split free.
 A module satisfies a structural protocol in `pyright` exactly as an instance does, extra keyword-only parameters and all, so nothing has to be a class — the `Protocol` is a type declaration and no adapter inherits from it.
 
 Prefer it to a record of callables, which lets a caller build a chimera: `Source(holdings=ark.fetch, names=wedbush.read)` type-checks, and a module cannot be mixed with itself.
