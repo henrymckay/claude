@@ -27,8 +27,16 @@ Three habits account for most of what goes wrong: importing names instead of mod
 
 `ruff` handles formatting, import sorting, line length, and lint rules; `pyright` handles type checking.
 Don't restate or fight those tools.
-**Don't spend effort on what `ruff format` fixes automatically** on pre-commit — line length, wrapping and stacking function arguments, quote style, trailing commas.
+**Don't spend effort on what `ruff format` fixes automatically** on pre-commit — line length, wrapping and stacking function arguments, quote style, and the trailing comma it adds when a line has to split.
 Write it naturally and let the hook format it; hand-formatting just creates needless churn and diff noise.
+
+**The one exception is the magic trailing comma, which is a decision rather than formatting.**
+`ruff format` collapses a call or a collection onto one line where it fits and splits it one-per-line where it does not — except that a trailing comma after the last element pins it open.
+That comma is not hand-formatting the tool will undo; it is the single signal the tool obeys, which makes it the one place a preference belongs.
+
+Spend it on consistency within a module.
+A file where some argument lists run down the page because they were long and others sit on one line because they were short reads as though the difference meant something, and a reader stops to work out what.
+Give the short ones the comma too, so every call of a kind reads the same way — and so adding an argument is a one-line diff rather than a reflowed block.
 
 ## Typing
 
