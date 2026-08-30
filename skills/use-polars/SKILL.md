@@ -108,6 +108,8 @@ The trap is the **second** `.over()`, which throws away whatever partition the f
 
 **Python control flow is what usually breaks a chain.** An `if` that inspects the frame and rebinds it, or an early return for an empty input, splits one transformation into branches that each need their own test.
 Keep the decision inside the chain — `when/then/otherwise` for a value, `.filter` for rows — or normalise the shape once where the data enters, so there is nothing left to branch on.
+Where the branch is about a column *existing*, `polars.selectors.by_name("a", "b", require_all=False)` applies to whichever are there and `.matches(...)` takes a pattern, so neither needs an `if`.
+Reach for them where the schema is genuinely open; where the caller knows which columns it handed you, being told is better than tolerating, since it removes the branch rather than expressing it.
 An empty input rarely deserves its own path: the same chain over an empty frame returns an empty frame with the right schema, where a hand-written early return duplicates that schema somewhere it can drift out of step.
 
 **`pivot` is the exception that breaks that promise.** With no rows there are no values to spread into columns, so it returns the index columns alone and every column downstream code selects has vanished — a `ColumnNotFoundError` that only ever fires once a filter empties the frame.

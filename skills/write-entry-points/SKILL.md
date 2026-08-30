@@ -38,6 +38,10 @@ Presentation belongs to the entry point, never the core: a CLI's table, an API's
 The line is whether the step still yields your own data: a frame in and a frame out is core, and presentation starts where the result stops being data and becomes a `Table`, a response model, a widget.
 Test it by asking what a second driver would do — an API serving the same report wants the same pivot and a completely different renderer, which places the pivot on the core's side of the line.
 
+So "a frame in and a frame out" is a proxy rather than the test itself.
+A pure frame step whose columns exist only for the renderer, and are dropped before anything receives them, is presentation written in the frame library: the second driver wants the pivot and not the colour, because it would choose its own.
+Purity puts it in the core; being part of the answer is what actually decides.
+
 **One renderer for the whole tool, told what to show rather than guessing.**
 A tool's commands answer with different shapes, so the temptation is a renderer per command — which is the same table built twice, differing only in the frame handed to it.
 One renderer is right.

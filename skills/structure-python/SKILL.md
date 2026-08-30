@@ -211,6 +211,12 @@ Ask what escapes when the service answers 200 with the wrong content — a login
 **A pure frame operation belongs in the core, however edge-ish the code around it looks.**
 An adapter fetches a document and decodes it — and from the moment it holds a frame it is doing core work.
 A frame in, a frame out, no IO: that is `transform`'s, whichever layer happened to notice it was needed, and `adapt` imports it inward like anything else.
+
+**Purity is a proxy for the test, though, and it misfires on a rendering intermediate.**
+A frame in and a frame out is *usually* core, because usually the frame coming out is the answer.
+Where the columns exist only to be consumed by the renderer in the same breath and are dropped before anything receives them, the operation is presentation written in the frame library — pure, and still the driver's.
+Ask what a second driver would do with it: it wants the reshape and does not want the colour, because it would choose its own.
+That is the same test that puts a pivot in the core, run the other way.
 Write it generic enough to name without naming the publisher — "take this column as the symbol", "fill a lookup's misses" — and it is shared by every adapter that needs it and covered by the core's own tests.
 Leave it in the adapters and three of them grow three versions of one reshape, none of which the core tests.
 
