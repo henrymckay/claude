@@ -131,6 +131,14 @@ Either way the filter stays generic and knows nothing about warm-up, and nothing
 Size the margin from evidence rather than instinct: measure how far back the state actually reaches over real data, and take a multiple of the observed worst case.
 Where no bound is available at all, say so in the docs rather than guessing — an unbounded fetch is the honest default, and a margin that is too small fails silently, which is the worst of the three outcomes.
 
+**Widening the fetch does not always leave something to filter — check before writing one.**
+The warm-up case above fetches *more* than it reports, so the filter is what makes the answer right.
+Widening to a boundary is the other kind: a request aligned to whole periods comes back as exactly the periods the range touches, so a filter after it removes nothing, on any input.
+Writing one anyway is worse than dead code — it is a second place the bounds are interpreted, so the next build widening the window again has to work out which of the two to change, and a reader cannot tell which one is load-bearing.
+
+The test is a measurement rather than a judgement, and it is cheap: run the fetch and count what the filter drops.
+Nothing dropped on every input means the widening already did the work, and the filter is the reconciliation to delete.
+
 ## Role and framework split
 
 Split each shell into a **role** and one or more **framework** parts:
