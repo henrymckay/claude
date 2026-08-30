@@ -226,6 +226,12 @@ def display(
 ```
 
 `display` is the name rather than `write` because only one of its two paths writes bytes; the other hands a `rich` object to a console, and the command asked for neither — it asked for the result to be shown.
+
+**Leaving the frame to render means a function per level of what you are building, not one loop with conditions in it.**
+A table is rows and a row is cells, so that is two functions and a third that assembles — and a branch inside the loop naming one column is the renderer sniffing the frame again, one level down.
+
+Style a **cell** with a `rich.text.Text` carrying its own style, never the row's `style=`.
+A row style paints the identity columns as well as the values it is about, so a long table becomes a wall of colour and the signal stops being one.
 Read input the same way: type the argument `pathlib.Path` and treat `-` as standard input, so `demark count - --daily-setup 9` works mid-pipeline.
 
 **Send logs to standard error, or they corrupt the data stream.**
