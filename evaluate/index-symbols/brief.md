@@ -40,6 +40,9 @@ They reach the command whichever way suits what I am doing at the time.
 - Read from a file I name.
 - Piped or redirected in on standard input, so `trade index catalogue | grep ARK | trade index get-symbols` just works.
 
+Where I use more than one of them at once, take them all: writing an index out and naming a file gives me both lists rather than whichever you looked at first.
+Standard input is the exception, since it is there whenever I am in a pipeline rather than because I asked for it — read that only when I have given you nothing else.
+
 Give it nothing by any of the three and that is an error, not an empty list, since an index is the whole of what the command is for.
 
 ## Funds

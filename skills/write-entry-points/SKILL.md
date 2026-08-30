@@ -127,6 +127,18 @@ The failure is quiet, and it is a split rather than an omission.
 Each route gets the part of the cleaning its own bytes obviously needed — the file reader strips whitespace, the operation drops duplicates — and whatever no route made obvious is done by none of them.
 Do the whole of it in one function, so what counts as the same input is stated once and every route inherits it.
 
+**The explicit routes union; the implicit one fills in.**
+Arguments and a named file are both things the caller typed, so using both means both.
+Silently taking one and dropping the other is the one outcome nobody wants, and it is exactly what a first-match rule gives you.
+
+Standard input is not like them.
+It is attached whenever the command runs in a pipeline, often incidentally, so unioning it folds a whole upstream result into a request that named its own subject.
+Read it only where no explicit source was given — which is what `cat`, `grep` and `sort` do, and what a caller already expects: `cat a b < c` concatenates `a` and `b` and never touches `c`.
+Where someone genuinely wants a pipe mixed with named values, the convention is an explicit `-` among the arguments rather than a change to the rule.
+
+Say nothing when the implicit route goes unread.
+Every tool being imitated is silent about it, and a warning fired on conventional behaviour is noise a caller learns to skip — which costs you the warnings that matter.
+
 **An argument may be optional, and exactly one reason justifies it.**
 The split between an argument and an option is not required against optional: an argument is what the command is *about* and its position carries its meaning, where an option modifies how and its name does.
 Requiredness is a separate axis, which is why `cat`, `grep` and `sort` all take an optional list of files.
