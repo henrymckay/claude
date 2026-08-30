@@ -307,6 +307,16 @@ None of them raises, none appears in a passing test, and each is found by readin
 
 It cuts the other way too, which is the cheaper half: a client whose timeout already defaults to ten seconds needs no wrapper setting one, so reading the defaults also stops you writing what is already there.
 
+**A behaviour the documentation does not mention is measured, not assumed.**
+Reading the signature settles the defaults; it settles nothing about what the call does at a boundary the docs are silent on.
+Whether a range's end is inclusive, whether a coarser period is aligned to the calendar or built from whatever rows the range happened to hold, what comes back for an input with no data — each is a rule your code will encode, and each is findable only by running the call and looking.
+
+The tell is precise: you are about to write a docstring, a comment or a branch stating how the library behaves, and you have not watched it behave.
+Run it on two inputs differing in the way you are about to rely on, print both, and write the rule from what came back.
+It costs a minute, and it is the difference between an adapter that is right and one that is plausible.
+
+Keep the measurement rather than the memory of it: a behaviour you had to discover is one nothing else records, so it belongs in a dependency test (see `write-tests`).
+
 This is **KISS** (keep it simple), **YAGNI** (you aren't gonna need it — don't build for imagined futures), and **DRY** (don't repeat yourself — factor out *real* duplication, but don't over-abstract chasing it).
 
 ## Error handling

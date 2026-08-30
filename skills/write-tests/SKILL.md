@@ -123,6 +123,14 @@ Feed a function only the fields it reads.
 - **Reach an expected value by a route independent of the code under test.** A stored answers file, or a plain restatement of the spec, qualifies; re-deriving with the *same* transformation the code uses is circular and proves nothing.
 - **Prefer invariants where deriving the answer would just reimplement the code.** Assert properties that hold for any input — conservation (group totals sum to the whole), ordering (sorted), membership (output ⊆ input) — so there's no expected value to compute at all, and drive them with property-based tests.
 
+**Check the fixture can exhibit what you are testing for.**
+A test passes when the code is right *or* when the fixture cannot show it wrong, and the two look identical from outside.
+The risk is not a wrong value but a missing **dimension**: one symbol cannot produce the gap that appears when two trade on markets with different holidays, one exchange cannot produce the row that is present-but-empty, one page cannot show what happens at the boundary between pages.
+
+So for each rule the code implements, ask what the input must contain for that rule to fire at all, and check the fixture contains it.
+Where it does not, the rule is untested however green the run is — and the fixture that is smallest and easiest to record is reliably the one that exhibits least.
+This is the same measurement property-based testing already asks for, applied to a fixture instead of a generator: count how many of your cases reach the state that matters, and read a count of zero as a failure rather than a pass.
+
 Feed a function only what it reads, and assert only what the behaviour promises.
 
 ## Many inputs

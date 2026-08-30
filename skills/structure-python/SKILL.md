@@ -276,6 +276,11 @@ Logging is **output**, so like all IO it's configured at the edge — but it's p
 A library or core module that calls `logging.basicConfig` hijacks its host, so configuration lives *only* in the driver (see `write-entry-points`), exactly as the suite configures it once per session (see `write-tests`).
 - **Emit through a module logger.** Every module — the core included — logs through `logging.getLogger(__name__)`.
 A logger is inert until the root configuration decides what to do with a record, so module loggers don't cost the core its purity under test: with no handler installed, a `debug` line simply vanishes.
+- **Configuring the root logger adopts every dependency's narration too.**
+`basicConfig` attaches a handler to the *root*, so a library emitting through its own module logger now writes to your standard error at whatever level you set — including the failures your adapter already caught, converted and reported.
+The result is one line of yours under a dozen of theirs, and the caller reads the noise first.
+Where a dependency narrates what you already handle, set that logger's level at the composition root beside your own configuration — a deliberate line naming the library, not a filter on the root that silences everything at once.
+Leave it alone where its records say something yours do not; what matters is that adopting them is a decision, and doing nothing makes it silently.
 - **The shell narrates; the core stays quiet.** The edge logs the IO and the boundaries it crosses — a request served, an adapter called, a job run, an error caught.
 The core logs sparingly if at all: it *returns* its results, and its behaviour is pinned by tests rather than narrated in logs.
 - **`rich`, and lazy.** Render through a `RichHandler` on the root logger, matching `write-tests`' session setup; write log lines with `logging`'s lazy `%` args, never f-strings (see `write-python`).
