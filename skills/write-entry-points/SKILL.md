@@ -127,6 +127,16 @@ The failure is quiet, and it is a split rather than an omission.
 Each route gets the part of the cleaning its own bytes obviously needed — the file reader strips whitespace, the operation drops duplicates — and whatever no route made obvious is done by none of them.
 Do the whole of it in one function, so what counts as the same input is stated once and every route inherits it.
 
+**An argument may be optional, and exactly one reason justifies it.**
+The split between an argument and an option is not required against optional: an argument is what the command is *about* and its position carries its meaning, where an option modifies how and its name does.
+Requiredness is a separate axis, which is why `cat`, `grep` and `sort` all take an optional list of files.
+
+An argument is optional exactly when **another route supplies the same value** — the file list you did not type is the one arriving on standard input.
+That is what makes the tool composable, and it is the whole of the licence.
+
+Optional for any other reason is a mode, and a mode belongs in an option.
+Where leaving the argument off makes the command do something *different* rather than get the same thing from elsewhere, nothing on the command line says which of the two the caller is in, and `--help` has to explain a behaviour the surface should have shown.
+
 **Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.
 Exit non-zero on failure, so `&&` and `set -e` behave.
 
