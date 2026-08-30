@@ -48,6 +48,13 @@ Naming is `.alias`, conditionals are `when/then/otherwise` (`polars.when(cond).t
 **Where an expression applies to a *class* of columns, say the class — `polars.selectors`.** `polars.selectors.numeric()`, `.starts_with("bid_")`, `.by_dtype(...)` and `.exclude(...)` resolve against the frame's real schema when the query runs, so `frame.with_columns(polars.selectors.numeric().fill_null(0))` covers the column somebody adds next month without the call being touched.
 Naming each column, or assembling the list in Python first, pins the set to what the schema held the day it was written.
 
+**Renaming follows the same rule as selecting: describe the change, don't list the columns.**
+`.rename({...})` names every column it touches, so a field the source adds arrives spelled the source's way and sits there until somebody notices the dict is short — the same staleness that naming each column in a `select` produces, arriving through the one call that looks like diligence.
+It is also a second place the column names live, beside wherever the output shape is declared, and nothing checks that the two agree.
+Where the change is a *rule* about names — camel case to snake case, a prefix stripped, a space closed up — pass a callable: `frame.rename(snake)`, or `polars.all().name.map(snake)` inside a `select`, either of which applies it to whatever the schema really holds.
+
+Keep the dict for what it is good at: a few renames that follow no rule, such as one field a source spells wrongly.
+
 Choosing the shape is most of the work — the expression API is the easy half.
 
 ```python
