@@ -21,7 +21,7 @@ Lift it to a shared `drive/` module the moment a second driver needs it.
 ## CLI
 
 `typer` for the CLI, `rich` for output (see Libraries in `setup-python`).
-Three packages under `code/drive/`:
+Three packages under `code/drive/`, in the shape they take while there is one command group:
 
 ```text
 cli/
@@ -87,8 +87,30 @@ from mypackage.code.drive.typer_ import app as app
 A `typer` app is callable, so its console script points straight at the app object (see Run).
 
 **Callbacks and command groups scale the same shape.** An `@app.callback()` runs before any command — the home for app-wide options and setup (a global `--verbose`, loading config); keep it as thin as a command.
-Sub-commands like `mypackage-cli users create` are command *groups*: each is its own `typer.Typer()`, mounted on the main app with `app.add_typer(users.app, name="users")`.
-Grow `command.py` into a `command/` package once a group exists — a module per group owning its sub-app and `@`-decorated commands, with `command/__init__.py` holding the main `app` and mounting each; a grouped command is still a thin composition root, the grouping only presentation.
+Sub-commands like `mypackage-cli users create` are command *groups*: each is its own `typer.Typer()`, mounted on the root app with `app.add_typer(users, name="users")`.
+A grouped command is still a thin composition root; the grouping is only presentation.
+
+**Every `typer.Typer()` lives in `driver`, the group sub-apps included.**
+The rule above put the root app there so nothing decorates an anchor defined beside it.
+A group's sub-app is an anchor too, so defining it at the top of its command module reintroduces that ordering one level down and leaves the app objects in two places.
+Put them together and each group's module stays a flat alphabetical list of commands decorating `driver.users`.
+`command/__init__.py` then only mounts each sub-app on the root — it defines nothing, which is what keeps `driver` importing no other driver module.
+
+**Growing `command` into a package promotes its siblings.**
+A group's arrival is what turns `command.py` into `command/`, a module per group inside it — and `structure-python`'s rule that a package's members are all the same kind then applies to `typer_` itself, so `argument.py`, `option.py` and the rest become packages at that same moment.
+It is a rename of every sibling and not a single import change, which is why it is worth doing the day it becomes true rather than the day somebody notices the shapes disagree.
+
+```text
+typer_/
+  __init__.py       re-exports app; imports callback and command
+  argument/         factories returning a configured typer.Argument
+  callback/         the @app.callback() run before any command
+  command/
+    __init__.py     mounts each group's sub-app on the root app
+    users.py        one module per group: its commands, decorating driver
+  driver/           every typer.Typer(): the root app and each sub-app
+  option/           factories returning a configured typer.Option
+```
 
 **A command's name is its function's name.** `typer` turns `list_names` into `list-names`, so let it and never pass `name=`.
 An override makes the CLI and the code disagree, so someone grepping for the command a user typed finds nothing, and the decorator becomes a second place the name lives.
