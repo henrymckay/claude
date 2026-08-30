@@ -353,22 +353,24 @@ Format the message against the decorated function's **own parameters**, so it ca
 
 ```python
 def handle[**P, T](
-    *kinds: type[Exception], report: type[Exception], message: str
+    *kinds: type[Exception],
+    message: str = "",
+    report: collections.abc.Callable[[str], BaseException],
 ) -> collections.abc.Callable[
     [collections.abc.Callable[P, T]], collections.abc.Callable[P, T]
 ]:
-    """Return a decorator raising one of your errors in place of a library's.
+    """Return a decorator answering a failure in your own terms.
 
     :param kinds: The exception types to handle.
-    :param report: The exception type to raise instead.
     :param message: A format string over the decorated function's parameters.
+    :param report: How to answer, returning the exception to raise instead.
     :returns: The decorator.
     """
 
     def decorate(
         work: collections.abc.Callable[P, T],
     ) -> collections.abc.Callable[P, T]:
-        """Return the function with its library failures reported as ours."""
+        """Return the function with its failures answered as yours."""
         signature = inspect.signature(work)
 
         @functools.wraps(work)
@@ -379,9 +381,8 @@ def handle[**P, T](
             except kinds as failure:
                 bound = signature.bind(*a, **k)
                 bound.apply_defaults()
-                raise report(
-                    f"{message.format(**bound.arguments)}: {failure}"
-                ) from failure
+                said = message.format(**bound.arguments)
+                raise report(f"{said}: {failure}" if said else str(failure)) from failure
 
         return run
 
@@ -396,6 +397,23 @@ def handle[**P, T](
 )
 def get_holdings(name: str, *, get: Get = get_document) -> polars.DataFrame: ...
 ```
+
+**`report` returns the exception to raise, which is what lets one decorator cover a driver too.**
+Typed `type[Exception]`, the decorator can only convert — the common case and not the only one.
+A driver at the end of the chain renders the failure and ends the process: the same catch, the same signature binding, the same message formatted over the decorated function's parameters, differing only in the last act.
+
+Widen the parameter rather than adding a second decorator.
+`collections.abc.Callable[[str], BaseException]` is satisfied by an exception class *unchanged* — a class taking a message already is such a callable — so every adapter's call site reads exactly as it did, and it is equally satisfied by a driver's own function that prints the message and returns the exit it wants raised:
+
+```python
+@handle(TradeError, report=output.report)
+def get_symbols(indices: list[str] | None = None) -> None: ...
+```
+
+Where `message` is empty the responder is handed the failure's own text, which is what a terminal boundary wants and an adapter never does.
+The program then holds one `try`, inside one decorator, which is what "lift it once" was always for.
+
+The driver's responder is presentation, so it lives with that driver's output rather than in the core: the core declares the shape and the edge supplies the behaviour, exactly as a port does — and that is what keeps the error package importing nothing (see `structure-python`).
 
 `typing.Concatenate` is not needed: `P` carries the whole signature, so the wrapped function keeps its own and the message reads any parameter by name.
 The `[**P, T]` type parameters are PEP 695 syntax and need 3.12, which is the floor this skill assumes; below it, declare `P` and `T` as module-level `typing.ParamSpec`/`typing.TypeVar` instead.
