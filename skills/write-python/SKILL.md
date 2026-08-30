@@ -409,6 +409,14 @@ Where the caller's next move differs by *which* failure it was, that decision is
 The two then compose rather than compete — the decorator handles the library exceptions that all mean the same thing (a connection that would not open, a document that would not parse), and the explicit raises cover the ones the caller has to tell apart.
 A retry policy sitting outside that function is what consumes the distinction, which is the usual reason the distinction has to exist at all.
 
+**Name the outcomes for who consumes them, and never by negation.**
+Which errors you raise at that boundary is decided by the *consumers*, and there are always at least two: the caller, choosing what to tell the user, and the retry policy, choosing whether to ask again.
+They cut differently — a caller may need only "no such thing" against "it went wrong", where retry needs "might work shortly" separated from "will never work" — so enumerate both before settling the classes, and expect siblings rather than a tree, since nothing wants the middle of the hierarchy.
+
+A predicate written as a negation is where this goes wrong quietly.
+"Retry unless it was a missing document" reads as the same rule and is not: it enrols every outcome nobody has thought of yet, so a refused credential and a forbidden path each wait out three backoffs before failing.
+Name the retryable outcome and retry *that*, so anything new defaults to failing fast.
+
 **Don't reach for a package.** The dedicated ones are abandoned — the four on PyPI run 40 to 100 downloads a month — and the popular neighbours solve other problems: `wrapt` and `decorator` help you *write* a decorator, `tenacity` and `backoff` retry, `returns` converts an exception into a `Result` and changes every caller.
 `tenacity`'s `retry_error_cls` does translate on exhaustion, but the message it raises is a `repr` of a `Future`, and fixing that means subclassing `tenacity.RetryError` — coupling your domain error to the library the adapter exists to hide.
 
