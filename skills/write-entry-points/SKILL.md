@@ -133,6 +133,17 @@ Exit non-zero on failure, so `&&` and `set -e` behave.
 **Make the log destination and level configurable.** Standard error is the right default, but a long run someone wants to keep belongs in a file, so offer an option that diverts it there and another that sets the level.
 Standard output is a valid destination only for a process that emits no data on it — the platform convention for a service or a scheduled job, and never for a tool in a pipeline.
 
+**Where a specification fixes the option set, the shape is still owed and the extra options are not.**
+Several rules here ask for an option — a log destination, a log level, a format switch — and each is right for a surface you are designing.
+Where somebody has fixed the surface and said to build no more, those are the recommendations to drop, and dropping them is not a compromise.
+
+Separate the two before you argue about either.
+If leaving it out makes the tool behave **incorrectly**, it is the shape and it stays: logs still go to standard error rather than into the data, configuration is still read once at the composition root, the plain form is still the default.
+If leaving it out only makes something **harder to reach**, it is a convenience the specification is entitled to decline.
+
+Then say which you dropped, once, rather than adding an option nobody asked for — and check what the dropping stranded.
+A tool with no way to raise its log level cannot show what it logs, so the `info` lines written for it are dead: either they earn the option back, or they should not be written.
+
 **Never let a prompt be the only way in.** Anything the tool can ask for interactively must also be settable by option, file or standard input, or it cannot be scripted at all.
 
 ## Composition root
