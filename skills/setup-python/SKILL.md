@@ -16,7 +16,6 @@ description: >-
 
 # Set up a Python project
 
-Getting the skeleton right up front — layout, packaging, tooling — saves pain later.
 This covers *scaffolding, packaging, and tooling*; for how to organise the code into layers, see `structure-python`; for in-code style, `write-python`; for tests, `write-tests`.
 Three mistakes account for most of what goes wrong: reaching for a tool the standard five already cover, laying the package out flat where `src/` would have caught the import mistake, and hand-rolling what a house-pick library already does.
 
@@ -128,12 +127,7 @@ uv run pytest
 uv sync
 ```
 
-- `uv init` scaffolds a new project (or set one up by hand as above).
-- `uv add httpx` adds a runtime dependency, writing it to `pyproject.toml` and the lock.
-- `uv add --dev pytest ruff pyright taplo` adds dev-only tooling.
-- `uv run pytest` runs inside the managed env — no manual `activate`.
-- `uv sync` reproduces the env from `uv.lock`.
-
+`uv run` runs inside the managed env with no `activate`, and `uv sync` reproduces it from `uv.lock`.
 Commit `uv.lock` for applications (reproducible installs); libraries usually don't pin as hard.
 Pin the Python version with a `.python-version` file so everyone's on the same interpreter.
 
@@ -151,27 +145,22 @@ Everywhere else the stdlib-first rule holds — don't add a dependency you don't
 - **Configuration and reference data files** → `pyyaml` (always `yaml.safe_load`, never `yaml.load`) for anything that isn't naturally a table, and `polars.read_csv` where it is; `structure-python` has the rule for choosing between them.
 `tomllib` reads TOML from the stdlib but cannot write it, so leave TOML to the files a tool already owns.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
-- **HTML tables** → `pandas.read_html`, converting the result with `polars.from_pandas` and touching `pandas` no further.
-It reads every table on a page in one call, where by hand that is a parser, an XPath and a loop rebuilding rows the reader already had.
-Add `extract_links="body"` where a cell's link carries what its text does not, and each cell arrives as a `(text, href)` pair.
-`pandas` and `pyarrow` are large: pay it once and use it for every table rather than keeping two approaches to one job.
+- **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → `httpx` (sync and async) over `requests`.
 - **Logging** → `logging` with `rich.logging.RichHandler`, or `rich.print` for one-off output, in preference to bare `logging` or `print`; `loguru` is an option for a more ergonomic API.
 `rich` formats output but isn't itself a logging framework.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
-- **Retries** → `tenacity` for retrying flaky IO, with exponential backoff and a predicate that retries only what is worth retrying.
-A hand-rolled loop with `time.sleep` gets the jitter, the give-up condition and the final re-raise wrong, and it retries the errors that will never succeed alongside the ones that might.
+- **Retries** → `tenacity`, with exponential backoff and a predicate naming only the retryable errors; a hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Spreadsheets** → `polars.read_excel`, with `fastexcel` (the `calamine` backend) as the reader engine.
 `polars` names the function but ships no engine, so a project that declares none fails at the first call rather than at install.
-- **Tabular / columnar data** → `polars` (see `use-polars`), including a dataframe another library hands you — convert a `pandas` result with `polars.from_pandas`, adding `pyarrow` alongside it, which that conversion needs for anything beyond plain numpy-backed columns.
-Keep the work in the frame rather than extracting to Python lists, per `write-python`.
+- **Tabular / columnar data** → `polars` (see `use-polars`), converting another library's `pandas` frame with `polars.from_pandas` plus `pyarrow`.
 - **Terminal output** → `rich` for tables, progress bars, colour, and readable tracebacks.
-- **Testing** → `pytest`, with `hypothesis` for property-based tests (assert invariants over generated inputs — strong for numeric and algorithmic code) and `pytest-cov` for coverage.
+- **Testing** → `pytest`, with `hypothesis` for property-based tests and `pytest-cov` for coverage.
 - **Validation and settings** → `pydantic` v2 for data models and validation, `pydantic-settings` for typed config from the environment.
 - **Web API** → `fastapi` (type-hint-driven, async, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
-- **XML and other markup** → `lxml` for pulling data out of a document that is not a table, reaching elements by XPath or CSS selector, over a hand-rolled parser or a regex.
-For XML use `lxml.etree` over the stdlib `xml.etree`, matching on `local-name()` rather than a declared namespace — two publishers filing one schema declare it differently, and a namespace-bound XPath then matches nothing at all.
+- **XML and other markup** → `lxml`, by XPath or CSS selector, over a hand-rolled parser or regex.
+Match XML elements on `local-name()` rather than a declared namespace, since two producers of one schema may declare it differently and a namespace-bound XPath then matches nothing.
 
 ## Standalone scripts
 
