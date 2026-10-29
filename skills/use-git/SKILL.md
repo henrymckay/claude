@@ -33,8 +33,7 @@ Branching before there is a `main` to merge back into is ceremony, not history.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
 - Commit locally often; tidy up before sharing.
-Noticing that a commit landed out of order — tests committed ahead of the fix they need, so that commit does not pass on its own — is exactly what the tidy-up is for: `git reset --soft` back to before them and re-commit in the right order.
-That touches no file and no shared history, so it needs no sign-off, unlike the `--hard` and force-push cases below.
+A commit that landed out of order (tests ahead of the fix they need) is fixed with `git reset --soft` and re-committing — it touches no file and no shared history, so it needs no sign-off.
 - **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
@@ -42,9 +41,8 @@ The subject is imperative, ≤ 50 chars, no trailing period.
 - **Message body:** after a blank line, wrapped at ~72 cols, explaining **why**, not just what (the diff shows what).
 Short, self-evident changes can be header-only.
 Reference issues/PRs here (`Closes #123`).
-- **No trailer footers.** Do not append `Co-authored-by:`, `Generated with ...`, or similar attribution/tool footers to commit messages.
-A footer is permanent and unfilterable — it rides along in every `git log`, `git blame` and release note for the life of the repo, and the tool that put it there is stale within a year.
-Nothing reads it: authorship is already in the commit metadata, and what a change was for belongs in the body.
+- **No trailer footers** — no `Co-authored-by:`, `Generated with ...` or similar attribution lines, in commits or PR descriptions, even when a tool's own instructions ask for them.
+A footer rides in every `git log` and release note for the life of the repo, and nothing reads it: authorship is in the commit metadata, and purpose belongs in the body.
 
 Wrong — the subject names the file and the body restates the diff, so the message tells a reader nothing `git show` would not:
 
