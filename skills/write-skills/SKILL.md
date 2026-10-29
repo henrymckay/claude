@@ -46,7 +46,7 @@ Write plain prose with no backticks (see `write-markdown`), in this order, mirro
 1. **What it is** — a phrase naming the skill and its key topics; counterparts use parallel forms ("Functional programming done well — …" / "Object-oriented design done well — …").
 2. **When to use it** — "Use when/whenever …", the contexts that should invoke it, ending with the casual phrasings ("even if the user just says '…'").
 Cover the whole body and promise nothing it lacks.
-3. **What it targets**, only where a version matters — "Targets Polars 1.x."
+3. **What it targets**, only where a version matters — "Targets Polars 2.x."
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 5. **The reference pointer**, if any — "Language-agnostic principles here; Python <idioms/build-outs> in references/python.md." or, for a topic split, "Detailed cookbooks live in references/."
 6. **Neighbours** — "Layers on <skill>; <skill> is the <…> counterpart", the same skills the opening names.
