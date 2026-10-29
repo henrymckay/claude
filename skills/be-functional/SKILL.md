@@ -37,28 +37,18 @@ If the code is naturally stateful throughout — I/O, UIs, long-lived objects �
 
 ## Core principles
 
-- **Pure functions and referential transparency.** A pure function gives the same output for the same inputs and has no observable **side effects** (it doesn't mutate arguments, globals, or files, or otherwise touch the outside world).
-Such a call is *referentially transparent* — you could replace it with its result and nothing else would change — which is exactly what makes pure functions easy to test and safe to compose.
-Return results explicitly; never signal work by mutating shared state.
-- **Immutability.** Don't mutate data in place; produce new values and treat inputs as read-only.
-Shared mutable state is the source of most order-dependent bugs.
-- **Explicit inputs and outputs.** Take everything a function needs as **arguments** rather than reaching for local or global state, and return results rather than writing them somewhere.
-The more of a function's behaviour its arguments determine, the more reusable and testable it is — so add a parameter rather than read ambient state.
-- **Express everything as a function.** Return a value from a function rather than declaring a bare constant — even a fixed value.
-`def default_rate() -> float: return 0.05` can be passed around, composed, overridden, or later made to depend on inputs, where a module-level constant must be torn out to extend.
-Functions are the unit of composition, so make everything one.
-- **Composition and currying.** Build behaviour by combining small, single-purpose functions rather than one large procedure.
-Write **generic** functions and derive specific variants by **currying** (binding some arguments — a.k.a. partial application) or **composing** (chaining functions end to end) instead of writing each from scratch — e.g. define a general `get_many`, then get `get_one` by composing it with `take_one`.
-Two mechanisms performing the *same* operation on different fields — a date bounded by its own pair of parameters beside a generic bounds filter for every other column — is one function that has not been made generic yet, and it shows up as a special case in the caller, in the docs and in every test.
-The field being special to the *domain* is not the test; the test is whether the operation differs, and "keep rows between two values" does not become a different operation because the values are dates.
-- **Higher-order functions.** Treat functions as first-class values — pass them, return them, store them.
-`map`/`filter`/`reduce` and friends express *what* you want done rather than spelling out *how* to loop.
-- **Declarative over imperative.** Describe the transformation, not the step-by-step mechanics.
-`[transform(x) for x in items if keep(x)]` states intent more directly than an accumulator loop.
-- **Lazy evaluation.** Compute values only when needed.
-Lazy sequences (generators/streams) let you work with large or infinite data and build pipelines that don't materialise intermediate collections — then force (materialise) the result at the boundary where you actually need it.
+- **Pure functions.** Same output for the same inputs, and no observable side effects — no mutating arguments, globals or files.
+Such a call is *referentially transparent*: replace it with its result and nothing changes, which is what makes it easy to test and safe to compose.
+- **Immutability.** Produce new values and treat inputs as read-only; shared mutable state causes most order-dependent bugs.
+- **Explicit inputs and outputs.** Take everything as arguments and return results, rather than reading ambient state or writing somewhere; the more the arguments determine, the more reusable the function.
+A fixed value is a function too (`write-python`'s function over a module global), so it can later be overridden or depend on inputs.
+- **Composition and currying.** Build behaviour from small single-purpose functions; write a **generic** function and derive variants by currying (binding some arguments) or composing — `get_one` as `take_one` composed with `get_many`.
+Two mechanisms doing the *same* operation on different fields — dates bounded by their own parameters beside a generic range filter for every other column — are one function not yet made generic.
+The test is whether the operation differs, not whether the field is special to the domain.
+- **Higher-order and declarative.** Pass, return and store functions; say *what* (`[transform(x) for x in items if keep(x)]`), not how to loop.
+- **Lazy evaluation.** Build pipelines over generators or streams that never materialise intermediates, and force the result at the boundary that needs it.
 
-Of the three mistakes above, reaching for ambient state is the one that hides, so it is worth seeing spelled out:
+Ambient state is the mistake that hides:
 
 - **Wrong** — `total(items)` reads an ambient `TAX_RATE`.
 A caller who needs a second rate has to edit the module, and a test has to patch it.
@@ -67,53 +57,35 @@ Both are one call, and the signature now says everything the result depends on.
 
 ## Functional core, imperative shell
 
-**Separate pure code from impure code.** Real programs must do I/O and hold state, so don't pretend otherwise: push side effects (input, output, network, mutation) to a thin outer **shell**, and keep the **core** — the decisions and transformations — pure.
-The core is where the logic and the bugs live, so keeping it pure buys testability and clarity while the shell stays small and dumb.
-A program often has *several* shells — one per entry point (a CLI, a dashboard, an HTTP API) — each thin and each owning its own **presentation** over the one shared core; so rendering and formatting belong with their entry point, never in the core.
+**Separate pure code from impure code.** Push side effects — input, output, network, mutation — to a thin **shell**, and keep the **core** of decisions and transformations pure; the core holds the logic and the bugs, so purity there buys the most.
+A program may have several shells, one per entry point, each owning its own presentation over the shared core.
 
-**Inject impure dependencies as arguments.** When a function needs something impure — the environment, the clock, randomness, a data source — take it as a parameter rather than reaching for it.
-Tests then pass explicit values, so the function stays pure and deterministic under test.
+**Inject impure dependencies as arguments** — the environment, the clock, randomness, a data source — so tests pass fixed values.
+Where the default goes depends on the effect:
 
-Where the default goes depends on *what* the effect is:
-
-- **Ambient, standard-library effects** (the clock, `os.environ`, randomness) can **default to the real thing in place** — `def f(now=datetime.datetime.now)`.
-Normal callers pass nothing; tests pass a fixed value.
-See `references/python.md` for the `os.environ` and clock patterns.
-- **A framework- or service-coupled dependency** (a database client, an HTTP-backed fetch, anything wrapping an external library) gets **no default in the core**.
-Defaulting it would drag that library's import into the core and point the dependency arrow outward.
-Instead the core takes it as a plain parameter typed as a *port* (an interface it defines), and the **entry point injects the concrete adapter** — the composition-root pattern in `structure-python`'s package layers (`transform` / `operate` / `adapt` / `drive`).
-The core calls the dependency at runtime without ever importing it.
+- **Ambient standard-library effects** (clock, environment, randomness) default to the real thing in place; callers pass nothing, tests pass a value (patterns in `references/python.md`).
+- **A library- or service-coupled dependency** gets **no default in the core**, which would import the library inward.
+The core types it as a *port* it defines, and the entry point injects the concrete adapter — `structure-python`'s composition root.
 
 ## Functions over classes
 
-Default to functions, closures, and curried functions rather than classes.
-A closure captures state just as an object does but without the ceremony, and a curried function specialises behaviour without a class hierarchy.
-Reach for a **class only when extending an existing hierarchy** — subclassing a framework base, or overriding a hook the framework calls — where a class is what the API expects.
-Otherwise a class holding a single method is just a function wearing a costume.
-When a class genuinely *is* the right call, `be-oop` covers doing it well.
+Default to functions, closures and curried functions: a closure captures state without the ceremony, and currying specialises without a hierarchy.
+Reach for a class only when extending an existing hierarchy — a framework base class or hook — since a one-method class is a function in costume; `be-oop` covers doing it well.
 
 ## Make illegal states unrepresentable
 
-Use **algebraic data types** — *product* types (an "AND": a record/dataclass holding field A **and** field B **and** …) and *sum* types (an "OR": a value that is exactly **one of** several variants — a union, enum, or tagged union).
-Design types so invalid combinations simply can't be constructed; then whole classes of validation and defensive checks disappear because the bad state has no representation.
-Apply this to the values the core computes over, not to the syntax an input arrived in.
-A variant per accepted phrasing models the grammar rather than the problem — parse each phrasing straight to the value the core needs, and the variants disappear with it.
+Use **algebraic data types** — *product* types (a record of field A **and** field B) and *sum* types (exactly **one of** several variants: a union, enum or tagged union) — so invalid combinations can't be constructed and the checks guarding against them disappear.
+Model the values the core computes over, not the syntax input arrived in: a variant per accepted phrasing models the grammar, so parse each phrasing straight to the value instead.
 
 ## Pattern matching
 
-Decompose data by its **shape** rather than a ladder of type checks and attribute access.
-Matching on the variants of a sum type makes each case explicit and lets the compiler/linter flag ones you forgot — the natural companion to algebraic data types.
+Decompose data by its **shape** rather than a ladder of type checks; matching a sum type's variants makes each case explicit and lets the checker flag a forgotten one.
 
-**A `match` whose every branch returns a different value is a lookup, not a match.**
-Pattern matching earns its place by *destructuring* — binding the parts of a variant and doing different work with them.
-Where each case names one member of a closed set and hands back a constant, a name or a row, the branches hold no pattern at all: the construction is a mapping written as control flow, it grows a case per member, and the set it encodes can be read by nobody but a person scrolling it.
-Write the mapping instead and let the key's type carry the exhaustiveness.
-Reach for `match` where the branches differ in what they *do*.
+**A `match` whose every branch returns a constant is a lookup.** Pattern matching earns its place by destructuring — binding a variant's parts and doing different work with them.
+Branches that each map one member of a closed set to a value are a mapping written as control flow, growing a case per member; write the mapping, and keep `match` for branches that differ in what they *do*.
 
-**What breaks is interpolating your word into a library's, not reaching a name dynamically.**
-`getattr(client, f"get_{kind}")` assumes your vocabulary and theirs are one vocabulary, and they are not: a kind you call `coin` may be spelled `cryptocurrency`, and one you call `mutual-fund` carries a hyphen no identifier may — so two members of seven fail, at runtime, in front of whoever asked for them.
-`getattr(client, kinds[kind])` is the same call with the mapping doing the reconciling, which is what a mapping was for.
-Where its values are data — and a method's name is data — `structure-python` has where the mapping itself goes.
+**Don't interpolate your word into a library's name.** `getattr(client, f"get_{kind}")` assumes both vocabularies agree, and they don't — your `fund` is their `mutual_fund`, your `real-estate` has a hyphen no identifier can — so some members fail at runtime.
+`getattr(client, methods[kind])` lets a mapping reconcile them; `structure-python` says where that mapping lives.
 
 ## Derive functions from the data flow
 
@@ -126,7 +98,7 @@ Endpoints alone constrain nothing: one function doing every step still satisfies
 Keep the distinction straight in both directions: a seam you skipped is a design error, where an extra well-chosen function is not.
 
 **Intermediate workings are not shapes.** Detail derived at the same entity and grain, from the same input, belongs *inside* one function however many steps it takes.
-The tell is whether you can name the whole thing without an "and" — "counts from candles" is one transformation, where "resample and count and align to dates" is three wearing one name.
+The tell is whether you can name the whole thing without an "and" — "totals from orders" is one transformation, where "deduplicate and total and align to months" is three wearing one name.
 Factor freely *below* that line — extract private helpers to keep a long function readable or to share logic — since the rule fixes that the **seam functions exist**, not that they are the only functions.
 
 Give each function **exactly the arguments its span needs.**
@@ -171,16 +143,13 @@ Extending *behaviour* is never in tension: composition, higher-order functions, 
 
 ## Chain with monads
 
-These sit on a progression worth naming: a **functor** is a wrapper you can `map` a plain function over; an **applicative** also combines several independently-wrapped values in a fixed way; a **monad** goes further, letting the next step *depend on* the previous result (`bind`).
-(The `map`/`amap`/`bind` naming in `use-polars` for `.pipe()` steps follows exactly this functor/applicative/monad split.)
-Monadic patterns thread optionality, errors, or effects through a chain of steps that each might short-circuit (`Optional`/`Result`/`Maybe` with their `map`/`bind`), sequencing operations without a ladder of `if` checks.
-Use them where the language supports them well, but **don't force idioms a language doesn't have** — bolting Haskell-style monads onto a language without the syntax or types for them produces code nobody else can read.
-Stay true to the language: in Python that's usually `X | None` and early returns, reaching for `returns` only when it genuinely pays (see `references/python.md`).
+A **functor** is a wrapper you can `map` a function over; an **applicative** also combines independently wrapped values in a fixed way; a **monad** lets the next step *depend on* the previous result (`bind`) — the split `use-polars` names its `map_`/`amap_`/`bind_` steps by.
+Monads thread optionality, errors or effects through steps that may short-circuit, without a ladder of `if`s.
+**Don't force idioms the language lacks**: Haskell-style monads without the syntax for them produce code nobody can read — in Python, `X | None` and early returns usually suffice (see `references/python.md`).
 
 ## Recursion
 
-Recursion expresses self-similar and tree-shaped problems naturally, and in pure FP it stands in for mutation-driven loops.
-But **stay true to the language**: where there's no tail-call optimisation (Python included), deep recursion overflows the stack — so prefer iteration or comprehensions for linear passes and reserve recursion for genuinely recursive structures.
+Recursion suits tree-shaped problems, but without tail-call optimisation (Python included) deep recursion overflows the stack, so use iteration for linear passes and recursion for genuinely recursive structures.
 
 ## Language specifics
 

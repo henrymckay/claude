@@ -81,15 +81,13 @@ For dispatch on **more than one argument's type**, the stdlib has nothing — re
   total = sum(x * x for x in numbers)
   ```
 - Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
-- **For tabular or columnar data, the vectorised declarative form is a dataframe expression — not a comprehension or `reduce` over extracted values.** When the data is rows-and-columns, or a library hands you a dataframe, reach for `polars` and do the work *in* one long-form frame across all groups; see the `use-polars` skill.
-Pulling columns out to Python lists and folding over them is the columnar version of a manual accumulator loop — the very thing this section is steering you away from.
+- **Tabular data's declarative form is a dataframe expression**, not a comprehension over extracted columns — see `use-polars`.
 
 ## `functools` and `itertools`
 
 - **`functools.reduce`** for genuine folds, but reach for a comprehension or `sum`/`math.prod`/`any`/`all` first — they're clearer.
 - **`functools.partial`** to specialise a function without a wrapper.
 - **`functools.lru_cache` / `cache`** to memoise pure functions.
-- **`functools.singledispatch`** for type-based dispatch instead of `if/elif`.
 - **`itertools`**: `chain`, `groupby`, `accumulate`, `takewhile`/`dropwhile`, `islice`, `product`, `starmap` — composable building blocks for iterators.
 - **`operator`** module (`operator.attrgetter`, `itemgetter`, `add`) gives named functions where you'd otherwise write a `lambda`.
 
@@ -168,29 +166,20 @@ import datetime
 
 def stamp(now: datetime.datetime | None = None) -> str:
     """Return an ISO-8601 timestamp, defaulting to the current UTC time."""
-    now = now or datetime.datetime.now(datetime.UTC)
-    return now.isoformat()
+    return (now or datetime.datetime.now(datetime.UTC)).isoformat()
 ```
 
 ## Errors, functionally
 
 For expected "no result" cases prefer returning `X | None` (or a small result type) over raising, and make it explicit in the signature.
 Reserve exceptions for genuinely exceptional conditions.
-If you want richer functional error handling (Result/Either types), the `returns` library provides it — but only adopt it if it genuinely earns its place; plain `X | None` covers most cases.
+Richer Result types come from `returns` (see Libraries).
 
 ## Libraries
 
-Two stand out and are worth reaching for by default: **`toolz`** for composition, currying, and dict/iterable helpers, and **`plum`** for multiple dispatch — both are well-maintained, well-typed, and cover the gaps the stdlib leaves.
+The stdlib covers most cases; reach for a library only when it simplifies.
+`toolz` (composition, currying, dict helpers) and `plum` (multiple dispatch) are the defaults, both covered above.
 
-- **`toolz`** — *the* curated functional-helper toolkit and the go-to for currying and composition (see above), plus `pipe`, `groupby`, `juxt`, `merge`, and immutable dict ops.
-Reach for it first.
-- **`plum`** — *the* multiple-dispatch library (dispatch on several argument types via annotations), for when `functools.singledispatch` isn't enough.
-Prefer it to the older `multipledispatch`.
-- **`cytoolz`** — a C reimplementation of `toolz`, near drop-in, much faster on hot paths.
-- **`funcy`** — an alternative functional-utils library; a peer to `toolz`, not a replacement — pick whichever API you prefer.
-- **`returns`** — Result/Maybe/IO containers for a stricter functional style, integrated with typing.
-- **`pymonad`** — explicit monad implementations (Maybe, Either, State, Writer, Reader) for a more Haskell-style approach; heavier than `returns`, so reach for it only when you genuinely want the full monad toolkit.
-- **`pyrsistent`** — persistent immutable collections (especially an immutable map) with efficient structural-sharing updates; reach for it when you update collections repeatedly in a functional style.
-Prefer frozen dataclasses for typed records — they integrate better with `pyright`.
-
-Beyond these, stdlib comprehensions + `functools`/`itertools` handle most cases; reach for a library when it genuinely simplifies things.
+- **`cytoolz`** — a C reimplementation of `toolz` for hot paths.
+- **`pyrsistent`** — persistent collections with structural sharing, for repeated functional updates; frozen dataclasses remain the choice for typed records.
+- **`returns`** — Result and Maybe containers, only where plain `X | None` genuinely falls short.
