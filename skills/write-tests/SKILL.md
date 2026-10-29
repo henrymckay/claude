@@ -3,22 +3,20 @@ name: write-tests
 description: >-
   How to write and structure tests in any language — the given-when-then shape,
   naming a test by its behaviour, testing behaviour over implementation,
-  isolation, table-driven and property-based testing, testing the dependency
-  behaviour you rely on, and layout. Use whenever writing, editing, or reviewing
-  tests, adding coverage, or setting up a suite, even if the user just says
-  "write a test", "add tests", "test this", or names a runner like pytest.
-  Language-agnostic principles and the paradigm/pattern catalogue here; Python
-  and pytest idioms in references/python.md. Tests are code: they follow the
-  language's own conventions (Python → write-python).
+  isolation, where test data and expected values come from, table-driven and
+  property-based testing, testing the dependency behaviour you rely on,
+  checking a build against the real source, and layout. Use whenever writing,
+  editing or reviewing tests, adding coverage, or setting up a suite, even if
+  the user just says "write a test", "add tests", "test this", or names a
+  runner like pytest. Language-agnostic principles and the paradigm and pattern
+  catalogue here; Python and pytest idioms in references/python.md. Tests are
+  code: they follow the language's own conventions (Python → write-python).
 ---
 
 # Write tests
 
-A test is production code that happens to assert.
-It follows the same conventions as the code it covers — in Python that's `write-python` (docstrings, typing, naming, ordering) — and layers the testing-specific judgment below on top.
-
-Good tests buy two things: confidence to change code, and a precise signal when it breaks.
-Both come from testing *behaviour* through the public surface, keeping each test small and isolated, and naming it so a failure reads like a false claim about the system.
+A test is production code that happens to assert, so it follows the conventions of the code it covers — in Python, `write-python` — with the testing judgment below on top.
+Good tests buy confidence to change code and a precise signal when it breaks, both from testing *behaviour* through the public surface in small, isolated, well-named tests.
 Three mistakes account for most weak suites: asserting on internals instead of the public contract, building the *given* inline instead of injecting it, and reaching an expected value with the very code under test.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
@@ -27,234 +25,135 @@ Three mistakes account for most weak suites: asserting on internals instead of t
 
 ## Tests are code
 
-Hold a test to the same standard as the code it covers — documented, typed, named and ordered the same way, with no "it's only a test" exemption.
-A test's description states the behaviour under test, not a restatement of its name.
-Factor shared construction into the runner's setup mechanism or small named helpers, not copied boilerplate.
+Hold a test to the standard of the code it covers — documented, typed, named and ordered the same way, with no "it's only a test" exemption.
+A test's description states the behaviour, not its name again.
+Factor shared construction into the runner's setup mechanism or small named helpers, never copied boilerplate.
 
 ## Given, when, then
 
-Structure every test as **given / when / then** — the behavioural form of the four-phase test (setup, exercise, verify).
+Structure every test as **given / when / then**, the behavioural form of setup, exercise, verify:
 
-- **Given** — the starting state, *arranged and injected* into the test rather than reconstructed inline (in `pytest`, as fixture arguments; see `references/python.md`).
-- **When** — the single action under test.
-- **Then** — the assertions on the outcome.
+- **Given** — the starting state, arriving **entirely through the test's parameters** (fixtures, including ones that load data files) — never a module global, never built in the body.
+- **When** — the single action under test, on its own line, assigned to a well-named result.
+- **Then** — the assertions, ideally `then_<expectation>` custom assertions.
 
-Name every test `test_when_<action>_then_<outcome>`.
-The **given** stays in the arguments, so the name carries only the **when** (the action) and the **then** (the outcome it must produce).
-`test_when_keep_valid_then_non_positive_rows_dropped`: the when is applying `keep_valid`, the then is that non-positive rows are dropped.
-The prescriptive split forces both halves to be explicit and makes a failure read as a falsified claim, which is most of the diagnosis.
-One when and one then per test — if either needs an "and", split the test.
+**Name every test `test_when_<action>_then_<outcome>`.** The given lives in the parameters, so the name carries the action and the outcome: `test_when_keep_valid_then_non_positive_rows_dropped`.
+A failure then reads as a falsified claim, which is most of the diagnosis.
+One when and one then per test — if either needs an "and", split it.
 
-Make the three beats visible through **structure and names, not comments** — the code should not need a `# given` label:
+Make the beats visible through structure and names, not `# given` comments.
 
-- *Given* arrives **entirely through the test's parameters** — every fixture and every piece of external data comes in as an argument (a fixture, or a fixture that loads a data file).
-Never a module-level global, and never data built inline in the body.
-- *When* is a single action on its own line, assigned to a well-named result.
-- *Then* is the assertions, ideally `then_<expectation>` **custom assertions**.
+- **Wrong** — the test builds its sample data in the body, so the scenario has no name and the next test copies it.
+- **Right** — the sample arrives as a named fixture parameter, and the outcome is a named assertion reused across tests.
 
-```python
-# Wrong: the given is built in the body, so the scenario has no name and the next test copies it.
-def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
-    """Every kept row is positive."""
-    raw_sales = polars.DataFrame({"quantity": [2, 0, -1, 5]})
-    kept = keep_valid(raw_sales)
-    assert kept.get_column("quantity").to_list() == [2, 5]
-
-
-# Right: the given arrives as a parameter and the then is a named, reusable claim.
-def test_when_keep_valid_then_non_positive_rows_dropped(
-    raw_sales: polars.DataFrame,
-) -> None:
-    """Every kept row is positive."""
-    kept = keep_valid(raw_sales)
-    then_every_row_is_positive(kept)
-```
-
-A `then_` custom assertion carries its own failure message and reuses across tests, so it earns its place even for a bare equality — a shared set (`then.equals`, `then.column_equals`) reads far more uniformly than scattered `assert` statements.
-Extract a `when_<action>` helper too when the action is compound or reads better named — but don't wrap a single, already well-named call for its own sake; that call is its own clearest *when*.
-
-Grouped into shared modules, the three beats gain a matching vocabulary — `given` (fixtures), `when` (action helpers) and `then` (assertions) — so a body reads `when.summarise_by_region(sales)` then `then.conserves(...)`.
-Add a `when` module only where actions earn a name; the `then` module almost always pays off, since every test asserts.
+**Prefer a custom assertion even for a bare equality**: it carries its own failure message, names the expected side so a transposed pair can't pass, and a shared set reads uniformly.
+Add a `when_<action>` helper only where the action is compound; a single well-named call is its own clearest *when*.
+Grouped, the beats become shared `given`, `when` and `then` modules, so a body reads `when.summarise(sales)` then `then.conserves(...)`.
 
 ## Behaviour, not implementation
 
-Test the observable contract — return values, raised errors, visible side effects — through the public surface, never private internals.
-Tests bound to implementation break on every refactor and stop being a safety net; tests bound to behaviour survive refactors and *are* the net.
+Test the observable contract — return values, raised errors, visible effects — through the public surface.
+Tests bound to implementation break on every refactor and stop being a safety net.
 
-Lean hardest on the **pure functional core** (see `be-functional`): it holds the logic and the bugs, and it is cheap to test because it is deterministic and needs no setup.
-Keep the imperative shell thin so little is left that needs slow integration tests — the **humble object** pattern.
+**Lean hardest on the pure core** (see `be-functional`): it holds the logic, and it is deterministic and needs no setup.
+Keep the shell thin so little needs slow integration tests — the humble object pattern.
 
-**The adapter's *judgement* earns its own cases, being neither core nor the library's.**
-Reading a document is the library's job; deciding *which field is the answer* is a claim about a source, and no core or dependency test covers it.
-Which of several symbols is the home listing, which column marks a row as cash, what an absent field means — pin each against a saved response, no stub for the fetch.
-Reaching the parse function directly is what the getting/parsing split is for (see `structure-python`), not a breach of the rule above.
-Cover the case it was written for **and** the case it was not: a record missing the field is where a source surprises you.
+**Mock sparingly.** A mock asserts on *how* code calls its collaborators, coupling the test to implementation.
+Prefer real objects and a fake at the seam you designed (a stub function, an in-memory double), and patch only at an external boundary you can't inject.
 
-This is also why you **mock sparingly**.
-Prefer real objects and dependency injection to mocks: a mock asserts on *how* code calls its collaborators, coupling the test to implementation — the opposite of testing behaviour.
-Fake at the seam you designed (pass a stub function or in-memory double), and reach for patching only at a genuine external boundary you can't inject.
+**Test an adapter's judgement on its own.** Reading a document is the library's job; deciding which field is the answer is a claim about the source that neither core nor dependency tests cover.
+Pin it against a saved response, passed straight to the parse function (see `structure-python` on splitting getting from parsing), covering the case the code was written for **and** a record missing the field.
 
-**Where an adapter owns its client on purpose, the seam is one argument, not a patch.**
-An adapter is built to keep its library's objects inside itself, so a test looking for something to inject finds nothing — and that is the boundary working rather than an oversight.
-Most of what you wanted to test does not need it anyway: splitting retrieval from parsing leaves the parse taking a saved response, with no client in it at all.
-
-What remains is genuinely about the client — which answers it treats as failures, what it retries, which page it fetches first.
-Reach that by giving the function that *builds* the client an optional transport defaulting to the real one, which is the injection any impure dependency takes.
-The test then hands it the library's own in-process transport, every layer above the wire stays the library's real code, and nothing private is patched.
-Patching the builder instead replaces the one function the test was about.
-See the test-double taxonomy under Patterns below.
+**Reach an owned client through one argument, not a patch.** An adapter keeps its library's client inside itself by design.
+For what is genuinely about the client — what it treats as failure, what it retries — give the function that builds the client an optional transport defaulting to the real one, and hand the test the library's in-process transport; patching the builder replaces the one function under test.
 
 ## Isolation
 
-- A test must pass **in any order and on its own** — no shared mutable state, no test depending on another having run.
-- **Inject setup; never share through a global.** Shared data or context belongs in the runner's setup mechanism (a fixture), not a module-level constant, so each test gets its own fresh copy.
-- Never touch the real clock, randomness, or network.
-Inject them (the default-argument seams from `be-functional`) and pass fixed values, or seed the generator, so a run is reproducible.
-- A flaky test is a broken test: fix or delete it, since one that cries wolf trains you to ignore the suite.
+- **Pass in any order and alone** — no shared mutable state, no test depending on another.
+- **Inject setup through the runner's fixtures**, never a global, so each test gets a fresh copy.
+- **Never touch the real clock, randomness or network.** Inject them (see `be-functional`) and pass fixed values or a seed.
+- **Fix or delete a flaky test** — one that cries wolf trains everyone to ignore the suite.
 
 ## Test data
 
-Since every *given* value arrives through the signature (above), the open question is where a fixture gets it — and, harder, where an *expected* value comes from.
-This is `write-python`'s "prefer a function over a bare variable or global" applied to tests: one source of truth, reusable, and free to change without editing each test.
+Every given arrives through the signature; the questions are where a fixture gets it and, harder, where an *expected* value comes from.
 
-- **Inputs → a fixture or builder**, or an external data file a fixture loads (keep a dataset out of the source as CSV/Parquet/JSON, inspectable as data).
+- **Inputs** come from a fixture, a builder, or a data file a fixture loads (CSV, Parquet, JSON kept out of the source).
 Feed a function only the fields it reads.
-- **Expected values → a fixture that derives them from the raw data**, or a stored answers file — then pass them into a `then_` custom assertion, not a literal buried in the body.
-- **Reach an expected value by a route independent of the code under test.** A stored answers file, or a plain restatement of the spec, qualifies; re-deriving with the *same* transformation the code uses is circular and proves nothing.
-- **Prefer invariants where deriving the answer would just reimplement the code.** Assert properties that hold for any input — conservation (group totals sum to the whole), ordering (sorted), membership (output ⊆ input) — so there's no expected value to compute at all, and drive them with property-based tests.
+- **Expected values** come from a fixture or a stored answers file, passed into a custom assertion — never a literal buried in the body.
+- **Reach an expected value independently of the code under test** — a stored answer or a plain restatement of the spec; re-deriving it with the same transformation proves nothing.
+- **Prefer invariants where deriving the answer would reimplement the code**: conservation (group totals sum to the whole), ordering, membership (output ⊆ input).
 
-**Check the fixture can exhibit what you are testing for.**
-A test passes when the code is right *or* when the fixture cannot show it wrong, and the two look identical from outside.
-The risk is not a wrong value but a missing **dimension**: one symbol cannot produce the gap that appears when two trade on markets with different holidays, one exchange cannot produce the row that is present-but-empty, one page cannot show what happens at the boundary between pages.
-
-So for each rule the code implements, ask what the input must contain for that rule to fire at all, and check the fixture contains it.
-Where it does not, the rule is untested however green the run is — and the fixture that is smallest and easiest to record is reliably the one that exhibits least.
-This is the same measurement property-based testing already asks for, applied to a fixture instead of a generator: count how many of your cases reach the state that matters, and read a count of zero as a failure rather than a pass.
-
-Feed a function only what it reads, and assert only what the behaviour promises.
+**Check the fixture can exhibit what you test for.** A test passes when the code is right *or* when the fixture can't show it wrong, and the two look identical.
+The usual gap is a missing **dimension**: one series can't show what happens when two have different gaps, one page can't show the boundary between pages.
+For each rule, ask what the input must contain for it to fire, and check the fixture has it — the smallest, easiest fixture to record is reliably the one exhibiting least.
 
 ## Many inputs
 
-Run one assertion over many inputs instead of copy-pasted cases — the same instinct as preferring an expression over a loop.
-A table covers the cases you can enumerate; a generator covers a rule you can only state.
+**Table-driven** runs one assertion over many **independent** cases — each reported separately, each one line to add.
+Don't shred one operation over a collection into a case per element: feed the whole input and assert the whole output in one test, the way it is called.
 
-**Table-driven** runs one assertion over many **independent** cases — different scalar inputs, distinct scenarios — instead of a loop or copy-pasted tests.
-Each case is reported and fails separately (a loop stops at the first failure), and adding one is a single line.
-Reserve it for cases that are genuinely separate.
-Don't shred a single operation over a whole collection into a case per element: when a function transforms a list or dataframe, feed it the whole input and assert the whole output in **one** test — that exercises it the way it is actually called and reads far better than a row-at-a-time table.
-The runner's parametrization syntax is in `references/python.md`.
-
-**Property-based** lets a generator produce inputs across a whole input space and shrink any failure to a minimal counterexample (`hypothesis` in Python, `QuickCheck` elsewhere).
-It is especially strong for numeric and algorithmic code, where example-based tests only spot-check.
-Reach for it when you can state an **invariant**:
+**Property-based** generates inputs across a space and shrinks failures to a minimal counterexample (`hypothesis`, `QuickCheck`).
+Reach for it when you can state an invariant:
 
 - Round-trips: `decode(encode(x)) == x`.
-- Algebraic laws: commutativity, associativity, an identity element.
-- Postconditions: the result is always sorted, within bounds, or the same length.
-- Agreement with a slow, obviously-correct reference implementation.
+- Algebraic laws: commutativity, associativity, identity.
+- Postconditions: always sorted, within bounds, same length.
+- Agreement with a slow, obviously correct reference implementation.
 
-**Check that the generator actually reaches the states you are testing.** A property that passes is evidence only about the inputs that were generated, and a naive generator usually produces the quiet ones: uniformly random prices almost never contain a nine-candle run, so an agreement property over them can pass a hundred examples having never once exercised the logic it was written for.
-Bias the generator towards the interesting region — a walk with drift rather than independent draws — and then *measure* its reach before trusting it, by counting over a few hundred generated inputs how many arrive in each state that matters.
-The measurement is throwaway; leaving the unbiased generator in place is what costs you.
+**Check the generator reaches the states you test.** Independent random draws rarely produce a long run or a trend, so a property can pass a hundred examples without once exercising its logic.
+Bias the generator toward the interesting region (a drifting walk, not independent draws), then count over a few hundred inputs how many reach each state that matters; zero is a failure, not a pass.
 
-**A reference implementation is neither a given, a when, nor a then** — it is an oracle, and it belongs in its own module beside them (`reference` alongside `given`/`when`/`then`), exposed to tests through a fixture like any other starting state.
-Write it from the specification in the most obvious style available, not by paraphrasing the implementation: the agreement is worth something only because the two share no mechanism.
+**A reference implementation is an oracle**, its own module beside `given`/`when`/`then`, reached through a fixture.
+Write it from the spec in the most obvious style, never by paraphrasing the implementation — the agreement is worth something only if they share no mechanism.
 
 ## Dependency tests
 
-Write tests against the third-party behaviour your code depends on, kept separate from tests of your own code.
-They are **not** exhaustive tests of the library — that's the maintainer's job — but a pinned record of the specific behaviour you rely on, doubling as executable documentation of *how* you use it and an early warning when an upgrade changes it.
+Pin the third-party behaviour your code relies on, kept apart from tests of your own code.
+They are not exhaustive tests of the library but a record of your assumptions, failing on the assumption itself when an upgrade changes it.
 
-- Assert only what your code assumes: that a parser yields the type you expect, that an aggregation totals the way you rely on, that one call runs several operations together.
-- A breaking change then fails on the assumption itself, not somewhere deep in your code on the next upgrade.
-- Keep the dependency-behaviour tests a directory level apart from your own — the reference shows the tree.
+**Pin every default you overrode, by its effect.** Each argument passed because the library's default was wrong for you is a belief about that default, and if it changes you get a wrong answer, not an error.
+Assert the effect — that an unadjusted series differs from the adjusted one, that a range bound excludes its own date — and add what you read off responses: whether a missing record raises or returns nulls, whether a field is absent or empty.
 
-**Every default you overrode is an assumption, and it is the one most worth pinning.**
-"Assert only what your code assumes" reads as a limit and is really a prompt: go and enumerate them.
-The largest group hides because it is written as arguments — each one you passed because the library's default was wrong for you is a belief about what that default *is*, and the day it changes back you get a wrong answer rather than an error.
-
-Pin them by their effect rather than their name: that the unadjusted close differs from the adjusted one, that a bound excludes its own date, that a search returns more than the default cap when told to.
-Each of those fails loudly on the upgrade that would otherwise change your numbers quietly.
-
-The rest of the enumeration is what you read off a response — the level names of an index you reshape, whether a missing record raises or comes back as nulls, whether a field is absent or empty.
-A test per assumption is not over-testing; the assumptions are what the adapter is made of.
-
-**A network-backed dependency is pinned without a network.**
-"Never touch the network" and "pin the behaviour you rely on" only look opposed: what you rely on is how the client turns a response into what your code reads — the status it raises on, the encoding it picks, how it follows a redirect — and none of that needs a socket.
-Use the client's **own** in-process transport rather than patching it, so every layer above the wire is still the library's real code, and feed it a response you recorded from the real service once and kept beside the test.
-Patching the client out entirely tests neither the dependency nor your code, and reaching the real service makes the suite fail on someone else's outage; the transport seam is what gets you both.
+**Pin a network-backed dependency without a network.** What you rely on — the status it raises on, the encoding, redirects — lives above the socket.
+Use the client's own in-process transport with a response recorded once from the real service, so every layer above the wire is the library's real code.
 
 ## Coverage and speed
 
-Measure coverage to find untested paths, then read *which* branches are uncovered — an uncovered error path matters, a percentage does not.
-Chasing a number produces assertion-free tests that execute code without checking it.
+Use coverage to find untested paths, then read *which* branches are uncovered; chasing a percentage produces tests that execute code without checking it.
+Keep the default run fast, tagging slow or external tests to opt into in CI.
 
-Keep the suite fast so it runs on every change; a slow one gets skipped, which is when regressions land.
-Tag genuinely slow or external tests so the default run stays quick and you opt into the rest in CI.
+**Run the real surface once before calling a build done.** A recorded response proves the parse, not that the source still serves it; exercise every input the tool claims against the real thing, as a marked test or a documented command.
+**Read the counts, not the exit code**, and assert sizes against something known beforehand rather than against zero:
 
-**A recorded response proves the parse, not the source, so run the real surface once before calling a build done.**
-A fixture cannot say whether the address still serves it, whether every input the tool *claims* to serve resolves, or whether one comes back empty.
-The recorded document is, by definition, one that worked.
-So exercise the whole declared surface against the real thing and **read the counts, not the exit code**.
-An input returning zero rows has passed every check a program can make on itself.
-Keep it as a marked test outside the default run, or a documented command, so it lives in the repo rather than someone's memory.
-
-**Zero is the loudest wrong count, not the dangerous one.**
-Checking that nothing came back empty catches a source that moved and a name that no longer resolves, and it is worth having.
-It does not catch the count that is plausible: a request for a full history quietly answered with one month looks exactly like a request that worked, and so does a search capped at a library default a quarter of what was asked for.
-
-So assert the size against something you knew before the run, not against zero.
-The cheapest form is a **relation between two runs** rather than a number — an unbounded fetch returns more than a bounded one, three timeframes return more rows than one, a limit of two hundred returns at least what fifty did.
-Those hold as the data grows, where a literal does not, and each fails on exactly the default that was silently taken.
-
-Assert the **categories** separately from the size, too.
-"All three timeframes appeared" and "as many rows came back as should have" are two claims, and a test making only the first reads as though it made both.
+- **Relations between runs** — an unbounded fetch returns more than a bounded one, a limit of 200 at least what 50 did — hold as data grows, and each catches a default silently taken (a history quietly capped at one month).
+- **Categories separately from size** — "every region appeared" and "as many rows as expected" are two claims.
 
 ## Paradigms
 
-Reach beyond example-based unit tests when the problem fits.
-
-- **TDD (Test-Driven Development)** — write a failing test, make it pass, refactor (red-green-refactor).
-Drives design and guarantees every line exists to satisfy a stated intent.
-- **BDD (Behaviour-Driven Development)** — express tests as given-when-then behaviour in domain language, the structure above.
-Keeps tests tied to requirements, not implementation.
-- **Property-based** — assert invariants over generated, shrinking inputs (`hypothesis`, `QuickCheck`), per Many inputs above.
-- **Test pyramid (and trophy)** — many fast unit tests, fewer integration, fewest end-to-end.
-A budgeting guide; lean toward integration (the "trophy") when units are trivial and the bugs live in the seams.
-- **Characterization** — capture the *current* behaviour of existing code before changing it.
-A safety net around legacy or unfamiliar code ahead of a refactor.
-- **Approval / golden-master / snapshot** — assert output equals a stored, reviewed reference.
-For complex output (rendered text, serialised structures) painful to assert field by field; review the diff when it changes.
-- **Contract** — verify both sides of an integration agree on a shared contract (consumer-driven contracts, Pact).
-Across boundaries you don't control end to end.
-- **Fuzz** — feed random or adversarial inputs to surface crashes and unhandled cases.
-On parsers and anything taking untrusted input.
-- **Mutation** — inject faults into the code and check the suite catches them.
-Run occasionally to measure whether tests actually assert, not merely execute.
+- **TDD (Test-Driven Development)** — red, green, refactor; every line exists to satisfy a stated intent.
+- **BDD (Behaviour-Driven Development)** — given-when-then in domain language, the shape above.
+- **Property-based** — invariants over generated inputs (Many inputs).
+- **Test pyramid or trophy** — many unit, fewer integration, fewest end-to-end; lean toward integration where units are trivial and the bugs live in the seams.
+- **Characterisation** — capture current behaviour before refactoring unfamiliar code.
+- **Approval or snapshot** — compare complex output to a reviewed reference, and review the diff when it changes.
+- **Contract** — both sides of an integration verify a shared contract (Pact).
+- **Fuzz** — random or adversarial input for parsers and anything untrusted.
+- **Mutation** — inject faults to check the suite asserts rather than merely executes.
 
 ## Patterns
 
-Reach for a named pattern to structure a test or its suite.
-
-- **Four-phase test** — setup, exercise, verify, teardown; given-when-then is its behavioural form.
-The skeleton of every test.
-- **Test doubles** — *dummy* (filler, unused), *stub* (canned answers), *spy* (records calls), *mock* (asserts on expected calls), *fake* (a working lightweight implementation).
-- **Custom assertion** — a `then_<expectation>` helper encapsulating a check and its failure message, per Given, when, then above.
-- **Test data builder** — a fluent builder for a valid object with overridable parts (`a_sale().with_quantity(0)`).
-For objects with many fields where tests vary one at a time.
-- **Object mother** — a factory of canonical, named test objects (`Sales.typical()`).
-For a small set of standard scenarios shared across tests.
-- **Parametrized / table-driven** — one test, a table of cases, per Many inputs above.
-- **Humble object** — push logic out of a hard-to-test boundary (UI, I/O) into a plain, testable object; the functional-core / imperative-shell split is this pattern.
-- **Fresh vs shared fixture** — a fresh fixture per test maximises isolation; a shared (module/session) one trades isolation for speed on expensive, read-only setup.
-Default to fresh.
-- **Suite layout** — separate the test cases (mirroring the source, dependency-behaviour tests kept apart), their data, and shared helpers; the concrete tree is language-specific.
-- **Runner as entry point** — a runner discovers and runs the tests, so no test file needs a `main`; run the whole suite or select a slice by directory, name or tag.
+- **Test doubles** — *dummy* (unused filler), *stub* (canned answers), *spy* (records calls), *mock* (asserts on calls), *fake* (working lightweight implementation).
+- **Test data builder** — a valid object with overridable parts (`a_sale().with_quantity(0)`), for many-field objects varied one field at a time.
+- **Object mother** — named canonical objects (`Sales.typical()`) for a few standard scenarios.
+- **Fresh vs shared fixture** — default to fresh; share (module or session scope) only expensive, read-only setup.
+- **Suite layout** — separate the cases (mirroring the source, dependency tests apart), their data, and shared helpers.
+- **Runner as entry point** — no test file has a `main`; select a slice by directory, name or tag.
 
 ## Language specifics
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (`pytest`: fixtures in the `pytest_` package, `parametrize`, `tmp_path`/`capsys`, `raises`/`approx`, `hypothesis`, `pytest-cov`, the `tests/` layout and import mode, running).
+- **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis`, custom assertions, `httpx.MockTransport`, logging, running).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

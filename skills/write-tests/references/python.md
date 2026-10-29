@@ -36,11 +36,30 @@ There is no `per-file-ignores` exemption for `tests/`.
 
 ## Given, when, then
 
-The three beats become the `pytest_` package's `given`, `when` and `then` modules (above): fixtures, action helpers, and custom assertions.
+The three beats become the `pytest_` package's `given`, `when` and `then` modules: fixtures, action helpers, and custom assertions.
+
+```python
+# Wrong: the given is built in the body, so the scenario has no name.
+def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
+    """Every kept row is positive."""
+    raw_sales = polars.DataFrame({"quantity": [2, 0, -1, 5]})
+    kept = keep_valid(raw_sales)
+    assert kept.get_column("quantity").to_list() == [2, 5]
+
+
+# Right: the given is a fixture parameter and the then a named, reusable claim.
+def test_when_keep_valid_then_non_positive_rows_dropped(
+    raw_sales: polars.DataFrame,
+) -> None:
+    """Every kept row is positive."""
+    kept = keep_valid(raw_sales)
+    then.every_row_positive(kept, column="quantity")
+```
+
 Supply the *given* through fixtures:
 
 - Take each *given* as a `@pytest.fixture` argument; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put shared fixtures in the `pytest_` package's `given.py`, registered as a plugin with `addopts = "-p pytest_.given"` (see Pick a layout).
+- Put shared fixtures in `given.py`, registered with `addopts = "-p pytest_.given"` (see Pick a layout).
 - Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
 - Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you can't inject.
@@ -55,7 +74,7 @@ The *when* helpers name compound actions where they earn it; the *then* helpers 
 
 ## Many inputs
 
-For independent scalar cases — not for splitting one whole-frame operation into a case per row (assert that whole under Assertions) — parametrize:
+Parametrize independent scalar cases — never one whole-frame operation split into a case per row:
 
 ```python
 @pytest.mark.parametrize(
@@ -82,10 +101,7 @@ def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
 
 Bind the strategy to a module-level name when several properties share it, rather than repeating the `@hypothesis.given` argument, and set `@hypothesis.settings(deadline=None)` for anything doing real work per example.
 
-Where the property only means something once the input reaches a particular state, **build the state into the strategy and then check it arrives**.
-Draw the increments and accumulate them (`itertools.accumulate` over a drifting step) so runs and trends actually occur, since independent draws almost never produce one.
-Then run a throwaway loop over a few hundred generated inputs counting how many land in each state you care about, and only keep the property once that count is high.
-A `hypothesis.event(...)` call in the test body records the same thing in the run statistics if you would rather keep the check.
+To reach a state independent draws rarely produce, draw increments and accumulate them (`itertools.accumulate` over a drifting step), then count how many generated inputs reach the state — a throwaway loop, or `hypothesis.event(...)` in the test to keep the count in the run statistics.
 
 ## Assertions
 
@@ -113,8 +129,7 @@ Naming the expected side is what stops the classic transposition, where a swappe
 - Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
 - Compare floats with `pytest.approx`, never `==`.
 
-Assert a dataframe transform on the **whole frame** in one test, with the `then` assertions above and the expected values from a fixture — never a literal.
-Here `expected_revenue` is a fixture that derives `quantity * unit_price` from the raw data in plain Python:
+Assert a frame transform on the **whole frame**, with expected values from a fixture — here `expected_revenue` derives `quantity * unit_price` from the raw data in plain Python:
 
 ```python
 def test_when_add_revenue_then_revenue_is_quantity_times_price(
@@ -125,7 +140,6 @@ def test_when_add_revenue_then_revenue_is_quantity_times_price(
     then.column_equals(priced, column="revenue", values=expected_revenue)
 ```
 
-Where deriving the expected would just reimplement the code — a group-by, a ranking — assert an invariant instead (`then.conserves`, `then.column_sorted`).
 For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)` — which needs its own `import polars.testing`, since importing `polars` alone does not bind the submodule (see `write-python`).
 
 ## Dependency tests
@@ -142,7 +156,7 @@ def test_when_raise_for_status_then_a_not_found_raises() -> None:
 
     client = httpx.Client(transport=httpx.MockTransport(refuse))
     with pytest.raises(httpx.HTTPStatusError):
-        client.get("https://example.test/holdings.csv").raise_for_status()
+        client.get("https://example.test/report.csv").raise_for_status()
 ```
 
 Keep the recorded response in `tests/data/` and load it through a fixture, the same as any other given.
@@ -214,7 +228,7 @@ If you don't need `rich` specifically, the zero-code alternative is `pytest`'s n
 ## Run
 
 `pytest` is the entry point — a test file never has an `if __name__ == "__main__"`.
-Run the whole suite, or select a slice by directory, name, or marker:
+Run everything under `testpaths`, or a slice by directory, name (`-k`) or marker (`-m`):
 
 ```bash
 uv run pytest
@@ -222,8 +236,3 @@ uv run pytest tests/suite/packages
 uv run pytest -k revenue
 uv run pytest -m slow
 ```
-
-- `uv run pytest` runs everything under `testpaths`.
-- `uv run pytest tests/suite/packages` runs one directory.
-- `uv run pytest -k revenue` runs tests whose name matches.
-- `uv run pytest -m slow` runs tests carrying a marker.
