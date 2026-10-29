@@ -75,7 +75,8 @@ Implement the protocols the language uses: `__repr__` (dataclasses give you this
 
 ## Mixins
 
-A mixin is a plain class inherited for one focused capability, listed **left** of the base so its methods take precedence in the method-resolution order:
+Python can add behaviour to a class only through inheritance, which is why mixins are the idiom.
+List a mixin **left** of the base, so its methods win in the MRO (Method Resolution Order):
 
 ```python
 class AsDictMixin:
@@ -103,12 +104,14 @@ Keep a mixin behaviour-only and stateless (no `__init__`) so several combine cle
 Concrete versions of the simpler forms listed in `SKILL.md`:
 
 ```python
+import collections.abc
 import functools
-import typing
 
 
 # Strategy / Command → a function parameter
-def process(data: list[int], strategy: typing.Callable[[list[int]], int]) -> int:
+def process(
+    data: list[int], strategy: collections.abc.Callable[[list[int]], int]
+) -> int:
     """Apply a pluggable strategy to the data."""
     return strategy(data)
 

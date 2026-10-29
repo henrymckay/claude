@@ -39,43 +39,36 @@ Inheritance couples you to a base class's internals and is rigid; composition st
 Reserve inheritance for genuine subtype relationships, not code reuse.
 - **Encapsulation.** Hide internal state behind a narrow public interface so the object controls its own invariants.
 Expose intent (methods), not raw fields to be poked; a leading underscore marks internals (see `write-python`).
-- **Program to an interface, not an implementation.** Depend on an abstraction so implementations are swappable.
-In Python that's usually a `typing.Protocol` (structural), not a base class.
+- **Program to an interface, not an implementation.** Depend on an abstraction so implementations are swappable — a structural interface where the language has one, rather than a base class.
 - **Keep hierarchies shallow.** One or two levels.
 Deep trees are fragile and hard to follow; if you're reaching for a third level, reconsider with composition.
 - **Immutable where you can.** Even in OOP, prefer immutable value objects (frozen dataclasses) for data; reserve mutability for things that genuinely model changing state.
 
 ## Mixins
 
-A **mixin** is a small class that *adds* a focused capability to other classes by being inherited.
-Python has no other native way to union behaviour into a class — you can't inject methods into the method-resolution order except through inheritance — so a mixin is the sanctioned use of (multiple) inheritance for **cross-cutting concerns**, distinct from is-a subclassing.
+A **mixin** is a small class that *adds* a focused capability to otherwise unrelated classes by being inherited — the sanctioned use of multiple inheritance for **cross-cutting concerns**, distinct from is-a subclassing.
 
 - Keep it **behaviour-only and narrow** — a few related methods, ideally no state or `__init__` of its own — so several mixins stay orthogonal and combine cleanly.
-- Name it with a `Mixin` suffix (`SerializableMixin`, `ComparableMixin`) and list it left of the base class, since the method-resolution order reads left to right.
-- This doesn't contradict composition-over-inheritance: reach for a mixin when a capability is genuinely shared across otherwise-unrelated classes and reads better mixed in; prefer composition when the behaviour carries its own state or lifecycle.
+- Name it with a `Mixin` suffix (`SerializableMixin`).
+- Prefer composition instead when the behaviour carries its own state or lifecycle.
 
 ## SOLID
 
-The classic OOP design-principle set.
-Several principles span paradigms — cross-references noted so you see they aren't OOP trivia:
+Several of these span paradigms:
 
 - **S — Single Responsibility.** One reason to change per class.
-(General — cf. cohesive modules in `write-python`, small functions in `be-functional`.)
-- **O — Open/Closed.** Open to extension, closed to modification.
-(Covered in depth by `be-functional`'s expression-problem section — add behaviour by adding code, not editing existing code.)
+- **O — Open/Closed.** Open to extension, closed to modification — add behaviour by adding code (see `be-functional`, "Choose axis of change").
 - **L — Liskov Substitution.** A subtype must work anywhere its base does, honouring the base's contract (don't strengthen preconditions or weaken postconditions).
 The genuinely OOP one — a broken override here is a real bug.
-- **I — Interface Segregation.** Many small, focused interfaces beat one fat one; a client shouldn't depend on methods it doesn't use.
-In Python, small `Protocol`s.
-- **D — Dependency Inversion.** Depend on abstractions, not concretions, and inject dependencies rather than hard-wiring them.
-(This *is* the dependency injection in `be-functional` — pass collaborators in.)
+- **I — Interface Segregation.** Many small interfaces beat one fat one; a client shouldn't depend on methods it doesn't use.
+- **D — Dependency Inversion.** Depend on abstractions and inject collaborators — the dependency injection of `be-functional`.
 
 ## Design patterns
 
-Patterns are shared vocabulary, but many classic GoF (Gang of Four) patterns are workarounds for features Python already has.
-Recognise the pattern, then reach for the **simplest form** that solves it — keep it simple and don't over-build (the KISS and YAGNI principles; see `write-python`); don't cargo-cult a Java-style class where a function does.
+Patterns are shared vocabulary, but many GoF (Gang of Four) patterns work around features a language with first-class functions and modules already has.
+Recognise the pattern, then take the simplest form that solves it — never a Java-style class where a function does.
 
-Patterns that usually **collapse** in Python — each with what it is, then the simpler form:
+Patterns that usually **collapse** — what each is, then the simpler form:
 
 - **Strategy** — swap one of a family of interchangeable algorithms at runtime → pass a **function**.
 - **Command** — package an action as an object to store, queue, or undo → a **function** (or `functools.partial`).
