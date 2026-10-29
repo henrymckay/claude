@@ -61,7 +61,7 @@ Where a column may be absent from a genuinely open schema, `polars.selectors.by_
 **Use expression methods, not operators**: `.mul`, `.add`, `.truediv`, `.gt`, `.eq` and the rest chain without wrapping parentheses and dodge the precedence trap in `polars.col("a").gt(0) & polars.col("b").gt(0)`.
 Keep `&`, `|`, `~` as operators — their method spellings read worse.
 
-**Name a column with `.alias()`, not a keyword argument.** The `move=` form belongs to the context, so the name is lost when the expression moves into a variable, a helper or a second context; `.alias()` travels with it, and also spells names Python can't, like `total (£)`.
+**Name a column with `.alias()`, not a keyword argument.** The keyword form (`with_columns(total=...)`) belongs to the context, so the name is lost when the expression moves into a variable, a helper or a second context; `.alias()` travels with it, and also spells names Python can't, like `total (£)`.
 
 ## Silent traps
 
@@ -188,7 +188,7 @@ projected = sales.join(polars.DataFrame({"rate": rates}), how="cross").with_colu
 - **Rendering** — a table, chart or response body, iterated once in the driver after all reshaping.
 - **Decoding** — the comprehension turning nested records into a frame with a declared schema, once, in the adapter; a second comprehension after the frame exists is the lapse.
 
-**Filter by another frame's keys with a semi join**: `frame.join(wanted, on="id", how="semi")` (or `"anti"` for non-matches).
+**Filter by another frame's keys with a semi join**: `frame.join(wanted, how="semi", on="id")` (or `"anti"` for non-matches).
 Pulling `wanted["id"].to_list()` into `is_in` collects the other frame and stops a lazy query being lazy; passing a `Series` to `is_in` is deprecated.
 A Python list you already hold is fine in `is_in`.
 

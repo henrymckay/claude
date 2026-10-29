@@ -5,33 +5,16 @@ Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-p
 
 ## Pick a layout
 
-```text
-tests/
-  data/
-  pytest_/
-    __init__.py
-    given.py
-    reference.py
-    then.py
-    when.py
-  suite/
-    mypackage/
-      test_core.py
-    packages/
-      test_httpx.py
-```
+`structure-python` owns the `tests/` tree and the `pytest` settings that serve it; writing the tests adds only this:
 
-`structure-python` owns this tree and the `pytest` settings that serve it; what follows is only what writing the tests adds to it.
-
-- `reference.py` is the addition to the `pytest_` package — the oracle a property test agrees with (see `SKILL.md`), a starting state like any other and so reached through a fixture.
+- `pytest_/reference.py` holds the oracle a property test agrees with (see `SKILL.md`), a starting state like any other and so reached through a fixture.
 - `-p` must name the module the fixtures are *defined* in, `pytest_.given`; `-p pytest_` loads the empty `__init__` and registers nothing.
 The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers — and the `pytest_plugins` variable works only there, never in `pyproject.toml`.
 - `pythonpath` only applies while `pytest` runs, so static tools resolve `from pytest_ import then` their own way — `pyright` finds it, but an IDE like PyCharm needs `tests/` marked as a source root, an uncommitted setting that can't live in `pyproject.toml`.
 
 ## Tests are code
 
-- Tests obey `write-python` in full: docstring and annotate every test — return `-> None`, and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`).
-There is no `per-file-ignores` exemption for `tests/`.
+- Annotate every test `-> None` and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`); no `per-file-ignores` for `tests/`.
 - Fixture docstrings are imperative too (`ruff`'s `D401`): "Load the sample dataset", not "The sample dataset".
 
 ## Given, when, then
@@ -60,9 +43,9 @@ Supply the *given* through fixtures:
 
 - Take each *given* as a `@pytest.fixture` argument; the fixture names and builds the scenario so the body doesn't set it up inline.
 - Put shared fixtures in `given.py`, registered with `addopts = "-p pytest_.given"` (see Pick a layout).
-- Use the narrowest correct **scope**: per-function (the default) keeps tests independent; widen to `module`/`session` only for expensive, read-only setup.
+- Widen a fixture's `scope` to `"module"` or `"session"` for expensive read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
-- Inject a fake at the seam you designed; reach for `monkeypatch` or `pytest-mock` only at a genuine external boundary you can't inject.
+- At a boundary you can't inject, patch with `monkeypatch` or `pytest-mock`.
 
 A fixture sources each input, and — harder — each expected value:
 
@@ -85,7 +68,7 @@ def test_when_revenue_then_quantity_times_price(
     quantity: int, unit_price: float, expected: float
 ) -> None:
     """Revenue is quantity times unit price."""
-    assert revenue(quantity, unit_price) == expected
+    then.equals(revenue(quantity, unit_price), expected=expected)
 ```
 
 Give cases `ids` when the values don't read clearly in the output.
@@ -96,7 +79,7 @@ For a property that should hold across an input space, let `hypothesis` generate
 @hypothesis.given(xs=hypothesis.strategies.lists(hypothesis.strategies.integers()))
 def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
     """Sorting an already-sorted list changes nothing."""
-    assert sorted(sorted(xs)) == sorted(xs)
+    then.equals(sorted(sorted(xs)), expected=sorted(xs))
 ```
 
 Bind the strategy to a module-level name when several properties share it, rather than repeating the `@hypothesis.given` argument, and set `@hypothesis.settings(deadline=None)` for anything doing real work per example.
@@ -181,6 +164,7 @@ class _TestRichHandler(rich.logging.RichHandler):
     """Rich handler that opens each test's first log line on a fresh row."""
 
     def __init__(self) -> None:
+        """Create the handler, armed for the first test."""
         super().__init__(rich_tracebacks=True)
         self.new_test = True
 
@@ -205,11 +189,11 @@ def _reset_log_newline() -> None:
 def _rich_logging() -> None:
     """Route session logs through Rich, matching the app's handler."""
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(message)s",
         datefmt="[%X]",
-        handlers=[_log_handler],
         force=True,
+        format="%(message)s",
+        handlers=[_log_handler],
+        level=logging.INFO,
     )
 ```
 

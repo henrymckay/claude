@@ -70,7 +70,7 @@ The core types it as a *port* it defines, and the entry point injects the concre
 ## Functions over classes
 
 Default to functions, closures and curried functions: a closure captures state without the ceremony, and currying specialises without a hierarchy.
-Reach for a class only when extending an existing hierarchy — a framework base class or hook — since a one-method class is a function in costume; `be-oop` covers doing it well.
+Reach for a class only where `be-oop`'s When to use applies — extending a framework hierarchy, a long-lived stateful object, an invariant to guard — since a one-method class is a function in costume.
 
 ## Make illegal states unrepresentable
 
@@ -123,7 +123,7 @@ This is the same test as "a value matched against the data element by element is
 ## Make functions total
 
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).
-Make functions total by **narrowing the input** so every value is valid (accept a sum type/enum, not an arbitrary string) or by **widening the output** to represent the awkward cases (`X | None`, a `Result`) instead of raising.
+Make functions total by **narrowing the input** so every value is valid (accept a sum type/enum, not an arbitrary string) or by **widening the output** to represent the *expected* awkward cases (`X | None`, a `Result`) instead of raising; a genuine failure still raises.
 Total functions compose without hidden landmines — the signature tells the caller nothing will explode.
 
 ## Choose axis of change

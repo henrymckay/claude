@@ -130,7 +130,7 @@ Swap the library and only the framework part changes.
 So one driver module owns input arriving by any route, another output leaving in either form, and the framework package builds its object and stops.
 The package mechanics are in `references/python.md`.
 
-## Launch
+## Run
 
 Give each entry point a **launch command namespaced to the project** (`myapp-cli`, `myapp-api`, never a bare `cli`), pointing at whatever starts it: a callable app object, or a thin launcher where the framework has none.
 

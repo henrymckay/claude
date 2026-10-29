@@ -4,7 +4,7 @@ The language-agnostic principles are in `SKILL.md`; this is how they land in Pyt
 Every driver lives under `code/drive/` (see `structure-python`); the libraries are `setup-python`'s house picks.
 The running example is a weather app whose operation `operate.report(stations, fetch=...)` returns a `polars` frame of `station` and `average`, fetched through a `port.Fetch`.
 
-## Packaging
+## Role and framework split
 
 Under `code/drive/`, each driver is a hollow **role package** over one or more **framework packages**:
 
@@ -232,7 +232,7 @@ A test swaps the adapter with `app.dependency_overrides[provide.fetch] = lambda:
 
 ## GUI
 
-`shiny` (Shiny for Python): its reactive model re-renders only the outputs a changed input affects, and its UI/server split matches shell over core, where `streamlit` reruns the whole script.
+`shiny`, `setup-python`'s pick for a GUI, whose UI/server split matches shell over core.
 
 **Use Shiny Core, not Express, in a packaged app.** Core keeps layout and reactive callbacks apart and yields an explicit `shiny.App` for the launcher; Express suits only a throwaway single-view dashboard.
 
@@ -279,11 +279,7 @@ def run() -> None:
     operate.refresh(fetch=httpx_.fetch, store=postgres_.save)
 ```
 
-Reach for a library only when the trigger must live inside the process, each in its own trailing-underscore package:
-
-- **In-process scheduling** → `apscheduler`.
-- **A task queue** → `dramatiq` over a Redis or RabbitMQ broker.
-- **Orchestration** (dependent steps, retries, backfills) → `prefect` or `dagster`.
+Reach for a library only when the trigger must live inside the process — `setup-python` names the picks — in its own trailing-underscore package, with the work still an operation over the core.
 
 ## Configuration
 

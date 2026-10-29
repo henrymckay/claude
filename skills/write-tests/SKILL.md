@@ -35,7 +35,7 @@ Structure every test as **given / when / then**, the behavioural form of setup, 
 
 - **Given** — the starting state, arriving **entirely through the test's parameters** (fixtures, including ones that load data files) — never a module global, never built in the body.
 - **When** — the single action under test, on its own line, assigned to a well-named result.
-- **Then** — the assertions, ideally `then_<expectation>` custom assertions.
+- **Then** — the assertions, ideally custom assertions from a shared `then` module (`then.<expectation>`).
 
 **Name every test `test_when_<action>_then_<outcome>`.** The given lives in the parameters, so the name carries the action and the outcome: `test_when_keep_valid_then_non_positive_rows_dropped`.
 A failure then reads as a falsified claim, which is most of the diagnosis.
@@ -47,7 +47,7 @@ Make the beats visible through structure and names, not `# given` comments.
 - **Right** — the sample arrives as a named fixture parameter, and the outcome is a named assertion reused across tests.
 
 **Prefer a custom assertion even for a bare equality**: it carries its own failure message, names the expected side so a transposed pair can't pass, and a shared set reads uniformly.
-Add a `when_<action>` helper only where the action is compound; a single well-named call is its own clearest *when*.
+Add a `when.<action>` helper only where the action is compound; a single well-named call is its own clearest *when*.
 Grouped, the beats become shared `given`, `when` and `then` modules, so a body reads `when.summarise(sales)` then `then.conserves(...)`.
 
 ## Behaviour, not implementation

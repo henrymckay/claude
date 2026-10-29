@@ -147,7 +147,8 @@ render(rows, True, 30)
 render(rows, table=True, width=30)
 ```
 
-- **A variable already spelled like the parameter needs no label**: `revenue(quantity, unit_price)`, not `revenue(quantity=quantity, …)`. The rule bites on literals, expressions and mismatched names.
+- **A variable already spelled like the parameter needs no label**: `revenue(quantity, unit_price)`, not `revenue(quantity=quantity, …)`.
+The rule bites on literals, expressions and mismatched names.
 - **A boolean or bare number is never the subject.**
 - **Put a `*` in the signature** before everything optional or modal, so the language enforces the naming and those parameters can be reordered later without breaking callers: `def fetch_user(user_id: int, *, include_archived: bool = False) -> User`.
 
@@ -167,8 +168,7 @@ Place a new definition in its slot, but don't reshuffle an existing file — the
 
 ## Simplicity
 
-**Take the simplest solution**: the language and standard library before custom code or a dependency, and complexity only when a concrete need forces it — KISS, YAGNI and DRY, factoring out real duplication without over-abstracting.
-When a dependency is warranted, `setup-python` names the house pick.
+**Take the simplest solution**: the language and standard library before custom code or a dependency (except where `setup-python` names a house pick over the stdlib, such as `typer` over `argparse`), and complexity only when a concrete need forces it — KISS, YAGNI and DRY, factoring out real duplication without over-abstracting.
 
 **Once a library is in play, use its features rather than hand-rolling around them.** Before writing validation, grouping, reshaping, retries or serialisation, check its API — a mature library already names any standard manipulation.
 Confirm the feature exists, though; a genuine gap is fine to fill.
@@ -249,7 +249,7 @@ def handle[**P, T](
     return decorate
 
 
-@handle(httpx.HTTPError, report=ForecastError, message="No forecast for {city}")
+@handle(httpx.HTTPError, message="No forecast for {city}", report=ForecastError)
 def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame: ...
 ```
 

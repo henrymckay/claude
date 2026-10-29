@@ -33,7 +33,7 @@ Branching before there is a `main` to merge back into is ceremony, not history.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
 - Commit locally often; tidy up before sharing.
-A commit that landed out of order (tests ahead of the fix they need) is fixed with `git reset --soft` and re-committing — it touches no file and no shared history, so it needs no sign-off.
+A commit that landed out of order (tests ahead of the fix they need), and is not yet pushed, is fixed with `git reset --soft` and re-committing — it touches no file and no shared history, so it needs no sign-off.
 - **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
@@ -64,7 +64,7 @@ first. Falls back to alphabetical when activity data is missing.
 ## Push
 
 Push freely — it backs work up and shows progress, with little downside.
-**Push after each atomic commit**, since each already leaves the branch in a coherent, working state; only batch when a commit is a deliberate mid-sequence step that would push the branch through a briefly-broken state.
+**Push after each atomic commit**, since each already leaves the branch in a coherent, working state; batch only while a sequence is mid-step or still being tidied, since a pushed commit can no longer be reset or rebased without a force-push.
 Always push before stepping away or opening/updating a PR.
 
 Pushing your own branch needs no sign-off.

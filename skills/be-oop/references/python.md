@@ -93,11 +93,9 @@ class Widget(AsDictMixin):
     ...
 ```
 
-Keep a mixin behaviour-only and stateless (no `__init__`) so several combine cleanly.
-
 ## Enums
 
-`enum.Enum` for a closed set of named constants — a sum type (see `be-functional`, "Algebraic data types and pattern matching").
+`enum.Enum` for a closed set of named constants — a sum type (see `be-functional/references/python.md`).
 
 ## Design patterns
 
