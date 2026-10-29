@@ -132,8 +132,7 @@ Filter at the edge only on what the source states and the value can't show.
 The adapter keeps the *decision* — that this source spells a key its own way is knowledge about the source.
 A `try` wrapped round the chain hides the pure part by making the reshape read as IO; lift the handling into a decorator and the frame-in, frame-out steps show.
 
-**Purity misfires on a rendering intermediate.** Columns computed only for a renderer to consume and drop in the same breath are presentation — pure, and still the driver's.
-Ask what a second driver would keep: it wants the reshape, not the colour.
+Purity is a proxy, though: columns computed only for a renderer are presentation and stay with the driver (see `write-entry-points`, Driver shell).
 
 **Share one reader per wire format**, with each adapter passing only what differs (columns, header rows to skip).
 Wait for the second caller, and count what's really shared — where the library reads the format natively, two adapters may share one line, not worth a module.

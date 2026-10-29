@@ -8,18 +8,18 @@ description: >-
   as a public surface and built to compose with the tools around it. Use
   whenever adding or structuring an entry point, designing a command's options
   or an API's surface, deciding what goes to standard output and what to
-  standard error, wiring dependency injection at the boundary, splitting a
-  driver into role and framework packages, or naming a launch command — even if
-  the user just says "add a CLI", "expose an API", "build a dashboard", "run
-  this on a schedule", or names typer, fastapi, uvicorn, pydantic, shiny, or a
-  scheduler. Language-agnostic principles here; Python build-outs in
-  references/python.md. Layers on structure-python's drive layer and
-  be-functional.
+  standard error, taking input from arguments, files or standard input, wiring
+  dependency injection at the boundary, splitting a driver into role and
+  framework packages, or naming a launch command — even if the user just says
+  "add a CLI", "expose an API", "build a dashboard", "run this on a schedule",
+  or names typer, fastapi, uvicorn, pydantic, shiny, or a scheduler.
+  Language-agnostic principles here; Python build-outs in references/python.md.
+  Layers on structure-python's drive layer and be-functional.
 ---
 
 # Write entry points
 
-An **entry point** is a **driver**: a thin shell over the presentation-agnostic core, and the composition root that wires a concrete adapter into an operation.
+An **entry point** is a **driver**: a thin shell over the core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
 It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell).
 Three mistakes account for most of what goes wrong: logic that settles in the shell instead of the core, output shaped for a person while something is piping it, and a capability reachable only as a side effect of asking for something else.
@@ -30,225 +30,125 @@ Three mistakes account for most of what goes wrong: logic that settles in the sh
 
 ## Driver shell
 
-Each entry point is a thin **shell** over the core: it reads its trigger, calls an operation, injects the adapter that operation needs, and renders the result its own way.
-Keep it thin — the logic stays in the core, so a second entry point can serve or render the same results differently.
-Presentation belongs to the entry point, never the core: a CLI's table, an API's JSON, a dashboard's widgets are each one driver's concern.
+Each entry point reads its trigger, calls an operation with the adapter it needs injected, and renders the result its own way.
+Keep it thin: logic in the shell can't be reused by a second entry point.
+Presentation belongs to the driver, never the core — a CLI's table, an API's JSON, a dashboard's widgets.
 
-**Reshaping the data is not presentation, however much it looks like it.** Pivoting a long result into a column per key changes what one row *is*, and a change of grain is a seam in the core (see `be-functional`) — so it belongs to a transform even when the only reason you noticed you wanted it was a table.
-The line is whether the step still yields your own data: a frame in and a frame out is core, and presentation starts where the result stops being data and becomes a `Table`, a response model, a widget.
-Test it by asking what a second driver would do — an API serving the same report wants the same pivot and a completely different renderer, which places the pivot on the core's side of the line.
+**Reshaping data is not presentation.** A pivot changes what a row *is*, a change of grain that belongs to a core transform (see `be-functional`) even if a table is why you wanted it.
+Ask what a second driver would do: an API serving the same report wants the same pivot and a different renderer, so the pivot is core.
+The converse holds too: columns computed only for the renderer to consume and drop — a colour, a bar width — are presentation, pure or not.
 
-So "a frame in and a frame out" is a proxy rather than the test itself.
-A pure frame step whose columns exist only for the renderer, and are dropped before anything receives them, is presentation written in the frame library: the second driver wants the pivot and not the colour, because it would choose its own.
-Purity puts it in the core; being part of the answer is what actually decides.
-
-**One renderer for the whole tool, told what to show rather than guessing.**
-A tool's commands answer with different shapes, so the temptation is a renderer per command — which is the same table built twice, differing only in the frame handed to it.
-One renderer is right.
-What it must not do is work out what it is holding.
-
-A renderer inspecting column names for the ones it recognises — colouring where it finds an open beside a close, drawing a bar where it finds a volume — has put the domain in the one place meant to be domain-free, and it is wrong the first time a later command carries a column of that name meaning something else.
-Pass a **per-column description** beside the frame instead: how to show this column, and plain for every column that says nothing.
-The command already knows what it is rendering, so the renderer never has to.
-
-**Rounding the data does not make a column read as one precision.**
-A float rendered by its own repr drops trailing zeros, so a column held to four places still shows two, one and four down the page and stops being scannable — which is the readability the rounding was for.
-Precision is a property of the *column* rather than of a value, so it belongs in the per-column description the renderer is handed, beside what a colour reads against and where a bar is drawn.
+**One renderer for the whole tool, told what to show rather than guessing.** A renderer that recognises column names (colouring where it finds a `close`) has put the domain in the one place meant to be domain-free, and breaks when a later command reuses a name.
+Pass a **per-column description** beside the data instead — how to show each column, including its precision, since a float's own repr drops trailing zeros and a column stops lining up.
 
 ## Design the surface
 
-An entry point is a public API — people script against it, so a renamed flag is a broken caller and a missing capability is a fork.
-Design it deliberately, against three demands at once.
+An entry point is a public API: people script against it, so a renamed flag breaks a caller and a missing capability forces a fork.
+Design it against three demands at once:
 
-- **Comprehensive.** Everything the core can do is reachable from it, and reachable on its own.
-A capability that needs a code change, or that only arrives as a side effect of asking for something else, is not exposed.
-- **Expressive.** The common request is short and the unusual one is still sayable, rather than a surface that serves the demo and nothing past it.
-- **Brief.** The least typing that stays unambiguous, with defaults carrying the common case so the everyday invocation is close to bare.
+- **Comprehensive** — everything the core can do is reachable, each capability on its own, not as a side effect of asking for something else.
+- **Expressive** — the unusual request is still sayable.
+- **Brief** — defaults carry the common case, so the everyday invocation is nearly bare.
 
-They pull against each other, and that tension is the design work: comprehensiveness invites a flag per capability, and brevity is what stops that reaching thirty of them.
-Resolve it by making options **combine rather than multiply** — orthogonal options a caller mixes freely beat a named flag per combination, and one option taking a value beats three that are variations of it.
+They pull against each other; resolve it with options that **combine rather than multiply** — orthogonal options mixed freely beat a flag per combination, and one option taking a value beats three variations.
 
-**An option the shell already provides earns its place on convention, so notice before you add it.**
-`--output PATH` does nothing `> PATH` does not, and `--quiet` does nothing `2>/dev/null` does not.
-That is not a reason to refuse them — callers reach for the flags the tools beside yours carry, and `curl` and `sort` both take `-o` — but it is a reason to say which you are doing and why.
-The failure is adding it without the thought: an option nobody decided to include is one nobody will decide to remove, and a surface grown that way is where the flag count comes from.
+- **Spell the same idea the same way everywhere**, so one command predicts the next.
+- **Treat `--help` as the documentation.** A surface understood only through a README needs redesigning.
+- **Never make a prompt the only way in.** Anything asked interactively must also be settable by option, file or standard input.
+- **Name the options that duplicate the shell, to whoever specified the surface.** `--output PATH` does what `> PATH` does; keeping it for convention is fine (`curl` and `sort` take `-o`), but an option nobody decided to add is one nobody will decide to remove.
+Say so in a sentence before building it.
 
-**Say it to whoever asked, before you build it.**
-"Notice" and "say why" are easy to satisfy privately and then not do at all, because nothing in a build stops for them.
-Where somebody specified the surface, the noticing is theirs to hear: name the options that duplicate the shell, say you are keeping them for convention, and carry on.
-It costs a sentence, it is the one moment a flag's cost is visible, and it is what turns "adding it without the thought" into something a reader of the diff can check.
-
-Two are worth raising every time, because they are the ones a specification asks for by reflex: an output path against `>`, and an input path against `<`.
-Neither refusing them nor adding them silently is the answer; saying so and building them is.
-
-Two more follow from the surface being public.
-**Spell the same idea the same way everywhere**, so learning one command predicts the next.
-And **treat `--help` as the documentation**: a surface that can only be understood by reading a README is a surface that needs redesigning, not a README.
+**Where a specification fixes the option set, keep the shape and drop the extras.** Several rules here recommend options — a log destination, a format switch.
+If leaving one out makes the tool behave *incorrectly* (logs in the data stream), it is shape and stays; if it only makes something harder to reach, the specification may decline it.
+Say which you dropped, and check what that strands: with no way to raise the log level, `info` lines are dead code.
 
 ## Expose the stages
 
-Where the core is a sequence of transforms, give each stage that is independently useful its own entry point over a shared interchange format, so they compose — commands in a pipeline, endpoints that take one another's output.
-Then add a convenience path that runs the whole sequence in one call, for when composing is more ceremony than it is worth.
+Where the core is a sequence of transforms, give each independently useful stage its own entry point over a shared interchange format, so they compose; then add a convenience path running the whole sequence.
 
-**One entry point carrying an option per stage hides the structure.** It forces the whole pipeline on someone who wants one step of it, leaves each stage reachable only through the others, and turns every new capability into another flag on an already-crowded signature.
-The stages are already separate in the core (see `be-functional`, "Derive functions from the data flow"); the entry point should not weld them back together.
-
-**A flag that swaps where a stage's input comes from is not an option per stage.** `--load` reading the interchange format instead of fetching it is the pipeline's *seam being used*, not hidden — the stage boundary has to already exist for the file to be writable at all.
-What the rule forbids is a flag that decides whether a stage *runs*.
-So the test is whether someone can get at each stage's output on its own; a `--save`/`--load` pair passes it, while a `--skip-fetch` or a `--with-filtering` does not.
-Where a user asks for the pair rather than separate commands, take it — it costs one option and duplicates no option set, which a second command carrying the same thirty filters would.
+**An option per stage on one entry point hides the structure** — the caller who wants one step gets the whole pipeline, and each new capability is another flag.
+A flag swapping where a stage's *input* comes from (`--load` reading the interchange format instead of fetching) is the seam being used, and is fine; a flag deciding whether a stage *runs* (`--skip-fetch`) is not.
 
 ## Compose with other tools
 
-A command-line tool is one process in a pipeline, so its input and output are interfaces rather than decoration.
-Build it to be driven by a person at a terminal *and* by the shell around it, since a tool that can only be read by eye has to be rewritten the first time someone wants to script it.
-
-**Aim to be indistinguishable from the tools it sits beside.** Someone who knows `grep`, `sort` and `jq` should be able to use yours without reading anything, because it takes input, gives output, signals failure and names its flags the way those do.
-Every convention you invent instead is one the caller has to learn and remember, so inherit rather than design wherever a convention already exists.
-
-The shell's own plumbing is the specification, so treat every one of these as a requirement:
+A command-line tool is one process in a pipeline, so its input and output are interfaces.
+**Aim to be indistinguishable from the tools beside it**: someone who knows `grep`, `sort` and `jq` should use yours without reading anything.
+The shell's plumbing is the specification:
 
 ```bash
-myapp report AAPL | jq '.[0]'    # | pipes the data on to another tool
-myapp report AAPL > counts.csv   # > redirects it to a file
-myapp report - < counts.csv      # < feeds it back in on standard input
-myapp report AAPL 2> run.log     # 2> diverts diagnostics, leaving the data
+myapp report london | jq '.[0]'
+myapp report london > report.csv
+myapp report - < stations.txt
+myapp report london 2> run.log
 ```
 
-**Fix the form and let an option change it, never the destination.** Emit the plain machine-readable form always, and render for a person only when asked.
-A tool that senses a terminal behaves one way under a person's hands and another inside a script, so the form that gets tested is never the form that runs unattended — and the caller finds out in production.
-`ls` gets away with it because both its forms are parseable; a bordered table is not, and guessing wrong there hands a script something it cannot read.
-So offer the choice through a format option and a destination option, and answer both the same way: same bytes at a terminal, down a pipe and into a file.
-Dropping *colour* off a tty is not this — the structure is identical either way, and a rendering library already does it for you.
+**Fix the form by option, never by destination.** Emit the plain machine form by default and render for a person only when asked.
 
-- **Wrong** — the command asks whether standard output is a terminal and renders a table if it is.
-The form you check by hand is then never the form a script receives, and nobody finds out until the parse fails in production.
-- **Right** — a `--table` option picks the form and an `--output` option picks the destination, and neither one consults the terminal.
+- **Wrong** — the command checks whether standard output is a terminal and draws a table if so.
+The form you check by hand is then never the form a script receives, and the parse fails in production.
+- **Right** — a format option picks the form and an output option the destination; the same bytes reach a terminal, a pipe and a file.
 
-**Take input the same way you give output.** Read a path where one is named and standard input otherwise, so the tool drops into the middle of a pipeline without a wrapper around it.
+Dropping *colour* off a terminal is not this — the structure is identical, and the rendering library does it for you.
 
-**The routes converge on one value, and that value is normalised once.**
-Arguments, a named file and standard input differ only in where the bytes came from, so they resolve to one list at the edge and nothing inward ever learns which won.
-That convergence is also the only sensible place to clean it: trim what a file's line endings added, fold the case a caller was careless about, drop what was given twice.
+**Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts to standard error, so redirecting the data yields data alone.
+Exit non-zero on failure, so `&&` and `set -e` work.
+**Make log destination and level configurable**, defaulting to standard error; standard output is a log destination only for a service or job that emits no data on it.
 
-The failure is quiet, and it is a split rather than an omission.
-Each route gets the part of the cleaning its own bytes obviously needed — the file reader strips whitespace, the operation drops duplicates — and whatever no route made obvious is done by none of them.
-Do the whole of it in one function, so what counts as the same input is stated once and every route inherits it.
+**Take input the way you give output**: from arguments or a named file, and from standard input otherwise.
 
-**The explicit routes union; the implicit one fills in.**
-Arguments and a named file are both things the caller typed, so using both means both.
-Silently taking one and dropping the other is the one outcome nobody wants, and it is exactly what a first-match rule gives you.
-
-Standard input is not like them.
-It is attached whenever the command runs in a pipeline, often incidentally, so unioning it folds a whole upstream result into a request that named its own subject.
-Read it only where no explicit source was given — which is what `cat`, `grep` and `sort` do, and what a caller already expects: `cat a b < c` concatenates `a` and `b` and never touches `c`.
-Where someone genuinely wants a pipe mixed with named values, the convention is an explicit `-` among the arguments rather than a change to the rule.
-
-Say nothing when the implicit route goes unread.
-Every tool being imitated is silent about it, and a warning fired on conventional behaviour is noise a caller learns to skip — which costs you the warnings that matter.
-
-**An argument may be optional, and exactly one reason justifies it.**
-The split between an argument and an option is not required against optional: an argument is what the command is *about* and its position carries its meaning, where an option modifies how and its name does.
-Requiredness is a separate axis, which is why `cat`, `grep` and `sort` all take an optional list of files.
-
-An argument is optional exactly when **another route supplies the same value** — the file list you did not type is the one arriving on standard input.
-That is what makes the tool composable, and it is the whole of the licence.
-
-Optional for any other reason is a mode, and a mode belongs in an option.
-Where leaving the argument off makes the command do something *different* rather than get the same thing from elsewhere, nothing on the command line says which of the two the caller is in, and `--help` has to explain a behaviour the surface should have shown.
-
-**Keep the channels apart.** Data goes to standard output; logs, progress, errors and prompts all go to standard error, so redirecting the data stream yields data alone.
-Exit non-zero on failure, so `&&` and `set -e` behave.
-
-**Make the log destination and level configurable.** Standard error is the right default, but a long run someone wants to keep belongs in a file, so offer an option that diverts it there and another that sets the level.
-Standard output is a valid destination only for a process that emits no data on it — the platform convention for a service or a scheduled job, and never for a tool in a pipeline.
-
-**Where a specification fixes the option set, the shape is still owed and the extra options are not.**
-Several rules here ask for an option — a log destination, a log level, a format switch — and each is right for a surface you are designing.
-Where somebody has fixed the surface and said to build no more, those are the recommendations to drop, and dropping them is not a compromise.
-
-Separate the two before you argue about either.
-If leaving it out makes the tool behave **incorrectly**, it is the shape and it stays: logs still go to standard error rather than into the data, configuration is still read once at the composition root, the plain form is still the default.
-If leaving it out only makes something **harder to reach**, it is a convenience the specification is entitled to decline.
-
-Then say which you dropped, once, rather than adding an option nobody asked for — and check what the dropping stranded.
-A tool with no way to raise its log level cannot show what it logs, so the `info` lines written for it are dead: either they earn the option back, or they should not be written.
-
-**Never let a prompt be the only way in.** Anything the tool can ask for interactively must also be settable by option, file or standard input, or it cannot be scripted at all.
+- **The routes converge on one value, normalised once.** Arguments, file and standard input resolve to one list at the edge, and one function trims, folds case and deduplicates it.
+Split across routes, each cleans what its own bytes obviously needed and what none made obvious is done by none.
+- **The explicit routes union; standard input fills in.** Arguments and a named file were both typed, so both count.
+Standard input is often attached incidentally, so read it only when no explicit source was given — as `cat a b < c` ignores `c` — and silently; an explicit `-` among the arguments mixes it in.
+- **An argument is optional only when another route supplies the same value.** Optional for any other reason makes leaving it off change *what* the command does, which is a mode and belongs in an option.
 
 ## Composition root
 
-The driver is the one place that imports **both** an operation and a concrete adapter, and injects the adapter into the operation.
-This is the **composition root** — where the abstract core meets a concrete implementation.
-Everywhere else the core depends only on its **ports** (the interfaces it defines); dependency injection is what lets the import arrow point inward while the driver alone names the real adapter (see `be-functional` and `structure-python`).
+The driver is the one place importing **both** an operation and a concrete adapter, injecting one into the other.
+Everywhere else the core depends only on its ports, so the import arrow points inward while the driver alone names the real adapter (see `structure-python`).
 
-**One input can enter the program twice, and the second use is easy to miss.** A bound the core filters on at the end often also decides how much the adapter has to fetch at the start — a date range selecting rows, and the same range sizing the request.
-Miss that and you either fetch everything, which is correct but slow and grows with the data, or fetch exactly the range asked for, which is fast and **wrong**.
+**One input can enter twice.** A bound the core filters on at the end often also sizes the fetch at the start — and a windowed computation (a running count, a moving average) needs history *before* the first row it reports.
+Fetch exactly the range asked for and the answer is fast and **wrong**; the fetch window is the requested range plus a warm-up margin.
 
-Wrong, because a windowed computation needs history *before* the earliest row it reports on: a running count, a moving average, a state that carries forward all read candles the user never asked to see.
-So the fetch window is the requested range **plus a warm-up margin**.
-
-**Derive it wherever the port is called from, which is usually the operation rather than the driver.**
-How far back the state reaches is a fact about the computation, so a driver deriving it has been taught the domain — and every second entry point then re-derives it, or gets it wrong in a way nothing downstream can see.
-Where the operation owns the port call, as in `structure-python`'s core, it takes the range the caller asked for and widens it itself; the driver passes on what the user typed and holds no margin.
-The driver derives it only where the driver is what fetches — a job assembling its own extract, a shell handing data to a pure core — and then it is still the same derivation, just made by whoever calls out.
-Either way the filter stays generic and knows nothing about warm-up, and nothing can ask for data it was not given.
-
-Size the margin from evidence rather than instinct: measure how far back the state actually reaches over real data, and take a multiple of the observed worst case.
-Where no bound is available at all, say so in the docs rather than guessing — an unbounded fetch is the honest default, and a margin that is too small fails silently, which is the worst of the three outcomes.
-
-**Widening the fetch does not always leave something to filter — check before writing one.**
-The warm-up case above fetches *more* than it reports, so the filter is what makes the answer right.
-Widening to a boundary is the other kind: a request aligned to whole periods comes back as exactly the periods the range touches, so a filter after it removes nothing, on any input.
-Writing one anyway is worse than dead code — it is a second place the bounds are interpreted, so the next build widening the window again has to work out which of the two to change, and a reader cannot tell which one is load-bearing.
-
-The test is a measurement rather than a judgement, and it is cheap: run the fetch and count what the filter drops.
-Nothing dropped on every input means the widening already did the work, and the filter is the reconciliation to delete.
+- **Derive the margin wherever the port is called** — usually the operation, since how far back the state reaches is a fact about the computation.
+A driver deriving it has been taught the domain, and every second entry point re-derives it.
+- **Size it from evidence**: measure how far back state reaches over real data and take a multiple of the worst case.
+Where no bound exists, fetch unbounded and say so — a margin too small fails silently.
+- **Check that the filter after a widened fetch removes anything.** A request aligned to whole periods may already return exactly what was asked for; a filter that drops nothing on any input is a second interpretation of the bounds to delete.
+Run it and count.
 
 ## Role and framework split
 
-Split each shell into a **role** and one or more **framework** parts:
+Split each driver into a **role** and one or more **framework** parts:
 
-- The **role** — what the entry point *is* (a CLI, an API, a GUI) — is stable and hollow, exposing the app object behind a name that hides which library sits behind it.
-- The **framework** part holds the library-coupled code: everything that uses or returns that library's objects.
+- The **role** (CLI, API, GUI) is hollow and stable, exposing the app object under a name that hides the library.
+- The **framework** part holds everything that uses or returns that library's objects.
 
-Swap the library and only the framework part changes; the role's name and launch identity stay put.
+Swap the library and only the framework part changes.
 
-**The driver owns the destination and the choice of form; the framework package owns only the rendering.**
-A tool answering two ways — a machine form and a readable one — invites a single `display()` taking the flag and branching.
-Put that in the presentation library's package and the package now owns a function that mostly does not use the library: the plain form is a serialisation the data library already does, and the destination is a file handle.
-
-Split them.
-One driver module owns where the output goes and which form was asked for; the framework package builds the library's object and stops.
-Swapping the presentation library then touches one function, and the plain form — the one every pipeline depends on — stops living inside a package named after a library it never calls.
-
-That leaves the driver a pair worth naming: one module for input arriving by any route, one for output leaving by either form.
-A tool reading three ways and writing two has exactly those two concerns, and naming them as a pair is what stops each command growing its own.
-The Python package mechanics — a hollow role package over trailing-underscore framework packages — are in `references/python.md`.
+**The driver owns the destination and the choice of form; the framework package only renders.** A `display()` branching on a format flag inside the presentation library's package mostly doesn't use the library — the plain form is the data library's serialisation, the destination a file handle.
+So one driver module owns input arriving by any route, another output leaving in either form, and the framework package builds its object and stops.
+The package mechanics are in `references/python.md`.
 
 ## Launch
 
-Give each entry point a **named launch command**, namespaced to the project so it doesn't collide once installed (`myapp-cli`, `myapp-api`, never a bare `cli`).
-The command points at whatever *starts* that entry point: a callable app object where the framework provides one, or a thin launcher function where it doesn't.
+Give each entry point a **launch command namespaced to the project** (`myapp-cli`, `myapp-api`, never a bare `cli`), pointing at whatever starts it: a callable app object, or a thin launcher where the framework has none.
 
 ## Kinds
 
-Each kind is a driver over the same core, differing only in trigger and presentation:
+Each kind is a driver over the same core, differing in trigger and presentation:
 
-- **CLI** — arguments and options from a terminal, results rendered as text.
-- **API** — HTTP requests over the core, results serialised to a wire format.
-- **GUI** — a reactive user interface whose inputs drive operations and whose outputs render their results.
-- **Jobs** — triggered by *time or events* rather than a person (a cron run, a queue worker, a webhook, a serverless function): the ETL (extract, transform, load) shape, with the transform in the core.
+- **CLI** — arguments from a terminal, results as text.
+- **API** — HTTP requests, results serialised to a wire format.
+- **GUI** — a reactive interface whose inputs drive operations.
+- **Jobs** — triggered by time or events (cron, a queue worker, a webhook): the ETL (extract, transform, load) shape, with the transform in the core.
 
-Two things look like entry points but aren't:
-
-- A **library** — if the project is imported by other code, its public API *is* its interface; there's no shell, only the public surface (see `write-python`).
-- A **data pipeline** — the transforms are core; the entry point is the *job* that runs them, not the pipeline itself.
+A **library** has no driver — its public API is the interface (see `write-python`) — and a **data pipeline**'s transforms are core, with the job that runs them as its entry point.
 
 ## Language specifics
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (the role and framework packages, the `typer`, `fastapi` and `shiny` build-outs, jobs, and the dependency-injection seams).
+- **Python** → `references/python.md` (the role and framework packages, the `typer`, `fastapi` and `shiny` build-outs, jobs, configuration, logging and launch).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
