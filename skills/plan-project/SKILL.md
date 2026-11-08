@@ -1,17 +1,18 @@
 ---
 name: plan-project
 description: >-
-  How to plan a project before building it — one PLAN.md at the repo root with
-  a standard set of sections (goal, numbered requirements, inputs, outputs,
-  data flow, interface, errors, decisions, not yet, verification, milestones,
-  open questions), drafted with the user through plan mode, then kept current
-  as each milestone is built. Use whenever starting a new project or repo, or a
-  build that adds a new input, output or interface; when the user wants to
-  think a project through, write a spec or design, or decide what to build
-  first; and whenever a repo already has a PLAN.md — even if the user just says
-  "let's plan this", "new project", "what should this look like", or "build
-  the next step". Layers on write-markdown; hands off to setup-python,
-  structure-python, write-entry-points and write-tests for the build.
+  How to plan a project before building it — one PLAN.md at the repo root in a
+  fixed layout: a brief (goal, terms, numbered requirements, not yet), a design
+  (inputs, data flow, outputs, interface, errors, decisions) and delivery
+  (verification, milestones, open questions), drafted with the user through
+  plan mode, then kept current as each milestone is built. Use whenever
+  starting a new project or repo, or a build that adds a new input, output or
+  interface; when the user wants to think a project through, write a spec or
+  design, or decide what to build first; and whenever a repo already has a
+  PLAN.md — even if the user just says "let's plan this", "new project", "what
+  should this look like", or "build the next step". Layers on write-markdown;
+  hands off to setup-python, structure-python, write-entry-points and
+  write-tests for the build.
 ---
 
 # Plan the project
@@ -28,41 +29,106 @@ Three mistakes account for most weak plans: design slipped into the requirements
 Plan a new project, and any build that adds a new input, output or interface.
 A fix or small change needs only a short plan in the conversation; a full `PLAN.md` for it costs more than the change.
 
-## Sections
+## Lay it out
 
-Use these headings, in this order, in every plan.
-Write "None" rather than dropping a section, so a reader can tell a settled blank from a forgotten one.
+Use this skeleton for every plan, every heading present and in this order.
+Write "None" under a heading with nothing to say, so a settled blank reads differently from a forgotten one.
 
-- **Goal** — the problem it solves and for whom, and what done looks like as something observable.
-- **Requirements** — what it must do, numbered (R1, R2, …) and in the user's words, including constraints: where it runs, offline, reproducible, private, fast.
-A requirement that forces complexity carries its cost, so the user can drop it before anything is built around it.
-- **Inputs** — each source: what it is, where it comes from, format, size and frequency, credentials, and how far it can be trusted.
-- **Outputs** — each artefact: where it goes, format, schema (columns, types, key, order), write rule (overwrite or append-only), and who reads it.
-- **Data flow** — the stages from input to output: what one row is at each, its key, and the transform to the next; mark where IO happens.
-- **Interface** — every command, option or screen, with a real invocation and sample output; what goes to standard output and what to standard error; exit codes.
-- **Errors** — what can go wrong at each input and output, and what happens: fail, skip or empty, and the message.
-- **Decisions** — each choice, the alternatives rejected and why: libraries, storage, any shape the user argued for.
-- **Not yet** — what is deliberately left out, and what would earn it.
-- **Verification** — how each requirement is checked, by ID: a test, or a real run with an expected count.
-- **Milestones** — ordered steps as a checklist, each runnable and checkable on its own.
-- **Open questions** — what is undecided, each naming the milestone it blocks.
+````markdown
+# <project>
+
+<One sentence: what it does and for whom.>
+
+## Brief
+
+### Goal
+
+<The problem, who has it, and what done looks like as something observable.>
+
+### Terms
+
+- **<term>** — <its meaning; code uses this name for it>.
+
+### Requirements
+
+- **R1** <What it must do, in the user's words.>
+  - Cost: <what it forces in the design, and what dropping it saves>.
+- **R2** <A constraint: where it runs, offline, reproducible, private, fast.>
+
+### Not yet
+
+- **<left out deliberately>** — <what would earn it>.
+
+## Design
+
+### Inputs
+
+- **<source>** — <what it is, where from, format, size and frequency, credentials, how far it can be trusted>.
+
+### Data flow
+
+1. **<stage>** — one row is <…>, keyed by <…>; <the transform to the next stage>. (IO)
+
+### Outputs
+
+**<artefact>** — <where it goes, format, write rule (overwrite or append-only), who reads it>.
+
+| column | type | meaning |
+|---|---|---|
+| <name> | <type> | <meaning; mark the key> |
+
+### Interface
+
+```bash
+<a real invocation>
+```
+
+<Sample output, what goes to standard output and what to standard error, exit codes, and the schedule if it runs unattended.>
+
+### Errors
+
+- **<what goes wrong>** — <fail, skip or empty, and the message>.
+
+### Decisions
+
+- **<choice>** over <alternatives> — <why>.
+
+## Delivery
+
+### Verification
+
+- **R1** — <a test, or a real run with an expected count>.
+
+### Milestones
+
+- [ ] **M1 <name>** — R1, R2; done when <check>.
+
+### Open questions
+
+- **Q1** <question> — blocks M2.
+````
+
+The groups mark who owns what: the user owns the **Brief**, Claude answers it with the **Design**, and **Delivery** orders and checks the work.
 
 ## Draft it with the user
 
 1. **Start in plan mode.** It blocks edits until the user approves, which is the sign-off the plan needs.
-2. **Draft Goal and Requirements by asking**, a few questions per round, and write them in the user's words.
+2. **Draft the Brief by asking**, a few questions per round, and write the requirements in the user's words.
 Requirements say *what*, never *how*; a design choice written as a requirement escapes the scrutiny the design gets.
 3. **Price each costly requirement** — what it forces in the design and what dropping it saves — and ask what it is for before designing around it.
-4. **Design the remaining sections from the requirements**, following the skill that owns each: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`.
-5. **Present the whole draft as the plan-mode plan.** On approval, write `PLAN.md` and commit it.
+4. **Get the Brief signed off before designing**, since every later section is derived from it.
+5. **Design from the requirements**, following the skill that owns each section: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`.
+6. **Present the whole draft as the plan-mode plan.** On approval, write `PLAN.md` and commit it.
 
 ## Write it for Claude
 
-- **Number the requirements and cite them.** A milestone, test or plan-mode step that names R4 shows what it serves, and a requirement nothing cites is visibly unbuilt.
-- **Show, don't describe.** A real command line and three sample rows fix an interface and a schema; a paragraph about them leaves the details to be guessed.
+- **Cite by ID.** A milestone, check or plan-mode step that names R4 shows what it serves, and a requirement nothing cites is visibly unbuilt.
+- **Show, don't describe.** A real command line and a schema table fix an interface and an output; a paragraph about them leaves the details to be guessed.
+- **Use the Terms everywhere.** One name per concept, in the plan and in the code; a second name for the same thing reads as a second thing.
+- **Write what is decided as fact** — "Each day is written to its own file" — and put what is not in Open questions; a "could" in the Design gets built as either.
 - **Record what was rejected.** A decision without its rejected alternatives gets reopened, or quietly reversed by a build that thinks it is improving things.
 - **Point at a skill instead of restating it.** The plan says what this project does; the skills say how every project does it, and a copy in the plan drifts from the skill.
-- **Keep only what changes the build.** A line no milestone or test would read differently without is background, and belongs in the README.
+- **Keep only what changes the build.** A line no milestone or check would read differently without is background, and belongs in the README.
 
 ## Build from it
 
