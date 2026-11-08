@@ -24,7 +24,7 @@ description: >-
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
 It is written with the user before the build and kept current as the build proceeds.
-It layers on `write-markdown`, points its design at `setup-python`, `structure-python`, `write-entry-points` and `write-tests` rather than restating them, and hands the build to `build-project`.
+It layers on `write-markdown`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars` and `write-tests` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -33,6 +33,7 @@ Three mistakes account for most weak plans: interviewing the user section by sec
 
 Plan a new project, and any build that adds a new input, output or interface.
 A fix or small change needs only a short plan in the conversation; a full `PLAN.md` for it costs more than the change.
+To extend a project that already has a `PLAN.md`, run the steps below on the new part alone, adding its requirements, design and milestones to the existing plan.
 
 ## Lay it out
 
@@ -129,26 +130,27 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 
 1. **Start in plan mode.** It blocks edits until the user approves, which is the sign-off the plan needs.
 2. **Gather before asking.** Read the conversation, the repo, any neighbouring repo it reads from or feeds, and samples of the real input data.
-Never ask what a file, a command or a quick check can answer.
+   Never ask what a file, a command or a quick check can answer.
 3. **Frame it wider than the brief.** A brief names what the user thought of today, in the words they happened to use; the design has to fit the domain and outlast the next request.
    - **Learn the domain's language.** Look up how practitioners name the things involved, the standard data shapes and units, and the formats and libraries to reuse rather than build.
-   Take the Terms from it; where the user's word differs, use the domain's and record the choice as an assumption.
+     Take the Terms from it; where the user's word differs, use the domain's and record the choice as an assumption.
    - **Place the project.** Who reads its outputs, which projects feed it or read from it, and what it plausibly grows into.
-   Let that shape the names and the seams between stages, and put the growth itself under Not yet; building for it now is the structure-ahead-of-need mistake.
+     Let that shape the names and the seams between stages, and put the growth itself under Not yet; building for it now is the structure-ahead-of-need mistake.
    - **Compare rival designs.** Sketch two or three for each structural choice, judged against how comparable tools do it and where they fall short, and record the losers under Decisions.
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
-Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
-Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
+   Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
+   Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
 5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`.
-Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
+   M1 starts with the scaffold from `setup-python`, and each Verification line is a check `write-tests` would accept.
+   Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
 6. **Fill each gap with an assumption, not a question.** Take the house pick from the skills, or the answer the rest of the conversation implies, and record it under Assumptions with what changes if it is wrong.
-A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
+   A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
 7. **Raise as a question only what an assumption can't carry**: a choice that splits the design, a costly requirement whose purpose is unclear, a concern that could sink the project.
-Give each a recommended answer, so the user can reply "yes" or by number.
+   Give each a recommended answer, so the user can reply "yes" or by number.
 8. **Ask once, in one batch**: the questions with their recommendations, as multiple choice where the options are few, and the assumptions listed for the user to override by ID.
-A second round only where an answer opened a question the first round couldn't have asked.
+   A second round only where an answer opened a question the first round couldn't have asked.
 9. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
-10. **Call the plan complete when nothing blocks M1** — every assumption confirmed or overridden, every question blocking M1 answered — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
+10. **Call the plan complete when every question is answered** — an assumption the user's reply leaves alone counts as confirmed, and a question only the build can settle stays under Open — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
 
 ## Write it for Claude
 
@@ -165,4 +167,3 @@ A second round only where an answer opened a question the first round couldn't h
 - **Change a requirement or decision only with the user's sign-off.** When work would overturn a decision or add a requirement, say so in a plan-mode plan, so the approval covers the change.
 - **Update it with the code.** Tick the milestone, move anything built out of Not yet, record what the build assumed or left unanswered under Open, and commit `PLAN.md` with the change that made it true.
 A plan left behind becomes a second, wrong README.
-- **Build it with `build-project`**, which ends with `review-project`.
