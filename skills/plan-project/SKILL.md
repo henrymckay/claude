@@ -14,8 +14,8 @@ description: >-
   what to build first; and whenever a repo already has a PLAN.md — even if the
   user just says "let's plan this", "new project", "what should this look
   like", or "build the next step". Layers on write-markdown; hands off to
-  setup-python, structure-python, write-entry-points and write-tests for the
-  build.
+  setup-python, structure-python, write-entry-points, be-functional,
+  use-polars and write-tests for the build.
 ---
 
 # Plan the project
