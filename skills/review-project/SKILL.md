@@ -4,16 +4,16 @@ description: >-
   How to review a whole project and then fix what the review finds — checking
   it against its PLAN.md where there is one, then correctness (the tests, the
   real surface, a bug hunt), the test suite, conformance to the skills,
-  modernity (current releases, no deprecated APIs, the latest language),
-  documentation and safety, with an unanchored cold read; then fixing the
+  modernity (current releases, no deprecated APIs, the latest language), the
+  README and CLAUDE.md, and safety, with an unanchored cold read; then fixing the
   findings by impact, each with its own commit and, for a bug, a regression
-  test. Use whenever the user asks to review, audit, critique or tidy a repo or
-  project, check it against its plan or the conventions, find what is out of
-  date, or fix what a review found — even if they just say "review this repo",
-  "what's wrong with this project", or "is this up to date". Works without a
-  PLAN.md. Layers on plan-project and every skill the project's code falls
-  under, using the built-in code-review for the bug hunt; review-plugin extends
-  it for a Claude Code plugin.
+  test. Use whenever the user asks to review, audit, critique or tidy a repo
+  or project, check it against its plan or the conventions, find what is out
+  of date, or fix what a review found — even if they just say "review this
+  repo", "what's wrong with this project", or "is this up to date". Works
+  without a PLAN.md. Layers on plan-project and every skill the project's code
+  falls under, using the built-in code-review for the bug hunt; review-plugin
+  extends it for a Claude Code plugin.
 ---
 
 # Review the project
@@ -70,7 +70,8 @@ Read the changelog before recommending a major upgrade.
 
 ## Check documentation and safety
 
-- **The README matches the code** — run its commands as written.
+- **The README matches the code** — run its commands as written, and check each claim about an outside tool against that tool's current docs.
+- **The project's `CLAUDE.md` is current** — no stale path or command, no default Claude follows anyway (see `write-markdown`), nothing a skill contradicts.
 - **No secret in the tree or its history.**
 - **No known vulnerability in the locked dependencies** — for Python, `uv export --format requirements-txt --no-emit-project > requirements.txt`, then `uvx pip-audit -r requirements.txt --disable-pip`.
 
