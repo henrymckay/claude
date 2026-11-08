@@ -30,6 +30,7 @@ Once you have applied a convention a few times, keep checking for it rather than
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
+- **`build-project`** when building a project from its `PLAN.md`: milestone by milestone, gating each before it is ticked.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
 - **`review-plugin`** when reviewing this Claude repo: `review-project` plus drift across skills, `CLAUDE.md`, README, wiring and memory.
 - **`review-project`** when reviewing, auditing or fixing a project: against its `PLAN.md`, the skills, correctness, tests and modernity.
