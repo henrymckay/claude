@@ -11,13 +11,13 @@ description: >-
   a skill", "add a skill", or "fix this skill's description". Layers on
   write-markdown for prose mechanics, and defers the draft-eval-iterate loop,
   file anatomy, packaging and description optimisation to the skill-creator
-  plugin; review-repo sweeps the whole repo against these conventions.
+  plugin; review-plugin sweeps the whole repo against these conventions.
 ---
 
 # Write skills
 
 House conventions that keep this library's skills consistent.
-They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, progressive disclosure, packaging and description optimisation; `review-repo` sweeps the whole repo against them.
+They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, progressive disclosure, packaging and description optimisation; `review-plugin` sweeps the whole repo against them.
 Three mistakes account for most weak skills: a description never reconciled with the body that shipped, a rule stated in two places that then drift apart, and a why that names the rule's purpose rather than something a reader could watch happen.
 
 **In an existing project, ask first.** Where a skill or repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -27,7 +27,7 @@ Three mistakes account for most weak skills: a description never reconciled with
 Name a skill **verb-first**, one or two kebab-case words, so the name says when Claude reaches for it rather than what topic it covers:
 
 - **`be-`** — a style to adopt (`be-functional`).
-- **`review-`** — sweep for drift (`review-repo`).
+- **`review-`** — sweep for drift (`review-plugin`).
 - **`setup-` / `structure-`** — arrange a project (`setup-python`, `structure-python`).
 - **`use-`** — a tool or library (`use-git`, `use-polars`).
 - **`write-`** — produce an artefact (`write-tests`).

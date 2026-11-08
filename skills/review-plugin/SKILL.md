@@ -1,21 +1,22 @@
 ---
-name: review-repo
+name: review-plugin
 description: >-
-  How to sweep a Claude Code configuration repo for drift — its skills and
-  references, CLAUDE.md, README, the symlinks wiring it into ~/.claude, and
-  auto-memory — checking each description against its body, cutting bloat and
-  overfitted examples, finding rules duplicated or contradicted across skills,
-  getting an unanchored cold read, and testing every code and library claim.
-  Use after a run of skill edits, or whenever the user asks to review, audit,
-  tidy or sweep their skills or Claude repo, even if they just say "check the
-  skills for drift" or "clean up the repo". Not for reviewing an application's
-  code. Layers on write-skills and write-markdown, the standard it checks
-  against; use-git commits the fixes.
+  How to sweep your own Claude Code plugin, or a repo serving as one, for
+  drift — its skills and references, CLAUDE.md, README, the symlinks wiring it
+  into ~/.claude, and auto-memory — checking each description against its
+  body, cutting bloat and overfitted examples, finding rules duplicated or
+  contradicted across skills, getting an unanchored cold read, and testing
+  every code and library claim. Use after a run of skill edits, or whenever
+  the user asks to review, audit, tidy or sweep their skills, plugin or Claude
+  repo, even if they just say "check the skills for drift" or "tidy up my
+  skills". Not for reviewing an application's code or a third-party plugin.
+  Layers on write-skills and write-markdown, the standard it checks against;
+  use-git commits the fixes.
 ---
 
-# Review the repo
+# Review the plugin
 
-A sweep of the whole Claude Code configuration repo — skills, instruction files, wiring and memory — after edits made one at a time during other work.
+A sweep of your own Claude Code plugin, or a repo serving as one — skills, instruction files, wiring and memory — after edits made one at a time during other work.
 It checks against `write-skills` and `write-markdown` rather than restating them, and commits through `use-git`.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
 
