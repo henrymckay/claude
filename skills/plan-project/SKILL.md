@@ -6,15 +6,16 @@ description: >-
   frame the project wider than the brief (the domain's vocabulary, its wider
   context, rival designs), draft every section, record assumptions in place of
   questions, then ask one batch with recommended answers, through plan mode.
-  The plan has a fixed layout: a brief (goal, terms, numbered requirements,
-  not yet), a design (inputs, data flow, outputs, interface, errors,
-  decisions), delivery (verification, milestones) and open items (assumptions,
-  questions), and changes only with the user's sign-off. Use whenever starting
-  a new project or repo, or a build that adds a new input, output or
-  interface; when the user wants to think a project through, write a spec or
-  design, or decide what to build first; and whenever a PLAN.md needs changing
-  — even if the user just says "let's plan this", "new project" or "what
-  should this look like". Layers on write-markdown; points the design at
+  The plan has a fixed layout for any kind of project — a program, a library,
+  or a content repo such as docs or skills: a brief (goal, terms, numbered
+  requirements, not yet), a design (inputs, data flow, outputs, interface,
+  errors, decisions), delivery (verification, milestones) and open items
+  (assumptions, questions), and changes only with the user's sign-off. Use
+  whenever starting a new project or repo, or a build that adds a new input,
+  output or interface; when the user wants to think a project through, write a
+  spec or design, or decide what to build first; and whenever a PLAN.md needs
+  changing — even if the user just says "let's plan this", "new project" or
+  "what should this look like". Layers on write-markdown; points the design at
   setup-python, structure-python, write-entry-points, be-functional,
   use-polars and write-tests, hands the build to build-project, and the
   finished build to review-project.
@@ -123,6 +124,14 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 The groups mark who owns what: the user owns the **Brief**, Claude answers it with the **Design**, **Delivery** orders and checks the work, and **Open** holds what is still the user's to settle.
 
+**Read the Design headings by what the project ships.** The skeleton is written for a program that turns inputs into outputs; keep every heading for any other kind of project, so the layout stays the one every plan shares, and read each by what it ships:
+
+- **A library** — Interface is its public API, and Data flow traces its main call paths.
+- **A content or configuration repo** (docs, skills, dotfiles) — Inputs are what it is written from, Data flow is how a change travels from source to where it takes effect, Outputs are the files it ships and their format, and Interface is how a person or tool invokes them.
+
+The schema table is for a tabular output only.
+Where work arrives continuously, as issues or feedback, the milestones cover only the planned work, and Verification names where the rest is tracked.
+
 ## Go from conversation to plan
 
 Draft the whole plan first and ask afterwards.
@@ -141,7 +150,7 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
 5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`.
-   M1 starts with the scaffold from `setup-python`, and each Verification line is a check `write-tests` would accept.
+   For a Python project M1 starts with the scaffold from `setup-python`, and each Verification line is a check `write-tests` would accept.
    Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
 6. **Fill each gap with an assumption, not a question.** Take the house pick from the skills, or the answer the rest of the conversation implies, and record it under Assumptions with what changes if it is wrong.
    A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
