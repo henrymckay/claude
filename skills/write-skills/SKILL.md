@@ -11,13 +11,13 @@ description: >-
   a skill", "add a skill", or "fix this skill's description". Layers on
   write-markdown for prose mechanics, and defers the draft-eval-iterate loop,
   file anatomy, packaging and description optimisation to the skill-creator
-  plugin.
+  plugin; review-repo sweeps the whole repo against these conventions.
 ---
 
 # Write skills
 
 House conventions that keep this library's skills consistent.
-They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, progressive disclosure, packaging and description optimisation.
+They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, progressive disclosure, packaging and description optimisation; `review-repo` sweeps the whole repo against them.
 Three mistakes account for most weak skills: a description never reconciled with the body that shipped, a rule stated in two places that then drift apart, and a why that names the rule's purpose rather than something a reader could watch happen.
 
 **In an existing project, ask first.** Where a skill or repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -27,6 +27,7 @@ Three mistakes account for most weak skills: a description never reconciled with
 Name a skill **verb-first**, one or two kebab-case words, so the name says when Claude reaches for it rather than what topic it covers:
 
 - **`be-`** — a style to adopt (`be-functional`).
+- **`review-`** — sweep for drift (`review-repo`).
 - **`setup-` / `structure-`** — arrange a project (`setup-python`, `structure-python`).
 - **`use-`** — a tool or library (`use-git`, `use-polars`).
 - **`write-`** — produce an artefact (`write-tests`).
@@ -77,6 +78,7 @@ If every rule hedges, the absolutes get broken as often as the defaults.
 - **Give a load-bearing rule its own line**, not the last sentence of a long paragraph, where it gets read past.
 - **Show the anti-pattern for the most-broken rule** as one compact wrong/right pair — a fenced pair in a language-bound skill, a named pair in prose in a language-agnostic one, so it doesn't quietly become a Python skill.
 - **Keep examples general.** An example drawn from the project that prompted a rule teaches its domain along with the rule; use the smallest example that shows the rule, from a domain any reader knows.
+- **Generalise a rule added mid-project.** A rule written to fix one incident arrives in that project's terms; restate it so a reader from any domain would apply it, and grep the neighbouring skills first — if one already says it, extend that, or the two copies drift apart.
 - **Keep cross-references live.** When you move or reword a rule, grep this skill and its neighbours for the section name and the rule's wording, so no pointer leads to nothing.
 
 ## Split the principle from the language
