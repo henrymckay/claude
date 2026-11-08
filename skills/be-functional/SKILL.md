@@ -64,6 +64,7 @@ A program may have several shells, one per entry point, each owning its own pres
 Where the default goes depends on the effect:
 
 - **Ambient standard-library effects** (clock, environment, randomness) default to the real thing in place; callers pass nothing, tests pass a value (patterns in `references/python.md`).
+In a layered app the core takes them with no default and the driver passes the real thing, since `structure-python` keeps the core free of IO.
 - **A library- or service-coupled dependency** gets **no default in the core**, which would import the library inward.
 The core types it as a *port* it defines, and the entry point injects the concrete adapter — `structure-python`'s composition root.
 
@@ -84,7 +85,7 @@ Decompose data by its **shape** rather than a ladder of type checks; matching a 
 **A `match` whose every branch returns a constant is a lookup.** Pattern matching earns its place by destructuring — binding a variant's parts and doing different work with them.
 Branches that each map one member of a closed set to a value are a mapping written as control flow, growing a case per member; write the mapping, and keep `match` for branches that differ in what they *do*.
 
-**Don't interpolate your word into a library's name.** `getattr(client, f"get_{kind}")` assumes both vocabularies agree, and they don't — your `fund` is their `mutual_fund`, your `real-estate` has a hyphen no identifier can — so some members fail at runtime.
+**Don't interpolate your word into a library's name.** `getattr(client, f"get_{kind}")` assumes both vocabularies agree, and they don't — your `car` is their `automobile`, your `e-bike` has a hyphen no identifier can — so some members fail at runtime.
 `getattr(client, methods[kind])` lets a mapping reconcile them; `structure-python` says where that mapping lives.
 
 ## Derive functions from the data flow
