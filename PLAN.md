@@ -60,16 +60,16 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 3. **Loading** — every session loads `CLAUDE.md` and each description; a skill's body loads when its description or `CLAUDE.md`'s list triggers it, a reference when the body points there.
 4. **Applying** — Claude follows the loaded skills in real work in other repos.
 5. **Feedback** — a skill that steers wrong becomes a skill-feedback issue here. (IO)
-6. **Sweep** — `review-plugin` works the issues, then checks for drift, and commits each skill's fixes. Back to 1.
+6. **Sweep** — `review-plugin` works the issues, then checks for drift, and commits each skill's fixes, which loops back to stage 1.
 
 ### Outputs
 
-**`skills/<name>/SKILL.md`** — frontmatter `name` and `description`, then a body laid out by `write-skills`; read by Claude.
-**`skills/<name>/references/*.md`** — language or topic depth, per `write-skills`.
-**`CLAUDE.md`** — Work, Answers and the mandatory Skills list; read by Claude every session.
-**`README.md`** — for humans: what each skill does, setup, configuration, feedback, evaluation.
-**`PLAN.md`** — this file.
-**`evaluate/prompt.md`** — the evaluation driver.
+- **`skills/<name>/SKILL.md`** — frontmatter `name` and `description`, then a body laid out by `write-skills`; read by Claude.
+- **`skills/<name>/references/*.md`** — language or topic depth, per `write-skills`.
+- **`CLAUDE.md`** — Work, Answers and the mandatory Skills list; read by Claude every session.
+- **`README.md`** — for humans: what each skill does, setup, configuration, feedback, evaluation.
+- **`PLAN.md`** — this file.
+- **`evaluate/prompt.md`** — the evaluation driver.
 
 ### Interface
 
@@ -118,7 +118,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 
 - [x] **M1 Sweep the skills** — R2; done when review-plugin left no defects (2026-11-08).
 - [x] **M2 Project trio and feedback loop** — R1, R3; done when plan-, build- and review-project and the skill-feedback rule were committed (2026-11-08).
-- [ ] **M3 Record the plan** — R3, R4; done when `PLAN.md` is committed, the README points at it, and memory holds only what this plan doesn't.
+- [x] **M3 Record the plan** — R3, R4; done when `PLAN.md` is committed, the README points at it, and memory holds only what this plan doesn't (2026-11-08).
 - [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin.
 
 ## Open
