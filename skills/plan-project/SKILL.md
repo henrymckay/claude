@@ -15,7 +15,8 @@ description: >-
   user just says "let's plan this", "new project", "what should this look
   like", or "build the next step". Layers on write-markdown; hands off to
   setup-python, structure-python, write-entry-points, be-functional,
-  use-polars and write-tests for the build.
+  use-polars and write-tests for the build, and to review-project once it is
+  done.
 ---
 
 # Plan the project
@@ -156,3 +157,4 @@ A second round only where an answer opened a question the first round couldn't h
 - **Change `PLAN.md` only with the user's sign-off.** When the work would overturn a decision or add a requirement, say so in the plan-mode plan, so the approval covers the change.
 - **Update it with the code.** Tick the milestone, move anything built out of Not yet, record what the build assumed or left unanswered under Open, and commit `PLAN.md` with the change that made it true.
 A plan left behind becomes a second, wrong README.
+- **Review when the build is done.** After the last milestone of a build, run `review-project` against the plan.
