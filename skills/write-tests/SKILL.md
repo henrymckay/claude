@@ -1,21 +1,21 @@
 ---
 name: write-tests
 description: >-
-  How to write and structure tests in any language — the given-when-then shape,
-  naming a test by its behaviour, testing behaviour over implementation,
-  isolation, where test data and expected values come from, table-driven and
-  property-based testing, testing the dependency behaviour you rely on,
-  checking a build against the real source, and layout. Use whenever writing,
-  editing or reviewing tests, adding coverage, or setting up a suite, even if
-  the user just says "write a test", "add tests", "test this", or names a
-  runner like pytest. Language-agnostic principles and the paradigm and pattern
-  catalogue here; Python and pytest idioms in references/python.md. Tests are
-  code: they follow the language's own conventions (Python → write-python).
+  How to write and structure tests in any language — the given-when-then
+  shape, naming a test by its behaviour, testing behaviour over
+  implementation, isolation, where test data and expected values come from,
+  table-driven and property-based testing, testing the dependency behaviour
+  you rely on, checking a build against the real source, and the paradigm and
+  pattern catalogue. Use whenever writing, editing or reviewing tests, adding
+  coverage, or setting up a suite, even if the user just says "write a test",
+  "add tests", "test this", or names a runner like pytest. Language-agnostic
+  principles here; Python and pytest idioms in references/python.md. Layers on
+  write-python, since tests are code.
 ---
 
 # Write tests
 
-A test is production code that happens to assert, so it follows the conventions of the code it covers — in Python, `write-python` — with the testing judgment below on top.
+A test is production code that happens to assert, so it follows the conventions of the code it covers — in Python, `write-python` — with the testing judgement below on top.
 Good tests buy confidence to change code and a precise signal when it breaks, both from testing *behaviour* through the public surface in small, isolated, well-named tests.
 Three mistakes account for most weak suites: asserting on internals instead of the public contract, building the *given* inline instead of injecting it, and reaching an expected value with the very code under test.
 
@@ -70,7 +70,6 @@ For what is genuinely about the client — what it treats as failure, what it re
 ## Isolation
 
 - **Pass in any order and alone** — no shared mutable state, no test depending on another.
-- **Inject setup through the runner's fixtures**, never a global, so each test gets a fresh copy.
 - **Never touch the real clock, randomness or network.** Inject them (see `be-functional`) and pass fixed values or a seed.
 - **Fix or delete a flaky test** — one that cries wolf trains everyone to ignore the suite.
 
@@ -113,7 +112,7 @@ Pin the third-party behaviour your code relies on, kept apart from tests of your
 They are not exhaustive tests of the library but a record of your assumptions, failing on the assumption itself when an upgrade changes it.
 
 **Pin every default you overrode, by its effect.** Each argument passed because the library's default was wrong for you is a belief about that default, and if it changes you get a wrong answer, not an error.
-Assert the effect — that an unadjusted series differs from the adjusted one, that a range bound excludes its own date — and add what you read off responses: whether a missing record raises or returns nulls, whether a field is absent or empty.
+Assert the effect — that a timestamp is not converted to local time, that a range bound excludes its own date — and add what you read off responses: whether a missing record raises or returns nulls, whether a field is absent or empty.
 
 **Pin a network-backed dependency without a network.** What you rely on — the status it raises on, the encoding, redirects — lives above the socket.
 Use the client's own in-process transport with a response recorded once from the real service, so every layer above the wire is the library's real code.
@@ -126,7 +125,7 @@ Keep the default run fast, tagging slow or external tests to opt into in CI.
 **Run the real surface once before calling a build done.** A recorded response proves the parse, not that the source still serves it; exercise every input the tool claims against the real thing, as a marked test or a documented command.
 **Read the counts, not the exit code**, and assert sizes against something known beforehand rather than against zero:
 
-- **Relations between runs** — an unbounded fetch returns more than a bounded one, a limit of 200 at least what 50 did — hold as data grows, and each catches a default silently taken (a history quietly capped at one month).
+- **Relations between runs** — an unbounded fetch returns more than a bounded one, a limit of 200 at least what 50 did — hold as data grows, and each catches a default silently taken (a listing quietly capped at one page).
 - **Categories separately from size** — "every region appeared" and "as many rows as expected" are two claims.
 
 ## Paradigms

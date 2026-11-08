@@ -105,7 +105,7 @@ def column_equals(
     equals(frame.get_column(column).to_list(), expected=list(values))
 ```
 
-A test body then reads `then.equals(code, expected=0)` or `then.column_equals(priced, column="revenue", values=expected_revenue)`.
+A test body then reads `then.equals(code, expected=expected_code)` or `then.column_equals(priced, column="revenue", values=expected_revenue)`.
 Naming the expected side is what stops the classic transposition, where a swapped pair still passes but reports the failure backwards.
 
 - Give each helper a failure message, since `pytest` only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
@@ -130,16 +130,23 @@ For an exact whole-frame match including dtypes, use `polars.testing.assert_fram
 Pin a network-backed dependency through `httpx.MockTransport`, which answers from a handler you supply while leaving status handling, decoding and redirects to `httpx` itself:
 
 ```python
-def test_when_raise_for_status_then_a_not_found_raises() -> None:
-    """A 404 raises rather than handing back an empty body."""
+@pytest.fixture
+def missing_document() -> httpx.Client:
+    """Return a client answering every request the way a missing document does."""
 
     def refuse(request: httpx.Request) -> httpx.Response:
-        """Answer every request the way a missing document does."""
+        """Answer with a 404."""
         return httpx.Response(404)
 
-    client = httpx.Client(transport=httpx.MockTransport(refuse))
+    return httpx.Client(transport=httpx.MockTransport(refuse))
+
+
+def test_when_raise_for_status_then_a_not_found_raises(
+    missing_document: httpx.Client,
+) -> None:
+    """A 404 raises rather than handing back an empty body."""
     with pytest.raises(httpx.HTTPStatusError):
-        client.get("https://example.test/report.csv").raise_for_status()
+        missing_document.get("https://example.test/report.csv").raise_for_status()
 ```
 
 Keep the recorded response in `tests/data/` and load it through a fixture, the same as any other given.
