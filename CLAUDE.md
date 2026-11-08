@@ -31,7 +31,8 @@ Once you have applied a convention a few times, keep checking for it rather than
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
-- **`review-plugin`** when reviewing or sweeping this Claude repo for drift: skills, `CLAUDE.md`, README, wiring, memory.
+- **`review-plugin`** when reviewing this Claude repo: `review-project` plus drift across skills, `CLAUDE.md`, README, wiring and memory.
+- **`review-project`** when reviewing, auditing or fixing a project: against its `PLAN.md`, the skills, correctness, tests and modernity.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
 - **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
 - **`use-git`** for any `git` operation: committing, branching, PRs, history (Conventional Commits; no `Co-authored-by` / "Generated with" footers).

@@ -18,7 +18,8 @@ Verb-first skills that encode consistent working conventions.
 - [`be-functional`](skills/be-functional) defines the default, language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`plan-project`](skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
-- [`review-plugin`](skills/review-plugin) sweeps this repo for drift, from descriptions that no longer match their skills to rules duplicated across them.
+- [`review-plugin`](skills/review-plugin) extends `review-project` for this repo, from descriptions that no longer match their skills to rules duplicated across them.
+- [`review-project`](skills/review-project) reviews a project against its plan, the skills, its tests and current releases, then fixes what it finds.
 - [`setup-python`](skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
 - [`structure-python`](skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers over a `code`/`data`/`tests` layout.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
