@@ -14,6 +14,15 @@ Personal [Claude Code](https://claude.com/claude-code) skills and global instruc
 ## 📦 Skills
 
 Verb-first skills that encode consistent working conventions.
+[`PLAN.md`](PLAN.md) records what the repo is for, its decisions and what is deliberately left out.
+
+A project runs through three of them in turn:
+
+1. [`plan-project`](skills/plan-project) drafts a `PLAN.md` from a loose conversation and asks one batch of questions.
+2. [`build-project`](skills/build-project) builds it milestone by milestone, gating each before it is ticked.
+3. [`review-project`](skills/review-project) reviews the result against the plan and the skills, then fixes what it finds.
+
+The rest are the conventions those three apply.
 
 - [`be-functional`](skills/be-functional) defines the default, language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
