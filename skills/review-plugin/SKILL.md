@@ -68,10 +68,8 @@ Verify each finding against the files before applying it — an agent's mistakes
 
 ## Test the claims
 
-- **Run every code block through the language's formatter and linter** — for Python, `uvx ruff@latest format --diff` and `uvx ruff@latest check`.
-An example that fails the linter teaches the habit the skill rejects.
-- **Run every library claim against the current release** in a throwaway script (for Python, a PEP 723 script under `uv run`), and note the version tested.
-A removed API or changed default makes the skill wrong without anything failing.
+Re-run every code block and library claim as `write-skills` requires, including in skills nobody edited.
+A release since the last sweep can remove an API or change a default, making a skill wrong without anything failing.
 
 ## Commit and report
 
