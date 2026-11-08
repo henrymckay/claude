@@ -27,6 +27,7 @@ Three mistakes account for most weak skills: a description never reconciled with
 Name a skill **verb-first**, one or two kebab-case words, so the name says when Claude reaches for it rather than what topic it covers:
 
 - **`be-`** — a style to adopt (`be-functional`).
+- **`plan-`** — settle a design before building (`plan-project`).
 - **`review-`** — sweep for drift (`review-plugin`).
 - **`setup-` / `structure-`** — arrange a project (`setup-python`, `structure-python`).
 - **`use-`** — a tool or library (`use-git`, `use-polars`).

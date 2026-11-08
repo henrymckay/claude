@@ -4,6 +4,7 @@
 
 - Show a short diff or plan before large or risky changes.
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
+- If a repo has a `PLAN.md`, read it before planning or building, and get my sign-off before changing it.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 - When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs. I may not want it once I know the price.
 
@@ -25,6 +26,7 @@ Once you have applied a convention a few times, keep checking for it rather than
 
 - **`be-functional`** for functional-style code, in any language.
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
+- **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
 - **`review-plugin`** when reviewing or sweeping this Claude repo for drift: skills, `CLAUDE.md`, README, wiring, memory.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
 - **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
