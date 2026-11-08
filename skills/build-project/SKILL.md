@@ -2,18 +2,19 @@
 name: build-project
 description: >-
   How to build a planned project milestone by milestone with minimal input
-  from the user — working through its PLAN.md in order, writing each check as
-  a failing test first, wiring the real path early, keeping the plan's terms
-  in the code, and passing a quality gate before ticking each milestone (the
-  suite, a real run, simplify, a code review, a read against the plan and any
-  performance budget), then keeping PLAN.md current and stopping only for what
-  the plan cannot settle. Use whenever building, implementing or continuing a
-  project that has a PLAN.md, or once a plan from plan-project is approved —
-  even if the user just says "build it", "go", "start on M1", "carry on" or
-  "build the next step". Layers on plan-project, the plan it builds from, and
-  on every skill the code falls under, using the built-in simplify and
-  code-review for the gate; hands off to review-project when the last
-  milestone is done.
+  from the user — working through its PLAN.md in order, each milestone on its
+  own branch, writing each check as a failing test first, wiring the real path
+  early, keeping the plan's terms in the code, and passing a quality gate
+  before ticking each milestone (the suite, a real run, simplify, a code
+  review, a read against the plan and any performance budget), keeping PLAN.md
+  current so a fresh session can resume, and stopping only for a change to the
+  plan, a blocking question or a check that won't pass. Use whenever building,
+  implementing or continuing a project that has a PLAN.md, or once a plan from
+  plan-project is approved — even if the user just says "build it", "go",
+  "start on M1", "carry on" or "build the next step". Layers on plan-project,
+  the plan it builds from, and on every skill the code falls under, using the
+  built-in simplify and code-review for the gate and use-git for branches and
+  commits; hands off to review-project when the last milestone is done.
 ---
 
 # Build the project
@@ -26,14 +27,14 @@ Three mistakes account for most weak builds: ticking a milestone because the tes
 
 ## Work without waiting
 
-The approved `PLAN.md` is the user's sign-off for building its milestones in order.
-Go from one milestone to the next without asking; stop and ask only when:
+The approved `PLAN.md` is the user's sign-off for building its milestones in order, each on its own branch merged once its gate passes (see `use-git`).
+Go from one milestone to the next without asking; stop only when:
 
-- the work would change a requirement or decision (see `plan-project`);
-- an open question blocks the next milestone;
-- a check fails in a way the plan doesn't cover.
+- **the work would change a requirement or decision** — raise it as `plan-project` says, with the change proposed; a workaround built instead buries the decision where the plan can't record it;
+- **an open question blocks the next milestone**;
+- **a gate check still fails after two fixes aimed at its cause** — report what was tried rather than trying a third.
 
-Without a `PLAN.md`, plan the project first with `plan-project`; a fix or small change needs only a short plan in the conversation.
+Without a `PLAN.md`, see `plan-project`'s When to plan.
 
 ## Start a milestone
 
@@ -46,7 +47,6 @@ A test written after the code tends to assert what the code does rather than wha
 
 - **Wire the real path early.** Get real input through to real output, however crude, before refining any stage; a stage polished in isolation can fail to meet the next one.
 - **Use the Terms.** Every module, function, column and option takes the plan's name for its concept; a new concept the plan lacks is a gap to record under Open, not a name to invent quietly.
-- **Stop when the design is wrong.** If the plan's design can't meet a requirement, say so and propose the change rather than building around it; a workaround buries the decision where the plan can't record it.
 - **Commit each step that leaves the suite green** (see `use-git`).
 
 ## Gate it
@@ -54,18 +54,19 @@ A test written after the code tends to assert what the code does rather than wha
 Pass every check before ticking the milestone; a drift caught here is a one-file fix, and caught at the final review it runs through everything built on top.
 
 1. **The suite passes**, with the linter and type checker clean.
-2. **The milestone's done-when check passes on real input** — run it and read the counts, not the exit code.
+2. **The milestone's done-when check passes on real input** — run it and read the counts (see `write-tests`).
+Where the real input is unreachable, run on a recorded sample, record that under Open, and say so in the report.
 3. **`/simplify` on the milestone's diff**, then re-run the suite.
-4. **`/code-review` on the diff** at a low level (never `max` or `ultra` unless the user asked); fix each confirmed bug with a regression test.
+4. **`/code-review` on the diff** at a low level; fix each confirmed bug with a regression test.
 5. **The diff reads true to the plan** — names from Terms, nothing beyond the milestone's requirements, no second copy of an existing helper, every decision honoured.
 6. **Any performance requirement the milestone covers is met**, measured on input of the size Inputs gives.
 
 ## Close it
 
-- **Bring `PLAN.md` up to date** as `plan-project` says, commit it with the change that made it true, and push.
+- **Bring `PLAN.md` up to date** as `plan-project` says, and commit it with the change that made it true.
 - **Keep the state in the repo, not the conversation.** The ticked milestones, Open and the commits are what a fresh session resumes from after a compaction or a break; a decision held only in the conversation is lost there.
 - **Report in a line or two** — what now works, what was assumed — and start the next milestone.
 
 ## Finish the build
 
-After the last milestone, run `review-project` against the plan, fix what it finds, and report what the project now does and what is left in Not yet and Open.
+After the last milestone, run `review-project` against the plan; it fixes what it finds and reports what the project now does and what is left.
