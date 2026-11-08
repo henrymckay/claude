@@ -39,7 +39,7 @@ A finding that cites neither is a preference: label it one, or drop it.
 Skip this section without a `PLAN.md`.
 
 - **Every requirement is built and cited by a check** in Verification; a requirement nothing cites is unbuilt until shown otherwise.
-- **Every ticked milestone is true** — run its check.
+- **Every ticked milestone is true** — run its check, and untick one that fails.
 - **Nothing in Not yet has been built**, and every decision is honoured; structure ahead of its requirement is a finding, however diligent it looks.
 - **Open holds nothing stale** — an assumption the code already settled, a question already answered.
 
@@ -49,7 +49,7 @@ Skip this section without a `PLAN.md`.
 - **Run the real surface** — every command, endpoint or screen against real input — and read the counts, not the exit code (see `write-tests`).
 - **Measure what the plan budgets** — time and memory on input of the size Inputs gives, against each performance requirement.
 Without a budget, time the real surface anyway and flag only what is slow at its real input size, profiling before naming a cause.
-- **Hunt for bugs with `/code-review`** on the codebase rather than a diff, at the level the user asked for; never `max` or `ultra` unless they asked.
+- **Hunt for bugs with `/code-review`** on the codebase rather than a diff, at a medium level unless the user named one.
 
 ## Check the tests
 
