@@ -25,7 +25,7 @@ Verb-first skills that encode consistent working conventions.
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs), from the expression API to keeping every group in one frame instead of looping.
 - [`write-entry-points`](skills/write-entry-points) builds an app's entry points as thin shells over the pure core, whether a [`typer`](https://typer.tiangolo.com/) CLI, [`fastapi`](https://fastapi.tiangolo.com/) API, [`shiny`](https://shiny.posit.co/py/) GUI or scheduled job.
 - [`write-markdown`](skills/write-markdown) covers writing Markdown for humans and LLMs (Large Language Models).
-- [`write-python`](skills/write-python) defines in-code Python conventions for style and structure.
+- [`write-python`](skills/write-python) defines in-code Python conventions, from typing and naming to error handling.
 - [`write-skills`](skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
 - [`write-tests`](skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
@@ -86,6 +86,7 @@ Order every brief and every answers file the same way.
 - Omit a section a file has nothing to say about rather than padding it out.
 
 Put each evaluation in its own folder, `evaluate/<name>/`, holding a `brief.md` and an `answers.md`.
+None are checked in at present.
 Chain builds, each carrying on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
 ## 📚 Learn more
