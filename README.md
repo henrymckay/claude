@@ -58,15 +58,16 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
   - `sonnet` for daily work.
   - `opus` for complex reasoning.
   - `fable` for the hardest or longest tasks.
+  - `best` for the most capable model available.
   - `opusplan` to plan on Opus and execute on Sonnet.
-- **Effort.** `/effort` sets reasoning depth from `low` to `max`.
+- **Effort.** `/effort` sets reasoning depth: `low`, `medium`, `high`, `xhigh` or `max`.
 Raise it for a hard bug or design decision.
 Lower it for routine edits.
 - **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
 - **Output style.** `/output-style` swaps Claude's behavioural preset.
-Default, Proactive and Explanatory ship with it.
+Default, Concise, Explanatory, Learning and Proactive ship with it.
 A custom one can be added.
-- **Permissions.** `Shift+Tab` cycles permission mode (`default`, `plan`, `acceptEdits`, `auto`, `bypassPermissions`).
+- **Permissions.** `Shift+Tab` cycles permission mode: `default`, `acceptEdits` and `plan`, then `bypassPermissions` and `auto` where enabled.
 It controls how much Claude does before checking in.
 
 ## 🎯 Evaluate
@@ -97,7 +98,7 @@ Chain builds, each carrying on from the last, so structure scaffolded too early 
 - [`CLAUDE.md`](https://code.claude.com/docs/en/memory) loads *every session*, so keep it to always-on rules under 200 lines.
 - Claude Code reads config from `~/.claude` and a project's [`.claude/`](https://code.claude.com/docs/en/claude-directory).
 - These skills follow the [Agent Skills](https://agentskills.io) open standard.
-- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/discover-plugins) from the [marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
+- Install prebuilt skills and [plugins](https://code.claude.com/docs/en/plugins/install) from the [marketplace](https://github.com/anthropics/claude-plugins-official) with `/plugin`.
 
 ## 🤝 Contribute
 
