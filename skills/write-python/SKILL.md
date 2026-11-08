@@ -7,7 +7,7 @@ description: >-
   writing, editing, refactoring or reviewing Python code, even if the user
   doesn't mention "conventions", "style", or "clean code". Targets Python
   3.12+. Formatting and linting are delegated to ruff and type-checking to
-  pyright; this skill covers only the judgment calls they can't make. The
+  pyright; this skill covers only the judgement calls they can't make. The
   baseline for all Python: be-functional, be-oop and write-tests layer on it;
   for project structure see structure-python, for packaging and tooling
   setup-python.
@@ -15,7 +15,7 @@ description: >-
 
 # Write Python
 
-The judgment calls that make Python readable — the decisions a formatter or linter can't make.
+The judgement calls that make Python readable — the decisions a formatter or linter can't make.
 It is the baseline that `be-functional`, `be-oop` and `write-tests` layer on; project structure lives in `structure-python`, packaging and tooling in `setup-python`.
 Three habits account for most of what goes wrong: importing names instead of modules, leaving a function unannotated or undocumented, and reaching for a class or abstraction before a second case calls for one.
 
@@ -128,11 +128,11 @@ They are the functions whose bodies a call site can't see, so their names most n
 Packages and modules:
 
 - **A package that acts takes a verb** (`transform/`, `adapt/`, `drive/`); one that holds definitions takes a noun (`domain/`, `port/`).
-- **Separate words with underscores**, in packages too, overriding PEP 8's discouragement: `market_cap`, not `marketcap`.
+- **Separate words with underscores**, in packages too, overriding PEP 8's discouragement: `unit_price`, not `unitprice`.
 A name is read far more often than typed.
 Spell it as the thing is called, not as a domain name runs it together.
-- **Take the shortest name the surrounding package leaves unambiguous**: a source inside `adapt/` is `market_cap`, not `market_cap_source`.
-- **Name an adapter for what it reads**, not whose data it is: the aggregator site you scrape is what breaks and changes under you, not the regulator whose filings it republishes.
+- **Take the shortest name the surrounding package leaves unambiguous**: a source inside `adapt/` is `weather`, not `weather_source`.
+- **Name an adapter for what it reads**, not whose data it is: the mirror you download from is what breaks and changes under you, not the project whose releases it republishes.
 
 ## Arguments
 
@@ -149,7 +149,7 @@ render(rows, table=True, width=30)
 
 - **A variable already spelled like the parameter needs no label**: `revenue(quantity, unit_price)`, not `revenue(quantity=quantity, …)`.
 The rule bites on literals, expressions and mismatched names.
-- **A boolean or bare number is never the subject.**
+- **A boolean or bare number is never the subject**, except as the operand of an operator method (`.gt(0)`, `.add(1)`).
 - **Put a `*` in the signature** before everything optional or modal, so the language enforces the naming and those parameters can be reordered later without breaking callers: `def fetch_user(user_id: int, *, include_archived: bool = False) -> User`.
 
 Two limits: a keyword binds callers to the parameter's name, so renaming it breaks a published API; and positional-only builtins (`len`, `abs`) raise `TypeError` if named.
@@ -173,7 +173,7 @@ Place a new definition in its slot, but don't reshuffle an existing file — the
 **Once a library is in play, use its features rather than hand-rolling around them.** Before writing validation, grouping, reshaping, retries or serialisation, check its API — a mature library already names any standard manipulation.
 Confirm the feature exists, though; a genuine gap is fine to fill.
 
-**Read every field of a record a library returns before deriving one.** The publisher knows what you can't compute — which listing is primary, which identifier canonical, which row current — and a derived version works for most rows and is silently wrong for the rest.
+**Read every field of a record a library returns before deriving one.** The publisher knows what you can't compute — which address is primary, which identifier canonical, which row current — and a derived version works for most rows and is silently wrong for the rest.
 Print one whole record first; where a field answers the question, take it.
 
 **Write the fallback for an absent field.** It is present on every record you looked at, which is why the fallback gets dropped.
@@ -181,7 +181,7 @@ Reach for it with `.get`, since one record missing the key would otherwise raise
 Fall back to the next-best field of the same kind **only where the direct one is absent** — preferring the fallback when it looks more complete replaces right answers with plausible ones.
 Where no field answers, leave the value empty rather than guessing.
 
-**Decide every default of a call you make.** A default is someone else's choice for a different caller, and the harmful ones are silent and plausible: a price series adjusted for dividends, a fetch that quietly returns one month when given no dates, a progress bar writing to a channel the driver owns.
+**Decide every default of a call you make.** A default is someone else's choice for a different caller, and the harmful ones are silent and plausible: a timestamp converted to local time, a fetch that quietly returns one page when given no limit, a progress bar writing to a channel the driver owns.
 None raises or fails a test; reading the signature is the only way to find them.
 It also stops you re-setting what is already the default.
 
