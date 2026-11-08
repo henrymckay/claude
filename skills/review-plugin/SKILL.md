@@ -2,16 +2,17 @@
 name: review-plugin
 description: >-
   How to review your own Claude Code plugin, or a repo serving as one, for
-  drift — the checks a skills repo needs on top of review-project: each
-  description against its body, bloat and overfitted examples, rules
-  duplicated or contradicted across skills, trigger overlap, CLAUDE.md and the
-  README against the skills, the symlinks wiring it into ~/.claude, and
-  auto-memory. Use after a run of skill edits, or whenever the user asks to
-  review, audit, tidy or sweep their skills, plugin or Claude repo, even if
-  they just say "check the skills for drift" or "tidy up my skills". Not for a
-  third-party plugin. Layers on review-project, which runs the cold read, the
-  fixes and the report, and on write-skills and write-markdown, the standard it
-  checks against.
+  drift — the checks a skills repo needs on top of review-project: working
+  through the open skill-feedback issues, each description against its body,
+  bloat and overfitted examples, rules duplicated or contradicted across
+  skills, trigger overlap, CLAUDE.md and the README against the skills, the
+  symlinks wiring it into ~/.claude, and auto-memory. Use after a run of skill
+  edits, when skill-feedback issues have piled up, or whenever the user asks
+  to review, audit, tidy or sweep their skills, plugin or Claude repo, even if
+  they just say "check the skills for drift", "tidy up my skills" or "work
+  through the skill feedback". Not for a third-party plugin. Layers on
+  review-project, which runs the cold read, the fixes and the report, and on
+  write-skills and write-markdown, the standard it checks against.
 ---
 
 # Review the plugin
@@ -21,6 +22,17 @@ It runs `review-project` with the skills as the code under review and adds the c
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
 
 **In an existing project, ask first.** Where a repo already has its own conventions for its skills, check with the user whether to review against them or against `write-skills`, and prefer `write-skills` unless they choose to match.
+
+## Work the feedback
+
+Start from the open reports, since they record what a real run got wrong and the checks below only find what reading can: `gh issue list -R <owner>/<repo> --label skill-feedback`.
+Verify each against the files, then close it one of three ways:
+
+- **Fixed** — in the skill that owns the rule, generalised as `write-skills` says, with `Fixes #<n>` in the commit message.
+- **Already covered** — the rule exists but went unapplied, so sharpen its wording, its placement or the description that should have loaded it.
+- **Won't fix** — no skill should cover it, with the reason in the closing comment.
+
+Several reports against one skill mean its structure is wrong; rework the skill rather than patching each report.
 
 ## Take an inventory
 
