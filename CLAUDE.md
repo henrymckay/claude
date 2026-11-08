@@ -4,17 +4,21 @@
 
 - Show a short diff or plan before large or risky changes.
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
-- If a repo has a `PLAN.md`, read it before planning or building, and get my sign-off before changing it.
+- If a repo has a `PLAN.md`, read it before planning or building, and change it only as `plan-project` allows.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
-- When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs. I may not want it once I know the price.
+- When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs.
+I may not want it once I know the price.
 
 ## Answers
 
 - **Let the length follow the question.** Use as few words as carry the point; a small question gets a small answer.
-- Lead with the answer. No preamble, no restating my question back at me.
-- Report a finding once, where it matters. Don't preview it, state it, then summarise it.
+- Lead with the answer.
+No preamble, no restating my question back at me.
+- Report a finding once, where it matters.
+Don't preview it, state it, then summarise it.
 - One example beats three; a table beats a table plus its prose restatement.
-- Cut the closing offer unless there is a real choice to make. If the next step is obvious, take it or name it in a clause.
+- Cut the closing offer unless there is a real choice to make.
+If the next step is obvious, take it or name it in a clause.
 - Keep the reasoning that changes my decision, cut the reasoning that shows your work.
 
 ## Skills
