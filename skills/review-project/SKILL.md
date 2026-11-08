@@ -3,17 +3,17 @@ name: review-project
 description: >-
   How to review a whole project and then fix what the review finds — checking
   it against its PLAN.md where there is one, then correctness (the tests, the
-  real surface, a bug hunt), the test suite, conformance to the skills,
-  modernity (current releases, no deprecated APIs, the latest language), the
-  README and CLAUDE.md, and safety, with an unanchored cold read; then fixing the
-  findings by impact, each with its own commit and, for a bug, a regression
-  test. Use whenever the user asks to review, audit, critique or tidy a repo
-  or project, check it against its plan or the conventions, find what is out
-  of date, or fix what a review found — even if they just say "review this
-  repo", "what's wrong with this project", or "is this up to date". Works
-  without a PLAN.md. Layers on plan-project and every skill the project's code
-  falls under, using the built-in code-review for the bug hunt; review-plugin
-  extends it for a Claude Code plugin.
+  real surface, performance, a bug hunt), the test suite, conformance to the
+  skills, modernity (current releases, no deprecated APIs, the latest
+  language), the README and CLAUDE.md, and safety, with an unanchored cold
+  read; then fixing the findings by impact, each with its own commit and, for
+  a bug, a regression test. Use whenever the user asks to review, audit,
+  critique or tidy a repo or project, check it against its plan or the
+  conventions, find what is out of date, or fix what a review found — even if
+  they just say "review this repo", "what's wrong with this project", or "is
+  this up to date". Works without a PLAN.md. Layers on plan-project and every
+  skill the project's code falls under, using the built-in code-review for the
+  bug hunt; review-plugin extends it for a Claude Code plugin.
 ---
 
 # Review the project
@@ -47,6 +47,8 @@ Skip this section without a `PLAN.md`.
 
 - **Run the whole suite** and read every failure and warning.
 - **Run the real surface** — every command, endpoint or screen against real input — and read the counts, not the exit code (see `write-tests`).
+- **Measure what the plan budgets** — time and memory on input of the size Inputs gives, against each performance requirement.
+Without a budget, time the real surface anyway and flag only what is slow at its real input size, profiling before naming a cause.
 - **Hunt for bugs with `/code-review`** on the codebase rather than a diff, at the level the user asked for; never `max` or `ultra` unless they asked.
 
 ## Check the tests
