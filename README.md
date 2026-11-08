@@ -85,12 +85,8 @@ Order every brief and every answers file the same way.
 - Answers run shape, what the build earns, what should not exist yet, the declarations, the boundary, failure, the surface, verification and wrong turns.
 - Omit a section a file has nothing to say about rather than padding it out.
 
-Each build below carries on from the last, adding a group to one `trade` command, so structure scaffolded too early shows up as a failure rather than a defensible choice.
-
-- [`index-symbols`](evaluate/index-symbols) builds `trade index`, expanding an index, fund, investor or ranking into the symbols it holds, and cataloguing the ones set up.
-- [`symbol-data`](evaluate/symbol-data) adds `trade symbol`, fetching candles on three timeframes, describing a symbol and searching for one.
-- [`demark-counts`](evaluate/demark-counts) adds `trade demark`, counting setups, sequentials and combos over those candles.
-- [`screen-symbols`](evaluate/screen-symbols) adds `trade screen`, returning the symbols whose counts match every condition at once.
+Put each evaluation in its own folder, `evaluate/<name>/`, holding a `brief.md` and an `answers.md`.
+Chain builds, each carrying on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
 
 ## 📚 Learn more
 
