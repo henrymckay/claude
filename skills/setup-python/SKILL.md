@@ -5,18 +5,19 @@ description: >-
   pyproject.toml, dependency and environment management with uv, house-pick
   libraries for common tasks, standalone scripts, pre-commit, and the
   ruff/taplo/pyright/pytest toolchain. Use whenever starting a new Python
-  project, package, script, or tool; adding packaging to existing code; setting
-  up dependencies, virtual environments, or project config; or choosing a
-  house-pick library for a task — even if the user just says "new project", "set
-  this up", or "make this a package". Standardises on uv, ruff, taplo, pyright,
-  and pytest, targeting the latest stable Python. For how to organise the
-  application's code into layers, see structure-python; for in-code style,
-  write-python; for the tests themselves, write-tests.
+  project, package, script, or tool; adding packaging to existing code;
+  setting up dependencies, virtual environments, or project config; or
+  choosing a house-pick library for a task — even if the user just says "new
+  project", "set this up", or "make this a package". Standardises on uv, ruff,
+  taplo, pyright, and pytest, targeting the latest stable Python. Plan a new
+  project first with plan-project. For how to organise the application's code
+  into layers, see structure-python; for in-code style, write-python; for the
+  tests themselves, write-tests.
 ---
 
 # Set up a Python project
 
-This covers *scaffolding, packaging, and tooling*; for how to organise the code into layers, see `structure-python`; for in-code style, `write-python`; for tests, `write-tests`.
+This covers *scaffolding, packaging, and tooling*; plan a new project first with `plan-project` (a one-off script needs no plan); for how to organise the code into layers, see `structure-python`; for in-code style, `write-python`; for tests, `write-tests`.
 Three mistakes account for most of what goes wrong: reaching for a tool the standard five already cover, laying the package out flat where `src/` would have caught the import mistake, and hand-rolling what a house-pick library already does.
 
 **In an existing project, ask first.** Where a repo already has a `pyproject.toml` or an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -109,7 +110,7 @@ An `__init__.py` marks a directory as an importable package — here only `mypac
 Keep modules small and cohesive (one responsibility).
 This is just the top-level skeleton; how `mypackage/` splits into `code/` and `data/` layers, and how `tests/` is laid out, is covered in `structure-python`.
 
-Keep a real `.gitignore` from the start, covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `.hypothesis/`, build artifacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
+Keep a real `.gitignore` from the start, covering `.venv/`, `__pycache__/`, `*.egg-info/`, `.pytest_cache/`, `.ruff_cache/`, `.hypothesis/`, build artefacts, and the editor/OS cruft a collaborator's setup drops in (`.idea/`, `.vscode/`, `.DS_Store`).
 See the `use-git` skill for repo hygiene.
 
 ## Dependencies and environment
@@ -197,4 +198,4 @@ repos:
 Pin each `rev` to the current release and bump it later with `pre-commit autoupdate`.
 Then `uv add --dev pre-commit` and `pre-commit install` (once per clone, to register the git hook).
 `ruff-check --fix` auto-fixes and `ruff-format` reformats Python; `taplo-format` does the same for TOML; if a hook changes files the commit stops so you can re-stage.
-This is also where a Conventional Commits `commit-msg` hook belongs (see `use-git`).
+This is also where a `commit-msg` hook enforcing `use-git`'s Conventional Commits belongs.
