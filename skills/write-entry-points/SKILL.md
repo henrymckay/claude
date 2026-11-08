@@ -8,13 +8,15 @@ description: >-
   as a public surface and built to compose with the tools around it. Use
   whenever adding or structuring an entry point, designing a command's options
   or an API's surface, deciding what goes to standard output and what to
-  standard error, taking input from arguments, files or standard input, wiring
-  dependency injection at the boundary, splitting a driver into role and
-  framework packages, or naming a launch command — even if the user just says
-  "add a CLI", "expose an API", "build a dashboard", "run this on a schedule",
-  or names typer, fastapi, uvicorn, pydantic, shiny, or a scheduler.
-  Language-agnostic principles here; Python build-outs in references/python.md.
-  Layers on structure-python's drive layer and be-functional.
+  standard error, taking input from arguments, files or standard input,
+  exposing each pipeline stage as its own command, wiring dependency injection
+  at the boundary, sizing a fetch that needs warm-up history, splitting a
+  driver into role and framework packages, or naming a launch command — even
+  if the user just says "add a CLI", "expose an API", "build a dashboard",
+  "run this on a schedule", or names typer, fastapi, uvicorn, pydantic, shiny,
+  or a scheduler. Language-agnostic principles here; Python build-outs in
+  references/python.md. Layers on structure-python's drive layer and
+  be-functional.
 ---
 
 # Write entry points
@@ -38,7 +40,7 @@ Presentation belongs to the driver, never the core — a CLI's table, an API's J
 Ask what a second driver would do: an API serving the same report wants the same pivot and a different renderer, so the pivot is core.
 The converse holds too: columns computed only for the renderer to consume and drop — a colour, a bar width — are presentation, pure or not.
 
-**One renderer for the whole tool, told what to show rather than guessing.** A renderer that recognises column names (colouring where it finds a `close`) has put the domain in the one place meant to be domain-free, and breaks when a later command reuses a name.
+**One renderer for the whole tool, told what to show rather than guessing.** A renderer that recognises column names (colouring where it finds a `status`) has put the domain in the one place meant to be domain-free, and breaks when a later command reuses a name.
 Pass a **per-column description** beside the data instead — how to show each column, including its precision, since a float's own repr drops trailing zeros and a column stops lining up.
 
 ## Design the surface
@@ -55,11 +57,11 @@ They pull against each other; resolve it with options that **combine rather than
 - **Spell the same idea the same way everywhere**, so one command predicts the next.
 - **Treat `--help` as the documentation.** A surface understood only through a README needs redesigning.
 - **Never make a prompt the only way in.** Anything asked interactively must also be settable by option, file or standard input.
-- **Name the options that duplicate the shell, to whoever specified the surface.** `--output PATH` does what `> PATH` does; keeping it for convention is fine (`curl` and `sort` take `-o`), but an option nobody decided to add is one nobody will decide to remove.
+- **Name the options that duplicate the shell, to the user.** `--output PATH` does what `> PATH` does; keeping it for convention is fine (`curl` and `sort` take `-o`), but an option nobody decided to add is one nobody will decide to remove.
 Say so in a sentence before building it.
 
-**Where a specification fixes the option set, keep the shape and drop the extras.** Several rules here recommend options — a log destination, a format switch.
-If leaving one out makes the tool behave *incorrectly* (logs in the data stream), it is shape and stays; if it only makes something harder to reach, the specification may decline it.
+**Where the user or the plan fixes the option set, keep the shape and drop the extras.** Several rules here recommend options — a log destination, a format switch.
+If leaving one out makes the tool behave *incorrectly* (logs in the data stream), it is shape and stays; if it only makes something harder to reach, the user may decline it.
 Say which you dropped, and check what that strands: with no way to raise the log level, `info` lines are dead code.
 
 ## Expose the stages

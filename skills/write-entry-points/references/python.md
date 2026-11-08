@@ -19,7 +19,7 @@ An app object must exist before anything decorates it, so in its own module the 
 **A framework package may hold a module that imports nothing from its framework**, where that framework is its only caller — `fastapi_/provide.py` naming the concrete adapter.
 Lift it to a shared `drive/` module when a second driver needs it.
 
-**A package of interchangeable adapters names its own members.** Where the core picks among adapters at runtime, `adapt/__init__.py` returns the mapping and every driver reads it; enumerating them in a driver means the next driver copies the list.
+**A package of interchangeable adapters names its own members.** Where the core picks among adapters at runtime, a function in `adapt/__init__.py` returns the mapping and every driver calls it; enumerating them in a driver means the next driver copies the list.
 The driver still chooses to use the set and injects it.
 
 ## CLI
@@ -307,18 +307,6 @@ It also keeps a required value honest, where a model invites a default.
 Configure once at the composition root — from a `typer` callback, a `fastapi` lifespan hook, or the top of a job's `run()` — through a `logging_/` package, with destination and level exposed as options:
 
 ```python
-def configure(
-    *, level: int = logging.WARNING, path: pathlib.Path | None = None
-) -> None:
-    """Route application logs to a file, or to standard error through Rich."""
-    logging.basicConfig(
-        force=True,
-        format="%(message)s",
-        handlers=[_file(path) if path else _stderr()],
-        level=level,
-    )
-
-
 def _file(path: pathlib.Path) -> logging.Handler:
     """Return a handler writing plain, timestamped records to a file."""
     handler = logging.FileHandler(path)
@@ -333,6 +321,18 @@ def _stderr() -> logging.Handler:
     return rich.logging.RichHandler(
         console=rich.console.Console(stderr=True), rich_tracebacks=True
     )
+
+
+def configure(
+    *, level: int = logging.WARNING, path: pathlib.Path | None = None
+) -> None:
+    """Route application logs to a file, or to standard error through Rich."""
+    logging.basicConfig(
+        force=True,
+        format="%(message)s",
+        handlers=[_file(path) if path else _stderr()],
+        level=level,
+    )
 ```
 
 `basicConfig` applies `format` only to a handler without one, so the file keeps its timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
@@ -340,7 +340,7 @@ Every other module just logs through `logging.getLogger(__name__)`.
 
 ## Run
 
-Each entry point is a `[project.scripts]` command named `<project>-<role>` — it lands on `PATH` when installed, so never a bare `cli`.
+Each entry point is a `[project.scripts]` command, named as `SKILL.md`'s Run says.
 It points at a callable app (`typer`) or a `run()` launcher (`uvicorn`, `shiny`, a job):
 
 ```toml
