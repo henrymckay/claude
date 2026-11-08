@@ -71,6 +71,11 @@ A custom one can be added.
 - **Permissions.** `Shift+Tab` cycles permission mode: `default`, `acceptEdits` and `plan`, then `bypassPermissions` and `auto` where enabled.
 It controls how much Claude does before checking in.
 
+## 🔁 Feed back
+
+Claude files an [issue](https://github.com/henrymckay/claude/issues?q=label%3Askill-feedback) labelled `skill-feedback` whenever a skill steers it wrong during real work, as [`CLAUDE.md`](CLAUDE.md) requires.
+[`review-plugin`](skills/review-plugin) works through the open ones first, fixing each in the skill that owns it or closing it with a reason.
+
 ## 🎯 Evaluate
 
 Test how well the skills guide a build.

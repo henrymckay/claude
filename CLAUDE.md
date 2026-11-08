@@ -5,6 +5,10 @@
 - Show a short diff or plan before large or risky changes.
 - Commit and push my own branch without being asked once a change is complete and working; hold off on anything I'm still reviewing or iterating.
 - If a repo has a `PLAN.md`, read it before planning or building, and change it only as `plan-project` allows.
+- When a skill steered you wrong, said nothing where it should have, or contradicted another skill, or I corrected you on something a skill should cover, file an issue and carry on: `gh issue create -R henrymckay/claude --label skill-feedback`.
+Name the skill and section, what happened, what should have happened, and the kind of project.
+The repo is public, so describe the shape of the case, never the project's data.
+File skill corrections there, not in memory.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 - When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs.
 I may not want it once I know the price.
