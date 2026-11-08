@@ -1,11 +1,12 @@
 ---
 name: use-git
 description: >-
-  Conventions for using git well — branch strategy, commit granularity, commit
-  messages, rebase or merge, pushing/PRs, and what to exclude from commits. Use
-  whenever committing, branching, writing commit messages, opening pull
-  requests, or managing git history in any repository and any language, even if
-  the user just says "commit this", "make a branch", or "clean up the history".
+  Conventions for using git well — branch strategy, commit granularity,
+  staging, commit messages and their footers, rebase or merge, when to push,
+  PRs and release tags, and what to exclude from commits. Use whenever
+  committing, branching, writing commit messages, opening pull requests, or
+  managing git history in any repository and any language, even if the user
+  just says "commit this", "make a branch", or "clean up the history".
   Language-agnostic. The commit-commands plugin runs the commit, push and PR
   flows; this skill defines the conventions those flows follow.
 ---
@@ -32,6 +33,8 @@ Branching before there is a `main` to merge back into is ceremony, not history.
 - **Atomic commits:** one logical change each.
 The build/tests should pass at each commit so history is bisectable and revertable.
 Don't bundle an unrelated refactor into a feature commit.
+- **Stage by path, never `git add -A` or `git add .`.** Another session or tool may have changes in the same tree and index, and a blanket add sweeps them into your commit under your message.
+For the same reason, check `git log` before amending or resetting: `HEAD` may not be the commit you left.
 - Commit locally often; tidy up before sharing.
 A commit that landed out of order (tests ahead of the fix they need), and is not yet pushed, is fixed with `git reset --soft` and re-committing — it touches no file and no shared history, so it needs no sign-off.
 - **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
@@ -90,7 +93,7 @@ Link related issues.
 
 - **Secrets** — API keys, tokens, passwords, `.env` files.
 If one lands in history, rotate it; removing the commit isn't enough.
-- **Generated/build artifacts, caches, virtualenvs** — `.gitignore` them.
+- **Generated/build artefacts, caches, virtualenvs** — `.gitignore` them.
 - **Large binaries** — use Git LFS or store them elsewhere.
 
 Keep a real `.gitignore` from the start so this never becomes a problem (`setup-python` has a starter list for Python projects).
