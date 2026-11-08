@@ -1,18 +1,17 @@
 ---
 name: be-functional
 description: >-
-  Functional programming done well — pure functions, immutability, composition,
-  explicit data flow, algebraic data types and pattern matching, and deriving a
-  program's functions from the shapes its data passes through. Use when the
-  user asks for functional code, a "functional approach", pipelines or
-  transformations over data, or wants to avoid mutation and side effects; when
-  deciding where one function ends and the next begins, or whether a value is a
-  parameter or really part of the input; and when refactoring imperative or
-  stateful code toward a cleaner functional shape. This is an opt-in style
-  skill: reach for a functional style where it genuinely fits, not by default.
-  Language-agnostic principles here; Python idioms in references/python.md.
-  Layers on write-python (the in-code baseline); be-oop is the object-oriented
-  counterpart.
+  Functional programming done well — pure functions, immutability,
+  composition, explicit data flow, algebraic data types and pattern matching,
+  and deriving a program's functions from the shapes its data passes through.
+  Use by default whenever writing, reviewing or refactoring code in any
+  language, even if the user never says "functional" — and especially for
+  pipelines or transformations over data; when deciding where one function
+  ends and the next begins, or whether a value is a parameter or really part
+  of the input; and when refactoring imperative or stateful code toward a
+  cleaner functional shape. Language-agnostic principles here; Python idioms
+  in references/python.md. Layers on write-python (the in-code baseline);
+  be-oop is the object-oriented counterpart.
 ---
 
 # Be functional
@@ -24,16 +23,12 @@ Three mistakes account for most of what goes wrong: reaching for ambient state i
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
-**This is opt-in.** Reach for a functional style where it genuinely fits (below), not by default.
+**In an existing project, ask first.** Where a repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
-## When to use
+## Where it bends
 
-- **Data transformations and pipelines** — mapping, filtering and aggregating data through composable steps.
-- **Pure logic and calculations** — decisions that depend only on their inputs, cheap to test and safe to reuse.
-- **The core of a stateful program** — keep the decision-making core pure and push I/O and mutation to a thin shell (see "Functional core, imperative shell").
-- **Concurrent work** — immutability and no shared state remove whole classes of races.
-
-If the code is naturally stateful throughout — I/O, UIs, long-lived objects — keep it imperative and apply this only at its edges.
+This is the house style for all code.
+Where code is naturally stateful throughout — I/O, UIs, long-lived objects — keep it imperative and apply this at its edges, and reach for `be-oop` where its When to use applies.
 
 ## Core principles
 

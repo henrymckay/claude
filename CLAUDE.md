@@ -28,7 +28,7 @@ Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
 
-- **`be-functional`** for functional-style code, in any language.
+- **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
 - **`review-plugin`** when reviewing or sweeping this Claude repo for drift: skills, `CLAUDE.md`, README, wiring, memory.

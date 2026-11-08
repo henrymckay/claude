@@ -15,7 +15,7 @@ Personal [Claude Code](https://claude.com/claude-code) skills and global instruc
 
 Verb-first skills that encode consistent working conventions.
 
-- [`be-functional`](skills/be-functional) defines a language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
+- [`be-functional`](skills/be-functional) defines the default, language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`plan-project`](skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
 - [`review-plugin`](skills/review-plugin) sweeps this repo for drift, from descriptions that no longer match their skills to rules duplicated across them.
