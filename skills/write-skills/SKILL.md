@@ -4,14 +4,15 @@ description: >-
   House conventions for authoring a Claude Code skill in this repo — naming it
   verb-first, writing a description that triggers reliably, opening with the
   standard placement, failure modes and caveat, structuring the body so each
-  rule is stated once with an observable why, and splitting a language-agnostic
-  skill from its language reference. Use whenever creating or editing a
-  SKILL.md or its references, naming a skill, writing or reviewing a skill
-  description, or splitting out a reference — even if the user just says "make
-  a skill", "add a skill", or "fix this skill's description". Layers on
-  write-markdown for prose mechanics, and defers the draft-eval-iterate loop,
-  file anatomy, packaging and description optimisation to the skill-creator
-  plugin; review-plugin sweeps the whole repo against these conventions.
+  rule is stated once with an observable why, running every code block and
+  library claim, and splitting a language-agnostic skill from its language
+  reference. Use whenever creating or editing a SKILL.md or its references,
+  naming a skill, writing or reviewing a skill description, or splitting out a
+  reference — even if the user just says "make a skill", "add a skill", or
+  "fix this skill's description". Layers on write-markdown for prose
+  mechanics, and defers the draft-eval-iterate loop, file anatomy, packaging
+  and description optimisation to the skill-creator plugin; review-plugin
+  sweeps the whole repo against these conventions.
 ---
 
 # Write skills
@@ -24,7 +25,7 @@ Three mistakes account for most weak skills: a description never reconciled with
 
 ## Name it
 
-Name a skill **verb-first**, one or two kebab-case words, so the name says when Claude reaches for it rather than what topic it covers:
+Name a skill **verb-first** in a few kebab-case words, so the name says when Claude reaches for it rather than what topic it covers:
 
 - **`be-`** — a style to adopt (`be-functional`).
 - **`plan-`** — settle a design before building (`plan-project`).
@@ -80,6 +81,8 @@ If every rule hedges, the absolutes get broken as often as the defaults.
 - **Show the anti-pattern for the most-broken rule** as one compact wrong/right pair — a fenced pair in a language-bound skill, a named pair in prose in a language-agnostic one, so it doesn't quietly become a Python skill.
 - **Keep examples general.** An example drawn from the project that prompted a rule teaches its domain along with the rule; use the smallest example that shows the rule, from a domain any reader knows.
 - **Generalise a rule added mid-project.** A rule written to fix one incident arrives in that project's terms; restate it so a reader from any domain would apply it, and grep the neighbouring skills first — if one already says it, extend that, or the two copies drift apart.
+- **Run what the skill claims.** Pass every code block through the language's formatter and linter (for Python, `uvx ruff@latest format --diff` and `uvx ruff@latest check`), and run every library claim in a throwaway script against the current release (for Python, a PEP 723 script under `uv run`), naming the version in the commit message.
+Careful reading passes examples that fail the linter and claims the library contradicts; running them takes about a minute each.
 - **Keep cross-references live.** When you move or reword a rule, grep this skill and its neighbours for the section name and the rule's wording, so no pointer leads to nothing.
 
 ## Split the principle from the language
