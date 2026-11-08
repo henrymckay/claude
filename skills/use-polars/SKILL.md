@@ -2,16 +2,16 @@
 name: use-polars
 description: >-
   How to write correct, idiomatic Polars (the Python DataFrame library) — the
-  expression API, lazy vs eager execution, keeping every group in one long-form
-  frame instead of looping, joining without silently multiplying rows, the
-  silent traps around nulls, dtypes and windows, naming frames and pipe steps,
-  and the mental-model shifts coming from pandas. Use whenever working with
-  Polars DataFrames or LazyFrames, writing data transformations or analytics in
-  Polars, converting pandas code to Polars, joining or reshaping between long
-  and wide, or reading a query plan — even if the user only says "polars",
-  "pl.", or names a .parquet/.csv workflow they want done with it. Targets
-  Polars 2.x. Polars-specific; the general write-python conventions still apply
-  on top.
+  expression API, lazy vs eager execution, keeping every group in one
+  long-form frame instead of looping, joining without silently multiplying
+  rows, the silent traps around nulls, dtypes and windows, naming frames and
+  pipe steps, and the mental-model shifts coming from pandas. Use whenever
+  working with Polars DataFrames or LazyFrames, writing data transformations
+  or analytics in Polars, converting pandas code to Polars, joining or
+  reshaping between long and wide, or reading a query plan — even if the user
+  only says "polars", "pl.", or names a .parquet/.csv workflow they want done
+  with it. Targets Polars 2.x. Layers on write-python and be-functional's
+  map/bind vocabulary.
 ---
 
 # Use Polars
@@ -37,7 +37,7 @@ An aggregation can take a condition: `polars.col("v").filter(polars.col("v").gt(
 
 **`.sort` is a correctness requirement, not presentation.** `.shift`, every cumulative, `.first`/`.last` and `join_asof` read the current row order, so an unsorted input gives a wrong answer and nothing raises.
 
-**Address a class of columns with `polars.selectors`.** `polars.selectors.numeric().fill_null(0)` resolves against the real schema when the query runs, so it covers the column added next month; a hand-listed set is pinned to the day it was written.
+**Address a class of columns with `polars.selectors`.** `polars.selectors.numeric().fill_null(value=0)` resolves against the real schema when the query runs, so it covers the column added next month; a hand-listed set is pinned to the day it was written.
 **Rename by rule the same way**: `frame.rename(to_snake_case)` applies to whatever arrives, where a `{...}` dict silently misses a new field — keep the dict for a few renames that follow no rule.
 
 ```python
@@ -71,15 +71,15 @@ Each of these returns a plausible frame rather than raising.
 A single `.over()` is fine however much precedes it.
 
 ```python
-# Wrong: the .over("run") is discarded; cum_sum runs within the segment.
+# Wrong: the .over("session") is discarded; cum_sum runs within the user.
 frame.with_columns(
-    polars.col("q").cum_sum().over("run").first().over("segment").alias("opened")
+    polars.col("amount").cum_sum().over("session").first().over("user").alias("first")
 )
 
 # Right: one .over() per expression, each result carried in a column.
-frame.with_columns(polars.col("q").cum_sum().over("run").alias("counted")).with_columns(
-    polars.col("counted").first().over("segment").alias("opened")
-)
+frame.with_columns(
+    polars.col("amount").cum_sum().over("session").alias("running")
+).with_columns(polars.col("running").first().over("user").alias("first"))
 ```
 
 **An empty `pivot` loses its value columns.** With no rows there is nothing to spread, so only the index columns return and a later `select` raises `ColumnNotFoundError` only when a filter empties the frame.
@@ -145,21 +145,21 @@ runs = (
     frame.sort("group", "order")
     .with_columns(
         polars.col("state")
-        .ne(polars.col("state").shift(1).over("group"))
-        .fill_null(True)
+        .ne(polars.col("state").shift(n=1).over("group"))
+        .fill_null(value=True)
         .cum_sum()
         .over("group")
         .alias("run_id")
     )
     .with_columns(
-        polars.int_range(1, polars.len().add(1))
+        polars.int_range(start=1, end=polars.len().add(1))
         .over("group", "run_id")
         .alias("run_len")
     )
 )
 ```
 
-`.fill_null(True)` makes each group's first row start a run; without it the comparison against a null shift is null, so that row's `run_id` is null and it drops out of every window keyed on it.
+`.fill_null(value=True)` makes each group's first row start a run; without it the comparison against a null shift is null, so that row's `run_id` is null and it drops out of every window keyed on it.
 
 **A grouping axis is data however it arrives** — rows from a fetch, a list the caller passed, or a set the problem fixes (three scenarios, four quartiles).
 The closed set is easiest to miss, because it feels like structure.
@@ -202,7 +202,7 @@ With `by=` it warns `Sortedness of columns cannot be checked when 'by' groups pr
 ```python
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="Sortedness of columns")
-    priced = trades.sort("time").join_asof(
+    priced = orders.sort("time").join_asof(
         rates.sort("time"), by="currency", on="time", strategy="backward"
     )
 ```
@@ -224,7 +224,7 @@ Keep `frame` or `df` for a generic function or placeholder.
 
 - **`map_`** — transforms the frame alone: `frame.pipe(map_round_2dp)`.
 - **`amap_`** — combines it with independently supplied inputs in a fixed way: `customers.pipe(amap_join_orders, orders)`.
-- **`bind_`** — chooses what to do from the frame's own data: `trades.pipe(bind_attach_fx, rate_tables)` joins only the currencies present.
+- **`bind_`** — chooses what to do from the frame's own data: `orders.pipe(bind_attach_rates, rate_tables)` joins only the currencies present.
 
 Name the function by `write-python`'s rules, then prefix it — `map_keep_active`, not `map_active`.
 The `amap_`/`bind_` line has teeth: `map_` and `amap_` are plan transforms and stay lazy, where `bind_` must materialise to decide, so reach for it only when the logic must see the data.
@@ -247,15 +247,17 @@ Carry state as data in the frame (a column, a `struct`) rather than a mutable ob
 ## Run a frame function inside an expression
 
 Ask first whether the function should simply be an expression.
-Where it genuinely takes a frame and returns a column, an eager ungrouped frame needs nothing special — `frame.with_columns(vwap(frame).alias("vwap"))`.
+Where it genuinely takes a frame and returns a column, an eager ungrouped frame needs nothing special — `frame.with_columns(weighted_mean(frame).alias("weighted_mean"))`.
 A `LazyFrame` or per-group application needs a struct and `map_batches`, which calls Python once per batch and stays vectorised (unlike `map_elements`):
 
 ```python
 frame.with_columns(
-    polars.struct("price", "volume")
-    .map_batches(lambda s: s.struct.unnest().pipe(vwap), return_dtype=polars.Float64)
-    .over("symbol")
-    .alias("vwap")
+    polars.struct("price", "quantity")
+    .map_batches(
+        lambda s: s.struct.unnest().pipe(weighted_mean), return_dtype=polars.Float64
+    )
+    .over("store")
+    .alias("weighted_mean")
 )
 ```
 
