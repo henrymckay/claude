@@ -2,18 +2,19 @@
 name: structure-python
 description: >-
   How to structure a non-trivial Python application — the hexagonal
-  (ports-and-adapters) layers of a pure core (domain types, logic, and use cases
-  behind ports) and an outer edge (driven adapters for IO, entry-point drivers at
-  a composition root), how to declare a port and write an adapter, plus where
-  configuration, logging, runtime data assets and the test suite sit. Use when
-  organising an app into layers, deciding where a module, entry point, IO
-  adapter, data asset or test belongs, designing a port or an adapter's output,
-  choosing whether a data file should be CSV or YAML, packaging data through
-  importlib.resources, applying dependency injection, or laying out the
-  code/data/tests directories — even if the user just says "structure this app",
-  "where does this go", or "clean/hexagonal architecture". Layers on
-  write-python and be-functional; for building the entry points themselves, see
-  write-entry-points; for scaffolding, packaging and tooling, see setup-python.
+  (ports-and-adapters) layers of a pure core (domain types, logic, and use
+  cases behind ports) and an outer edge (driven adapters for IO, entry-point
+  drivers at a composition root), how to declare a port and write an adapter
+  that fetches politely, the error package, plus where configuration, logging,
+  runtime data assets and the test suite sit. Use when organising an app into
+  layers, deciding where a module, entry point, IO adapter, data asset or test
+  belongs, designing a port or an adapter's output, choosing whether a data
+  file should be CSV or YAML, packaging data through importlib.resources,
+  applying dependency injection, or laying out the code/data/tests directories
+  — even if the user just says "structure this app", "where does this go", or
+  "clean/hexagonal architecture". Layers on write-python and be-functional;
+  for building the entry points themselves, see write-entry-points; for
+  scaffolding, packaging and tooling, see setup-python.
 ---
 
 # Structure a Python application
@@ -137,7 +138,7 @@ Purity is a proxy, though: columns computed only for a renderer are presentation
 **Share one reader per wire format**, with each adapter passing only what differs (columns, header rows to skip).
 Wait for the second caller, and count what's really shared — where the library reads the format natively, two adapters may share one line, not worth a module.
 
-**Give a convention several sources share its own edge member**, named for the convention (an identifier scheme, an exchange-code suffix), holding the rule and its table.
+**Give a convention several sources share its own edge member**, named for the convention (an identifier scheme, a country-code prefix), holding the rule and its table.
 The core still mustn't know it exists, and it isn't a source, so it stays out of the mapping of adapters a driver can fetch from.
 
 **Call services you don't own with a timeout and a user agent.** A request with no timeout hangs the program on someone else's outage; a library's default user agent gets refused unevenly by whatever fronts the service, so the same code works on two hosts and 403s on a third.
@@ -156,9 +157,9 @@ Give the HTTP module an optional page to visit first, beside the timeout and use
 
 Configuration is input crossing the boundary, so it takes the same path as any IO.
 
-- **Read and validate at the edge** into a typed object, usually a `pydantic-settings` model.
+- **Read and validate at the edge** into typed values.
 - **Inject inward.** An operation takes the values it needs as arguments, never a global `Settings` or `os.environ` — reading ambient config is IO.
-- **Wire it at the composition root**, loaded once at startup and injected beside the adapters (concretely in `write-entry-points`).
+- **Wire it at the composition root** and inject it beside the adapters; `write-entry-points` has when to validate and when one value outgrows a function.
 - **A value only an adapter needs is read by that adapter** — a user agent, a connection string.
 Threading it through the port makes every adapter accept a parameter some ignore; the core stays pure either way, since the rule is that *it* never reaches for ambient state.
 - **Secrets take the same path**, from the environment or a secret store, never committed.
@@ -167,7 +168,7 @@ Threading it through the port makes every adapter accept a parameter some ignore
 
 Logging is output, configured at the edge but carried by convention rather than a port.
 
-- **Configure once, at the composition root** — level, format, a `rich` `RichHandler` — matching the suite's session setup (see `write-tests`).
+- **Configure once, at the composition root** — level, format, a `rich` `RichHandler` — matching the suite's session setup (see `write-tests`' Python reference).
 A library or core module calling `logging.basicConfig` hijacks its host.
 - **Emit through `logging.getLogger(__name__)` everywhere**, the core included; with no handler installed a record vanishes, so module loggers don't cost the core its purity.
 - **Configuring the root adopts every dependency's narration.** A library logging failures your adapter already handled now writes them to standard error above your one line.
