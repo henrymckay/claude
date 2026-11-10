@@ -9,7 +9,8 @@ description: >-
   safety, with an unanchored cold read; reporting defects, judgement calls and
   challenges to a house pick or a plan decision separately, with evidence;
   then fixing the defects by impact, each with its own commit and, for a bug,
-  a regression test, and the rest on the user's reply. Use whenever the user
+  a regression test, then re-running every check and bringing PLAN.md and the
+  README up to date; the rest waits on the user's reply. Use whenever the user
   asks to review, audit, critique or tidy a repo or project, check it against
   its plan or the conventions, find what is out of date, or fix what a review
   found — even if they just say "review this repo", "what's wrong with this
@@ -24,6 +25,9 @@ description: >-
 A review of a whole project against its plan, the skills and the current state of its tools, followed by fixing what it finds.
 It layers on `plan-project` (the plan it checks against) and on every skill the code falls under, and uses the built-in `/code-review` for the bug hunt rather than reimplementing one; `review-plugin` extends it for a Claude Code plugin.
 Three mistakes account for most weak reviews: reading code instead of running it, reporting a preference as a defect when no plan or skill backs it, and fixing everything in one sweep, with no regression test and a recorded decision quietly overturned.
+
+- **Wrong** — "Defect: the adapter should use a dataclass here" with no rule cited, fixed in the same sweep as a real bug.
+- **Right** — "Judgement call: a dataclass would read better (no rule); Defect: `fetch` returns one page when given no limit (`write-python`, Decide every default)", the defect fixed with a regression test, the call left for the reply.
 
 **In an existing project, ask first.** Where a repo already has its own conventions, check with the user whether to review against them or against the skills, and prefer the skills unless they choose to match.
 
@@ -65,7 +69,7 @@ A high percentage over tests that assert nothing is a finding, not a pass.
 
 Read the code against each skill invoked above: the layout against `setup-python`, the layers against `structure-python`, the drivers against `write-entry-points`, and the code against `write-python`, `be-functional` and, for frames, `use-polars`.
 Quote the rule a finding breaks.
-A rule the project breaks on purpose — a recorded decision, its own `CLAUDE.md` — is not a defect; it can still be challenged.
+A rule the project breaks under a `PLAN.md` decision naming the skill is not a defect; it can still be challenged.
 
 ## Check modernity
 
@@ -100,4 +104,4 @@ Fix the defects without waiting, in ranked order; a judgement call, a challenge 
 - **A bug gets a regression test** that fails before the fix and passes after.
 - **Commit each fix on its own** (see `use-git`), so one can be reverted alone.
 - **Re-run every check at the end**, since one fix can break what another check passed.
-- **Bring `PLAN.md` and the README up to date** with what changed, then report what changed in behaviour and what was left, and why.
+- **Bring `PLAN.md` and the README up to date** with what changed, then report what changed in behaviour, the calls made while fixing, and what was left, and why.
