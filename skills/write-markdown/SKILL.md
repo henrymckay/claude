@@ -44,7 +44,7 @@ A sentence stating what something *is* stays declarative: "`CLAUDE.md` holds the
 
 ### Structure
 
-- **One `#` title, then `##` and `###`, never skipping a level.** Nesting past `###` usually means the doc should split.
+- **Nesting past `###` usually means the doc should split.**
 - **Headings are short labels in sentence case.** Name the section in the fewest exact words — "Toolchain", not "Toolchain summary" — and capitalise only the first word, proper nouns and code as spelled: "Name `.pipe()` steps", never "Name The Steps".
 - **Use imperative headings for task sections** — "Set up on a new machine", not "Setup notes" — including the `#` title of a how-to doc ("Write Python").
 Catalogue sections and docs that *name* a thing keep nouns ("Requirements", a README's project name).
@@ -68,7 +68,6 @@ Avoid underline — it needs raw HTML and reads as a link.
 
 ### Code blocks
 
-- **Tag every fenced block with its language** (` ```bash `, ` ```python `).
 - **Make runnable blocks copy-pasteable.** Write commands exactly as typed — single spaces, no column alignment, no explanatory comments — and put the explanation in prose.
 Teaching examples may keep teaching comments.
   - Separate a flag from its value with a space (`--import-mode importlib`); use `=` only where a space would misparse.
@@ -113,9 +112,3 @@ State importance in words ("mandatory, not advisory").
 - **Cut meta-preamble from a `CLAUDE.md`.** The model knows the file holds the user's instructions, so a "this file contains…" opener is noise; phrase every line as a command.
 - **Cut default behaviour from a `CLAUDE.md`.** It is loaded every session, so it earns its place only with what deviates from the model's defaults or is specific to the user — "be concise" and "match the surrounding code" are wasted lines.
 
-## Avoid
-
-- Burying the point below background or history.
-- Documenting the obvious while omitting what the reader needs.
-- Giant paragraphs and walls of undifferentiated bullets.
-- Screenshots of text or code that could be a copy-pasteable block.
