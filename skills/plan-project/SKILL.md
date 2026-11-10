@@ -155,7 +155,7 @@ The groups mark who owns what: the user owns the **Brief**, Claude answers it wi
 - **A library** — Interface is its public API, and Data flow traces its main call paths.
 - **A content or configuration repo** (docs, skills, dotfiles) — Inputs are what it is written from, Data flow is how a change travels from source to where it takes effect, Outputs are the files it ships and their format, and Interface is how a person or tool invokes them.
 
-The schema table is for a tabular output only; the endpoint table for an HTTP API; the screen list for a dashboard or GUI; Runs on names a host for every artefact that runs anywhere but the user's own shell, from `deploy-project`'s picks.
+The schema table is for a tabular output only; the endpoint table for an HTTP API; the screen list for a dashboard or GUI; Runs on names a host for every artefact that runs when the user is not at the shell — a launchd or systemd unit on the user's own machine included — from `deploy-project`'s and `run-unattended`'s picks.
 Where work arrives continuously, as issues or feedback, the milestones cover only the planned work, and Verification names where the rest is tracked.
 
 ## Go from conversation to plan
@@ -183,6 +183,7 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
 5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, Runs on from `deploy-project` and `run-unattended`, and any message to the user from `send-messages`.
    For a Python project M1 is the scaffold from `setup-python`, logging, and the first real path from input to output, however thin; each Verification line is a check `write-tests` would accept.
+   For a job that runs unattended, M2 makes it run and alert with nobody watching — the schedule, the lock, `status` and the alert — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
    Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
 6. **Fill each gap with an assumption, not a question.** Take the house pick from the skills, or the answer the rest of the conversation implies, and record it under Assumptions with what changes if it is wrong.
    A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
