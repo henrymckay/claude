@@ -20,7 +20,7 @@ description: >-
 # Choose the model
 
 Which model, effort and mode each stage of work runs on, chosen for the stage rather than left at whatever the session started with.
-The project skills apply it through their frontmatter — `plan-project`, `review-project` and `review-plugin` pull Opus at high effort, `build-project` Sonnet — and this skill says why and how to go further.
+The project skills apply it through their frontmatter — `plan-project`, `review-project` and `review-plugin` pull Opus at high effort, `build-project` Sonnet at medium — and this skill says why and how to go further.
 Three mistakes account for most wasted spend: running every stage on the largest model, running a plan or a review on the cheapest, and relying on the user to switch by hand at each stage, which they forget.
 
 **In an existing project, ask first.** Where a repo already pins a model in its settings, check with the user whether to keep it or apply the ladder, and prefer the ladder unless they choose to keep theirs.
@@ -68,4 +68,4 @@ Check the prices against the current pricing page before quoting them; a release
 
 - **Delegate the reading, keep the conclusion.** A subagent that reads twenty files returns a page; the same twenty files read in the main session stay in its context for the rest of the day.
 - **Compact before a long build**, after the plan is approved, so the build starts from the plan and the code, not from the conversation that produced them.
-- **Keep skill descriptions to the trigger** (see `write-skills`); every description is loaded on every turn of every session, so a sentence added to one is paid thousands of times.
+- **Keep a description to what decides the trigger and the body's scope**, as `write-skills` says; every description is loaded on every turn of every session, so a rule restated there is paid thousands of times.
