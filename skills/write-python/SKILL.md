@@ -5,19 +5,20 @@ description: >-
   typing (the frozen dataclass as the record, Literal, StrEnum, NewType,
   Protocol, override, assert_never), aware UTC datetimes and Decimal money,
   docstrings, comments, imports and the trailing underscore on a
-  library-coupled module, public API, naming, call-site argument style, member
+  library-coupled module, re-exports, naming, call-site argument style, member
   ordering, simplicity, the one error model (raise from the app's error
-  package, catch in drivers, X | None only for a lookup miss), sync by
-  default, and idioms. The magic trailing comma and the Avoid list close it. A
-  rule that bends carries its exception, and a PLAN.md decision overrides any
-  of them. Use whenever writing, editing, refactoring or reviewing Python
-  code, even if the user doesn't mention "conventions", "style", or "clean
-  code". Targets the Python floor setup-python sets, 3.14 today. Formatting
-  and linting are delegated to ruff and type-checking to pyright in strict
-  mode; this skill covers only the judgement calls they can't make. The
-  baseline for all Python: be-functional, be-oop and write-tests layer on it;
-  for project structure see structure-python, for packaging and tooling
-  setup-python.
+  package, convert or classify at an adapter's seam, decide what the user sees
+  in a driver, nothing caught in the core, X | None only for a lookup miss),
+  sync by default, and idioms. The magic trailing comma and the Avoid list
+  close it. A rule that bends carries its exception, and a PLAN.md decision
+  overrides any of them. Use whenever writing, editing, refactoring or
+  reviewing Python code, even if the user doesn't mention "conventions",
+  "style", or "clean code". Targets the Python floor setup-python sets, 3.14
+  today. Formatting and linting are delegated to ruff and type-checking to
+  pyright in strict mode; this skill covers only the judgement calls they
+  can't make. The baseline for all Python: be-functional, be-oop and
+  write-tests layer on it; for project structure see structure-python, for
+  packaging and tooling setup-python.
 ---
 
 # Write Python
@@ -110,8 +111,6 @@ It stays a module until a second file is needed, then becomes a package of the s
 - **Fix a circular import by restructuring** — merge the two modules or extract the third they both need — not with a function-local import.
 
 ## Public API
-
-Prefix implementation details with an underscore (`_helper`) freely, so the real surface is obvious.
 
 **Mark a re-export with a redundant alias — `from .users import find as find` — not `__all__`.**
 A name imported into `__init__.py` for callers is unused in that file, so `ruff` flags it as a leftover unless something marks it deliberate.
@@ -209,8 +208,9 @@ Keep the measurement as a dependency test (see `write-tests`).
 
 ## Error handling
 
-**Raise from the application's own `error/` package and catch only in a driver** (see `structure-python`): the core and the adapters raise, and the entry point decides what the user sees.
-`except Exception` belongs only at that top-level boundary, which logs and exits.
+**Raise from the application's own `error/` package** (see `structure-python`), and catch in two places only.
+An adapter converts a library's failure, or classifies an item's outcome, at its seam (Convert with a decorator, Classify outcomes), so nothing third-party crosses into the core; a driver decides what the user sees, and its top-level `except Exception` logs and exits.
+Nothing in the core catches: a `try` there hides a failure the driver was built to report.
 **Return `X | None` only for a lookup miss the caller always branches on**, visible in the signature; every other awkward case raises, and no `Result` library is used, since it changes every caller's shape to carry what an exception carries for free.
 
 **Wait for the second error before building a hierarchy**, unless a retry policy or a caller must already tell outcomes apart, in which case name the siblings on day one (see Classify outcomes).
