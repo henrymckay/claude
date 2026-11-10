@@ -7,11 +7,12 @@ description: >-
   than a prior sort, calendar windows against row windows and the defaults to
   pin, joining without silently multiplying rows, join_asof within groups, the
   silent traps around nulls, NaN and dtypes, naming frames and pipe steps, and
-  the mental-model shifts coming from pandas. Use whenever working with Polars
-  DataFrames or LazyFrames, writing data transformations or analytics in
-  Polars, converting pandas code to Polars, joining or reshaping between long
-  and wide, writing a rolling or windowed computation, or reading a query plan
-  — even if the user only says "polars", "pl.", or names a .parquet/.csv
+  the mental-model shifts coming from pandas. Load it before the first line of
+  any Polars code, even a snippet answered inline. Use whenever working with
+  Polars DataFrames or LazyFrames, writing data transformations or analytics
+  in Polars, converting pandas code to Polars, joining or reshaping between
+  long and wide, writing a rolling or windowed computation, or reading a query
+  plan — even if the user only says "polars", "pl.", or names a .parquet/.csv
   workflow they want done with it. Targets Polars 2.x. Layers on write-python
   (its import and naming rules, and the method-over-operator preference) and
   be-functional's map/bind vocabulary; a PLAN.md decision overrides any rule
@@ -21,7 +22,7 @@ description: >-
 # Use Polars
 
 `polars` is fast and correct when you work with its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-This targets `polars` 2.x, and `write-python` applies on top — including its import rule, so `import polars` and `polars.col(...)`, never `import polars as pl`, except in an external snippet being quoted or read, which keeps its `pl`.
+This targets `polars` 2.x, and `write-python` applies on top — including its import rule, so `import polars` and `polars.col(...)`, never `import polars as pl`, except in an external snippet being quoted or read, which keeps its `pl`; frame functions take their names from `be-functional`'s map/bind vocabulary.
 Three mistakes account for nearly all that goes wrong: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` habits or types leak past the boundary.
 Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
