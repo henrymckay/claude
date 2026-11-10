@@ -57,7 +57,7 @@ Compare each against its neighbours and against the counts the last review recor
 
 - **Description against body, both ways.** List what the description promises and what the body covers; drop promises the body doesn't keep and add what it grew to cover.
 - **Overfitting.** Find names, data and edge cases from one project — its domain terms, a single incident turned into a rule — and restate them in a domain any reader knows, or cut them.
-- **The default test** (see `write-skills`). For each rule, ask whether Claude would do it unprompted, and cut it if so.
+- **The default test** (see `write-skills`): for each rule, ask whether Claude would do it unprompted, and cut it if so.
 Word counts miss this bloat; it reads as reasonable advice.
 
 ## Check across skills
@@ -90,6 +90,6 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 ## Adapt review-project
 
 - **Correctness is the claims.** Re-run every code block and library claim as `write-skills` requires, including in skills nobody edited; a release since the last review can remove an API or change a default, making a skill wrong without anything failing.
-- **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps; it runs on `sonnet`, and a gap probe or trigger grader on the rung below (see `choose-model`).
+- **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps; it runs on `sonnet`, as does a gap probe, and only a trigger grader or a hook on `haiku` (see `choose-model`).
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
