@@ -12,22 +12,23 @@ description: >-
   overriding the configured one, date ranges inclusive at both ends on the CLI
   and the API, resource paths bounded by date, one handler mapping the app's
   errors to statuses, an API and a dashboard that read the store and never the
-  source, and a dashboard that refreshes when the run manifest changes. Use
-  whenever adding or structuring an entry point, designing a command's options
-  or an API's surface, deciding what goes to standard output and what to
-  standard error, taking input from arguments, files or standard input,
-  exposing each pipeline stage as its own command, wiring dependency injection
-  at the boundary, reading settings and finding the .env under a scheduler,
-  sizing a fetch that needs warm-up history, picking a command's log
-  destination and level, splitting a driver into role and framework packages
-  at the right rung, or naming a launch command — even if the user just says
-  "add a CLI", "expose an API", "build a dashboard", "run this on a schedule",
-  or names typer, fastapi, uvicorn, pydantic-settings, shiny, shinywidgets or
-  a scheduler. Language-agnostic principles here; Python build-outs in
-  references/python.md. Layers on structure-python's drive layer and
-  be-functional; run-unattended owns what the scheduled command does unwatched
-  and its exit codes, store-data the data it writes, and a PLAN.md decision
-  overrides any rule here.
+  source, and a dashboard that refreshes when the run manifest changes. Load
+  it before adding or changing a CLI, API, dashboard or scheduled command,
+  even before reading the package. Use whenever adding or structuring an entry
+  point, designing a command's options or an API's surface, deciding what goes
+  to standard output and what to standard error, taking input from arguments,
+  files or standard input, exposing each pipeline stage as its own command,
+  wiring dependency injection at the boundary, reading settings and finding
+  the .env under a scheduler, sizing a fetch that needs warm-up history,
+  picking a command's log destination and level, splitting a driver into role
+  and framework packages at the right rung, or naming a launch command — even
+  if the user just says "add a CLI", "expose an API", "build a dashboard",
+  "run this on a schedule", or names typer, fastapi, uvicorn,
+  pydantic-settings, shiny, shinywidgets or a scheduler. Language-agnostic
+  principles here; Python build-outs in references/python.md. Layers on
+  structure-python's drive layer and be-functional; run-unattended owns what
+  the scheduled command does unwatched and its exit codes, store-data the data
+  it writes, and a PLAN.md decision overrides any rule here.
 ---
 
 # Write entry points
