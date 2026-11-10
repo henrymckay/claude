@@ -7,14 +7,16 @@ description: >-
   docstrings, comments, imports, public API, naming, call-site argument style,
   member ordering, simplicity, the one error model (raise from the app's error
   package, catch in drivers, X | None only for a lookup miss), sync by
-  default, and idioms. Each rule carries its exception, and a PLAN.md decision
-  overrides any of them. Use whenever writing, editing, refactoring or
-  reviewing Python code, even if the user doesn't mention "conventions",
-  "style", or "clean code". Targets Python 3.14. Formatting and linting are
-  delegated to ruff and type-checking to pyright in strict mode; this skill
-  covers only the judgement calls they can't make. The baseline for all
-  Python: be-functional, be-oop and write-tests layer on it; for project
-  structure see structure-python, for packaging and tooling setup-python.
+  default, and idioms. The magic trailing comma and the Avoid list close it. A
+  rule that bends carries its exception, and a PLAN.md decision overrides any
+  of them. Use whenever writing, editing, refactoring or reviewing Python
+  code, even if the user doesn't mention "conventions", "style", or "clean
+  code". Targets the Python floor setup-python sets, 3.14 today. Formatting
+  and linting are delegated to ruff and type-checking to pyright in strict
+  mode; this skill covers only the judgement calls they can't make. The
+  baseline for all Python: be-functional, be-oop and write-tests layer on it;
+  for project structure see structure-python, for packaging and tooling
+  setup-python.
 ---
 
 # Write Python
@@ -40,7 +42,7 @@ Use it for consistency within a module: if some calls of a kind run down the pag
 
 - **Accept the most general type, return a concrete one**: take `collections.abc.Iterable`, return `list`.
 - **`typing.Any`** only for a genuinely unspecified type.
-- **A record is a frozen dataclass** — `@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)` — once the record is warranted (see `be-functional`); `kw_only` makes construction follow the Arguments rule.
+- **A record is a frozen dataclass** — `@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)` — once the record is warranted (see `be-functional`); `kw_only` makes construction follow the Arguments rule, and an object whose changing state is the model leaves `frozen` off (see `be-oop`).
 `pydantic` models only where data crosses a trust boundary — a request body, a settings source, a response being parsed — since validation at every layer is paid at every layer; `typing.NamedTuple` only where an API requires tuple semantics; never `attrs`.
 - **Name a closed set of modes as a type**: `typing.Literal[...]` for a few string modes inside the code, `enum.StrEnum` once the set crosses a boundary or needs behaviour, a sum type of frozen dataclasses once the variants carry data (see `be-functional`).
 - **`typing.NewType` for an identifier that must not mix** with another of the same base type (`UserId`, `OrderId`), so `pyright` catches the swap.
@@ -48,18 +50,18 @@ Use it for consistency within a module: if some calls of a kind run down the pag
 - **`typing.Protocol` for a structural interface** rather than an ABC (Abstract Base Class) hierarchy, and **`typing.override`** on every overridden method, so a renamed base method fails type-checking instead of silently detaching the override.
 - **End every `match` over a sum type with `case _: typing.assert_never(value)`**, which makes a forgotten variant a type error rather than a missing return.
 - **A type that spans a line becomes a PEP 695 `type` alias**, so names stay qualified and the signature stays readable (see Convert with a decorator).
-- **Write for Python 3.14**, `setup-python`'s floor: annotations are deferred, so no `from __future__ import annotations` and no quoted forward references; `warnings.deprecated` marks a deprecation; `copy.replace` updates any record with `__replace__`.
+- **Write for the floor `setup-python` sets**, today 3.14, except in a library published for others, which keeps the floor its users need: annotations are deferred, so no `from __future__ import annotations` and no quoted forward references; `warnings.deprecated` marks a deprecation; `copy.replace`, not `dataclasses.replace`, updates a record, since it works for any type with `__replace__`.
 
 ## Time and money
 
 - **Aware datetimes only, in UTC inside the core**; attach a `zoneinfo.ZoneInfo` only where a person reads the value, and use `datetime.date` for a calendar day.
 A naive value a library hands back is converted at the adapter, once, so a local-time conversion never hides in the core.
-Never `pytz`, `arrow` or `pendulum`; the stdlib covers it, and inside a frame the temporal dtypes do (see `use-polars`).
+Never `pytz`, `arrow` or `pendulum`; the stdlib covers it, and inside a frame the temporal dtypes do.
 - **Money is `decimal.Decimal` or integer minor units in domain types, never `float`**; in a frame, `polars.Decimal` where the operations support it, else `Float64` rounded only at presentation, with a dependency test pinning the precision (see `write-tests`).
 
 ## Docstrings
 
-**Every module, class, and public or module-level private function gets a docstring**, in reStructuredText field-list style; a closure nested inside a function does not, and nor does a test (see `write-tests`), since `ruff`'s `D` rules skip them for the reason that their name and position already say what they do:
+**Every module, class, and public or module-level private function gets a docstring**, in reStructuredText field-list style, a `Protocol` method included, since the stub is the whole contract; a closure nested inside a function does not, since its name and position already say what it does and `ruff`'s `D` rules never ask, and nor does a test, which `setup-python`'s `per-file-ignores` exempt for the same reason (see `write-tests`):
 
 ```python
 def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame:
@@ -99,7 +101,6 @@ This applies to the standard library too: `import pathlib` → `pathlib.Path`, `
 For a deep internal path, bind the nearest useful module (`from mypackage import db`, then `db.session`).
 
 - **Import a submodule explicitly.** `import polars` does not bind `polars.testing` — a package exposes only the submodules it imports itself — so write both lines when you use both.
-- **Use absolute imports**, which survive moving a file; a relative import is fine only for a tight sibling reference.
 - **Don't rename with `as`**, including the popular aliases: `import polars`, not `import polars as pl`.
 Where a clash forces a rename, derive it from the true name (`import numpy as numpy_`).
 A redundant alias (`from .users import find as find`) renames nothing — it marks a re-export (see Public API).
@@ -177,14 +178,14 @@ Order alphabetically so every name has one predictable place.
 - **Module level and class members: dunders, then private names, then public names**, each group alphabetical.
 A definition is then met before the public functions that call it, and the underscore already tells a scanner which block to skip.
 - **Execution order outranks the sort**: a base class precedes its subclasses.
-- **Arguments alphabetically**, in definitions and keyword call sites, after `self`/`cls` and the language's own constraints, except in a pipeline module, where parameters follow the data flow (see `be-functional`), and never where order carries meaning.
+- **Arguments alphabetically**, in definitions and keyword call sites, after `self`/`cls` and the language's own constraints, except in a pipeline module, where parameters follow the data flow the functions were derived from (see `be-functional`, Derive functions from the data flow), and never where order carries meaning.
 - Carve-outs: a script's `main` may sit conventionally, and grouped constants stay at the top.
 
 Place a new definition in its slot, but don't reshuffle an existing file — the diff noise and broken `git blame` outweigh the tidiness.
 
 ## Simplicity
 
-**Take the simplest solution**: the language and standard library before custom code or a dependency (except where `setup-python` names a house pick over the stdlib, such as `typer` over `argparse`), and complexity only when a concrete need forces it — KISS, YAGNI and DRY, factoring out real duplication without over-abstracting.
+**Take the simplest solution**: the language and standard library before custom code or a dependency, except where `setup-python` names a house pick over the stdlib, such as `typer` over `argparse`; complexity only when a concrete need forces it.
 
 **Once a library is in play, use its features rather than hand-rolling around them.** Before writing validation, grouping, reshaping, retries or serialisation, check its API — a mature library already names any standard manipulation.
 Confirm the feature exists, though; a genuine gap is fine to fill.
@@ -208,7 +209,7 @@ Keep the measurement as a dependency test (see `write-tests`).
 ## Error handling
 
 **Raise from the application's own `error/` package and catch only in a driver** (see `structure-python`): the core and the adapters raise, and the entry point decides what the user sees.
-`except Exception` belongs only at that top-level boundary, which logs and exits; `raise NewError(...) from original` keeps the chain when a library's failure is converted.
+`except Exception` belongs only at that top-level boundary, which logs and exits.
 **Return `X | None` only for a lookup miss the caller always branches on**, visible in the signature; every other awkward case raises, and no `Result` library is used, since it changes every caller's shape to carry what an exception carries for free.
 
 **Wait for the second error before building a hierarchy**, unless a retry policy or a caller must already tell outcomes apart, in which case name the siblings on day one (see Classify outcomes).
@@ -267,7 +268,8 @@ def handle[**P, T](
 
 
 @handle(httpx.HTTPError, message="No forecast for {city}", report=ForecastError)
-def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame: ...
+def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame:
+    """Return the daily forecast for a city."""
 ```
 
 - **`report` returns the exception to raise**, so an exception class satisfies it unchanged and a driver can pass its own function that prints the message and returns the exit to raise — one decorator for adapters and drivers, and with an empty `message` the driver gets the failure's own text.
@@ -297,7 +299,7 @@ Lift either only when a second function needs the same check; on one function a 
 ## Sync and async
 
 The core is synchronous and pure; `async` lives only inside a driver or adapter whose framework or fan-out requires it, and never reaches a signature the core calls.
-A `fastapi` handler stays a plain `def` unless it awaits something, since the framework runs it in a worker thread either way (see `write-entry-points`).
+A `fastapi` handler stays a plain `def` unless it awaits something, since the framework runs a plain `def` in a worker thread.
 Test async code through the `anyio` pytest plugin, which `fastapi` already depends on, not `pytest-asyncio`.
 
 ## Idioms
@@ -306,12 +308,12 @@ Test async code through the `anyio` pytest plugin, which `fastapi` already depen
 - **A named method over an operator when chaining** is a preference: `path.joinpath("a").read_text()` reads left to right where `(path / "a").read_text()` needs parentheses, and `polars` says the same for `col.gt(0)` (see `use-polars`); operators stay for plain arithmetic and short unchained expressions.
 - **One branch shape per function.** An early return and a conditional expression say the same thing, so mixing them looks meaningful; two branches read well as a conditional expression, three or more as early returns.
 - **`urllib.parse.urljoin`, not concatenation, for URLs.** `urljoin` treats the base as a document: keep the trailing slash on the base and none on the path, or it drops the base's last segment or resets to the host.
-- **Tabular data stays in a dataframe** — compute in expressions across one long frame rather than looping over lists or groups, never `iter_rows`, lazy and collected once (see `use-polars`).
+- **Tabular data stays in a dataframe** — compute in expressions across one long frame rather than looping over lists or groups (see `use-polars`); `iter_rows` appears only where a driver renders rows for a person, never in a transform.
 - **Measure before optimising** — `pyinstrument` on the real input — and only against a budget the plan sets (see `plan-project`); a hot path guessed at is usually the wrong one.
 
 ## Avoid
 
-- **A class where a function will do**, or any abstraction (factory, base class, config layer) before a second case.
+- **Any abstraction** (factory, base class, config layer) **before a second case**.
 - **Registration machinery for a closed set.** Implementations you ship, can enumerate and change only by editing your code are data reached by a lookup; build registries only when code outside your control must join the set.
 - **A single-use local variable**, unless its name documents an otherwise opaque expression or is the *when* of a test (see `write-tests`).
 - **Blank lines inside a function body** to group statements, except between the beats of a short function that would otherwise split into one-line functions; past that the urge means the function should be split.
