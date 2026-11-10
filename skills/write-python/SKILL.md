@@ -2,15 +2,19 @@
 name: write-python
 description: >-
   In-code conventions for writing Python that a formatter can't decide —
-  typing, docstrings, comments, imports, public API, naming, call-site argument
-  style, member ordering, simplicity, error handling and idioms. Use whenever
-  writing, editing, refactoring or reviewing Python code, even if the user
-  doesn't mention "conventions", "style", or "clean code". Targets Python
-  3.12+. Formatting and linting are delegated to ruff and type-checking to
-  pyright; this skill covers only the judgement calls they can't make. The
-  baseline for all Python: be-functional, be-oop and write-tests layer on it;
-  for project structure see structure-python, for packaging and tooling
-  setup-python.
+  typing (the frozen dataclass as the record, Literal, StrEnum, NewType,
+  Protocol, override, assert_never), aware UTC datetimes and Decimal money,
+  docstrings, comments, imports, public API, naming, call-site argument style,
+  member ordering, simplicity, the one error model (raise from the app's error
+  package, catch in drivers, X | None only for a lookup miss), sync by
+  default, and idioms. Each rule carries its exception, and a PLAN.md decision
+  overrides any of them. Use whenever writing, editing, refactoring or
+  reviewing Python code, even if the user doesn't mention "conventions",
+  "style", or "clean code". Targets Python 3.14. Formatting and linting are
+  delegated to ruff and type-checking to pyright in strict mode; this skill
+  covers only the judgement calls they can't make. The baseline for all
+  Python: be-functional, be-oop and write-tests layer on it; for project
+  structure see structure-python, for packaging and tooling setup-python.
 ---
 
 # Write Python
@@ -34,17 +38,28 @@ Use it for consistency within a module: if some calls of a kind run down the pag
 **Annotate every function** — every argument and the return value, public and private alike — so `pyright` checks every call site.
 **Don't annotate local variables**; let inference work, and add a hint only where it genuinely can't.
 
-- **Native generics**: `list[int]`, `dict[str, int]`, never `typing.List`.
-- **`|` for unions**: `str | None`, never `Optional` or `Union`.
 - **Accept the most general type, return a concrete one**: take `collections.abc.Iterable`, return `list`.
-- **`typing.Any`** only for a genuinely unspecified type; **`collections.abc.Callable`** for callables.
+- **`typing.Any`** only for a genuinely unspecified type.
+- **A record is a frozen dataclass** — `@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)` — once the record is warranted (see `be-functional`); `kw_only` makes construction follow the Arguments rule.
+`pydantic` models only where data crosses a trust boundary — a request body, a settings source, a response being parsed — since validation at every layer is paid at every layer; `typing.NamedTuple` only where an API requires tuple semantics; never `attrs`.
+- **Name a closed set of modes as a type**: `typing.Literal[...]` for a few string modes inside the code, `enum.StrEnum` once the set crosses a boundary or needs behaviour, a sum type of frozen dataclasses once the variants carry data (see `be-functional`).
+- **`typing.NewType` for an identifier that must not mix** with another of the same base type (`UserId`, `OrderId`), so `pyright` catches the swap.
+- **`typing.TypedDict` only for a JSON shape before `pydantic` parses it**; past that boundary it is a dataclass.
+- **`typing.Protocol` for a structural interface** rather than an ABC (Abstract Base Class) hierarchy, and **`typing.override`** on every overridden method, so a renamed base method fails type-checking instead of silently detaching the override.
+- **End every `match` over a sum type with `case _: typing.assert_never(value)`**, which makes a forgotten variant a type error rather than a missing return.
+- **A type that spans a line becomes a PEP 695 `type` alias**, so names stay qualified and the signature stays readable (see Convert with a decorator).
+- **Write for Python 3.14**, `setup-python`'s floor: annotations are deferred, so no `from __future__ import annotations` and no quoted forward references; `warnings.deprecated` marks a deprecation; `copy.replace` updates any record with `__replace__`.
 
-Reach for `dataclasses.dataclass` before a hand-written `__init__` — after checking the record is warranted, since one built at one call site and unpacked at the next is just that function's arguments (see `be-functional`).
-Use `typing.Protocol` for a structural interface rather than an ABC (Abstract Base Class) hierarchy.
+## Time and money
+
+- **Aware datetimes only, in UTC inside the core**; attach a `zoneinfo.ZoneInfo` only where a person reads the value, and use `datetime.date` for a calendar day.
+A naive value a library hands back is converted at the adapter, once, so a local-time conversion never hides in the core.
+Never `pytz`, `arrow` or `pendulum`; the stdlib covers it, and inside a frame the temporal dtypes do (see `use-polars`).
+- **Money is `decimal.Decimal` or integer minor units in domain types, never `float`**; in a frame, `polars.Decimal` where the operations support it, else `Float64` rounded only at presentation, with a dependency test pinning the precision (see `write-tests`).
 
 ## Docstrings
 
-**Every module, class, function and method gets a docstring**, in reStructuredText field-list style:
+**Every module, class, and public or module-level private function gets a docstring**, in reStructuredText field-list style; a closure nested inside a function does not, and nor does a test (see `write-tests`), since `ruff`'s `D` rules skip them for the reason that their name and position already say what they do:
 
 ```python
 def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame:
@@ -70,7 +85,7 @@ def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame:
 
 Write self-documenting code instead of `#` comments: a name, a named constant or a small helper carries the meaning and cannot drift out of sync the way a comment does.
 Where a genuine *why* remains — a workaround, a subtle invariant — put it in the docstring.
-Reserve `#` for tooling directives and the PEP 723 script header, and keep config files (`pyproject.toml`, pre-commit, CI) comment-free, explaining any odd setting in the docs.
+Reserve `#` for tooling directives and the PEP 723 script header; in a config file (`pyproject.toml`, pre-commit) a one-line comment beside an odd setting is read when the setting is, where an explanation in the docs drifts.
 
 **A suppression names what it suppresses** — `# noqa: D103`, `# type: ignore[arg-type]`, never bare.
 A bare `# noqa` disables every rule on the line, including rules added later, so the line silently stops being checked.
@@ -133,6 +148,7 @@ A name is read far more often than typed.
 Spell it as the thing is called, not as a domain name runs it together.
 - **Take the shortest name the surrounding package leaves unambiguous**: a source inside `adapt/` is `weather`, not `weather_source`.
 - **Name an adapter for what it reads**, not whose data it is: the mirror you download from is what breaks and changes under you, not the project whose releases it republishes.
+- **One library serving many sources gets a module per source** — `adapt/weather.py`, `adapt/tides.py` — sharing the library package (`adapt/httpx_/`): the trailing underscore names the coupling, and the source module names what it reads.
 
 ## Arguments
 
@@ -156,12 +172,12 @@ Two limits: a keyword binds callers to the parameter's name, so renaming it brea
 
 ## Ordering
 
-Order alphabetically so every name has one predictable place and diffs stay stable.
+Order alphabetically so every name has one predictable place.
 
 - **Module level and class members: dunders, then private names, then public names**, each group alphabetical.
 A definition is then met before the public functions that call it, and the underscore already tells a scanner which block to skip.
 - **Execution order outranks the sort**: a base class precedes its subclasses.
-- **Arguments alphabetically where possible**, in definitions and keyword call sites, after `self`/`cls` and the language's own constraints, and never where order carries meaning.
+- **Arguments alphabetically**, in definitions and keyword call sites, after `self`/`cls` and the language's own constraints, except in a pipeline module, where parameters follow the data flow (see `be-functional`), and never where order carries meaning.
 - Carve-outs: a script's `main` may sit conventionally, and grouped constants stay at the top.
 
 Place a new definition in its slot, but don't reshuffle an existing file — the diff noise and broken `git blame` outweigh the tidiness.
@@ -191,12 +207,12 @@ Keep the measurement as a dependency test (see `write-tests`).
 
 ## Error handling
 
-- **Catch the specific exception you can handle**, never bare `except:`, which swallows `KeyboardInterrupt` and real bugs; `except Exception` only at a top-level boundary that logs and exits.
-- **Raise specific, meaningful exceptions**, re-raising with `raise NewError(...) from original` to keep the chain.
-- **Let exceptions propagate** to where they can be handled; never catch-and-continue to hide a failure.
-- **Return `None` only for an expected "not found"**, visible in the type (`User | None`) and docstring.
+**Raise from the application's own `error/` package and catch only in a driver** (see `structure-python`): the core and the adapters raise, and the entry point decides what the user sees.
+`except Exception` belongs only at that top-level boundary, which logs and exits; `raise NewError(...) from original` keeps the chain when a library's failure is converted.
+**Return `X | None` only for a lookup miss the caller always branches on**, visible in the signature; every other awkward case raises, and no `Result` library is used, since it changes every caller's shape to carry what an exception carries for free.
 
-**Wait for the second error before building a hierarchy.** A base with one subclass distinguishes nothing, since catching either catches both.
+**Wait for the second error before building a hierarchy**, unless a retry policy or a caller must already tell outcomes apart, in which case name the siblings on day one (see Classify outcomes).
+A base with one subclass distinguishes nothing, since catching either catches both.
 Start with one class named for what goes wrong (`ForecastError`), and add a base when a second arrives and callers need to choose broad or narrow.
 When you do, expect siblings under one base rather than a deep tree — nothing catches the middle of one.
 
@@ -210,13 +226,16 @@ The trigger is the repetition — a `try` atop every function in a layer, catchi
 Format the message over the decorated function's own parameters, so it can name what the caller asked for:
 
 ```python
+type Decorator[**P, T] = collections.abc.Callable[
+    [collections.abc.Callable[P, T]], collections.abc.Callable[P, T]
+]
+
+
 def handle[**P, T](
     *kinds: type[Exception],
     message: str = "",
     report: collections.abc.Callable[[str], BaseException],
-) -> collections.abc.Callable[
-    [collections.abc.Callable[P, T]], collections.abc.Callable[P, T]
-]:
+) -> Decorator[P, T]:
     """Return a decorator answering a failure in your own terms.
 
     :param kinds: The exception types to handle.
@@ -228,12 +247,10 @@ def handle[**P, T](
     def decorate(
         work: collections.abc.Callable[P, T],
     ) -> collections.abc.Callable[P, T]:
-        """Return the function with its failures answered as yours."""
         signature = inspect.signature(work)
 
         @functools.wraps(work)
         def run(*a: P.args, **k: P.kwargs) -> T:
-            """Do the work, and say whose fault it is in your own terms."""
             try:
                 return work(*a, **k)
             except kinds as failure:
@@ -261,7 +278,7 @@ Put the narrow conversion inside the broad one; reversed, the broad one catches 
 - **A meaning that varies by caller can't be bound at decoration.** Write one private converter taking the error type as an argument and call it from each entry point.
 - **No package does this well.** The dedicated ones are abandoned, and the popular neighbours solve other problems (`tenacity` retries, `returns` changes every caller to a `Result`).
 
-PEP 695's `[**P, T]` needs 3.12; `P` carries the whole signature, so no `typing.Concatenate` is needed.
+`P` carries the whole signature, so no `typing.Concatenate` is needed; the `type` alias keeps the return annotation to one line.
 
 ### Classify outcomes
 
@@ -277,27 +294,24 @@ Lift either only when a second function needs the same check; on one function a 
 **Name outcomes for their consumers, never by negation.** There are usually two consumers — the caller deciding what to tell the user, and the retry policy deciding whether to ask again — and they cut differently, so enumerate both before choosing the classes.
 "Retry unless it was missing" enrols every outcome nobody thought of, so a refused credential waits out three backoffs; name the retryable outcome and retry only that, so anything new fails fast.
 
+## Sync and async
+
+The core is synchronous and pure; `async` lives only inside a driver or adapter whose framework or fan-out requires it, and never reaches a signature the core calls.
+A `fastapi` handler stays a plain `def` unless it awaits something, since the framework runs it in a worker thread either way (see `write-entry-points`).
+Test async code through the `anyio` pytest plugin, which `fastapi` already depends on, not `pytest-asyncio`.
+
 ## Idioms
 
-- **Comprehensions** for simple transforms and filters; a loop once it needs several statements; never nest past two levels.
-- **Context managers** for anything with cleanup; write one with `contextlib.contextmanager`.
-- **EAFP (Easier to Ask Forgiveness than Permission)** where it reads well: try and handle the exception rather than pre-checking, which also avoids races.
-- **f-strings** for formatting, but `%`-style lazy arguments for `logging` (`logger.info("got %s", x)`), so an unlogged message is never built.
-- **A function over a module global**, even for a value that looks permanent, so it can later compute or take a parameter without callers changing.
-Exceptions are names a tool requires at module level: a `logging.getLogger(__name__)` logger, a framework's app object.
-- **A named method over an operator when chaining**: `path.joinpath("a").read_text()` reads left to right where `(path / "a").read_text()` needs parentheses; `polars` prefers `col.gt(0)` too (see `use-polars`).
-Keep operators for plain arithmetic and short unchained expressions.
+- **A function over a module global**, even for a value that looks permanent, so it can later compute or take a parameter without callers changing — except a `typing.Final` constant, and a name a tool requires at module level (a `logging.getLogger(__name__)` logger, a framework's app object).
+- **A named method over an operator when chaining** is a preference: `path.joinpath("a").read_text()` reads left to right where `(path / "a").read_text()` needs parentheses, and `polars` says the same for `col.gt(0)` (see `use-polars`); operators stay for plain arithmetic and short unchained expressions.
 - **One branch shape per function.** An early return and a conditional expression say the same thing, so mixing them looks meaningful; two branches read well as a conditional expression, three or more as early returns.
-- **`pathlib.Path`, not string paths**: it carries suffix, parent and existence as methods and handles separators.
 - **`urllib.parse.urljoin`, not concatenation, for URLs.** `urljoin` treats the base as a document: keep the trailing slash on the base and none on the path, or it drops the base's last segment or resets to the host.
-- **`*a` / `**k` for pass-through variadics**; descriptive names only when the function inspects them.
-- **Tabular data stays in a dataframe** — compute in expressions across one long frame rather than looping over lists or groups (see `use-polars`).
+- **Tabular data stays in a dataframe** — compute in expressions across one long frame rather than looping over lists or groups, never `iter_rows`, lazy and collected once (see `use-polars`).
+- **Measure before optimising** — `pyinstrument` on the real input — and only against a budget the plan sets (see `plan-project`); a hot path guessed at is usually the wrong one.
 
 ## Avoid
 
-- **Mutable default arguments**: `def f(x=[])` shares one list across calls; use `x: list | None = None`.
-- **`from module import *`**.
 - **A class where a function will do**, or any abstraction (factory, base class, config layer) before a second case.
 - **Registration machinery for a closed set.** Implementations you ship, can enumerate and change only by editing your code are data reached by a lookup; build registries only when code outside your control must join the set.
-- **A single-use local variable**, unless its name documents an otherwise opaque expression.
-- **Blank lines inside a function body** to group statements — the urge usually means the function should be split.
+- **A single-use local variable**, unless its name documents an otherwise opaque expression or is the *when* of a test (see `write-tests`).
+- **Blank lines inside a function body** to group statements, except between the beats of a short function that would otherwise split into one-line functions; past that the urge means the function should be split.
