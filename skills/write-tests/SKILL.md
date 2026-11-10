@@ -1,19 +1,21 @@
 ---
 name: write-tests
 description: >-
-  How to write and structure tests in any language — the given-when-then
-  shape, naming a test by its behaviour, testing behaviour over
-  implementation, a bare assert for equality and a custom assertion for a
-  domain claim, where test data and expected values come from and how a
-  recorded response is refreshed, table-driven and property-based testing with
-  an imported oracle, testing the dependency behaviour you rely on, the seams
-  a paced client needs, testing a store and a dashboard, and checking a build
-  against the real source; no coverage target, no mutation testing, no
-  snapshots until earned. Use whenever writing, editing or reviewing tests,
-  adding coverage, or setting up a suite, even if the user just says "write a
-  test", "add tests", "test this", or names a runner like pytest.
-  Language-agnostic principles here; Python and pytest idioms in
-  references/python.md. Layers on write-python, since tests are code.
+  How to write and structure tests in any language — tests held to the code's
+  own standard, the given-when-then shape, naming a test by its behaviour,
+  testing behaviour over implementation, a bare assert for equality and a
+  custom assertion for a domain claim, where test data and expected values
+  come from and how a recorded response is refreshed, table-driven and
+  property-based testing with an imported oracle, testing the dependency
+  behaviour you rely on, the seams a paced client needs, checking that a
+  fixture can exhibit the failure and a generator reaches the state, testing a
+  store and a dashboard, and checking a build against the real source by its
+  counts; no coverage target, no mutation testing, no snapshots until earned.
+  Use whenever writing, editing or reviewing tests, adding coverage, or
+  setting up a suite, even if the user just says "write a test", "add tests",
+  "test this", or names a runner like pytest. Language-agnostic principles
+  here; Python and pytest idioms in references/python.md. Layers on
+  write-python, since tests are code.
 ---
 
 # Write tests
@@ -36,9 +38,9 @@ Factor shared construction into the runner's setup mechanism or small named help
 
 Structure every test as **given / when / then**, the behavioural form of setup, exercise, verify:
 
-- **Given** — the starting state, arriving **through the test's parameters** (fixtures, including ones that load data files) — never a module global, and built in the body only for a boundary literal with no scenario to name, such as an empty table with its schema.
+- **Given** — the starting state, arriving **through the test's parameters** (fixtures, including ones that load data files) — never a module-level value, and built in the body only for a boundary literal with no scenario to name, such as an empty table with its schema.
 - **When** — the single action under test, on its own line, assigned to a well-named result.
-- **Then** — the assertions, ideally custom assertions from a shared `then` module (`then.<expectation>`).
+- **Then** — the assertions: a bare `assert` for an equality, a shared `then.<claim>` for a domain claim (below).
 
 **Name every test `test_when_<action>_then_<outcome>`.** The given lives in the parameters, so the name carries the action and the outcome: `test_when_keep_valid_then_non_positive_rows_dropped`.
 A failure then reads as a falsified claim, which is most of the diagnosis.
@@ -56,13 +58,11 @@ Grouped, the beats become shared `given`, `when` and `then` modules, so a body r
 ## Behaviour, not implementation
 
 Test the observable contract — return values, raised errors, visible effects — through the public surface.
-Tests bound to implementation break on every refactor and stop being a safety net.
 
 **Lean hardest on the pure core** (see `be-functional`): it holds the logic, and it is deterministic and needs no setup.
 Keep the shell thin so little needs slow integration tests — the humble object pattern — and lean toward integration where the units are trivial and the bugs live in the seams.
 
-**Mock sparingly.** A mock asserts on *how* code calls its collaborators, coupling the test to implementation.
-Prefer real objects and a fake at the seam you designed (a stub function, an in-memory double), and patch only at an external boundary you can't inject.
+**Use real objects and a fake at the seam you designed** (a stub function, an in-memory double), and patch only at an external boundary you can't inject; a mock that asserts on *how* code calls its collaborators couples the test to the implementation.
 
 **Test an adapter's judgement on its own.** Reading a document is the library's job; deciding which field is the answer is a claim about the source that neither core nor dependency tests cover.
 Pin it against a saved response, passed straight to the parse function (see `structure-python` on splitting getting from parsing), covering the case the code was written for **and** a record missing the field.
@@ -70,7 +70,7 @@ Pin it against a saved response, passed straight to the parse function (see `str
 **Reach an owned client through one argument, not a patch.** An adapter keeps its library's client inside itself by design.
 For what is genuinely about the client — what it treats as failure, what it retries, how it paces — give the function that builds the client an optional transport defaulting to the real one, and a `sleep` the retry and pacing policy call, so the test hands it the library's in-process transport and a spy that counts the waits; patching the builder replaces the one function under test.
 
-**Never touch the real clock, randomness or network.** Inject them (see `be-functional`) and pass fixed values or a seed; a test that sleeps for real is a slow test that still proves nothing about the wait.
+**Never touch the real clock, randomness or network**, except in the marked real-surface run below; inject them (see `be-functional`) and pass fixed values or a seed, since a test that sleeps for real is a slow test that still proves nothing about the wait.
 
 ## Test data
 
@@ -78,9 +78,9 @@ Every given arrives through the signature; the questions are where a fixture get
 
 - **Inputs** come from a fixture, a builder, or a data file a fixture loads (CSV, Parquet, JSON kept out of the source); a fixture is fresh per test, and shared at module or session scope only for expensive read-only setup.
 Feed a function only the fields it reads.
-- **Expected values** come from a fixture or a stored answers file, passed into a custom assertion — never a literal buried in the body.
+- **Expected values** come from a fixture or a stored answers file — never a literal buried in the body, except the parameters of a table-driven case, which are the table.
 - **Reach an expected value independently of the code under test** — a stored answer or a plain restatement of the spec; re-deriving it with the same transformation proves nothing.
-- **Prefer invariants where deriving the answer would reimplement the code**: conservation (group totals sum to the whole), ordering, membership (output ⊆ input).
+- **Assert invariants where deriving the answer would reimplement the code**: conservation (group totals sum to the whole), ordering, membership (output ⊆ input).
 
 **Check the fixture can exhibit what you test for.** A test passes when the code is right *or* when the fixture can't show it wrong, and the two look identical.
 The usual gap is a missing **dimension**: one series can't show what happens when two have different gaps, one page can't show the boundary between pages.
@@ -92,12 +92,7 @@ For each rule, ask what the input must contain for it to fire, and check the fix
 Don't shred one operation over a collection into a case per element: feed the whole input and assert the whole output in one test, the way it is called.
 
 **Property-based** generates inputs across a space and shrinks failures to a minimal counterexample (`hypothesis`, `QuickCheck`).
-Reach for it when you can state an invariant:
-
-- Round-trips: `decode(encode(x)) == x`.
-- Algebraic laws: commutativity, associativity, identity.
-- Postconditions: always sorted, within bounds, same length.
-- Agreement with a slow, obviously correct reference implementation.
+Reach for it when you can state an invariant — a round-trip, an algebraic law, a postcondition, agreement with a slow and obviously correct reference.
 
 **Check the generator reaches the states you test.** Independent random draws rarely produce a long run or a trend, so a property can pass a hundred examples without once exercising its logic.
 Bias the generator toward the interesting region (a drifting walk, not independent draws), then count over a few hundred inputs how many reach each state that matters; zero is a failure, not a pass.
