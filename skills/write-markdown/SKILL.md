@@ -79,13 +79,12 @@ A reader copies examples, so one that fails the project's linter teaches exactly
 Humans skim, jump to headings and copy code, so optimise for the scan.
 Some rules below have an observable effect (a buried point goes unread); others are **house preference**, worth following for consistency but not worth arguing from — the emoji anchors, full stops and dropped Oxford comma.
 
-- **Front-load.** The first lines say what this is and whether the reader is in the right place — a README opens with a one-line description, not history.
 - **Put content where its reader looks.** Don't strand a maintainer's warning in the setup path a new user reads.
 - **Default to sections of bullets**; keep prose for ideas that need connected sentences.
 - **One idea per sentence.** Split compound sentences instead of joining clauses with commas, "and", dashes, semicolons or parentheses.
 Inside a bullet, don't bolt on an aside or inline list with a colon or dash — use sub-bullets.
 A lead-in line ending in ":" before a real list is fine.
-- **Second person, active voice, present tense, no first person.** "Run `x` to build", not "The build may be performed"; "Personal conventions", not "My conventions".
+- **No first person**, even in a personal repo: "Personal conventions", not "My conventions", since the reader is whoever opens it next.
 - **Link the first mention** of a tool, library, standard — and the repo's own files and skills, which are the links most often missing.
 Anchor the link on the one or two words naming its destination: "install from a [marketplace](…)", never "[click here](…)" or a bare URL.
 - **Use GitHub alert callouts** for asides: `[!NOTE]` info, `[!TIP]` advice, `[!IMPORTANT]` key point, `[!WARNING]` or `[!CAUTION]` for a hazard rather than a "don't" buried in prose.
