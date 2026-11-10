@@ -1,0 +1,7 @@
+{
+  "name": "claude",
+  "description": "Personal Claude Code skills and global instructions.",
+  "experimental": {
+    "evals": "evaluate/triggers"
+  }
+}

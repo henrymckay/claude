@@ -37,9 +37,11 @@ A reason you find yourself goes under Decisions as proposed, with its source and
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
 - **`build-project`** when building a project from its `PLAN.md`: milestone by milestone, gating each before it is ticked.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
+- **`run-unattended`** when a job runs on a schedule with nobody watching: the day it fetches, the lock, catch-up, exit codes, `status`, logs, the scheduler unit.
 - **`review-plugin`** when reviewing this Claude repo: `review-project` plus drift across skills, `CLAUDE.md`, README, wiring and memory.
 - **`review-project`** when reviewing, auditing or fixing a project: against its `PLAN.md`, the skills, correctness, tests and modernity.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
+- **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.
 - **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
 - **`use-git`** for any `git` operation: committing, branching, PRs, history (Conventional Commits; no `Co-authored-by` / "Generated with" footers).
 - **`use-polars`** when working with `polars`.

@@ -28,9 +28,11 @@ The rest are the conventions those three apply.
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`build-project`](skills/build-project) builds a planned project milestone by milestone, passing a quality gate before each is ticked.
 - [`plan-project`](skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
+- [`run-unattended`](skills/run-unattended) covers a job that runs on a schedule with nobody watching, from the lock and the missed night to the [`launchd`](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), [`systemd`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) or [GitHub Actions](https://docs.github.com/en/actions) unit.
 - [`review-plugin`](skills/review-plugin) extends `review-project` for this repo, from descriptions that no longer match their skills to rules duplicated across them.
 - [`review-project`](skills/review-project) reviews a project against its plan, the skills, its tests and current releases, then fixes what it finds.
 - [`setup-python`](skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
+- [`store-data`](skills/store-data) decides where a project's data lives, from hive-partitioned [Parquet](https://parquet.apache.org/) queried with [DuckDB](https://duckdb.org/) or [MotherDuck](https://motherduck.com/) to atomic partitions, the raw archive and the run manifest.
 - [`structure-python`](skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers over a `code`/`data`/`tests` layout.
 - [`use-git`](skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
 - [`use-polars`](skills/use-polars) covers idiomatic [`polars`](https://pola.rs), from the expression API to keeping every group in one frame instead of looping.
@@ -83,7 +85,17 @@ It controls how much Claude does before checking in.
 ## 🔁 Feed back
 
 Claude files an [issue](https://github.com/henrymckay/claude/issues?q=label%3Askill-feedback) labelled `skill-feedback` whenever a skill steers it wrong during real work, as [`CLAUDE.md`](CLAUDE.md) requires.
-[`review-plugin`](skills/review-plugin) works through the open ones first, fixing each in the skill that owns it or closing it with a reason.
+A [`Stop` hook](hooks/stop-skill-feedback.json) backs the rule: at the end of each turn a small model reads the reply and, if a skill gap surfaced that was not filed, sends Claude back to file it.
+Merge the file's `hooks` key into `~/.claude/settings.json` to install it.
+[`review-plugin`](skills/review-plugin) works through the open issues first, fixing each in the skill that owns it, closing it with a reason, or leaving it open for a decision only you can make.
+A weekly scheduled run of it opens one pull request with the sweep's report, so the week's skill changes are reviewed in one place.
+
+The trigger suite under [`evaluate/triggers/`](evaluate/triggers) holds one casual prompt per skill with a grader that checks the skill fired.
+Run it from the repo root to catch a description that has stopped triggering.
+
+```bash
+claude plugin eval . --ablation none --no-publish
+```
 
 ## 🎯 Evaluate
 

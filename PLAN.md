@@ -117,6 +117,8 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
 - **House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver that needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
 - **Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
+- **MotherDuck connects with `duckdb.connect("md:<db>")` and the token in `motherduck_token`**, lower case per its docs (checked 2026-11-10); A1 had it upper case.
+- **The trigger suite lives at `evaluate/triggers/`**, named by `.claude-plugin/plugin.json`'s `experimental.evals`, beside the brief-and-answers evaluations; the manifest sits at the repo root, outside `~/.claude/skills/`, so the loader never sees it and nothing is namespaced.
 - **The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
 - **A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
 - **A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
@@ -132,7 +134,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **R5** — `evaluate/prompt.md` present, no briefs under `evaluate/`.
 - **R6** — the gap probe re-run (a fresh agent plans the generic nightly fetch → store → metrics → CLI → API → dashboard tool from the skills alone) leaves no decision open that a skill should settle, and names no rule it would have followed anyway.
 - **R7** — a plan written with plan-project shows the decision list with sources; the trio's files each state when and how to deviate from a skill; a review can flag a house pick as wrong for the project.
-- **R8** — the hook fires and files on a seeded gap; the scheduled task runs and opens a PR; `claude plugin eval` passes the trigger suite.
+- **R8** — the hook fires and files on a seeded gap; the scheduled task runs and opens a PR; `claude plugin eval . --ablation none` passes every case under `evaluate/triggers/`.
 
 ### Milestones
 
@@ -151,7 +153,6 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 
 ### Assumptions
 
-- **A1** The MotherDuck connection idiom is `duckdb.connect("md:<db>")` with `MOTHERDUCK_TOKEN` in the environment — from memory, to be checked against the docs while writing `store-data`; if wrong, only that skill's example changes.
 - **A2** The cloud scheduled task has an authenticated `gh` — undocumented; the first run tests it, and if absent the sweep reads issues through the GitHub REST API with the task's token.
 
 ### Questions
