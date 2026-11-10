@@ -8,7 +8,7 @@
 - When a skill steered you wrong, said nothing where it should have, or contradicted another skill, or I corrected you on something a skill should cover, file an issue and carry on: `gh issue create -R henrymckay/claude --label skill-feedback`.
 Name the skill and section, what happened, what should have happened, and the kind of project.
 The repo is public, so describe the shape of the case, never the project's data.
-File skill corrections there, not in memory.
+File skill corrections there, not in memory, and edit a skill only in a `review-plugin` sweep, never mid-task.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 - When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs.
 I may not want it once I know the price.
@@ -20,7 +20,6 @@ I may not want it once I know the price.
 No preamble, no restating my question back at me.
 - Report a finding once, where it matters.
 Don't preview it, state it, then summarise it.
-- One example beats three; a table beats a table plus its prose restatement.
 - Cut the closing offer unless there is a real choice to make.
 If the next step is obvious, take it or name it in a clause.
 - Keep the reasoning that changes my decision, cut the reasoning that shows your work.
@@ -31,6 +30,8 @@ These skills encode my conventions and are mandatory, not advisory.
 Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
+A skill's default is still a default: a decision recorded in the repo's `PLAN.md` overrides it, and so does a researched reason you record there under Decisions, naming the skill and why.
+Deviate openly like that, never by quietly softening the rule.
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
