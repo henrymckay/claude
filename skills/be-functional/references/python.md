@@ -67,7 +67,7 @@ The `case _: assert_never` arm is what makes a new variant a type error at every
 **`match` vs `functools.singledispatch`** — both dispatch on type, so choose by who owns the cases.
 Use `match` for a **closed** set of variants you own (you get exhaustiveness checking); use `singledispatch` when the operation should stay **open** to new types that register their own handler from elsewhere, without editing the function.
 For plain boolean conditions, `if`/`elif` still wins over both.
-Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, written as a mapping that lives in the package's data (see `structure-python`, Data).
+Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, written as an `enum.StrEnum` or a dict literal in the core, or as a data file when it is reference data someone will correct (see `structure-python`, Data).
 For dispatch on **more than one argument's type** the stdlib has nothing; `plum` does it well typed, at the cost of a dependency and a dispatch at every call, so reach for it only where `match` on a tuple of the arguments would not read.
 
 ## Specialise and compose
@@ -131,4 +131,4 @@ The stdlib covers composition, immutability and dispatch; each library below ear
 - **`toolz`** — a sequence helper the stdlib lacks (`partition_all`, `sliding_window`, `groupby` into a dict without pre-sorting); untyped, so never for currying or composition.
 - **`plum`** — multiple dispatch on more than one argument's type where `match` on the tuple would not read.
 - **`pyrsistent`** — persistent collections with structural sharing for repeated functional updates to large structures; frozen dataclasses remain the record.
-- **No `Result` library** (`returns` and the like): `write-python`'s error model is exceptions caught in drivers, with `X | None` for a lookup miss.
+- **No `Result` library** (`returns` and the like): `write-python`'s error model is exceptions raised from `error/` and answered in drivers, with `X | None` for a lookup miss.
