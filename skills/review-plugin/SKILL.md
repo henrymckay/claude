@@ -3,12 +3,14 @@ name: review-plugin
 description: >-
   How to review your own Claude Code plugin, or a repo serving as one, for
   drift — the checks a skills repo needs on top of review-project: working
-  through the open skill-feedback issues, each description against its body,
-  bloat and overfitted examples, rules duplicated or contradicted across
-  skills, trigger overlap, CLAUDE.md and the README against the skills, the
-  symlinks wiring it into ~/.claude, and auto-memory. Use after a run of skill
-  edits, when skill-feedback issues have piled up, or whenever the user asks
-  to review, audit, tidy or sweep their skills, plugin or Claude repo, even if
+  through the open skill-feedback issues (fixed, already covered, won't fix,
+  or needs the user), each description against its body, bloat and overfitted
+  examples, rules duplicated or contradicted across skills, trigger overlap,
+  CLAUDE.md, PLAN.md and the README against the skills, the symlinks and
+  feedback wiring, and auto-memory; run in a session or unattended as a
+  scheduled task that opens one pull request. Use after a run of skill edits,
+  when skill-feedback issues have piled up, or whenever the user asks to
+  review, audit, tidy or sweep their skills, plugin or Claude repo, even if
   they just say "check the skills for drift", "tidy up my skills" or "work
   through the skill feedback". Not for a third-party plugin. Layers on
   review-project, which runs the cold read, the fixes and the report, and on
@@ -21,8 +23,6 @@ A review of your own Claude Code plugin, or a repo serving as one — skills, in
 It runs `review-project` with the skills as the code under review and adds the checks below, judging against `write-skills` and `write-markdown` rather than restating them.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
 
-**In an existing project, ask first.** Where a repo already has its own conventions for its skills, check with the user whether to review against them or against `write-skills`, and prefer `write-skills` unless they choose to match.
-
 ## Work the feedback
 
 Start from the open reports, since they record what a real run got wrong and the checks below only find what reading can: `gh issue list -R <owner>/<repo> --label skill-feedback`.
@@ -31,8 +31,15 @@ Verify each against the files, then close it one of three ways:
 - **Fixed** — in the skill that owns the rule, generalised as `write-skills` says, with `Fixes #<n>` in the commit message.
 - **Already covered** — the rule exists but went unapplied, so sharpen its wording, its placement or the description that should have loaded it.
 - **Won't fix** — no skill should cover it, with the reason in the closing comment.
+- **Needs the user** — it would change a `PLAN.md` decision or settle policy; leave it open with a recommended answer, and never decide it in an unattended run.
 
+Where an issue describes a case, verify the fix by running that case — a throwaway prompt or script — not by reading the new wording.
 Several reports against one skill mean its structure is wrong; rework the skill rather than patching each report.
+
+## Run unattended
+
+As a scheduled task, work on a branch and open one pull request carrying the report as its body, so the user reviews the week's changes in one place; in a session, commit as the plan decides.
+Either way the report lists every rule cut, generalised or left for the user.
 
 ## Take an inventory
 
@@ -59,13 +66,15 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 
 - **`CLAUDE.md`'s skill list matches `skills/` both ways**, and each entry agrees with that skill's description.
 - **`CLAUDE.md` carries no defaults** (see `write-markdown`).
-- **The README lists every skill**, each described as its skill describes itself.
+- **The README lists every skill**, each described as its skill describes itself, and its other sections — setup, configuration, feedback, evaluation — are still true.
+- **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
 
 ## Check the wiring
 
 - **Every symlink into `~/.claude` resolves**, or is dangling on purpose.
 - **`.gitignore` covers what should never be committed**: editor folders, caches, OS files, folders synced in by other tools.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
+- **The feedback wiring works**: the `skill-feedback` label exists and `gh issue list` runs authenticated.
 
 ## Check memory
 
@@ -76,5 +85,5 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 
 - **Correctness is the claims.** Re-run every code block and library claim as `write-skills` requires, including in skills nobody edited; a release since the last review can remove an API or change a default, making a skill wrong without anything failing.
 - **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps.
-- **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory; the next inventory reads it.
+- **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it.
 - **Flag in the report every rule cut by the default test**, so the user can restore one.
