@@ -2,25 +2,28 @@
 name: store-data
 description: >-
   Where a project's data lives and how it is written and read —
-  hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck
-  when another machine or a phone chat must reach it, SQLite for small
-  single-writer state, Postgres only for a multi-writer service, and no ORM;
-  the data directory, its environment override and its tree; one store adapter
-  bound to the directory that writes everything a fetch returned; one file per
-  partition, overwritten atomically so a re-run is idempotent, and an empty
-  day stored as an empty partition; the raw archive one file per page, the
-  quarantine's one schema for rejected rows and failed items, the run manifest
-  with its counts and outcomes, and long-form metrics recomputed whole;
-  scanning lazily from Polars or DuckDB and compacting only once measured; and
-  testing a store on a temporary directory with an in-memory fake for the
-  core. Use whenever deciding where a project's output goes, writing a store
-  adapter, choosing between Parquet, DuckDB, SQLite or Postgres, laying out a
-  data directory, writing or scanning Parquet, deciding what to keep when a
-  row or an item fails, recording what a run did, or sharing data with another
-  machine — even if the user just says "save the results", "where should this
-  live" or "add a database". Targets Polars 2.x and DuckDB 2.x. Layers on
-  structure-python (the store is an adapter) and use-polars; run-unattended
-  reads the manifest and holds the lock.
+  hive-partitioned Parquet for pipeline output, read by Polars in code and
+  queried across the tree by DuckDB, MotherDuck when another machine or a
+  phone chat must reach it, SQLite for small single-writer state, Postgres
+  only for a multi-writer service, and no ORM; the data directory, its
+  environment override and its tree; the store as a write port and a read
+  port, a Parquet adapter bound to the directory that writes everything a
+  fetch returned, and a MotherDuck adapter loading the records, metrics and
+  manifest when the token is set while the raw archive stays local; one file
+  per partition, overwritten atomically so a re-run is idempotent, and an
+  empty day stored as an empty partition; the raw archive one file per page,
+  the quarantine's one schema for rejected rows and failed items, the run
+  manifest with its counts, requests and outcomes, and long-form metrics
+  recomputed whole; compacting only once measured; and testing a store on a
+  temporary directory with an in-memory fake for the core. Use whenever
+  deciding where a project's output goes, writing a store adapter, choosing
+  between Parquet, DuckDB, SQLite or Postgres, laying out a data directory,
+  writing or scanning Parquet, deciding what to keep when a row or an item
+  fails, recording what a run did, or sharing data with another machine or a
+  hosted dashboard — even if the user just says "save the results", "where
+  should this live" or "add a database". Targets Polars 2.x and DuckDB 2.x.
+  Layers on structure-python (the store is an adapter) and use-polars;
+  run-unattended reads the manifest and holds the lock.
 ---
 
 # Store data
@@ -37,8 +40,8 @@ Each pick is the default for its need; a `PLAN.md` decision overrides it, and a 
 
 - **Hive-partitioned Parquet** for pipeline output — `records/source=<s>/day=<d>/part.parquet`, scanned as one table.
 A single DuckDB file would be simpler to hand around, but it is one writer's binary blob: a crash mid-write risks the whole table where Parquet risks one day, and nothing but DuckDB can read it.
-- **DuckDB** to query the Parquet locally — `read_parquet` over the tree, with views for the questions asked often.
-Loading into Polars and filtering there works for one frame; DuckDB joins, aggregates and prunes partitions across the whole tree without a materialising step.
+- **Polars to read the tree in code**, and **DuckDB for a question across it** — `read_parquet` over the whole tree at a SQL prompt, or a view for a question asked often (Read).
+The read port is Polars because the core speaks frames; DuckDB earns its place where a person asks something no operation answers, joining and aggregating every partition without writing an operation for a one-off.
 - **MotherDuck** when more than one machine, or a phone chat, must reach the data: the same SQL over `duckdb.connect("md:<db>")`, with the token in the environment as `motherduck_token` (lower case, per MotherDuck's docs).
 Syncing Parquet to a bucket is the alternative and costs a sync step and credentials on every reader.
 - **SQLite** for small single-writer app state — a watermark table, a key-value cache — through the stdlib `sqlite3`.
@@ -71,13 +74,21 @@ Settings mechanics are in `write-entry-points`' Python reference; `platformdirs`
   rejected/         the quarantine: rows that failed validation and items that failed, with a reason
   metrics.parquet   derived numbers, recomputed whole
   runs.parquet      the run manifest
+  alerts.json       the last state each source alerted on (see send-messages)
   logs/
   .lock             the overlap lock (see run-unattended)
 ```
 
 A tiny tool with one output is one Parquet file at the root; grow the tree when a second source or a second kind of output arrives.
 
-**The store is one adapter, `adapt/parquet.py`, satisfying one port**, since reading what it wrote ties the calls (`structure-python`, Declare a port); it is a frozen dataclass holding `data_dir`, built by the composition root, and it writes everything a fetch returned — records, rejected rows, raw pages — plus the manifest row, so the fetch adapter never sees the directory.
+**The store is two ports**, since its writer and its readers differ (`structure-python`, Declare a port): a write port, `port.Sink`, taking what a fetch returned, the manifest row and the metrics; and a read port, `port.Store`, answering records over a range, the metrics and the manifest.
+The API and the dashboard take only `port.Store`, so a stray write from either is a type error.
+`adapt/parquet.py` satisfies both over the tree: a frozen dataclass holding `data_dir`, built by the composition root, writing records, rejected rows, raw pages, metrics and the manifest row, so the fetch adapter never sees the directory.
+
+**When `motherduck_token` is set, the root adds `adapt/motherduck.py`**, a second adapter satisfying both ports over `records`, `metrics` and `runs` tables, and hands the nightly both sinks, the tree first as the record, so a hosted dashboard and `status` read the manifest where they run.
+A second target inside `parquet.py` would be less code, but the hosted dashboard needs a MotherDuck reader anyway, and keeping the network out of `parquet.py` keeps its tests to a temporary directory.
+The load replaces the source's day in one transaction, the table's form of overwriting a partition, and a failed load raises after the tree is written, so the night exits 1 and a `fetch --day` re-run reloads it.
+**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`).
 
 ## Write a partition
 
@@ -109,15 +120,15 @@ A frame that arrives carrying them (the quarantine's does) has them dropped on w
 A parser fix then re-parses history offline; without it the fix applies from tonight and every earlier day keeps the bug.
 - **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `record` (the raw record as a string, or the item's name where nothing arrived), `reason`, `source`, `day`.
 Dropping them silently makes a schema change at the source look like a quiet day; the quarantine makes it a count, and one schema lets the whole tree be read as one table.
-- **Write a run manifest**, `runs.parquet`: one row per source per run with `source`, `day`, `rows`, `rejected`, `failed_items`, `started`, `ended` and `outcome`.
-`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `outcome` is an `enum.StrEnum` of `stored` (every item answered, whatever was rejected), `partial` (an item failed), `failed` (nothing stored) and `skipped` (the run never reached it), and the `compute` stage writes its own row with `source="metrics"`.
+- **Write a run manifest**, `runs.parquet`: one row per source per run with `source`, `day`, `rows`, `rejected`, `failed_items`, `requests`, `started`, `ended` and `outcome`.
+`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`, Write an adapter); `outcome` is an `enum.StrEnum` of `stored` (failed items within the source's tolerance, whatever was rejected), `partial` (more failed than it tolerates), `failed` (nothing stored) and `skipped` (the run never reached it), as `run-unattended`'s Report the outcome reads them, and the `compute` stage writes its own row with `source="metrics"`.
 It is small, so append by reading, concatenating and overwriting the file atomically; `run-unattended`'s `status` command reads it, and nothing else records that a night happened.
 - **Store metrics as a full recompute** overwriting `metrics.parquet` from the records, until a timed check shows the recompute exceeding the nightly window; an incremental update is a second code path that drifts from the full one, so it is earned by that measurement and nothing else.
 The file is long — `item`, `day`, `metric`, `value` — so a new metric is rows, not a column every reader must learn (`use-polars`).
 
 ## Read
 
-**Scan lazily and collect once**, pushing the filter down so only the partitions asked for are opened:
+**Scan the tree as `use-polars`' Eager vs lazy says**, with the filter on the partition columns, so only the partitions asked for are opened:
 
 ```python
 readings = (
@@ -129,7 +140,7 @@ readings = (
 
 `hive_partitioning=True` adds `source` and `day` as columns, with `day` inferred as `Date` from `YYYY-MM-DD`; pass `hive_schema` when inference guesses wrong, such as a numeric-looking identifier that must stay a string.
 
-In DuckDB the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`.
+At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`.
 Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()` — which needs `pyarrow` installed, a dependency the Parquet path never needed.
 A Polars frame in scope is queryable by name (`duckdb.sql("select * from readings")`), so a transform written in SQL costs no export step.
 
@@ -139,7 +150,7 @@ Rewriting earlier is a second layout to maintain for a cost nobody has measured.
 ## Test the store
 
 - **Exercise the real adapter on `tmp_path`** with a round-trip property: whatever frame is written is read back equal, through `polars.testing.assert_frame_equal`, including the partition columns and after a second write of the same day.
-- **Give the core an in-memory fake** satisfying the same port — a dict keyed by source and day — so operations run with no filesystem.
+- **Give the core an in-memory fake** satisfying the same two ports — a dict keyed by source and day — so operations run with no filesystem.
 - **Point every test's `data_dir` at `tmp_path`** through the environment override (Lay out the data directory), never the platform default, or a test run writes into the real store.
 
-The shape of the tests is `write-tests`; the port they share is `structure-python`'s Declare a port.
+The shape of the tests is `write-tests`; the ports they share are Lay out the data directory's.
