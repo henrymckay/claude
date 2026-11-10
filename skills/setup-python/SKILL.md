@@ -4,7 +4,7 @@ description: >-
   How to scaffold and configure a Python project — the src/ layout,
   pyproject.toml with the uv_build backend, dependency and environment
   management with uv, a committed lock file upgraded on a schedule, the floor
-  of Python 3.14, the house-pick libraries for common tasks (typer, httpx with
+  of Python 3.15, the house-pick libraries for common tasks (typer, httpx with
   tenacity and pyrate-limiter, polars, shiny with plotly, pydantic-settings,
   rich logging), standalone scripts, pre-commit hooks run through uv, releases
   with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
@@ -52,14 +52,14 @@ A sensible starting point:
 name = "mypackage"
 version = "0.1.0"
 description = "..."
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = []
 
 [project.scripts]
 mypackage-cli = "mypackage.code.drive.cli:app"
 
 [build-system]
-requires = ["uv_build>=0.11,<0.12"]
+requires = ["uv_build>=0.13,<0.14"]
 build-backend = "uv_build"
 
 [tool.ruff]
@@ -94,7 +94,7 @@ The non-obvious choices:
 - **`uv_build`** is what `uv init --package` writes: zero config for a `src/` layout, and it ships every file under the package, data included, so nothing names a path.
 `hatchling` does the same and adds a plugin system; reach for it only when a build plugin is needed (a version from git tags, generated files), since it is a second tool to pin.
 - `[tool.ruff]` names no `target-version`: `ruff` reads it from `requires-python`, so the floor lives in one place.
-- `[tool.ruff.lint] select` opts into a broader baseline than `ruff`'s `E`+`F` default: `I` (import sorting), `N` (naming), `D` (docstring presence), `UP` (modern syntax), `B` (likely bugs), `SIM` (simplify), `C4` (comprehensions), `RUF` (`ruff`'s own, including unused `noqa`), `PT` (`pytest` style) and `TC` (imports only a type checker needs).
+- `[tool.ruff.lint] select` replaces `ruff`'s default set — `E`+`F` until 0.16, since then about 400 rules that add `PIE`, `PYI`, `PL`, `DTZ`, `ASYNC` and more — with this list: `I` (import sorting), `N` (naming), `D` (docstring presence), `UP` (modern syntax), `B` (likely bugs), `SIM` (simplify), `C4` (comprehensions), `RUF` (`ruff`'s own, including unused `noqa`), `PT` (`pytest` style) and `TC` (imports only a type checker needs).
 - `"tests/**" = ["D"]` drops docstrings from tests and fixtures, since the test name is the claim (see `write-tests`).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reStructuredText field-list style stays free (see `write-python`).
 - `pyright` `strict` on a greenfield project: `standard` (the default) lets an unannotated parameter through as `Unknown`, so a wrong argument is found at runtime; `strict` reports it at the definition.
@@ -140,7 +140,7 @@ The core workflow:
 
 ```bash
 uv init --package
-uv python pin 3.14
+uv python pin 3.15
 uv add httpx
 uv add --dev pytest ruff pyright taplo pre-commit
 uv run pytest
@@ -152,7 +152,7 @@ The published library still carries only `pyproject.toml`'s ranges, so consumers
 - **Declare a lower bound and no upper cap** (`polars>=2.1`), since a cap blocks the upgrade that fixes the bug you hit; run `uv lock --upgrade` and the suite together on a schedule — by hand, or from a workflow that opens a pull request, which is not the CI declined above since it gates nothing — and the lock moves only when the tests still pass.
 - **Pin the Python version** with `uv python pin`, which writes `.python-version`, so everyone is on the same interpreter.
 
-**Target the latest stable Python release**, 3.14 at the time of writing, in `.python-version` and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
+**Target the latest stable Python release**, 3.15 at the time of writing, in `.python-version` and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
 Go one release back only when a dependency has no wheels for it and `uv sync` fails to resolve, and record that under the plan's Decisions so the next sweep tries again; never a pre-release.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
@@ -190,7 +190,7 @@ Declare deps inline (PEP 723) and run with `uv run script.py` — `uv` builds a 
 
 ```python
 # /// script
-# requires-python = ">=3.14"
+# requires-python = ">=3.15"
 # dependencies = ["httpx"]
 # ///
 ```
