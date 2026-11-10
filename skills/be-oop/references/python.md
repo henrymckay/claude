@@ -46,25 +46,33 @@ Money is `decimal.Decimal`, never `float` (see `write-python`); `slots=True` rej
 ## Mixins
 
 A mixin shares behaviour across classes with no common base.
-List it **left** of the base, so its methods win in the MRO (Method Resolution Order), and keep it to methods over the host's own interface, since a slotted host has no `__dict__` for a mixin to read:
+List it **left** of the base, so its methods win in the MRO (Method Resolution Order), keep it to methods over the host's own interface, and give it an empty `__slots__`, or a `slots=True` host silently gains a `__dict__` through it:
 
 ```python
 class OrderedByKeyMixin:
     """Order instances by the key the host defines."""
 
+    __slots__ = ()
+
     def sort_key(self) -> tuple[int, ...]:
         """Return the key instances are ordered by."""
-        ...
+        raise NotImplementedError
 
     def __lt__(self, other: typing.Self) -> bool:
         """Order by the key."""
         return self.sort_key() < other.sort_key()
 
 
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class Version(OrderedByKeyMixin):
     """A release version that sorts by its parts."""
 
-    ...
+    major: int
+    minor: int
+
+    def sort_key(self) -> tuple[int, ...]:
+        """Return the major and minor numbers."""
+        return (self.major, self.minor)
 ```
 
 ## Enums
