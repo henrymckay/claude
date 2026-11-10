@@ -1,25 +1,27 @@
 ---
 name: build-project
 model: sonnet
+effort: medium
 description: >-
   How to build a planned project milestone by milestone with minimal input
   from the user — working through its PLAN.md in order, each milestone on its
-  own branch unless the plan decides otherwise, writing each check as a
-  failing test first, wiring the real path early, keeping the plan's terms in
-  the code, building only what the milestone's requirements need, recording
-  every call the plan didn't make as a proposed decision or an idea, and
-  passing a quality gate read by what the project ships (the suite, a real
-  run, simplify, a code review, a read against the plan and any performance
-  budget) before ticking each milestone, keeping PLAN.md current so a fresh
-  session can resume, filing skill gaps as it goes, reporting each milestone's
-  calls, and stopping only for a change to the plan, a blocking question or a
-  check that won't pass. Use whenever building, implementing or continuing a
-  project that has a PLAN.md, or once a plan from plan-project is approved —
-  even if the user just says "build it", "go", "start on M1", "carry on" or
-  "build the next step". Layers on plan-project, the plan it builds from, and
-  on every skill the code falls under, using the built-in simplify and
-  code-review for the gate and use-git for branches and commits; hands off to
-  review-project when the last milestone is done.
+  own branch unless the plan decides otherwise and a new repository's scaffold
+  first on main, writing each check as a failing test first, wiring the real
+  path early, keeping the plan's terms in the code, building only what the
+  milestone's requirements need, recording every call the plan didn't make as
+  a proposed decision or an idea, and passing a quality gate read by what the
+  project ships (the suite, a real run, simplify, a code review, a read
+  against the plan and any performance budget) before ticking each milestone,
+  keeping PLAN.md current so a fresh session can resume, filing skill gaps as
+  it goes, reporting each milestone's calls, and stopping only for a change to
+  the plan, a blocking question or a check that won't pass. Use whenever
+  building, implementing or continuing a project that has a PLAN.md, or once a
+  plan from plan-project is approved — even if the user just says "build it",
+  "go", "start on M1", "carry on" or "build the next step". Layers on
+  plan-project, the plan it builds from, and on every skill the code falls
+  under, using the built-in simplify and code-review for the gate and use-git
+  for branches and commits; hands off to review-project when the last
+  milestone is done.
 ---
 
 # Build the project
@@ -36,6 +38,7 @@ Three mistakes account for most weak builds: ticking a milestone because the tes
 ## Work without waiting
 
 The approved `PLAN.md` is the user's sign-off for building its milestones in order, each on its own branch merged once its gate passes (see `use-git`) unless its Decisions say otherwise.
+In a new repository M1's scaffold commit — the ignore file, the project config, the empty package — lands on `main` first, since there is no `main` to branch off yet, and the rest of M1 goes on its branch.
 Go from one milestone to the next without asking; stop only when:
 
 - **the work would change a requirement or decision, override a skill, or build something from Not yet** — raise it as `plan-project` says, with the change proposed; a workaround built instead buries the decision where the plan can't record it, and a requirement found to be forcing the design's complexity is asked about, not built around;
