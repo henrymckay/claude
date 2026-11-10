@@ -4,23 +4,30 @@ description: >-
   How to structure a non-trivial Python application — the hexagonal
   (ports-and-adapters) layers of a pure core (domain types, logic, and use
   cases behind ports) and an outer edge (driven adapters for IO, entry-point
-  drivers at a composition root), how to declare a port, how to write an
-  adapter that declares its frame's schema and fetches politely through one
-  httpx client paced by pyrate-limiter and retried by tenacity, how it absorbs
-  a source's schema changes and malformed rows, the error package, the three
-  homes of a configuration value (settings, package YAML, a user-editable
-  CSV), and where logging, runtime data assets and the test suite sit. Use
-  when organising an app into layers, deciding where a module, entry point, IO
-  adapter, data asset, constant or test belongs, naming adapter modules for
-  several sources, designing a port or an adapter's output, choosing whether a
-  data file should be CSV, YAML or TOML, deciding whether a lookup is a file
-  or an enum, packaging data through importlib.resources, applying dependency
-  injection, or laying out the code/data/tests directories — even if the user
-  just says "structure this app", "where does this go", or "clean/hexagonal
-  architecture". Layers on write-python and be-functional; for building the
-  entry points themselves, see write-entry-points; for where the data lives,
-  store-data; for scaffolding, packaging and tooling, setup-python. A PLAN.md
-  decision overrides any rule here.
+  drivers at a composition root), how to declare a port as a noun satisfied by
+  a verb, how to write an adapter that maps into the port's shared schema,
+  fetches politely through one httpx client the composition root opens with
+  the key bound in, paced by pyrate-limiter and retried by tenacity with a
+  transport and a sleep as test seams, and returns what it got — records,
+  rejected rows, raw pages and failed items — for the store to write, failing
+  an item rather than the source and treating an empty answer as an empty day,
+  how it absorbs a source's schema changes and malformed rows, the error
+  package, the three homes of a configuration value (settings for deployment
+  values and every secret, package YAML for a source's constants, a
+  user-editable CSV for lists), the log level per event, and where logging,
+  runtime data assets and the test suite sit. Use when organising an app into
+  layers, deciding where a module, entry point, IO adapter, data asset,
+  constant, secret or test belongs, naming adapter modules for several
+  sources, designing a port or an adapter's output, deciding what happens when
+  one item of a fetch fails, choosing whether a data file should be CSV, YAML
+  or TOML, deciding whether a lookup is a file or an enum, packaging data
+  through importlib.resources, applying dependency injection, or laying out
+  the code/data/tests directories — even if the user just says "structure this
+  app", "where does this go", or "clean/hexagonal architecture". Layers on
+  write-python and be-functional; for building the entry points themselves,
+  see write-entry-points; for where the data lives, store-data; for
+  scaffolding, packaging and tooling, setup-python. A PLAN.md decision
+  overrides any rule here.
 ---
 
 # Structure a Python application
@@ -53,11 +60,12 @@ mypackage/
 `code/` has two groups — a pure **core** holding the logic and an **edge** doing all the IO — in five standard packages, each a regular package with an `__init__.py` (`data/` is a plain resource tree):
 
 - **`transform`** (core) — the problem's types and rules, and the pure functions over them; the domain's records and enums live here, moving to a `domain/` package once they multiply.
-- **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Fetch = collections.abc.Callable[[list[str]], polars.DataFrame]`).
-A noun naming *what* the core needs, not how; see [Declare a port](#declare-a-port).
+- **`port`** (core) — the *behavioural* interfaces the core needs the outside world to satisfy, as `typing.Protocol`s or callable aliases (`Records = collections.abc.Callable[[list[str]], Fetched]`), with the records they move (`port.Fetched`) and the schema those records share (`port.RECORDS`) beside them.
+A port is a noun naming *what* the core needs, not how, and the function satisfying it is the verb (`port.Records`, `noaa.fetch_records`; see `write-python`); see [Declare a port](#declare-a-port).
 - **`operate`** (core) — one function per use case, orchestrating it: calling `transform` for logic and a port for IO, staying pure because the adapter is injected (`operate.report(stations, fetch=...)`).
 Imports only `transform` and `port`; a use case is a module named by its verb (`report.py`) and re-exported, so callers write `operate.report(...)` and the module is shadowed (see below) — accept that here, since a use case holds no helper worth reaching behind it, and one that does belongs in `transform`.
-- **`adapt`** (edge) — concrete implementations of the ports, one module per source named for it (`noaa.py`, `metoffice.py`), with what every source shares — the client, pacing, retry — in a package named for the library (`httpx_/`); with one source over one library the single module `httpx_.py` is both, and splits when the second source arrives.
+- **`adapt`** (edge) — concrete implementations of the ports, one module per source named for it (`noaa.py`, `metoffice.py`), with what every source shares — the client, pacing, retry — in `httpx_.py`, named for the library; the store is `parquet.py` and the overlap lock `lock.py` (see `store-data` and `run-unattended`).
+A library-coupled module becomes a package of the same name when it needs a second file (`write-python`, Imports), so `httpx_.py` splits when the second source arrives.
 Imports `transform` and `port`, never `operate` or `drive`; see [Write an adapter](#write-an-adapter).
 - **`drive`** (edge) — the entry points and the composition root, built out in `write-entry-points`.
 
@@ -81,7 +89,7 @@ Settle it first, deriving it from the data flow (see `be-functional`).
 
 **A module separates what is read separately.** Split a layer when a module would be worth opening on its own, never one module per function: following one call through three dozen-line files, re-exported by an `__init__.py` that exists to undo the split, is the tell.
 
-**Reach each package through one qualified name.** A package with one cohesive API re-exports it, so callers write `transform.averages(...)` or `port.Fetch`; a package of independent peers (adapters, `typer` modules) is reached module by module, `httpx_.fetch`.
+**Reach each package through one qualified name.** A package with one cohesive API re-exports it, so callers write `transform.averages(...)` or `port.Records`; a package of independent peers (adapters, `typer` modules) is reached module by module, `noaa.fetch_records`.
 
 **A re-export shadows its module.** Re-exporting `count` from `transform/count.py` binds `transform.count` to the function, so the module — and its private helpers, for a test — is no longer reachable by that name.
 In `operate` accept it, as above; elsewhere name the module for the shape it holds (`sequence.py` re-exporting `count`), which also keeps it from holding just one function.
@@ -97,6 +105,7 @@ Pass `{"noaa": noaa}`, not `Source(list=noaa.list_stations, fetch=other.fetch)` 
 - **A shared library is not a tie.** A client answering three unrelated questions is one import and three ports; bundling them forces every test fake to implement all three.
 Count the ties, not the imports — one adapter module still satisfies all three ports.
 - **A protocol's member name is the contract**, so every adapter spells it the same; put what distinguishes implementations (cost, source) in the module name.
+- **An adapter whose every call needs one deployment value is a frozen dataclass holding it**, built by the composition root — `parquet.Store(settings.data_dir)` — since a module can't be bound to a value; an adapter with no such state stays a module.
 
 **A port's parameters are the domain's values, not the computation's container.**
 A caller should *state* a request — `fetch(stations, *, end, start)` — not assemble one; typing a parameter `polars.DataFrame` makes every adapter and fake speak the frame library.
@@ -114,29 +123,41 @@ Make the order explicit: resolve against sources that state their names, and fal
 
 ### Write an adapter
 
-**An adapter declares its output shape as a module constant and checks every return against it** — the same columns and types on a full response, an empty one, and absent values alike:
+**An adapter checks every return against a declared schema** — the same columns and types on a full response, an empty one, and absent values alike.
+Every source satisfying one port maps its fields into the port's schema (`port.RECORDS`), so one scan reads them all and the core never branches on who sent a row; a port one adapter satisfies keeps the schema as that adapter's module constant:
 
 ```python
-READINGS = polars.Schema({"station": polars.String, "average": polars.Float64})
-
-
-def fetch(stations: list[str]) -> polars.DataFrame:
-    """Fetch the latest reading for each station."""
-    return _parse(_get(_url(stations))).match_to_schema(READINGS)
+RECORDS = polars.Schema({"item": polars.String, "value": polars.Float64})
 ```
 
-`match_to_schema` raises `SchemaError` on a missing column or a wrong dtype and casts nothing wider than `Float32` to `Float64`, so `_parse` builds the frame with `schema=READINGS` and the call at the return is the check, on a `LazyFrame` too; it is marked unstable in `polars` 2.1, so pin it with a dependency test (see `write-tests`).
+`match_to_schema` raises `SchemaError` on a missing column or a wrong dtype and casts nothing wider than `Float32` to `Float64`, so the parse builds the frame with `schema=port.RECORDS` and `.match_to_schema(port.RECORDS)` at the return is the check, on a `LazyFrame` too; it is marked unstable in `polars` 2.1, so pin it with a dependency test (see `write-tests`).
 Normalise the library's quirks (`None` for a bad key, columns that vary with row count) once at the boundary, so nothing downstream branches on them; a branch on the upstream's shape past the adapter means it didn't finish its job.
 
-**An absent value is a row; an absent answer is an error.** Nothing found for a query normalises into the declared empty shape.
-A source that didn't answer — request failed, document wouldn't parse, file not where it's published — **raises**, because an empty frame says "there are none" and the caller can't tell that from "nobody told me".
+**An adapter returns what it got and writes nothing.** A fetch's unit of work is one source for one day, but it asks for many items, so its port returns a record of all four things the night needs, and the store port (`store-data`) writes them where they belong, which is why the fetch adapter never sees the data directory and a test reads its result as values:
 
-**Split getting from making sense of.** Give retrieval and parsing a function each and let the port's function compose them: `return _parse(_get(_url(station)))`.
+```python
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+class Fetched:
+    """What one source sent for one day, as it arrived."""
+
+    failed: tuple[str, ...]
+    raw: tuple[bytes, ...]
+    records: polars.DataFrame
+    rejected: polars.DataFrame
+```
+
+`records` is matched to `port.RECORDS`, `rejected` holds `store-data`'s quarantine row (the raw record as text and its `reason`), `raw` is the bytes of each page as sent, and `failed` names the items that answered nothing usable.
+
+**Fail an item, not the source.** An item that 404s, exhausts its retries or won't parse goes into `rejected` with its reason and its name into `failed`, and the items that arrived go into `records`, so one dead item costs a count in the manifest, not the night; a source whose every item failed **raises**, since storing an empty partition would make an outage read as a quiet day.
+An empty answer is different from no answer: an item the source answers with nothing normalises into the declared empty shape, and a day on which every item did so is a stored empty partition with `rows=0` (`store-data`), because that is what the source said.
+
+**Split getting from making sense of.** Give retrieval and parsing a function each and let the port's function compose them: `_parse(get(_url(item, day)))` per item, with `get` the paced getter the composition root built (below).
 Retrieval is a few lines that never change; the parse is where the source's quirks accumulate, and kept separate it takes a saved response in a test with no stubbed fetch.
 
 **Declare the columns from the source, not today's caller.** Carry every field the source publishes that the domain has a name for — dropping a column later is one line in the core, widening it means revisiting every adapter and test — but not fields the domain can't name.
 
-**Absorb the source's changes at the edge.** A field the source adds that the domain can't name is logged once per run and dropped, not carried in case; a row that won't parse is quarantined with its reason where `store-data` says, never silently dropped, so the rows returned plus the rows quarantined equal the rows the source sent; a batch with no valid row raises, since an empty frame says "nothing happened" when the truth is that the source changed shape.
+**Absorb the source's changes at the edge.** A field the source adds that the domain can't name is logged once per run and dropped, not carried in case; a row that won't parse goes into `rejected` with its reason, never silently dropped, so the rows returned plus the rows quarantined equal the rows the source sent; a batch where rows arrived but none validated raises, since an empty frame says "nothing happened" when the truth is that the source changed shape (a batch with no rows at all is the empty answer above).
+The core's own rules take the same shape: a domain validation returns `(valid, rejected)` frames and the operation hands both rejections to the store, and a row the source restated is deduplicated in the core, counted and logged — never in the adapter, whose conservation count would then stop holding.
 
 **Return the narrowest type callers use.** Returning `httpx.Response` makes that library your internal API: callers reach for `.headers`, and swapping the library touches them all.
 Return the text, rows or values, and a test fake becomes a function instead of a mock of someone else's class.
@@ -159,31 +180,13 @@ Wait for the second caller, and count what's really shared — where the library
 **Give a convention several sources share its own edge member**, named for the convention (an identifier scheme, a country-code prefix), holding the rule and its table.
 The core still mustn't know it exists, and it isn't a source, so it stays out of the mapping of adapters a driver can fetch from.
 
-**Call services you don't own through one sync `httpx.Client` with a timeout, a user agent and the key in a header, paced by `pyrate-limiter` and retried by `tenacity`:**
+**Call services you don't own through one sync `httpx.Client` with a timeout, a user agent and the key in a header, paced by `pyrate-limiter` and retried by `tenacity`.** `httpx_.py` holds two builders: the client the composition root opens once per run and closes, and the getter each source module composes with its parse:
 
 ```python
-@functools.cache
-def _client(api_key: str) -> httpx.Client:
-    """Return the client every call shares."""
-    return httpx.Client(
-        headers={
-            "User-Agent": f"mypackage/{importlib.metadata.version('mypackage')}",
-            "X-API-Key": api_key,
-        },
-        timeout=30.0,
-    )
-
-
-@functools.cache
-def _limiter() -> pyrate_limiter.Limiter:
-    """Return the pacer every call shares: the rate the service states."""
-    return pyrate_limiter.Limiter(
-        pyrate_limiter.Rate(5, pyrate_limiter.Duration.SECOND)
-    )
-
-
 def _retryable(failure: BaseException) -> bool:
-    """Retry a throttle or a server fault, never a client error."""
+    """Retry a transport fault, a throttle or a server fault, never a client error."""
+    if isinstance(failure, httpx.TransportError):
+        return True
     return isinstance(failure, httpx.HTTPStatusError) and (
         failure.response.status_code == 429 or failure.response.status_code >= 500
     )
@@ -202,23 +205,60 @@ def _wait(state: tenacity.RetryCallState) -> float:
     return tenacity.wait_exponential_jitter(initial=1, max=60)(state)
 
 
-@tenacity.retry(
-    retry=tenacity.retry_if_exception(_retryable),
-    reraise=True,
-    stop=tenacity.stop_after_attempt(5),
-    wait=_wait,
-)
-def _get(url: str, *, api_key: str) -> str:
-    """Fetch one document, paced and retried."""
-    _limiter().try_acquire("weather")
-    return _client(api_key).get(url).raise_for_status().text
+def build_client(
+    api_key: str,
+    *,
+    timeout: float,
+    transport: httpx.BaseTransport | None = None,
+) -> httpx.Client:
+    """Return the one client a run shares; the composition root closes it."""
+    return httpx.Client(
+        headers={
+            "User-Agent": f"mypackage/{importlib.metadata.version('mypackage')}",
+            "X-API-Key": api_key,
+        },
+        timeout=timeout,
+        transport=transport,
+    )
+
+
+def build_get_document(
+    client: httpx.Client,
+    *,
+    rate: pyrate_limiter.Rate,
+    sleep: collections.abc.Callable[[float], None] = time.sleep,
+) -> collections.abc.Callable[[str], str]:
+    """Return a getter over the client, paced at the rate and retried."""
+    limiter = pyrate_limiter.Limiter(rate)
+    retrying = tenacity.Retrying(
+        reraise=True,
+        retry=tenacity.retry_if_exception(_retryable),
+        sleep=sleep,
+        stop=tenacity.stop_after_attempt(5),
+        wait=_wait,
+    )
+
+    def attempt(url: str) -> str:
+        limiter.try_acquire("source")
+        return client.get(url).raise_for_status().text
+
+    def get_document(url: str) -> str:
+        """Fetch one document, paced and retried."""
+        return retrying(attempt, url)
+
+    return get_document
 ```
 
+- **The composition root builds one client per run and passes it in** — `with httpx_.build_client(key, timeout=...) as client:` — binding the key from settings as it does (see Configuration); a `functools.cache`d module-level client has no owner to close it and no seam for a test transport.
+`timeout` and `rate` are the source's constants from its package YAML, not literals here, so a second source over the same module states its own.
+- **`transport` and `sleep` are the test seams** (`write-tests`): `httpx.MockTransport` answers in-process and a spy `sleep` records what the retry would have waited, so "backs off three times" runs in milliseconds.
+`pyrate-limiter` 4.5.1 takes no sleep — `Limiter(rate)` blocks inside `try_acquire` (the `blocking=True` default; `blocking=False` returns `False` at once, and the 3.x `raise_when_fail` and `max_delay` are gone) through a module-level `pyrate_limiter.limiter.sleep` — so a pacing test `monkeypatch`es that name, the one patch the seam rule allows, and the limiter then advances as if it had slept.
 - **A request with no timeout hangs the program on someone else's outage**; a library's default user agent gets refused unevenly by whatever fronts the service, so the same code works on two hosts and 403s on a third.
 `importlib.metadata.version` names the tool and release; a service that accepts only a browser string is a fact found by trying it, not a default.
 - **The key goes in a header, never the query string**, which every proxy, access log and shared link records.
-- **`pyrate-limiter` paces at the rate the service states**, blocking until a slot frees; a hand-rolled `time.sleep` paces the calls you remembered.
-`tenacity` retries only the outcomes the predicate names — a `429` or a `5xx` — honouring `Retry-After`, with `reraise=True` so the caller sees the real exception; a `4xx` is your bug and retrying it only hides which request was wrong (see `write-python` on classifying outcomes).
+- **`pyrate-limiter` paces at the rate the service states**; a hand-rolled `time.sleep` paces the calls you remembered.
+`tenacity` retries only the outcomes the predicate names — a dropped connection or timeout (`httpx.TransportError`), a `429` or a `5xx` — honouring `Retry-After`, with `reraise=True` so the caller sees the real exception; a `4xx` is your bug and retrying it only hides which request was wrong (see `write-python` on classifying outcomes).
+Pacing sits inside the attempt, so a retry takes a slot too.
 - **Page to exhaustion and assert the count**: follow the next-page link until the service sends none, then compare the rows against the total the first page states, since a loop stopping at a fixed page count caps the data silently (see `write-tests`).
 - **Sync by default**; `httpx.AsyncClient` only inside a driver or adapter whose framework or fan-out needs it, never in a signature the core calls (see `write-python`).
 
@@ -237,20 +277,20 @@ Configuration is input crossing the boundary, so it takes the same path as any I
 
 - **Read and validate at the edge** into typed values.
 - **Inject inward.** An operation takes the values it needs as arguments, never a global `Settings` or `os.environ` — reading ambient config is IO.
-- **Wire it at the composition root** and inject it beside the adapters; `write-entry-points` has when to validate and when one value outgrows a function.
-- **A value only an adapter needs is read by that adapter** — a user agent, a connection string.
-Threading it through the port makes every adapter accept a parameter some ignore; the core stays pure either way, since the rule is that *it* never reaches for ambient state.
+- **Wire it at the composition root** and inject it beside the adapters; `write-entry-points` has when to validate, where the `.env` is found and when one value outgrows a function.
+- **A secret is bound at the composition root, never read by an adapter or carried by a port.** The root reads settings once and binds the key into the adapter as it builds it — `httpx_.build_client(settings.api_key.get_secret_value(), ...)`, then `functools.partial(noaa.fetch_records, get=get)` to make the port's callable — so the port's signature stays the domain's and an adapter test needs no environment.
+An adapter reading `os.environ` works on the laptop and fails under a scheduler, whose environment is not the shell's.
 
 **A value has one of three homes, by who changes it:**
 
-- **Settings** — per-deployment values and secrets, which differ between the laptop and the server: a data directory, an API key.
-`pydantic-settings` reads them from the environment and a local `.env` (see `write-entry-points`); a secret is never committed (see `use-git`).
-- **Package YAML in `data/adapt/`** — per-source constants the code was written against: a base URL, a field map, a rate.
-Changing one is a code change and ships with the package.
-- **A user-editable CSV in the app's data directory** (see `store-data`) — a list the user maintains between runs: the stations to follow.
+- **Settings** — per-deployment values and every secret, which differ between the laptop and the server: the data directory, the API key.
+`pydantic-settings` reads them from the environment and a `.env` (see `write-entry-points`); a secret is never committed (see `use-git`).
+- **Package YAML in `data/adapt/<source>.yaml`** — per-source constants the code was written against: the base URL, the rate, the page size, the timeout, a field map.
+Changing one is a code change and ships with the package; the source module reads its own file through `importlib.resources` into a frozen dataclass (`noaa.read_constants()`), and the root hands the values to the builders.
+- **A user-editable CSV in the app's data directory** (`items.csv`, see `store-data`) — a list the user maintains between runs: the items to follow.
 In package data it would force a reinstall per edit, and a setting can't hold a table.
 
-The tell for the wrong home is a reinstall to add a row, or a key in a committed file.
+The tell for the wrong home is a reinstall to add a row, a key in a committed file, or a rate in a `Settings` field that no deployment ever changes.
 
 ## Logging
 
@@ -259,8 +299,10 @@ Logging is output, configured at the edge but carried by convention rather than 
 - **Configure once, at the composition root** — `write-entry-points` has the handler setup, matching the suite's session setup in `write-tests`.
 A library or core module calling `logging.basicConfig` hijacks its host; a module logger in the core costs it nothing, since with no handler installed a record vanishes.
 - **Configuring the root adopts every dependency's narration.** A library logging failures your adapter already handled now writes them to standard error above your one line.
-Where that happens, set that library's logger level at the composition root, by name — adopting its records is then a decision.
-- **The edge narrates; the core stays quiet.** Log requests, adapter calls and caught errors at the edge; the core returns its results and is pinned by tests.
+Where that happens, set that library's logger level at the composition root, by name — adopting its records is then a decision; `httpx` and `httpcore` narrate every request at INFO, so the root sets both to WARNING.
+- **The edge narrates; the core stays quiet.** Log at the edge; the core returns its results and is pinned by tests.
+- **One level per event**: a request is DEBUG, an adapter call INFO, a failure caught and handled (a rejected row, a failed item) WARNING, a failed source ERROR.
+A level picked per line makes `--log-level INFO` show a different story in each module; `write-entry-points` sets the level an interactive and a scheduled command run at.
 
 ## Data
 
@@ -331,7 +373,7 @@ tests/
     packages/
 ```
 
-- **`data/`** — files the tests load; never shipped.
+- **`data/`** — files the tests load, a recorded response under `data/<source>/` (see `write-tests`); never shipped.
 - **`pytest_/`** — imported helpers, a package named for its coupling to `pytest`: fixtures in `given.py`, assertions in `then.py`, named actions in `when.py`; tests import `from pytest_ import then`.
 - **`suite/`** — the cases: your code mirrored in `suite/mypackage/`, dependency-behaviour tests in `suite/packages/`.
 It is not a package: `--import-mode importlib` collects files by path, so same-named test files in different directories coexist.

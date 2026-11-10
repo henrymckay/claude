@@ -4,8 +4,9 @@ description: >-
   In-code conventions for writing Python that a formatter can't decide —
   typing (the frozen dataclass as the record, Literal, StrEnum, NewType,
   Protocol, override, assert_never), aware UTC datetimes and Decimal money,
-  docstrings, comments, imports, public API, naming, call-site argument style,
-  member ordering, simplicity, the one error model (raise from the app's error
+  docstrings, comments, imports and the trailing underscore on a
+  library-coupled module, public API, naming, call-site argument style, member
+  ordering, simplicity, the one error model (raise from the app's error
   package, catch in drivers, X | None only for a lookup miss), sync by
   default, and idioms. The magic trailing comma and the Avoid list close it. A
   rule that bends carries its exception, and a PLAN.md decision overrides any
@@ -104,8 +105,8 @@ For a deep internal path, bind the nearest useful module (`from mypackage import
 - **Don't rename with `as`**, including the popular aliases: `import polars`, not `import polars as pl`.
 Where a clash forces a rename, derive it from the true name (`import numpy as numpy_`).
 A redundant alias (`from .users import find as find`) renames nothing — it marks a re-export (see Public API).
-- **Name a package coupled to a third-party library with a trailing underscore** — `polars_/`, `typer_/`, `httpx_/` — so it marks the coupling without shadowing the library.
-Make it a package even when one module would do, since the coupled code is what grows when the library is used harder, and the name then never changes shape.
+- **Name a module coupled to a third-party library with a trailing underscore** — `polars_.py`, `typer_.py`, `httpx_.py` — so it marks the coupling without shadowing the library.
+It stays a module until a second file is needed, then becomes a package of the same name (`httpx_/`), so no import changes shape; an empty `__init__.py` package wrapping one module is a directory nobody opens.
 - **Fix a circular import by restructuring** — merge the two modules or extract the third they both need — not with a function-local import.
 
 ## Public API

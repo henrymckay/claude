@@ -45,12 +45,12 @@ Supply the *given* through fixtures:
 - Take each *given* as a `@pytest.fixture` argument; the fixture names and builds the scenario so the body doesn't set it up inline.
 - Put shared fixtures in `given.py`, registered as Pick a layout says.
 - Widen a fixture's `scope` to `"module"` or `"session"` for expensive read-only setup.
-- Build files under the `tmp_path` fixture.
+- Build files under the `tmp_path` fixture, and point the app's data directory at it with `monkeypatch.setenv("MYAPP_DATA_DIR", str(tmp_path))` before the settings are built (`store-data`).
 - At a boundary you can't inject, patch with `monkeypatch`; for the clock, `time-machine` freezes `datetime.now` and friends in C, where `monkeypatch` can only replace the module attribute the code happened to import.
 
 A fixture sources each input, and — harder — each expected value:
 
-- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`).
+- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`); a recorded response sits under `tests/data/<source>/`, so each source's fixtures and its recording script are found together.
 - A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
 - Expected values → a fixture that derives them in plain Python (not by re-running the pipeline), passed into a `then` assertion; where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
 
@@ -156,12 +156,34 @@ def test_when_raise_for_status_then_a_not_found_raises(
         missing_document.get("https://example.test/report.csv").raise_for_status()
 ```
 
-Keep the recorded response in `tests/data/` and load it through a fixture, the same as any other given.
+Keep the recorded response under `tests/data/<source>/` and load it through a fixture, the same as any other given.
 `respx` is the alternative where you want to assert on the request as well, but the transport is enough to pin behaviour and carries no extra dependency.
 
-**Record it with `tests/data/record.py`**, a PEP 723 script (see `setup-python`) that calls the real source with the key from the environment, strips the key from the saved request and response, and writes the file the fixture loads; re-run it when the source changes shape, so the fixture is always something the source actually sent.
+**Record it with `tests/data/<source>/record.py`**, a PEP 723 script (see `setup-python`) that calls the real source with the key from the environment, strips the key from the saved request and response, and writes the file the fixture loads; re-run it when the source changes shape, so the fixture is always something the source actually sent.
 
-**Pace and retry through a seam.** The client builder takes `sleep: collections.abc.Callable[[float], None] = time.sleep`, passed on to the retry and rate-limit policy; the test passes a spy that records the waits, so a test of "backs off three times" runs in milliseconds.
+**Pace and retry through the adapter's seams** (`structure-python`, Write an adapter, has the adapter):
+
+```python
+def build_client(
+    api_key: str,
+    *,
+    timeout: float,
+    transport: httpx.BaseTransport | None = None,
+) -> httpx.Client: ...
+
+
+def build_get_document(
+    client: httpx.Client,
+    *,
+    rate: pyrate_limiter.Rate,
+    sleep: collections.abc.Callable[[float], None] = time.sleep,
+) -> collections.abc.Callable[[str], str]: ...
+```
+
+The test builds the client on an `httpx.MockTransport` whose handler answers from a sequence (a `503` with `Retry-After`, then the recorded `200`) and passes `sleep=waits.append`, then asserts the document came back and `waits == [3.0]`; the retry's waits are the test's, so "backs off three times" runs in milliseconds.
+`pyrate-limiter` 4.5.1 sleeps through its own `pyrate_limiter.limiter.sleep`, so a pacing test adds `monkeypatch.setattr(pyrate_limiter.limiter, "sleep", paced.append)` and asserts on `paced`; the limiter advances as if it had slept, so five calls at two a second finish at once with three waits recorded.
+
+**Drive a `typer` command through `typer.testing.CliRunner`**, invoking the role package's `app` with the arguments a user would type and asserting on `result.exit_code` and `result.stdout`; the composition root then runs for real over fakes injected the same way as the API's `dependency_overrides` — the store at `tmp_path` through the environment, the source through a `MockTransport` — so a CLI test proves the wiring, not only the operation.
 
 ## Coverage, speed and logs
 
