@@ -1,14 +1,14 @@
 ---
 name: write-markdown
 description: >-
-  How to write clear, well-structured Markdown for any audience — READMEs, docs,
-  guides, changelogs and issues/PRs written for humans, and SKILL.md, CLAUDE.md,
-  agent instructions and prompts written for an LLM. Use whenever writing or
-  editing Markdown, even if the user just says "write a README", "document
-  this", "update the docs", "write a skill", or "tidy up this CLAUDE.md". Covers
-  the universal principles first, then the human-only polish and the LLM-only
-  guidance, so decide the reader first and apply the matching set. write-skills
-  layers on this for authoring a skill.
+  How to write clear, well-structured Markdown for any audience — READMEs,
+  docs, guides, changelogs and issues/PRs written for humans, and SKILL.md,
+  CLAUDE.md, agent instructions and prompts written for an LLM. Use whenever
+  writing or editing Markdown, even if the user just says "write a README",
+  "document this", "update the docs", or "tidy up this CLAUDE.md". Covers the
+  universal principles first, then the human-only polish and the LLM-only
+  guidance, so decide the reader first and apply the matching set.
+  write-skills layers on this for authoring a skill.
 ---
 
 # Write Markdown
