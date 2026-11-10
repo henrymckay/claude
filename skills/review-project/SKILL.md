@@ -90,7 +90,7 @@ Read the changelog before recommending a major upgrade.
 
 ## Get a cold read
 
-After your own pass, give a fresh agent the files and the standard, never your conclusions, and ask what breaks the plan or the skills.
+After your own pass, give a fresh agent on `sonnet` (see `choose-model`) the files and the standard, never your conclusions, and ask what breaks the plan or the skills.
 An agent handed your findings tends to confirm them; one reading cold finds what your pass was blind to.
 Verify each finding against the files before keeping it — an agent's mistakes read as confidently as its catches.
 
