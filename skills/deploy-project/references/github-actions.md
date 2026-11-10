@@ -25,7 +25,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
@@ -107,7 +107,7 @@ Its checkout names `ref: ${{ github.ref_name }}`, because the default is the com
 - `export metrics` reads the store, never a source, so the site job needs no token and the bundle holds only the exported file.
 - `app/` is the browser app's own directory, separate from the package: it runs on Pyodide, so it cannot import a package that depends on `polars`, and it reads `data/metrics.parquet` by a same-origin `pyodide.http.pyfetch`; after changing it, run the workflow by hand rather than waiting a night.
 - `pages: write` and `id-token: write` are what `deploy-pages` needs; the `github-pages` environment is created by the first deploy and shows the site's URL on the run.
-- Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors (checked 2026-11-10).
+- Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors, except `setup-uv`, which has published no major tag since v8, so `@v10` resolves to nothing and the job fails at setup — it takes a full version (checked 2026-11-10).
 
 ## Status
 
@@ -129,7 +129,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
