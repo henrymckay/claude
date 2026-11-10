@@ -4,4 +4,8 @@ allowed_tools: [Read, Glob, Grep, Skill]
 tags: [trigger]
 ---
 
-Convert this pandas groupby-apply over sensor readings to polars.
+Convert this to polars:
+
+```python
+readings.groupby("sensor").apply(lambda g: g.assign(delta=g["value"].diff()))
+```
