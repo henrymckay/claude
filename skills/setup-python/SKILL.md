@@ -169,11 +169,11 @@ A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wron
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script; see `run-unattended`); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Spreadsheets** → `polars.read_excel`, with `fastexcel` (the `calamine` backend) as the reader engine.
 `polars` names the function but ships no engine, so a project that declares none fails at the first call rather than at install.
-- **Storage** → hive-partitioned Parquet for pipeline output, DuckDB to query it, SQLite for small single-writer state; `store-data` has the picks and their cases.
+- **Storage** → hive-partitioned Parquet for pipeline output, DuckDB to query it, SQLite for small single-writer state, and `platformdirs` for the data directory's default; `store-data` has the picks and their cases.
 - **Tabular / columnar data** → `polars` (see `use-polars`), converting another library's `pandas` frame with `polars.from_pandas` plus `pyarrow`.
 - **Terminal output for a person** → `rich` for tables, progress bars, colour, and readable tracebacks; a command's data output stays plain bytes on standard output (see `write-entry-points`).
 - **Testing** → `pytest`, with `hypothesis` for property-based tests, `time-machine` for the clock, the `anyio` plugin for async code (not `pytest-asyncio`) and `pytest-cov` for coverage.
-- **Validation and settings** → `pydantic` v2 at a trust boundary (see `write-python`), `pydantic-settings` for typed config from the environment and a local `.env`.
+- **Validation and settings** → `pydantic` v2 at a trust boundary (see `write-python`), `pydantic-settings` for typed config from the environment and a local `.env`, and `pyyaml` for the per-source constants in package data (see `structure-python`).
 - **Web API** → `fastapi` (type-hint-driven, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **XML and other markup** → `lxml`, by XPath or CSS selector, over a hand-rolled parser or regex.
 Match XML elements on `local-name()` rather than a declared namespace, since two producers of one schema may declare it differently and a namespace-bound XPath then matches nothing.
