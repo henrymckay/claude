@@ -6,21 +6,23 @@ description: >-
   standard placement, failure modes and caveat, structuring the body so each
   rule is stated once with an observable why and its exception in the same
   sentence, naming each house pick with its alternative and the case that
-  earns it, saying when to deviate, running every code block and library
-  claim, and splitting a language-agnostic skill from its language reference.
-  Use whenever creating or editing a SKILL.md or its references, naming a
-  skill, writing or reviewing a skill description, or splitting out a
-  reference — even if the user just says "make a skill", "add a skill", or
-  "fix this skill's description". Layers on write-markdown for prose
-  mechanics, and defers the draft-eval-iterate loop, file anatomy, packaging
-  and description optimisation to the skill-creator plugin; review-plugin
-  sweeps the whole repo against these conventions.
+  earns it, saying when to deviate, cutting what Claude does unprompted,
+  keeping examples general and cross-references live, running every code block
+  and library claim, and splitting a language-agnostic skill from its language
+  reference, or a library-bound skill into topic cookbooks. Use whenever
+  creating or editing a SKILL.md or its references, naming a skill, writing or
+  reviewing a skill description, or splitting out a reference — even if the
+  user just says "make a skill", "add a skill", or "fix this skill's
+  description". Layers on write-markdown for prose mechanics, and defers the
+  draft-eval-iterate loop, file anatomy, packaging and description
+  optimisation to the skill-creator plugin; review-plugin sweeps the whole
+  repo against these conventions.
 ---
 
 # Write skills
 
 House conventions that keep this library's skills consistent.
-They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, progressive disclosure, packaging and description optimisation; `review-plugin` sweeps the whole repo against them.
+They layer on `write-markdown` (the prose) and defer to the `skill-creator` plugin for the draft-eval-iterate loop, file anatomy, packaging and description optimisation; `review-plugin` sweeps the whole repo against them.
 Three mistakes account for most weak skills: a description never reconciled with the body that shipped, a rule stated in two places that then drift apart, and a why that names the rule's purpose rather than something a reader could watch happen.
 
 **In an existing project, ask first.** Where a skill or repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -32,7 +34,7 @@ Name a skill **verb-first** in a few kebab-case words, so the name says when Cla
 - **`be-`** — a style to adopt (`be-functional`).
 - **`build-`** — carry a plan out (`build-project`).
 - **`plan-`** — settle a design before building (`plan-project`).
-- **`review-`** — sweep for drift (`review-plugin`).
+- **`review-`** — check against a standard and fix (`review-project`, `review-plugin`).
 - **`setup-` / `structure-`** — arrange a project (`setup-python`, `structure-python`).
 - **`use-`** — a tool or library (`use-git`, `use-polars`).
 - **`write-`** — produce an artefact (`write-tests`).
@@ -51,12 +53,12 @@ Write plain prose with no backticks (see `write-markdown`), in this order, mirro
 
 1. **What it is** — a phrase naming the skill and its key topics; counterparts use parallel forms ("Functional programming done well — …" / "Object-oriented design done well — …").
 2. **When to use it** — "Use when/whenever …", the contexts that should invoke it, ending with the casual phrasings ("even if the user just says '…'").
-Cover the whole body and promise nothing it lacks.
+   Cover the whole body and promise nothing it lacks.
 3. **What it targets**, only where a version matters — "Targets Polars 2.x."
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 5. **The reference pointer**, if any — "Language-agnostic principles here; Python <idioms/build-outs> in references/python.md." or, for a topic split, "Detailed cookbooks live in references/."
 6. **Neighbours** — "Layers on <skill>; <skill> is the <…> counterpart", the same skills the opening names.
-The description and the opening both name them on purpose — one is read when choosing a skill, the other when following it — so this is the one place a repeat is wanted; keep the two identical in substance.
+   The description and the opening both name them on purpose — one is read when choosing a skill, the other when following it — so this is the one place a repeat is wanted; keep the two identical in substance.
 
 ## Open consistently
 
@@ -64,7 +66,7 @@ Every skill opens with these parts, in order:
 
 1. **Placement** — a line or two saying what the skill is, the skills it **builds on** and the skills it **hands off to** ("for scaffolding, see `setup-python`"), as bare backticked names matching the description.
 2. **Failure modes** — the two or three mistakes behind most of what goes wrong.
-Take them from what a real run got wrong; a mistake nobody makes spends attention the real ones needed.
+   Take them from what a real run got wrong; a mistake nobody makes spends attention the real ones needed.
 3. **Language pointer**, only with a language reference — `**Language-agnostic here.** The Python specifics live in references/python.md.`
 4. **Caveat**, one of two fixed shapes, omitted only for a skill that applies to nothing but the user's own material:
    - Applied to existing material: `**In an existing project, ask first.** Where a repo already has <X>, check with the user whether to keep it or apply <Y>, and prefer <Y> unless they choose to keep theirs.` — <Y> is this skill, or what it produces (`PLAN.md`).
@@ -74,6 +76,7 @@ Take them from what a real run got wrong; a mistake nobody makes spends attentio
 
 - **Use punchy section headings**: imperative for an action (`Pick a layout`), a noun for a catalogue (`Patterns`), sentence case.
 - **Order by dependency.** Sections that define vocabulary come before those that spend it, so a reader never meets a term before its definition; synthesising sections (`Pick a layout`, `Run`) trail.
+- **Cut what Claude does unprompted.** For each rule ask whether Claude would follow it with no skill loaded — pure functions, no bare `except`, atomic commits — and cut it if so; it spends the reader's attention that the corrections, house picks and non-obvious traps needed, and it reads as reasonable advice, so word counts never catch it.
 - **State each rule exactly once.** A rule stated twice drifts as soon as one copy is edited, and a reader who meets both wonders whether they differ.
 Fold one-line points into a catalogue section rather than giving them a stub heading.
 - **Make the why an observable consequence.** "Define `__all__` to make the API explicit" gives a purpose nobody can check; "mark a re-export with a redundant alias, or the linter reads it as an unused import" says what happens, and a reader can watch it happen.
@@ -83,7 +86,7 @@ Where nothing observable turns on a rule, label it a preference so the reader kn
 A rule softened to *prefer* is ignored outright; a rule with a named exception is applied, and the exception with it.
 - **Name the pick, the alternative and the case that earns it.** "Use `functools.partial`; `toolz.curry` composes more freely but ships no type hints, so pyright loses the function's type — reach for it only where that cost is paid knowingly."
 A non-default stays mentioned without becoming the default, and the reader knows what reaching for it costs.
-- **Say when to deviate.** A skill is a set of defaults: state what evidence overrides one — a `PLAN.md` decision, a measurement, the current docs — so Claude deviates openly under Decisions rather than silently or never.
+- **Say when to deviate.** A skill is a set of defaults: a `PLAN.md` decision the user signed off overrides one, and a measurement or the current docs do once recorded there as a proposed decision and raised, so Claude deviates openly rather than silently or never.
 - **Give a load-bearing rule its own line**, not the last sentence of a long paragraph, where it gets read past.
 - **Show the anti-pattern for the most-broken rule** as one compact wrong/right pair — a fenced pair in a language-bound skill, a named pair in prose in a language-agnostic one, so it doesn't quietly become a Python skill.
 - **Keep examples general.** An example drawn from the project that prompted a rule teaches its domain along with the rule; use the smallest example that shows the rule, from a domain any reader knows.
