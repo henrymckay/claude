@@ -1,13 +1,13 @@
 # Be functional in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
-Python isn't a pure functional language, so aim for *pragmatic* functional: pure logic, immutable data, and comprehensions and generators over manual loops — without fighting the language.
+Python isn't a pure functional language, so aim for *pragmatic* functional without fighting the language.
 
 ## Immutability
 
-- **Tuples** and **`frozenset`** instead of lists and sets when the data shouldn't change.
 - **Frozen dataclasses** for records, in `write-python`'s shape:
   ```python
+  import copy
   import dataclasses
 
 
@@ -20,10 +20,9 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
 
 
   p = Point(x=1, y=2)
-  p2 = dataclasses.replace(p, x=10)
+  p2 = copy.replace(p, x=10)
   ```
-- **`typing.NamedTuple`** only where an API requires tuple semantics (see `write-python`).
-- **Build a new mapping rather than mutating one**: `d | {k: v}` adds or replaces a key, a comprehension filters or maps, `dataclasses.replace` and `copy.replace` update a record.
+- **`copy.replace`** updates a record (see `write-python`); `d | {k: v}` a mapping.
 
 ## Algebraic data types and pattern matching
 
@@ -68,7 +67,7 @@ The `case _: assert_never` arm is what makes a new variant a type error at every
 **`match` vs `functools.singledispatch`** — both dispatch on type, so choose by who owns the cases.
 Use `match` for a **closed** set of variants you own (you get exhaustiveness checking); use `singledispatch` when the operation should stay **open** to new types that register their own handler from elsewhere, without editing the function.
 For plain boolean conditions, `if`/`elif` still wins over both.
-Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, written as a mapping (`structure-python` says where it lives).
+Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, written as a mapping that lives in the package's data (see `structure-python`, Data).
 For dispatch on **more than one argument's type** the stdlib has nothing; `plum` does it well typed, at the cost of a dependency and a dispatch at every call, so reach for it only where `match` on a tuple of the arguments would not read.
 
 ## Specialise and compose
@@ -84,17 +83,17 @@ def get_many(source: Source, *, n: int) -> list[Item]:
     ...
 
 
-def take_one(items: list[Item]) -> Item:
-    """Return the first item."""
-    return items[0]
+def get_one(source: Source) -> Item:
+    """Fetch one item from a source."""
+    return take_one(get_many(source, n=1))
 
 
 get_pair = functools.partial(get_many, n=2)
 
 
-def get_one(source: Source) -> Item:
-    """Fetch one item from a source."""
-    return take_one(get_many(source, n=1))
+def take_one(items: list[Item]) -> Item:
+    """Return the first item."""
+    return items[0]
 ```
 
 - **`functools.partial`** binds arguments and keeps the type: `pyright` special-cases it, so `get_pair` is checked at every call.
@@ -102,7 +101,6 @@ def get_one(source: Source) -> Item:
 - **A named function over `compose`.** `get_one` as a two-line `def` is typed, documented and greppable; `toolz.compose(take_one, functools.partial(get_many, n=1))` is none of those.
 Keep any composition shallow enough to read; the aim is expressive building blocks, not point-free cleverness.
 - **`functools.cache`** memoises a pure function, with three traps: an unhashable argument (a frame) raises, a method leaks `self` into the cache, and the cache is hidden state the tests then share.
-- **`toolz` earns a line** for a sequence helper the stdlib lacks — `partition_all`, `sliding_window`, `groupby` into a dict without pre-sorting — not for currying or dict updates.
 - **Tabular data's declarative form is a dataframe expression**, not a comprehension over extracted columns — see `use-polars`.
 
 ## Inject impure dependencies
@@ -130,7 +128,7 @@ A script with no layers may default to the real thing in place: `env: collection
 
 The stdlib covers composition, immutability and dispatch; each library below earns its place only for the case named.
 
-- **`toolz`** — the sequence helpers above; untyped, so never for currying or composition.
+- **`toolz`** — a sequence helper the stdlib lacks (`partition_all`, `sliding_window`, `groupby` into a dict without pre-sorting); untyped, so never for currying or composition.
 - **`plum`** — multiple dispatch on more than one argument's type where `match` on the tuple would not read.
 - **`pyrsistent`** — persistent collections with structural sharing for repeated functional updates to large structures; frozen dataclasses remain the record.
 - **No `Result` library** (`returns` and the like): `write-python`'s error model is exceptions caught in drivers, with `X | None` for a lookup miss.
