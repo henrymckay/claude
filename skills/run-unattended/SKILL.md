@@ -4,19 +4,20 @@ description: >-
   The operational side of a job that runs on a schedule with nobody watching —
   which day a nightly run fetches, the overlap lock, no silent catch-up and
   backfill by range, exit codes and a partial fetch, the status command as the
-  health check and no notification in v1, logs and their rotation, picking the
-  scheduler (a launchd agent on macOS, a systemd timer on Linux, GitHub
-  Actions in the cloud) and what each does with a missed run, invoking the
-  environment through uv, secrets outside the unit file, keeping an API or
-  dashboard alive, and deploying with a clone and uv sync. Use whenever
-  scheduling a nightly or periodic job, writing a plist, timer or workflow,
-  deciding what a job does when a night is missed or a source fails, adding a
-  status or health command, choosing where a job's logs go, or keeping a
-  service running — even if the user just says "run this every night", "cron
-  this", "make it restart" or "why did last night not run". Layers on
-  write-entry-points (the job driver) and store-data (the manifest); the plist
-  and timer files are in references/schedulers.md, the Actions workflow in
-  deploy-project's references/github-actions.md.
+  health check and no notification in v1, the job's own rotated log at INFO
+  plus the scheduler's capture, picking the scheduler (a launchd agent on
+  macOS, a systemd timer on Linux, GitHub Actions in the cloud) and what each
+  does with a missed run, invoking the environment through uv, secrets outside
+  the unit file and a working directory inside it, keeping an API or dashboard
+  alive, and deploying with a clone and uv sync. Use whenever scheduling a
+  nightly or periodic job, writing a plist, timer or workflow, deciding what a
+  job does when a night is missed or a source fails, adding a status or health
+  command, choosing where a job's logs go, or keeping a service running — even
+  if the user just says "run this every night", "cron this", "make it restart"
+  or "why did last night not run". Layers on write-entry-points (the job
+  driver) and store-data (the manifest); the plist and timer files are in
+  references/schedulers.md, the Actions workflow in deploy-project's
+  references/github-actions.md.
 ---
 
 # Run unattended
@@ -29,7 +30,7 @@ Three mistakes account for most quiet failures: a slow night overlapping the nex
 
 ## Name the day
 
-**The nightly command fetches yesterday in UTC and nothing else**; a `--day` option overrides it for a re-run.
+**The nightly command fetches yesterday in UTC and nothing else**; a `--day` option overrides it for a re-run, and a source that revises a day after publishing earns a `--days-back` that re-fetches the revised days too, recorded under Decisions with the source's revision window.
 Compute it from the UTC clock, not the local one, and schedule the run after midnight **UTC**: at 00:30 British Summer Time it is still yesterday in UTC, so "yesterday" comes out as the day before and a day is skipped every summer.
 
 ```python
@@ -42,7 +43,7 @@ Size the hour from when the source publishes, not from midnight: a feed that pos
 
 ## Make a run rerunnable
 
-- **Lock the data directory with `fcntl.flock` on `<data_dir>/.lock`**, taken non-blocking at the top of the job and held to the end.
+- **Lock the data directory with `fcntl.flock` on `<data_dir>/.lock`**, taken non-blocking at the top of every command that writes — `nightly`, `fetch`, `compute`, a backfill — and held to the end, from one `held()` in `adapt/lock.py` (see `structure-python`).
 The kernel releases it when the process dies, where a PID file outlives a crash and blocks every later run until someone deletes it; `fcntl` is Unix-only, which the house targets are.
 - **When the lock is held, log one line and exit 0.** The run in progress is the one that counts; a non-zero exit would make the scheduler record a failure and a restart policy fire a third copy.
 
@@ -76,20 +77,21 @@ A mail or chat hook is earned by the first outage nobody noticed, and then costs
 
 ## Log
 
-- **Write the job's log to `<data_dir>/logs/` through a `TimedRotatingFileHandler`** rolling at `midnight` with a `backupCount`, or let the scheduler capture standard error (`StandardErrorPath`, the journal, the workflow log) and install no file handler.
-Doing both writes every line twice; an unrotated `FileHandler` grows until the disk is full.
-- **Keep `RichHandler` for a terminal**: its colour codes are noise in a file.
+- **The unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job writes its own log in `write-entry-points`' plain file format through a `TimedRotatingFileHandler` rolling at `midnight` with a `backupCount`; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
+- **The unit captures standard output and standard error to `<data_dir>/logs/<scheduler>.log`** as well, for the summary row and for anything that escapes before logging is configured — a traceback at import, a missing environment variable; the scheduler never rotates that file, so the job's own log stays the one to read.
+- **Keep `RichHandler` for a terminal**: its colour codes are noise in a file, which is why the scheduled command names a `--log-file` instead of letting the scheduler capture a Rich stream.
 - **Emit JSON lines only behind a collector** that indexes them; for a file a person reads, the timestamped plain format in `write-entry-points`' Logging is the one to grep.
 
 ## Schedule it
 
 **Pick the scheduler by platform**, since each is already running there: a launchd agent in `~/Library/LaunchAgents` on macOS, a systemd user timer in `~/.config/systemd/user` on Linux, a `schedule` workflow on GitHub Actions when the job has no machine of its own.
 `cron` runs everywhere but fires into a bare environment with no log capture and no missed-run handling, which is the work the other three do for you.
-The launchd and systemd files are in `references/schedulers.md` and the Actions workflow in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, so a new machine is a copy and one command.
+The launchd and systemd files are in `references/schedulers.md` and the Actions workflow in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, which also names the absolute paths to edit, since a unit carries the machine's home directory and a copy alone points at the wrong one.
 
 - **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
 `--frozen` runs what is locked instead of re-resolving against the network every night.
-- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read, `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`.
+- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (see `write-entry-points`), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`.
+Set `WorkingDirectory` to the repo in every unit: a scheduler starts the job in `/`, so a relative `.env` or data path is never found and the first unattended run exits 2 for a missing key.
 - **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays under load, and disables the schedule after sixty days without activity in a public repository.
 Each is a gap `status` reports, not a job to repair.
 

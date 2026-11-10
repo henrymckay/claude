@@ -23,7 +23,13 @@ Keep them in the repo under `deploy/` and give the README the install line shown
     <string>--frozen</string>
     <string>myapp-cli</string>
     <string>nightly</string>
+    <string>--log-file</string>
+    <string>/Users/me/Library/Application Support/myapp/logs/nightly.log</string>
+    <string>--log-level</string>
+    <string>info</string>
   </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/me/Git/myapp</string>
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
@@ -36,15 +42,18 @@ Keep them in the repo under `deploy/` and give the README the install line shown
     <key>MYAPP_DATA_DIR</key>
     <string>/Users/me/Library/Application Support/myapp</string>
   </dict>
+  <key>StandardOutPath</key>
+  <string>/Users/me/Library/Application Support/myapp/logs/launchd.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/me/Library/Logs/myapp/nightly.log</string>
+  <string>/Users/me/Library/Application Support/myapp/logs/launchd.log</string>
 </dict>
 </plist>
 ```
 
 - `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in British Summer Time; a missed interval runs once on wake.
-- `StandardErrorPath` captures the log, so the job installs no file handler; launchd never rotates it, so add a `TimedRotatingFileHandler` instead once the file matters.
-- Secrets come from the `.env` the settings read, not `EnvironmentVariables`.
+- `StandardOutPath` and `StandardErrorPath` catch the summary row and anything that escapes before logging is configured; the job's own log is the `--log-file`, rotated by the handler, since launchd never rotates.
+- `WorkingDirectory` is the repo, so the settings find the `.env` there; secrets come from it, not from `EnvironmentVariables`.
+- The two `/Users/me/...` paths are the ones the README tells a new machine to edit.
 - For a service, replace `StartCalendarInterval` with `<key>KeepAlive</key><true/>`.
 
 ## systemd (Linux)
@@ -77,7 +86,7 @@ Description=Fetch yesterday's readings
 Type=oneshot
 WorkingDirectory=/home/me/Git/myapp
 EnvironmentFile=/home/me/.config/myapp/env
-ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen myapp-cli nightly
+ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen myapp-cli nightly --log-file /home/me/.local/share/myapp/logs/nightly.log --log-level info
 ```
 
 - `OnCalendar` takes a zone suffix, so the hour is stated in UTC directly; `Persistent=true` runs a missed firing at the next boot.
