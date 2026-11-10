@@ -45,6 +45,7 @@ An aggregation can take a condition: `polars.col("v").filter(polars.col("v").gt(
 
 **A time window is `rolling_*_by`; a row window is `rolling_*`.** `rolling_mean_by("ts", window_size="3d")` covers three calendar days whether they hold three rows or none, where `rolling_mean(window_size=3)` averages the last three rows wherever they fall; `min_samples` (default `1`) decides whether a short window reports or returns null, and `closed` (default `"right"`) which end the window includes.
 Pin all three with a dependency test (see `write-tests`), since each default is a belief about the library that an upgrade changes without an error.
+A per-item window is `rolling_mean_by("day", window_size="7d", min_samples=7).over("item", order_by="day")`: each item runs over its own days whatever the frame's order, `min_samples` equal to the window leaves the first six days null rather than a mean of fewer, and a calendar window over a gap leaves the missing days unfilled — no row appears for them, and a day whose window spans the gap is null (Polars 2.1).
 
 **Address a class of columns with `polars.selectors`.** `polars.selectors.numeric().fill_null(value=0)` resolves against the real schema when the query runs, so it covers the column added next month; a hand-listed set is pinned to the day it was written.
 **Rename by rule the same way**: `frame.rename(to_snake_case)` applies to whatever arrives, where a `{...}` dict silently misses a new field — keep the dict for a few renames that follow no rule.

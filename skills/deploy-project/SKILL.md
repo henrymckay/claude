@@ -3,31 +3,33 @@ name: deploy-project
 description: >-
   Where each artefact of a project runs in the cloud and how it gets there at
   zero or near-zero cost — the nightly pipeline as a GitHub Actions schedule
-  in the project's own repository, writing to MotherDuck and committing a
-  Parquet copy back, Modal when a job outgrows a runner; MotherDuck Lite with
-  one token per consumer, R2 past 10 GB; a Shiny dashboard on Posit Connect
-  Cloud Free from a public repo, shinylive on GitHub Pages when it needs no
-  secret, Streamlit Community Cloud when the app is Streamlit or must be
-  private; an API on Render only once a second consumer earns one, Cloud Run
-  when the wake matters; a static site from the same workflow; what changes
-  for a private repository; secrets in each platform's own store; the hosts
-  ruled out as dead or no longer free; and re-reading the vendor's plan page
-  before relying on a limit. Use whenever deploying, hosting or publishing a
-  pipeline, dashboard, API or site, choosing a free tier or cloud host,
-  writing a workflow that runs in the cloud, or filling a plan's Runs on
-  section — even if the user just says "put this online", "host the
-  dashboard", "run it in the cloud" or "is there a free tier for this". Facts
-  checked 2026-11-10; the two workflow files are in
-  references/github-actions.md. Layers on run-unattended (what the job does
-  unwatched), store-data (the store and its tokens), write-entry-points (the
-  drivers deployed) and setup-python (uv, Docker and CI); plan-project's Runs
-  on section records the choice.
+  in the project's own repository, writing to MotherDuck and committing the
+  data tree back to main, alerting when the driver could not, with a status
+  workflow for a night that never ran, and Modal when a job outgrows a runner;
+  MotherDuck Lite with one token per consumer, R2 past 10 GB; a Shiny
+  dashboard on Posit Connect Cloud Free from a public repo, shinylive on
+  GitHub Pages when it needs no secret, Streamlit Community Cloud when the app
+  is Streamlit or must be private; an API on Render only once a second
+  consumer earns one, Cloud Run when the wake matters; a static site built by
+  a second job of the same workflow; what changes for a private repository;
+  secrets in each platform's own store; the hosts ruled out as dead or no
+  longer free; and re-reading the vendor's plan page before relying on a
+  limit. Use whenever deploying, hosting or publishing a pipeline, dashboard,
+  API or site, choosing a free tier or cloud host, writing a workflow that
+  runs in the cloud, or filling a plan's Runs on section — even if the user
+  just says "put this online", "host the dashboard", "run it in the cloud" or
+  "is there a free tier for this". Facts checked 2026-11-10; the two workflow
+  files are in references/github-actions.md. Layers on run-unattended (what
+  the job does unwatched), store-data (the store and its tokens),
+  write-entry-points (the drivers deployed), send-messages (the alert) and
+  setup-python (uv, Docker, and CI, which the nightly workflow does not
+  bring); plan-project's Runs on section records the choice.
 ---
 
 # Deploy a project
 
 Where each artefact of a project runs once it leaves the laptop, and how it gets there, on hosts that cost nothing or nearly nothing.
-It builds on `run-unattended` (what the job does unwatched), `store-data` (the store), `write-entry-points` (the drivers deployed) and `setup-python` (`uv`; no Docker or CI until earned, and this skill earns the workflow); `plan-project`'s Runs on section records each choice with the date its tier was checked.
+It builds on `run-unattended` (what the job does unwatched), `store-data` (the store), `write-entry-points` (the drivers deployed), `send-messages` (the alert) and `setup-python` (`uv`; no Docker or CI until earned — this skill earns the nightly workflow, not a CI one, so the suite still runs where the code is written); `plan-project`'s Runs on section records each choice with the date its tier was checked.
 Three mistakes account for most deployments that die quietly: a free tier that changed or vanished after the plan was written, so the job stops the day the credit runs out; a secret bundled into a static app, which the browser hands to anyone who opens the network tab; and a public-repository assumption on a private project, where Pages and Connect Cloud Free refuse to publish.
 
 **In an existing project, ask first.** Where a repo already deploys somewhere, check with the user whether to keep it or apply these picks, and prefer these unless they choose to keep theirs.
@@ -51,12 +53,14 @@ A weather project, say, fetches yesterday's observations each night into MotherD
 
 ## Run the pipeline
 
-**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked` then `uv run myapp-cli nightly`; the file is in `references/github-actions.md`.
+**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked` then `uv run myapp-cli nightly --log-level info`; the file is in `references/github-actions.md`.
 A public repository runs it free; a job must finish inside six hours, and the cron fires on the default branch only, at most every five minutes, and late under load, so pick a minute other than `:00` and let `run-unattended`'s day rule set the hour.
 
-- **Write to MotherDuck and commit a date-partitioned Parquet copy back** with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
-The copy is the backup, and the push is repository activity, so GitHub does not disable the schedule after sixty days without a commit; a push made with `GITHUB_TOKEN` triggers no workflow, so it cannot loop.
-- **Commit one small file per night, never a growing one.** GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and a rewritten file makes every clone carry every version.
+- **Write to MotherDuck and commit the data tree back** — the night's `records/` and `rejected/` partitions, `metrics.parquet` and `runs.parquet` — with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
+The tree is the backup and the next night's input, and the push is repository activity, so GitHub does not disable the schedule after sixty days without a commit; a push made with `GITHUB_TOKEN` triggers no workflow, so it cannot loop.
+- **Commit one date-partitioned file per source a night, and rewrite whole only files that stay small.** GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and a rewritten file makes every clone carry every version; the manifest stays small, but once `metrics.parquet` passes a few MiB, stop committing it and let the site job run `compute` before it exports.
+- **The data commits land on `main`**, since the data tree is not code and nothing reviews a night's rows; record that as a `PLAN.md` decision, which `use-git`'s branch rule defers to.
+- **Alert from the workflow when the driver could not**: an `if: failure()` step posts the run's link to the alert channel when the install or the commit fails, and a second, `status` workflow alerts when a night never ran (`send-messages`).
 - **Set a spend limit on a private repository**, or the schedule stops silently the day the included minutes run out.
 - **Move the job to Modal when it needs more than six hours, more memory than a 2-core runner, or retries and logs outside GitHub**: `@app.function(schedule=modal.Cron("0 2 * * *", timezone=...))`, deployed by `modal deploy` from an Action holding its two tokens; Starter includes $30 of compute a month and five crons, and the cost is a second platform with its own secrets and logs.
 - **Vercel's Hobby cron is not a pipeline host**: once a day at most, up to 59 minutes late, 300 seconds a function, non-commercial only.
@@ -76,7 +80,7 @@ Its GitHub App republishes on every push from a committed `requirements.txt`, so
 Usage-credit enforcement on the Free plan began in November 2026 and its limits could not be verified, so read connect.posit.cloud/plans before relying on it; Basic at $19 a month adds private repositories and scheduled publishing.
 
 - **shinylive on GitHub Pages when the dashboard needs no secret and its data fits in the site.** `uvx shinylive export app site` builds a bundle the nightly workflow publishes (`references/github-actions.md`).
-It runs in the browser on Pyodide — pure-Python wheels only, so `pandas` with `pyarrow` or DuckDB-wasm and never `polars`, `pyodide.http.pyfetch` in place of `urllib`, about 13 MB on first load — and the whole bundle, data included, goes to the viewer, so it holds no token; the nightly job writes a small pre-aggregated Parquet or CSV into `site/` for a same-origin fetch.
+It runs in the browser on Pyodide — pure-Python wheels only, so `pandas` with `pyarrow` or DuckDB-wasm and never `polars`, `pyodide.http.pyfetch` in place of `urllib`, about 13 MB on first load — and the whole bundle, data included, goes to the viewer, so it holds no token; the site job exports the stored metrics into `site/` for a same-origin fetch.
 - **Streamlit Community Cloud when the app is Streamlit or must be private at $0**: unlimited public apps and one private one, `uv.lock` read directly, secrets as TOML through `st.secrets`, sleep after twelve idle hours, a cap of about 2.7 GB.
 Plotly Cloud Free (ten Dash apps, three private viewers) has no GitHub integration, so every change is published by hand.
 
@@ -91,7 +95,7 @@ It gives 750 instance hours a month and, per a secondary source, 5 GB of bandwid
 
 ## Publish a static site
 
-**Publish a static site from the same nightly workflow**, a `site/` directory sent through `actions/upload-pages-artifact` and `actions/deploy-pages`, so the data and the page showing it are never from different nights.
+**Publish a static site from the same nightly workflow**, a second job that `needs:` the nightly, sending a `site/` directory through `actions/upload-pages-artifact` and `actions/deploy-pages`, so the data and the page showing it are never from different nights.
 Pages serves a public repository on the Free plan and a private one only on Pro, up to 1 GB a site and a soft 100 GB a month.
 
 ## Keep secrets per consumer
@@ -102,7 +106,7 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 
 ## Re-check the tiers
 
-Free tiers moved several times between 2024 and 2026; every figure above was read from the vendor's page on 2026-11-10.
+Free tiers moved several times between 2024 and 2026; every figure above not marked otherwise was read from the vendor's page on 2026-11-10.
 **Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; the weekly `review-plugin` sweep re-checks the picks in this skill.
 
 Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17); Fly.io (no free tier, a card for a $1 trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio, Docker and Streamlit Spaces need PRO at $9 a month since mid-2026); PythonAnywhere (the free tier expires monthly and blocks most outbound hosts); Netlify (no Python functions); and shinyapps.io (no secrets, sunset for Connect Cloud in 2027).

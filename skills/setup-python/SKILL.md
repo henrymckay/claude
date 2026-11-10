@@ -3,21 +3,22 @@ name: setup-python
 description: >-
   How to scaffold and configure a Python project — the src/ layout,
   pyproject.toml with the uv_build backend, dependency and environment
-  management with uv, a committed lock file, the floor of Python 3.14, the
-  house-pick libraries for common tasks (typer, httpx with tenacity and
-  pyrate-limiter, polars, shiny with plotly, pydantic-settings, rich logging),
-  standalone scripts, pre-commit hooks run through uv, releases with uv
-  version, and the ruff/taplo/pyright-strict/pytest toolchain with the strict
-  pytest flags. Use whenever starting a new Python project, package, script,
-  or tool; adding packaging to existing code; setting up dependencies, virtual
-  environments, project config or hooks; cutting a release; or choosing a
-  house-pick library for a task — even if the user just says "new project",
-  "set this up", or "make this a package". Standardises on uv, ruff, taplo,
-  pyright and pytest, with no task runner, Docker only for a deployed API or
-  job, and no CI until a project earns it; a PLAN.md decision overrides any
-  pick. Plan a new project first with plan-project. For how to organise the
-  application's code into layers, see structure-python; for in-code style,
-  write-python; for the tests themselves, write-tests.
+  management with uv, a committed lock file upgraded on a schedule, the floor
+  of Python 3.14, the house-pick libraries for common tasks (typer, httpx with
+  tenacity and pyrate-limiter, polars, shiny with plotly, pydantic-settings,
+  rich logging), standalone scripts, pre-commit hooks run through uv, releases
+  with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
+  strict pytest flags and an untyped dependency kept out of strict's way. Use
+  whenever scaffolding a new Python project, package, script, or tool; adding
+  packaging to existing code; setting up dependencies, virtual environments,
+  project config or hooks; cutting a release; or choosing a house-pick library
+  for a task — even if the user just says "set this up", "add a dependency",
+  or "make this a package". Standardises on uv, ruff, taplo, pyright and
+  pytest, with no task runner, Docker only for a deployed API or job, and no
+  CI until a project earns it; a PLAN.md decision overrides any pick. Plan a
+  new project first with plan-project. For how to organise the application's
+  code into layers, see structure-python; for in-code style, write-python; for
+  the tests themselves, write-tests.
 ---
 
 # Set up a Python project
@@ -75,6 +76,7 @@ select = ["E", "F", "I", "N", "D", "UP", "B", "SIM", "C4", "RUF", "PT", "TC"]
 convention = "pep257"
 
 [tool.pyright]
+reportMissingTypeStubs = false
 typeCheckingMode = "strict"
 
 [tool.pytest.ini_options]
@@ -97,6 +99,9 @@ The non-obvious choices:
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reStructuredText field-list style stays free (see `write-python`).
 - `pyright` `strict` on a greenfield project: `standard` (the default) lets an unannotated parameter through as `Unknown`, so a wrong argument is found at runtime; `strict` reports it at the definition.
 An existing codebase adopts `strict` file by file with `# pyright: strict`.
+- `reportMissingTypeStubs = false` is the one strict check turned off project-wide: strict fails the import of any dependency that ships no types (`plotly`), and a typed one (`shiny`) is checked as before (pyright 1.1.414).
+`pyright` then infers the untyped library from its source, so its methods still report `reportUnknownMemberType`; confine its calls to the one module coupled to it and open that module with `# pyright: reportUnknownMemberType=false`, keeping every other file fully strict.
+That source accepts nearly any argument, so a wrong-typed call there is caught by the test that builds the figure (`write-tests`), not by the checker.
 - `--strict-markers` and `--strict-config` turn a misspelt marker or option into an error instead of a silently unselected test; `xfail_strict` fails a test that passes while marked `xfail`; `filterwarnings = ["error"]` turns a dependency's deprecation into a failing test the day it appears, with a `markers` entry per marker the suite uses.
 - The `-p pytest_.given`, `pythonpath` and `testpaths` lines serve `structure-python`'s full `tests/` layout.
 A small tool that keeps `tests/` flat drops them and sets `testpaths = ["tests"]`.
@@ -144,7 +149,7 @@ uv sync
 
 - **Commit `uv.lock`, for a library as much as an application.** It pins what the suite was green against; without it a contributor's `uv sync` resolves differently from yours and the first bug report is a version skew nobody can reproduce.
 The published library still carries only `pyproject.toml`'s ranges, so consumers are not pinned.
-- **Declare a lower bound and no upper cap** (`polars>=2.1`), since a cap blocks the upgrade that fixes the bug you hit; run `uv lock --upgrade` and the suite together on a schedule, and the lock moves only when the tests still pass.
+- **Declare a lower bound and no upper cap** (`polars>=2.1`), since a cap blocks the upgrade that fixes the bug you hit; run `uv lock --upgrade` and the suite together on a schedule — by hand, or from a workflow that opens a pull request, which is not the CI declined above since it gates nothing — and the lock moves only when the tests still pass.
 - **Pin the Python version** with `uv python pin`, which writes `.python-version`, so everyone is on the same interpreter.
 
 **Target the latest stable Python release**, 3.14 at the time of writing, in `.python-version` and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
@@ -161,7 +166,7 @@ No optional-extras split (`mypackage[dashboard]`): one install carries every dri
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s Write an adapter has the mechanics.
-A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and `httpx`'s async client only where a driver or adapter needs it (see `write-python`).
+A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered; the client is sync as `write-python`'s Sync and async says.
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person, and JSON lines only where a collector reads them (see `run-unattended`); never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.

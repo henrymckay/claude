@@ -52,7 +52,7 @@ Keep them in the repo under `deploy/` and give the README the install line shown
 
 - `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in British Summer Time; a missed interval runs once on wake.
 - `StandardOutPath` and `StandardErrorPath` catch the summary row and anything that escapes before logging is configured; the job's own log is the `--log-file`, rotated by the handler, since launchd never rotates.
-- `WorkingDirectory` is the repo, so the settings find the `.env` there; secrets come from it, not from `EnvironmentVariables`.
+- `WorkingDirectory` is the repo, so a relative path resolves there; the settings find the `.env` by its absolute path, and secrets come from it, not from `EnvironmentVariables`.
 - The two `/Users/me/...` paths are the ones the README tells a new machine to edit.
 - For a service, replace `StartCalendarInterval` with `<key>KeepAlive</key><true/>`.
 
@@ -90,9 +90,13 @@ ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen myapp
 ```
 
 - `OnCalendar` takes a zone suffix, so the hour is stated in UTC directly; `Persistent=true` runs a missed firing at the next boot.
-- The journal captures standard error and rotates it, so no file handler.
+- The journal captures standard output and standard error and rotates them, as the backstop for anything that escapes before logging is configured; the `--log-file` stays the job's own record, rotated by its handler.
 - `EnvironmentFile` holds the secrets, outside the repo, mode `600`.
 - For a service, drop `Type=oneshot`, add `Restart=on-failure` and `RestartSec=10`, and enable the `.service` rather than a timer.
+
+## The status unit
+
+Once an alert is earned (`SKILL.md`, Report the outcome), copy the nightly unit as `com.example.myapp.status` or `myapp-status.timer` and `.service`, with `status --alert` in place of `nightly` and its log options, firing a few hours after the nightly so a night that never started is already stale.
 
 ## GitHub Actions (cloud)
 

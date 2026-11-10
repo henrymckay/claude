@@ -175,13 +175,15 @@ def build_client(
 def build_get_document(
     client: httpx.Client,
     *,
-    rate: pyrate_limiter.Rate,
+    budget: int,
+    rates: list[pyrate_limiter.Rate],
     sleep: collections.abc.Callable[[float], None] = time.sleep,
 ) -> collections.abc.Callable[[str], str]: ...
 ```
 
 The test builds the client on an `httpx.MockTransport` whose handler answers from a sequence (a `503` with `Retry-After`, then the recorded `200`) and passes `sleep=waits.append`, then asserts the document came back and `waits == [3.0]`; the retry's waits are the test's, so "backs off three times" runs in milliseconds.
 `pyrate-limiter` 4.5.1 sleeps through its own `pyrate_limiter.limiter.sleep`, so a pacing test adds `monkeypatch.setattr(pyrate_limiter.limiter, "sleep", paced.append)` and asserts on `paced`; the limiter advances as if it had slept, so five calls at two a second finish at once with three waits recorded.
+A budget test passes `budget=2` and asserts the third call raises `QuotaError` with the transport's handler called twice.
 
 **Drive a `typer` command through `typer.testing.CliRunner`**, invoking the role package's `app` with the arguments a user would type and asserting on `result.exit_code` and `result.stdout`; the composition root then runs for real over fakes injected the same way as the API's `dependency_overrides` — the store at `tmp_path` through the environment, the source through a `MockTransport` — so a CLI test proves the wiring, not only the operation.
 
