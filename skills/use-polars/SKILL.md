@@ -3,22 +3,27 @@ name: use-polars
 description: >-
   How to write correct, idiomatic Polars (the Python DataFrame library) — the
   expression API, lazy vs eager execution, keeping every group in one
-  long-form frame instead of looping, joining without silently multiplying
-  rows, the silent traps around nulls, dtypes and windows, naming frames and
-  pipe steps, and the mental-model shifts coming from pandas. Use whenever
-  working with Polars DataFrames or LazyFrames, writing data transformations
-  or analytics in Polars, converting pandas code to Polars, joining or
-  reshaping between long and wide, or reading a query plan — even if the user
-  only says "polars", "pl.", or names a .parquet/.csv workflow they want done
-  with it. Targets Polars 2.x. Layers on write-python and be-functional's
-  map/bind vocabulary.
+  long-form frame instead of looping, ordering a window with order_by rather
+  than a prior sort, calendar windows against row windows and the defaults to
+  pin, joining without silently multiplying rows, join_asof within groups, the
+  silent traps around nulls, NaN and dtypes, naming frames and pipe steps, and
+  the mental-model shifts coming from pandas. Use whenever working with Polars
+  DataFrames or LazyFrames, writing data transformations or analytics in
+  Polars, converting pandas code to Polars, joining or reshaping between long
+  and wide, writing a rolling or windowed computation, or reading a query plan
+  — even if the user only says "polars", "pl.", or names a .parquet/.csv
+  workflow they want done with it. Targets Polars 2.x. Layers on write-python
+  (its import and naming rules, and the method-over-operator preference) and
+  be-functional's map/bind vocabulary; a PLAN.md decision overrides any rule
+  here.
 ---
 
 # Use Polars
 
 `polars` is fast and correct when you work with its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-This targets `polars` 2.x, and `write-python` applies on top — including its import rule, so `import polars` and `polars.col(...)`, never `import polars as pl`.
+This targets `polars` 2.x, and `write-python` applies on top — including its import rule, so `import polars` and `polars.col(...)`, never `import polars as pl`, except in an external snippet being quoted or read, which keeps its `pl`.
 Three mistakes account for nearly all that goes wrong: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` habits or types leak past the boundary.
+Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 **In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -35,7 +40,11 @@ An aggregation can take a condition: `polars.col("v").filter(polars.col("v").gt(
 - **Aggregate without collapsing** — `.over(group)` computes within a partition and writes the answer onto every row.
 - **Factor out a step** — `.pipe(fn)` hands the frame to a function without breaking the chain.
 
-**`.sort` is a correctness requirement, not presentation.** `.shift`, every cumulative, `.first`/`.last` and `join_asof` read the current row order, so an unsorted input gives a wrong answer and nothing raises.
+**Order a window with `order_by=`, not a `.sort` ahead of it.** `.shift`, every cumulative and `.first`/`.last` read row order, so an unsorted input gives a wrong answer and nothing raises; `.over(group, order_by="time")` fixes the order inside the window whatever the frame's order, where a `.sort` before it is undone by the next join and nothing says so.
+`join_asof` is the exception: it has no `order_by`, so both frames are sorted on `on` (see Stay in the frame).
+
+**A time window is `rolling_*_by`; a row window is `rolling_*`.** `rolling_mean_by("ts", window_size="3d")` covers three calendar days whether they hold three rows or none, where `rolling_mean(window_size=3)` averages the last three rows wherever they fall; `min_samples` (default `1`) decides whether a short window reports or returns null, and `closed` (default `"right"`) which end the window includes.
+Pin all three with a dependency test (see `write-tests`), since each default is a belief about the library that an upgrade changes without an error.
 
 **Address a class of columns with `polars.selectors`.** `polars.selectors.numeric().fill_null(value=0)` resolves against the real schema when the query runs, so it covers the column added next month; a hand-listed set is pinned to the day it was written.
 **Rename by rule the same way**: `frame.rename(to_snake_case)` applies to whatever arrives, where a `{...}` dict silently misses a new field — keep the dict for a few renames that follow no rule.
@@ -50,7 +59,7 @@ revenue = (
 )
 ```
 
-**Write one fluent method chain.** Chain contexts end to end in parentheses rather than binding intermediate frames: it reads as one transformation and stays one query for the optimiser.
+**Write one fluent method chain.** Chain contexts end to end in parentheses rather than binding intermediate frames: it reads as one transformation, and on an eager frame each bound intermediate is materialised in full; on a lazy frame a binding costs nothing, so there the reason is only the reading.
 Compute several columns in one `with_columns`, which the engine parallelises.
 A chain opening with a function — `polars.concat(...)`, `polars.read_csv(...)` — is still a chain; that unannounced start is where most single-use intermediates come from.
 
@@ -58,8 +67,7 @@ A chain opening with a function — `polars.concat(...)`, `polars.read_csv(...)`
 An empty input rarely needs its own path — the chain returns an empty frame with the right schema, where an early return duplicates the schema somewhere it can drift.
 Where a column may be absent from a genuinely open schema, `polars.selectors.by_name("a", "b", require_all=False)` avoids the `if`; where the caller knows the columns, require them.
 
-**Use expression methods, not operators**: `.mul`, `.add`, `.truediv`, `.gt`, `.eq` and the rest chain without wrapping parentheses and dodge the precedence trap in `polars.col("a").gt(0) & polars.col("b").gt(0)`.
-Keep `&`, `|`, `~` as operators — their method spellings read worse.
+**Expression methods over operators is a preference**, shared with `write-python`: `.mul`, `.add`, `.truediv`, `.gt`, `.eq` and the rest chain without wrapping parentheses and dodge the precedence trap in `polars.col("a").gt(0) & polars.col("b").gt(0)`; an operator stays where precedence is unambiguous inside a one-line expression, and `&`, `|`, `~` are always operators, since their method spellings read worse.
 
 **Name a column with `.alias()`, not a keyword argument.** The keyword form (`with_columns(total=...)`) belongs to the context, so the name is lost when the expression moves into a variable, a helper or a second context; `.alias()` travels with it, and also spells names Python can't, like `total (£)`.
 
@@ -85,8 +93,7 @@ frame.with_columns(
 **An empty `pivot` loses its value columns.** With no rows there is nothing to spread, so only the index columns return and a later `select` raises `ColumnNotFoundError` only when a filter empties the frame.
 Restore the shape without branching: `polars.concat([pivoted, empty], how="diagonal")`, where `empty` is a zero-row frame declaring the full schema.
 
-**Null is not `NaN`.** `.fill_null` and `.fill_nan` are different calls, and `.drop_nulls` leaves `NaN`.
-A ratio against a group aggregate — `polars.col("x").truediv(polars.col("x").max().over("g"))` — yields `NaN` where the maximum is zero, which then compares false against everything; decide the zero case with `when` where you divide.
+**`NaN` compares false against everything, null included.** A ratio against a group aggregate — `polars.col("x").truediv(polars.col("x").max().over("g"))` — yields `NaN` where the maximum is zero, and every later filter on that column silently drops the row; decide the zero case with `when` where you divide.
 
 **A comparison with null is null, not false**, so `.filter` drops the row; `.eq_missing()` is the null-safe form, counting two nulls equal.
 
@@ -99,9 +106,6 @@ For a one-column frame, `polars.Series("id", ids, dtype=polars.String).to_frame(
 
 ## Unlearn `pandas`
 
-- **No index** — no `.loc`/`.iloc`; select and filter with expressions.
-- **Immutable** — every operation returns a new frame; there is no `inplace=`.
-- **Select before compute** — or go lazy and let the optimiser prune.
 - **Convert at the boundary and never reach back.** Convert another library's frame with `polars.from_pandas` at once; tidying in `pandas` first does the work in the weaker API and leaks its types into your signatures.
 - **Pass `include_index=True` when the index means something** — the default drops it silently.
 - **Flatten a column `MultiIndex` before converting** (`.stack(level=..., future_stack=True)`), the one `pandas` call with no `polars` equivalent.
@@ -109,8 +113,7 @@ For a one-column frame, `polars.Series("id", ids, dtype=polars.String).to_frame(
 
 ## Eager vs lazy
 
-- **Eager** (`polars.read_csv`, `frame.select`) runs immediately — fine for small, interactive work.
-- **Lazy** (`polars.scan_csv`, `frame.lazy()`) builds a plan that runs on `.collect()`, pushing filters down and pruning columns — the default for real pipelines.
+A real pipeline is lazy from the scan and collected once:
 
 ```python
 result = (
@@ -134,32 +137,28 @@ Never repair it by slicing lines first: a quoted field may hold a newline, so th
 ## Stay in the frame
 
 **Dataframe-shaped work stays in `polars`.** Pulling columns into lists and looping, comprehending or reducing throws away the engine and the optimiser; comparing to an earlier row, a running count and grouping are all expressions.
-`.map_elements` is the same mistake under a `polars` name — a Python call per row.
 
 **Keep every group in one long-form frame.** Stack all groups and compute across them together; most work is plain column expressions with no `.over` at all.
 Reach for `.over(group)` only where an operation must respect group boundaries — a shift, a cumulative, a rank.
 Even sequential per-group logic stays in the frame: a run length is a change flag, a `cum_sum` numbering the runs, and a count within each run.
 
 ```python
-runs = (
-    frame.sort("group", "order")
-    .with_columns(
-        polars.col("state")
-        .ne(polars.col("state").shift(n=1).over("group"))
-        .fill_null(value=True)
-        .cum_sum()
-        .over("group")
-        .alias("run_id")
-    )
-    .with_columns(
-        polars.int_range(start=1, end=polars.len().add(1))
-        .over("group", "run_id")
-        .alias("run_len")
-    )
+runs = frame.with_columns(
+    polars.col("state")
+    .ne(polars.col("state").shift(n=1))
+    .fill_null(value=True)
+    .cum_sum()
+    .over("group", order_by="order")
+    .alias("run_id")
+).with_columns(
+    polars.int_range(start=1, end=polars.len().add(1))
+    .over("group", "run_id", order_by="order")
+    .alias("run_len")
 )
 ```
 
 `.fill_null(value=True)` makes each group's first row start a run; without it the comparison against a null shift is null, so that row's `run_id` is null and it drops out of every window keyed on it.
+The `order_by` on each `.over` is what makes `.shift` and `.cum_sum` read the rows in order; the frame itself is never sorted.
 
 **A grouping axis is data however it arrives** — rows from a fetch, a list the caller passed, or a set the problem fixes (three scenarios, four quartiles).
 The closed set is easiest to miss, because it feels like structure.
@@ -197,14 +196,16 @@ Pivot mid-computation to compare across a key (this month against last), and unp
 A chain of joins spreading a key is a hand-rolled `pivot`; per-column selects stacked with `concat`, a hand-rolled `unpivot`.
 
 **Attach a coarser series to finer rows with `join_asof`**, `strategy="backward"` for "the last row at or before this one", both frames sorted on `on`.
-With `by=` it warns `Sortedness of columns cannot be checked when 'by' groups provided` on every call however the frames are sorted, so suppress exactly that message:
+With `by=` pass `check_sortedness=False`, since the engine cannot check order within groups and otherwise warns on every call however the frames are sorted:
 
 ```python
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message="Sortedness of columns")
-    priced = orders.sort("time").join_asof(
-        rates.sort("time"), by="currency", on="time", strategy="backward"
-    )
+priced = orders.sort("time").join_asof(
+    rates.sort("time"),
+    by="currency",
+    check_sortedness=False,
+    on="time",
+    strategy="backward",
+)
 ```
 
 ## Declare what a join must do
@@ -217,8 +218,7 @@ A join's failures all return an ordinary-looking frame.
 
 ## Name frames and steps
 
-**Name a frame by its contents** — `customers`, `orders` — never `df` or `df_orders`; the type already says it's a frame.
-Keep `frame` or `df` for a generic function or placeholder.
+**Name a frame by its contents** under `write-python`'s naming rules — `customers`, never `df_orders`, since the type already says it's a frame — keeping `frame` for a generic function's parameter.
 
 **Prefix every frame-to-frame function by its functional shape**, the map/bind vocabulary of `be-functional`:
 
