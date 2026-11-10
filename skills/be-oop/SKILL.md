@@ -38,7 +38,7 @@ If none of these hold, a function (or a plain dataclass + functions) is simpler.
 Composition over inheritance, encapsulation, programming to an interface and shallow hierarchies need no rule here; the house additions are these.
 
 - **A value object is a frozen dataclass** even inside an OOP design (see `write-python`); mutability is reserved for the object whose changing state *is* the model.
-- **A structural interface over a base class**: a `Protocol` where the language has one, so an implementation never has to inherit to qualify.
+- **A structural interface over a base class**: a `Protocol` where the language has one, so an implementation never has to inherit to qualify; an abstract base class only where you own every implementation and they share code as well as a contract.
 - **Liskov is the SOLID principle that bites**: a subtype must work anywhere its base does, so an override that strengthens a precondition or weakens a postcondition is a bug the type checker can't see.
 The other four follow from `be-functional`'s injection and axis-of-change rules.
 - **A mixin is behaviour-only**, named with a `Mixin` suffix (`SerializableMixin`), and becomes composition the moment it carries its own state or lifecycle, since two stateful mixins fight over `__init__`.
@@ -53,7 +53,7 @@ Patterns that usually **collapse** — what each is, then the simpler form:
 - **Strategy** — swap one of a family of interchangeable algorithms at runtime → pass a **function**.
 - **Command** — package an action as an object to store, queue, or undo → a **function** (or `functools.partial`).
 - **Factory** — centralise how objects get created → a **function** or `classmethod`.
-- **Singleton** — one shared instance for the whole program → a **module**, or a cached read of *immutable* settings at the composition root; mutable module state is injected instead (see `be-functional`).
+- **Singleton** — one shared instance for the whole program → a **module**, or a value read once at the composition root and injected (see `structure-python`); module-level mutable state is never the answer.
 - **Observer** — notify dependents when state changes → a list of **callbacks** / pub-sub.
 - **Template Method** — fix an algorithm's skeleton but vary specific steps → pass in the varying **functions**, or a base hook.
 - **Iterator** — traverse a collection without exposing its internals → a **generator** / `__iter__`.
@@ -71,6 +71,6 @@ Patterns that stay **genuinely useful** as classes:
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (dataclasses for state, `Protocol` vs ABC with `override`, mixins and the MRO, the collapsed patterns in Python).
+- **Python** → `references/python.md` (dataclasses for state, `Protocol` vs ABC, mixins and the MRO, enums, the collapsed patterns in Python).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
