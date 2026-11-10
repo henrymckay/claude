@@ -3,14 +3,16 @@ name: be-functional
 description: >-
   Functional programming done well — pure functions, immutability,
   composition, explicit data flow, algebraic data types and pattern matching,
-  and deriving a program's functions from the shapes its data passes through.
-  Use by default whenever writing, reviewing or refactoring code in any
-  language, even if the user never says "functional" — and especially for
-  pipelines or transformations over data; when deciding where one function
-  ends and the next begins, or whether a value is a parameter or really part
-  of the input; and when refactoring imperative or stateful code toward a
-  cleaner functional shape. Language-agnostic principles here; Python idioms
-  in references/python.md. Layers on write-python (the in-code baseline);
+  deriving a program's functions from the shapes its data passes through, and
+  specialising a generic function by partial application. Use by default
+  whenever writing, reviewing or refactoring code in any language, even if the
+  user never says "functional" — and especially for pipelines or
+  transformations over data; when deciding where one function ends and the
+  next begins, or whether a value is a parameter or really part of the input;
+  and when refactoring imperative or stateful code toward a cleaner functional
+  shape. Language-agnostic principles here; Python idioms in
+  references/python.md, including when toolz or plum earn their place over the
+  stdlib. Layers on write-python (the in-code baseline and the error model);
   be-oop is the object-oriented counterpart.
 ---
 
@@ -32,16 +34,13 @@ Where code is naturally stateful throughout — I/O, UIs, long-lived objects —
 
 ## Core principles
 
-- **Pure functions.** Same output for the same inputs, and no observable side effects — no mutating arguments, globals or files.
-Such a call is *referentially transparent*: replace it with its result and nothing changes, which is what makes it easy to test and safe to compose.
-- **Immutability.** Produce new values and treat inputs as read-only; shared mutable state causes most order-dependent bugs.
+Pure functions, immutable values, higher-order functions and lazy pipelines need no rule here; what follows is where the house style departs from habit.
+
 - **Explicit inputs and outputs.** Take everything as arguments and return results, rather than reading ambient state or writing somewhere; the more the arguments determine, the more reusable the function.
 A fixed value is a function too (`write-python`'s function over a module global), so it can later be overridden or depend on inputs.
-- **Composition and currying.** Build behaviour from small single-purpose functions; write a **generic** function and derive variants by currying (binding some arguments) or composing — `get_one` as `take_one` composed with `get_many`.
+- **Write the generic function and specialise it.** Derive variants by partial application (binding some arguments) or composition — `get_one` as `take_one` after `get_many` — rather than hand-writing each.
 Two mechanisms doing the *same* operation on different fields — dates bounded by their own parameters beside a generic range filter for every other column — are one function not yet made generic.
 The test is whether the operation differs, not whether the field is special to the domain.
-- **Higher-order and declarative.** Pass, return and store functions; say *what* (`[transform(x) for x in items if keep(x)]`), not how to loop.
-- **Lazy evaluation.** Build pipelines over generators or streams that never materialise intermediates, and force the result at the boundary that needs it.
 
 Ambient state is the mistake that hides:
 
@@ -65,7 +64,7 @@ The core types it as a *port* it defines, and the entry point injects the concre
 
 ## Functions over classes
 
-Default to functions, closures and curried functions: a closure captures state without the ceremony, and currying specialises without a hierarchy.
+Default to functions, closures and partially applied functions: a closure captures state without the ceremony, and partial application specialises without a hierarchy.
 Reach for a class only where `be-oop`'s When to use applies — extending a framework hierarchy, a long-lived stateful object, an invariant to guard — since a one-method class is a function in costume.
 
 ## Make illegal states unrepresentable
@@ -119,7 +118,7 @@ This is the same test as "a value matched against the data element by element is
 ## Make functions total
 
 A *total* function returns a valid result for every input in its type; a *partial* one blows up or misbehaves on some (divide-by-zero, indexing an empty list, an unhandled case).
-Make functions total by **narrowing the input** so every value is valid (accept a sum type/enum, not an arbitrary string) or by **widening the output** to represent the *expected* awkward cases (`X | None`, a `Result`) instead of raising; a genuine failure still raises.
+Make functions total by **narrowing the input** so every value is valid (accept a sum type or enum, not an arbitrary string) or by **widening the output** for the one expected awkward case — `X | None` for a lookup miss the caller always branches on; anything else raises, under `write-python`'s error model.
 Total functions compose without hidden landmines — the signature tells the caller nothing will explode.
 
 ## Choose axis of change
@@ -140,17 +139,12 @@ Extending *behaviour* is never in tension: composition, higher-order functions, 
 ## Chain with monads
 
 A **functor** is a wrapper you can `map` a function over; an **applicative** also combines independently wrapped values in a fixed way; a **monad** lets the next step *depend on* the previous result (`bind`) — the split `use-polars` names its `map_`/`amap_`/`bind_` steps by.
-Monads thread optionality, errors or effects through steps that may short-circuit, without a ladder of `if`s.
-**Don't force idioms the language lacks**: Haskell-style monads without the syntax for them produce code nobody can read — in Python, `X | None` and early returns usually suffice (see `references/python.md`).
-
-## Recursion
-
-Recursion suits tree-shaped problems, but without tail-call optimisation (Python included) deep recursion overflows the stack, so use iteration for linear passes and recursion for genuinely recursive structures.
+**Don't force idioms the language lacks**: Haskell-style monads without the syntax for them produce code nobody can read — in Python, `X | None` and early returns suffice.
 
 ## Language specifics
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (comprehensions, `functools`, `itertools`, frozen dataclasses, currying/composition with `toolz`, dependency injection).
+- **Python** → `references/python.md` (frozen dataclasses, sum types with `match`, partial application and composition, dependency injection, where `toolz` and `plum` earn their place).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

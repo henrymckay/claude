@@ -1,17 +1,17 @@
 # Be functional in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
-Python isn't a pure functional language, so aim for *pragmatic* functional: pure logic, immutable data, and comprehensions/generators over manual loops — without fighting the language.
+Python isn't a pure functional language, so aim for *pragmatic* functional: pure logic, immutable data, and comprehensions and generators over manual loops — without fighting the language.
 
 ## Immutability
 
-- **Tuples** and **`frozenset`** instead of lists/sets when the data shouldn't change.
-- **Frozen dataclasses** for immutable records:
+- **Tuples** and **`frozenset`** instead of lists and sets when the data shouldn't change.
+- **Frozen dataclasses** for records, in `write-python`'s shape:
   ```python
   import dataclasses
 
 
-  @dataclasses.dataclass(frozen=True, slots=True)
+  @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
   class Point:
       """An immutable 2-D point."""
 
@@ -20,37 +20,36 @@ Python isn't a pure functional language, so aim for *pragmatic* functional: pure
 
 
   p = Point(x=1, y=2)
-  p2 = dataclasses.replace(p, x=10)  # new value, original untouched
+  p2 = dataclasses.replace(p, x=10)
   ```
-- **`typing.NamedTuple`** for lightweight immutable tuples with names.
-- Don't mutate arguments.
-Return a new structure instead of editing in place (`sorted(xs)` not `xs.sort()`; comprehension not `for … .append()`).
-- **Immutable dict updates** with `toolz`: `assoc`/`dissoc` (add/remove a key), `update_in`/`get_in` (nested update/lookup), `valmap`/`keymap`/`valfilter` (map or filter a dict) — each returns a **new** dict instead of mutating.
+- **`typing.NamedTuple`** only where an API requires tuple semantics (see `write-python`).
+- **Build a new mapping rather than mutating one**: `d | {k: v}` adds or replaces a key, a comprehension filters or maps, `dataclasses.replace` and `copy.replace` update a record.
 
 ## Algebraic data types and pattern matching
 
-Model *product* types with frozen dataclasses (above) and *sum* types with a union of variant classes (or an `enum.Enum` for a simple closed set), then destructure with `match`:
+Model *product* types with frozen dataclasses and *sum* types with a `type` alias over variant classes (or an `enum.StrEnum` for a closed set of names), then destructure with `match` and close it with `assert_never`:
 
 ```python
 import dataclasses
 import math
+import typing
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class Circle:
     """A circle, by radius."""
 
     radius: float
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class Square:
     """A square, by side length."""
 
     side: float
 
 
-Shape = Circle | Square  # sum type: a shape is exactly one variant
+type Shape = Circle | Square
 
 
 def area(shape: Shape) -> float:
@@ -60,53 +59,27 @@ def area(shape: Shape) -> float:
             return math.pi * r**2
         case Square(side=s):
             return s * s
+        case _:
+            typing.assert_never(shape)
 ```
 
-`match` makes each case explicit, and a type checker can flag an unhandled variant when the union grows — prefer it to `isinstance` ladders.
+The `case _: assert_never` arm is what makes a new variant a type error at every `match` that forgot it; without it `pyright` reports only a possibly missing return, and only when the function returns a value.
 
 **`match` vs `functools.singledispatch`** — both dispatch on type, so choose by who owns the cases.
 Use `match` for a **closed** set of variants you own (you get exhaustiveness checking); use `singledispatch` when the operation should stay **open** to new types that register their own handler from elsewhere, without editing the function.
-And for plain boolean conditions, a simple `if/elif` still wins over both.
+For plain boolean conditions, `if`/`elif` still wins over both.
 Neither is right where every branch only *returns a value* for its case — that is the lookup `SKILL.md` describes, written as a mapping (`structure-python` says where it lives).
-For dispatch on **more than one argument's type**, the stdlib has nothing — reach for **`plum`** (annotation-driven multiple dispatch, well-typed and maintained; `multipledispatch` is a simpler older alternative), and only when `singledispatch`/`match` genuinely can't express it.
+For dispatch on **more than one argument's type** the stdlib has nothing; `plum` does it well typed, at the cost of a dependency and a dispatch at every call, so reach for it only where `match` on a tuple of the arguments would not read.
 
-## Transformations over loops
+## Specialise and compose
 
-- **Comprehensions** for map/filter in one readable expression:
-  ```python
-  names = [u.name for u in users if u.active]
-  ```
-- **Generator expressions** for lazy pipelines over large/streamed data — they don't materialise the whole sequence:
-  ```python
-  total = sum(x * x for x in numbers)
-  ```
-- Prefer comprehensions to `map`/`filter` with a `lambda` (usually clearer); `map(f, xs)` is fine when `f` is already a named function.
-- **Tabular data's declarative form is a dataframe expression**, not a comprehension over extracted columns — see `use-polars`.
-
-## `functools` and `itertools`
-
-- **`functools.reduce`** for genuine folds, but reach for a comprehension or `sum`/`math.prod`/`any`/`all` first — they're clearer.
-- **`functools.partial`** to specialise a function without a wrapper.
-- **`functools.lru_cache` / `cache`** to memoise pure functions.
-- **`itertools`**: `chain`, `groupby`, `accumulate`, `takewhile`/`dropwhile`, `islice`, `product`, `starmap` — composable building blocks for iterators.
-- **`operator`** module (`operator.attrgetter`, `itemgetter`, `add`) gives named functions where you'd otherwise write a `lambda`.
-
-## Composition and currying
-
-Write **generic** functions and derive specific variants by currying or composing them, rather than hand-writing each variant.
-`toolz` provides both cleanly — use it rather than rolling your own:
-
-- **`toolz.curry`** — bind arguments to produce a new, more specific function.
-Prefer it to `functools.partial`: it auto-curries, works as a decorator, and composes cleanly (`partial` is fine when you want zero dependencies).
-- **`toolz.compose`** / **`toolz.compose_left`** — chain functions into a new one (right-to-left, or left-to-right for readability).
-- **`toolz.pipe(data, f, g, h)`** — thread a value through functions left-to-right; the most readable one-off pipeline.
+Write the **generic** function and derive variants from it, with the stdlib:
 
 ```python
-import toolz
+import functools
 
 
-@toolz.curry
-def get_many(source: Source, n: int) -> list[Item]:
+def get_many(source: Source, *, n: int) -> list[Item]:
     """Fetch n items from a source."""
     ...
 
@@ -116,70 +89,48 @@ def take_one(items: list[Item]) -> Item:
     return items[0]
 
 
-get_pair = get_many(n=2)  # curry: bind an argument
-get_one = toolz.compose(take_one, get_many(n=1))  # compose: chain steps
+get_pair = functools.partial(get_many, n=2)
+
+
+def get_one(source: Source) -> Item:
+    """Fetch one item from a source."""
+    return take_one(get_many(source, n=1))
 ```
 
-Keep compositions shallow enough to stay readable — the aim is expressive, reusable building blocks, not point-free cleverness for its own sake.
-
-Other high-value `toolz` helpers: **`groupby(key, seq)`** (group into a dict of lists — no pre-sorting, unlike `itertools.groupby`), **`juxt(f, g)(x)`** → `(f(x), g(x))`, and **`do(effect, x)`** to run a side-effect mid-pipeline and return `x` unchanged.
-
-## Functional core, imperative shell
-
-Keep functions that compute/transform free of I/O; do the reading and writing at the call site:
-
-```python
-def summarise(rows: list[Row]) -> Summary:  # pure — easy to test
-    """Reduce rows to a summary."""
-    ...
-
-
-def main() -> None:  # shell — does the I/O
-    """Load, summarise, and print the report."""
-    rows = load(path)
-    print(render(summarise(rows)))
-```
+- **`functools.partial`** binds arguments and keeps the type: `pyright` special-cases it, so `get_pair` is checked at every call.
+`toolz.curry` composes more freely, but `toolz` ships no type hints, so every curried or composed function comes out `Unknown` and `write-python`'s annotate-everything rule is defeated on exactly the functions hardest to read; reach for it only where that cost is paid knowingly.
+- **A named function over `compose`.** `get_one` as a two-line `def` is typed, documented and greppable; `toolz.compose(take_one, functools.partial(get_many, n=1))` is none of those.
+Keep any composition shallow enough to read; the aim is expressive building blocks, not point-free cleverness.
+- **`functools.cache`** memoises a pure function, with three traps: an unhashable argument (a frame) raises, a method leaks `self` into the cache, and the cache is hidden state the tests then share.
+- **`toolz` earns a line** for a sequence helper the stdlib lacks — `partition_all`, `sliding_window`, `groupby` into a dict without pre-sorting — not for currying or dict updates.
+- **Tabular data's declarative form is a dataframe expression**, not a comprehension over extracted columns — see `use-polars`.
 
 ## Inject impure dependencies
 
-Take impure inputs — environment, clock, randomness, handles — as arguments whose default is the real thing.
-Deterministic and pure under test (pass explicit values), convenient in normal use (rely on the default):
+In a layered application the core takes an ambient effect — environment, clock, randomness — with **no default**, and the driver passes the real thing (see `structure-python`):
 
 ```python
 import collections.abc
-import os
-
-
-def build_config(env: collections.abc.Mapping[str, str] = os.environ) -> Config:
-    """Build config, reading settings from the environment."""
-    return Config(debug=env.get("DEBUG") == "1")
-```
-
-Tests call `build_config({"DEBUG": "1"})`; normal callers pass nothing.
-(`os.environ` is a live mapping, so binding it once as the default still reflects the current environment.)
-
-For a value that must be *re-read* each call — the clock, a fresh random — default to `None` and resolve inside, which also sidesteps the mutable-default trap:
-
-```python
 import datetime
 
 
-def stamp(now: datetime.datetime | None = None) -> str:
-    """Return an ISO-8601 timestamp, defaulting to the current UTC time."""
-    return (now or datetime.datetime.now(datetime.UTC)).isoformat()
+def build_config(env: collections.abc.Mapping[str, str]) -> Config:
+    """Build config from the settings the environment holds."""
+    return Config(debug=env.get("DEBUG") == "1")
+
+
+def stamp(now: datetime.datetime) -> str:
+    """Return an ISO-8601 timestamp."""
+    return now.isoformat()
 ```
 
-## Errors, functionally
-
-For expected "no result" cases prefer returning `X | None` (or a small result type) over raising, and make it explicit in the signature.
-Reserve exceptions for genuinely exceptional conditions.
-Richer Result types come from `returns` (see Libraries).
+A script with no layers may default to the real thing in place: `env: collections.abc.Mapping[str, str] = os.environ` (a live mapping, so one binding tracks the environment), and for a value re-read each call, `now: datetime.datetime | None = None` resolved with `if now is None`, never `now or …`, which treats any falsy value as absent.
 
 ## Libraries
 
-The stdlib covers most cases; reach for a library only when it simplifies.
-`toolz` (composition, currying, dict helpers) and `plum` (multiple dispatch) are the defaults, both covered above.
+The stdlib covers composition, immutability and dispatch; each library below earns its place only for the case named.
 
-- **`cytoolz`** — a C reimplementation of `toolz` for hot paths.
-- **`pyrsistent`** — persistent collections with structural sharing, for repeated functional updates; frozen dataclasses remain the choice for typed records.
-- **`returns`** — Result and Maybe containers, only where plain `X | None` genuinely falls short.
+- **`toolz`** — the sequence helpers above; untyped, so never for currying or composition.
+- **`plum`** — multiple dispatch on more than one argument's type where `match` on the tuple would not read.
+- **`pyrsistent`** — persistent collections with structural sharing for repeated functional updates to large structures; frozen dataclasses remain the record.
+- **No `Result` library** (`returns` and the like): `write-python`'s error model is exceptions caught in drivers, with `X | None` for a lookup miss.
