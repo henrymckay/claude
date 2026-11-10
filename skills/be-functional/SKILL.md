@@ -4,16 +4,17 @@ description: >-
   Functional programming done well — pure functions, immutability,
   composition, explicit data flow, algebraic data types and pattern matching,
   deriving a program's functions from the shapes its data passes through, and
-  specialising a generic function by partial application. Use by default
-  whenever writing, reviewing or refactoring code in any language, even if the
-  user never says "functional" — and especially for pipelines or
-  transformations over data; when deciding where one function ends and the
-  next begins, or whether a value is a parameter or really part of the input;
-  and when refactoring imperative or stateful code toward a cleaner functional
-  shape. Language-agnostic principles here; Python idioms in
-  references/python.md, including when toolz or plum earn their place over the
-  stdlib. Layers on write-python (the in-code baseline and the error model);
-  be-oop is the object-oriented counterpart.
+  specialising a generic function by partial application. Load it before the
+  first line of any code you write, tidy or refactor, even a snippet answered
+  inline. Use by default whenever writing, reviewing or refactoring code in
+  any language, even if the user never says "functional" — and especially for
+  pipelines or transformations over data; when deciding where one function
+  ends and the next begins, or whether a value is a parameter or really part
+  of the input; and when refactoring imperative or stateful code toward a
+  cleaner functional shape. Language-agnostic principles here; Python idioms
+  in references/python.md, including when toolz or plum earn their place over
+  the stdlib. Layers on write-python (the in-code baseline and the error
+  model); be-oop is the object-oriented counterpart.
 ---
 
 # Be functional
