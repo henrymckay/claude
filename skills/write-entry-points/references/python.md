@@ -14,7 +14,6 @@ Under `code/drive/`, each driver is a hollow **role package** over one or more *
 **Every framework package keeps its app object in `driver.py`**, with the `run()` launcher where one is needed.
 An app object must exist before anything decorates it, so in its own module the command and route modules stay flat alphabetical lists; `driver.py` imports no other `drive` module, so nothing cycles.
 `__init__.py` then stays a pure re-export, and you know where the app is in any framework package without reading it.
-`driver.app` also reads as `category.member`, where `app.app` would repeat the namespace.
 
 **A framework package may hold a module that imports nothing from its framework**, where that framework is its only caller — `fastapi_/provide.py` naming the concrete adapter.
 Lift it to a shared `drive/` module when a second driver needs it.
@@ -24,8 +23,13 @@ The driver still chooses to use the set and injects it.
 
 ## CLI
 
-`typer` parses, `rich` renders.
-The shape while there is one command group:
+`typer` parses, `rich` renders, at one of three rungs:
+
+- **A throwaway one-command tool** is one `cli.py`, with the work still in the core.
+- **The middle rung**, for most tools: the `cli/` role package over one `typer_.py` and one `rich_.py` module, each holding what the packages below hold.
+- **The full rung** promotes each module to a package when it would be worth opening a file at a time (`structure-python`'s module rule) — in practice at the second command group or the second output form.
+
+The full rung while there is one command group:
 
 ```text
 cli/
@@ -44,7 +48,7 @@ rich_/
   render.py       builds the rich table and nothing else
 ```
 
-`command.py` is the composition root: each command injects an adapter into an operation and hands the result to `output`.
+`command.py` is the composition root (`SKILL.md`), and hands the result to `output`:
 
 ```python
 import pathlib
@@ -58,19 +62,19 @@ from mypackage.code.drive.typer_ import argument, driver, option, output
 @driver.app.command()
 def report(
     stations: typing.Annotated[list[str], argument.stations()],
+    form: typing.Annotated[output.Form, option.form()] = output.Form.CSV,
     path: typing.Annotated[pathlib.Path | None, option.output()] = None,
-    pretty: typing.Annotated[bool, option.pretty()] = False,
 ) -> None:
     """Report the average temperature for each station."""
-    output.display(
-        operate.report(stations, fetch=httpx_.fetch), path=path, pretty=pretty
-    )
+    output.display(operate.report(stations, fetch=httpx_.fetch), form=form, path=path)
 ```
+
 
 `typer_/__init__.py` re-exports the app and imports the modules whose decorators register commands — a decorator runs only when its module is imported:
 
 ```python
-from mypackage.code.drive.typer_ import callback as callback, command as command
+from mypackage.code.drive.typer_ import callback as callback
+from mypackage.code.drive.typer_ import command as command
 from mypackage.code.drive.typer_.driver import app as app
 ```
 
@@ -87,7 +91,7 @@ Where the natural name is a builtin (`list`, `type`), pick a better command name
 - **An `@app.callback()`** runs before every command — the home for app-wide options; keep it as thin as a command.
 - **A command group** is its own `typer.Typer()`, mounted with `app.add_typer(users, name="users")`.
 Every `typer.Typer()`, sub-apps included, lives in `driver`, so each group's module stays a flat list of commands and `command/__init__.py` only mounts them.
-- **A group's arrival turns `command.py` into `command/`**, and `structure-python`'s same-kind rule promotes every sibling (`argument/`, `option/`, …) at the same moment.
+- **A group's arrival turns `command.py` into `command/`**, one module per group; `argument.py` and `option.py` follow only when they too would be worth opening a file at a time.
 
 ### Arguments and options
 
@@ -120,21 +124,33 @@ Read the rest of `typer.Typer`'s signature before adding to it — `pretty_excep
 
 ### Output
 
-**Render the machine form and the person's form separately.** `rich` drops colour off a terminal, but a boxed table is still unparseable, so the plain form is a second path chosen by option, never by `Console().is_terminal`.
-`output` decides; `rich_` only builds the table:
+**`output` picks the form `SKILL.md` fixes by option; `rich_` only builds the table.** The form is an `enum.StrEnum`, since it crosses the boundary (see `write-python`): `typer` lists its members under `--help` and exits 2 on any other value.
 
 ```python
-def display(
-    report: polars.DataFrame, *, path: pathlib.Path | None, pretty: bool
-) -> None:
-    """Draw the report as a table, or emit it as CSV."""
+class Form(enum.StrEnum):
+    """The forms a command can emit."""
+
+    CSV = "csv"
+    JSON = "json"
+    TABLE = "table"
+
+
+def display(report: polars.DataFrame, *, form: Form, path: pathlib.Path | None) -> None:
+    """Emit the report in the form asked for, to the destination asked for."""
     with contextlib.ExitStack() as open_files:
         file = sys.stdout if path is None else open_files.enter_context(path.open("w"))
-        if pretty:
-            rich.console.Console(file=file).print(render.table(report))
-        else:
-            file.write(report.write_csv(include_header=False))
+        match form:
+            case Form.TABLE:
+                rich.console.Console(file=file).print(render.table(report))
+            case Form.JSON:
+                file.write(report.write_ndjson())
+            case Form.CSV:
+                file.write(report.write_csv())
+            case _:
+                typing.assert_never(form)
 ```
+
+`write_csv()` keeps its header and `write_ndjson()` is the JSON form; a binary form (`PARQUET`) is `report.write_parquet(path)` after a check that `path` was given, raising the usage error before anything is opened.
 
 - **Build a table a level at a time**: a function per cell, one per row, one assembling them; a branch in a loop naming a column is the renderer sniffing the frame again.
 - **Style a cell with a `rich.text.Text`**, never a row's `style=`, which paints the identity columns too.
@@ -145,8 +161,6 @@ def display(
 
 **Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)`.
 It is `write-python`'s `handle` with `report=output.report`, and the one broad catch at a boundary; a `try` per command is missed on exactly the command that then shows a traceback.
-
-A throwaway one-command tool may collapse `typer_` and `rich_` into one `cli.py`, with the work still in the core.
 
 ## API
 
@@ -170,8 +184,7 @@ pydantic_/
 **A schema is not a domain type, even when the fields match.** The DTO (Data Transfer Object) is the external contract, the domain type the internal truth; separate, they evolve independently and untrusted input is validated at the boundary.
 Map between them in `route.py`.
 
-- **Use `pydantic` at trust boundaries** — API bodies, `pydantic-settings`, parsing an external response in an adapter.
-In the core the data is already validated, so a frozen `dataclasses.dataclass` is the lighter default.
+- **`pydantic` validates at the API boundary — request and response models — and in `pydantic-settings`.** An adapter returning a frame declares a `polars` schema instead (see `structure-python`), since a model per row re-validates what the frame's dtypes already fix; one returning records parses with `pydantic` (see `write-python`), and the core takes frozen dataclasses either way.
 - **Never duplicate an enum**: a schema field references the domain's `enum.Enum` directly.
 - **A model wanted in both `adapt` and `drive` is a domain model** — the two edges can't import each other — so it moves to `transform`/`domain`.
 
@@ -199,6 +212,16 @@ def fetch() -> port.Fetch:
 
 `provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Fetch` in its signature, and names `httpx_` only in its body.
 It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
+Settings take the same seam, read once per process:
+
+```python
+@functools.cache
+def settings() -> config.Settings:
+    """Provide the settings once per process; overridden in tests."""
+    return config.Settings()
+```
+
+A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan; a handler stays a plain `def` unless it awaits something (see `write-python`).
 
 ```python
 router = fastapi.APIRouter()
@@ -228,6 +251,7 @@ def run() -> None:
     uvicorn.run(app)
 ```
 
+`uvicorn.run` binds `127.0.0.1` by default; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
 A test swaps the adapter with `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — no patching.
 
 ## GUI
@@ -244,6 +268,7 @@ shiny_/
   callback.py   server(input, output, session) — the composition root
   driver.py     app = shiny.App(layout.root(), callback.server); run()
   layout.py     functions returning shiny.ui objects; root() is the top
+  provide.py    the settings and the manifest path the callbacks read
 ```
 
 Layouts are functions, so a reused panel is a function `root()` calls rather than copied markup:
@@ -261,42 +286,60 @@ def root() -> htmltools.Tag:
 def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -> None:
     """Wire inputs to the core and render the results."""
 
+    @shiny.reactive.file_reader(provide.manifest_path())
+    def runs() -> polars.DataFrame:
+        """Re-read the run manifest whenever the nightly job rewrites it."""
+        return polars.read_parquet(provide.manifest_path())
+
     @shiny.render.data_frame
     def report() -> polars.DataFrame:
         """Render the report for the stations entered."""
         return operate.report(input.stations().split(), fetch=httpx_.fetch)
+
+    @shinywidgets.render_plotly
+    def chart() -> plotly.graph_objects.Figure:
+        """Chart the rows each source delivered last night."""
+        return plotly.graph_objects.Figure(
+            plotly.graph_objects.Bar(
+                x=runs().get_column("source").to_list(),
+                y=runs().get_column("rows").to_list(),
+            )
+        )
 ```
+
+- **The dashboard calls `operate.*` directly**, as the CLI does; `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
+- **Refresh by watching the run manifest** (`store-data`): `shiny.reactive.file_reader` polls the file's modification time and re-runs its function when the nightly job rewrites it, so every output depending on `runs()` updates without a timer and the dashboard shows its own staleness.
+- **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
+- **The blank line after `server`'s docstring** is `write-python`'s exception for a short function's beats.
 
 `driver.py` builds `app = shiny.App(layout.root(), callback.server)` and a `run()` calling `shiny.run_app(app)`.
 
 ## Jobs
 
-A job is `command.py` without the parsing: a thin composition root wiring a source and a sink around an operation, run once by an **external** scheduler — cron, a systemd timer, a Kubernetes `CronJob`, a cloud trigger — so the schedule lives in infrastructure.
-
-```python
-def run() -> None:
-    """Fetch the latest readings and store the daily averages."""
-    operate.refresh(fetch=httpx_.fetch, store=postgres_.save)
-```
-
-Reach for a library only when the trigger must live inside the process — `setup-python` names the picks — in its own trailing-underscore package, with the work still an operation over the core.
+**The scheduled path is a CLI command**: `nightly` in `command.py` runs the whole sequence, and `myapp-cli nightly` is what the scheduler invokes (see `run-unattended`), so the CLI stays the one composition root and the schedule lives in infrastructure.
+A `job/` driver exists only for an event trigger — a queue message, a webhook — whose framework needs its own app object, in its own trailing-underscore package (`setup-python` names the picks), with the work still an operation over the core.
 
 ## Configuration
 
-Load configuration once at the composition root and pass values into operations (see `structure-python`).
-A `pydantic-settings` model in a driver-side `config` module validates the environment and fails fast on a bad value:
+Load configuration once at the composition root and pass values into operations (see `structure-python`, which says which value lives in settings).
+A `pydantic-settings` model in a driver-side `config` module reads the environment and a local `.env`, and fails fast on a bad value:
 
 ```python
 class Settings(pydantic_settings.BaseSettings):
-    """Application configuration, read from the environment."""
+    """Application configuration, read from the environment and a local .env."""
 
-    model_config = pydantic_settings.SettingsConfigDict(env_prefix="MYPACKAGE_")
+    model_config = pydantic_settings.SettingsConfigDict(
+        env_file=".env", env_prefix="MYPACKAGE_"
+    )
 
+    api_key: pydantic.SecretStr
     rate: float = 0.05
     timeout: float = 30.0
 ```
 
-A secret is a `pydantic.SecretStr` field from the environment or a mounted file, never a default in code.
+- **`.env` is for the laptop and is ignored by git**; the environment wins over it, so a scheduler or a container sets variables and the file is never deployed.
+Commit a `.env.example` naming every variable with a placeholder, so a fresh clone knows what to set without reading the model.
+- **A secret is a `pydantic.SecretStr` field** with no default, so a missing key fails at startup and a `repr` or a log line shows `**********`.
 
 - **One value is a function, not a model.** A function reading one variable and raising an error naming it when unset costs nothing; grow into the model at the second field, and call sites don't change.
 It also keeps a required value honest, where a model invites a default.
@@ -304,7 +347,7 @@ It also keeps a required value honest, where a model invites a default.
 
 ## Logging
 
-Configure once at the composition root — from a `typer` callback, a `fastapi` lifespan hook, or the top of a job's `run()` — through a `logging_/` package, with destination and level exposed as options:
+The composition root configures logging (`structure-python`) from a `typer` callback or a `fastapi` lifespan hook, through a `logging_/` package, with destination and level exposed as options:
 
 ```python
 def _file(path: pathlib.Path) -> logging.Handler:
@@ -336,24 +379,9 @@ def configure(
 ```
 
 `basicConfig` applies `format` only to a handler without one, so the file keeps its timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
-Every other module just logs through `logging.getLogger(__name__)`.
+A file handler grows until the disk is full; rotating it is `run-unattended`'s, and JSON lines belong only behind a collector that indexes them.
 
 ## Run
 
-Each entry point is a `[project.scripts]` command, named as `SKILL.md`'s Run says.
-It points at a callable app (`typer`) or a `run()` launcher (`uvicorn`, `shiny`, a job):
-
-```toml
-[project.scripts]
-mypackage-api = "mypackage.code.drive.api:run"
-mypackage-cli = "mypackage.code.drive.cli:app"
-mypackage-gui = "mypackage.code.drive.gui:run"
-mypackage-job = "mypackage.code.drive.job:run"
-```
-
-```bash
-uv run mypackage-cli report london tokyo
-```
-
-- The API and GUI also run under their dev servers: `uvicorn mypackage.code.drive.api:app`, `shiny run mypackage.code.drive.gui:app`.
-- A job carries no scheduler; the external trigger invokes its command.
+Each entry point is a `[project.scripts]` command in `setup-python`'s `pyproject.toml`, named as `SKILL.md`'s Run says: `mypackage-cli = "mypackage.code.drive.cli:app"` for the callable `typer` app, and `mypackage-api = "mypackage.code.drive.api:run"` or `mypackage-gui = "...gui:run"` for a `run()` launcher.
+The API and GUI also run under their dev servers: `uvicorn mypackage.code.drive.api:app`, `shiny run mypackage.code.drive.gui:app`.
