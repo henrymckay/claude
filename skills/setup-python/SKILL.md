@@ -161,7 +161,7 @@ No optional-extras split (`mypackage[dashboard]`): one install carries every dri
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s Write an adapter has the mechanics.
-A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and `httpx`'s async client only where a driver needs it (see `write-python`).
+A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and `httpx`'s async client only where a driver or adapter needs it (see `write-python`).
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person, and JSON lines only where a collector reads them (see `run-unattended`); never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
