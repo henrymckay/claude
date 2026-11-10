@@ -220,7 +220,7 @@ def _get(url: str, *, api_key: str) -> str:
 - **`pyrate-limiter` paces at the rate the service states**, blocking until a slot frees; a hand-rolled `time.sleep` paces the calls you remembered.
 `tenacity` retries only the outcomes the predicate names — a `429` or a `5xx` — honouring `Retry-After`, with `reraise=True` so the caller sees the real exception; a `4xx` is your bug and retrying it only hides which request was wrong (see `write-python` on classifying outcomes).
 - **Page to exhaustion and assert the count**: follow the next-page link until the service sends none, then compare the rows against the total the first page states, since a loop stopping at a fixed page count caps the data silently (see `write-tests`).
-- **Sync by default**; `httpx.AsyncClient` only inside a driver whose framework or fan-out needs it (see `write-python`).
+- **Sync by default**; `httpx.AsyncClient` only inside a driver or adapter whose framework or fan-out needs it, never in a signature the core calls (see `write-python`).
 
 **Recognise a publisher's unstated terms**, since all three look like your bug and none appears in a test:
 
