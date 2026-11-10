@@ -1,0 +1,134 @@
+---
+name: send-messages
+description: >-
+  How a deployed job or assistant reaches a person — what deserves a message
+  (a failure alert, a digest, a conversation, never a routine success),
+  picking the channel (ntfy.sh for the alert, email with the chart attached
+  for the digest, Claude Code channels for the conversation; Pushover,
+  Telegram, Slack, Discord and iMessage as the alternatives with the case that
+  earns each), leading with what the reader would act on, sending from the job
+  driver with the stdlib, keeping the topic, token or app password in the
+  environment, and reaching a Claude Code session through a channel or a
+  scheduled task's trigger. Use whenever adding a notification, alert, digest
+  or chat to a job, choosing between push, chat and email, wiring ntfy,
+  Pushover, Telegram, Slack, Discord, iMessage or SMTP, or deciding how an
+  unattended job tells someone it failed — even if the user just says "text me
+  when it breaks", "email me a summary" or "let me chat with it from my
+  phone". Layers on run-unattended (when a message is earned) and store-data
+  (the digest's counts); Claude Code's own hooks and PushNotification tool are
+  not covered.
+---
+
+# Send messages
+
+How a deployed job or assistant reaches a person: the failure alert, the digest with its chart, the two-way conversation, and how a job reaches a Claude Code session.
+It builds on `run-unattended`, whose exit code and `status` command say when a message is earned, and `store-data`, whose manifest holds the digest's counts; the Stop and Notification hooks and the PushNotification tool are Claude Code's own and not covered here.
+Three mistakes account for most messages nobody reads: a success message every night, so the one failure scrolls past with the rest; a secret pasted into the unit file or the message body; and a channel that needs a Mac awake, chosen for a job that runs in the cloud.
+
+**In an existing project, ask first.** Where a repo already has a notification channel, check with the user whether to keep it or apply these picks, and prefer these unless they choose to keep theirs.
+
+## Decide what deserves a message
+
+**Send nothing for a routine success**; the manifest and `status` are the record (`run-unattended`, Report the outcome).
+A nightly "job ran" trains the reader to swipe it away, and the failure a month later is swiped with it: an alert earns its place by being rare.
+
+- **A failure alert** when the job exits 1 or 2, or `status` finds a source stale — the reader has something to do.
+- **A digest** on the cadence the reader would otherwise run `status` or open the dashboard.
+- **A conversation** only for questions a digest cannot anticipate; a question asked the same way every day is a digest line.
+
+`run-unattended` leaves notification out of v1; the first outage nobody noticed earns it, recorded under Decisions.
+
+## Pick the channel
+
+Each pick is the default for its need; a `PLAN.md` decision overrides it, and a channel the reader already lives in is a reason to record one.
+Every channel below sends from GitHub Actions, a cloud host or a launchd job over outbound HTTPS or SMTP, except iMessage.
+
+- **Failure alert: ntfy.sh** with an unguessable topic and `Priority: urgent` — no account, no cost, one HTTP POST, and a phone app that shows it as a push.
+The topic name is the password, so generate it (`secrets.token_urlsafe(16)`); a guessable one lets anyone post to the reader's phone.
+Alternative: **Pushover** when an alert must repeat until acknowledged (priority 2), at $4.99 once per platform.
+- **Digest with a chart: email through the reader's own SMTP** — iCloud (`smtp.mail.me.com:587`, STARTTLS, an app-specific password) or Gmail (`smtp.gmail.com:465`, an app password behind 2-Step Verification, 500 a day) — with the PNG attached: already read daily, searchable, archived, nothing to install.
+Alternative: **Telegram `sendPhoto`** (caption 1024 characters, one message a second per chat) when the reader wants it in a chat and has installed Telegram; the reader must message the bot before `getUpdates` yields their chat id.
+- **Interactive assistant: Claude Code channels** — the iMessage plugin on the Mac the job runs on, or the Telegram plugin from any host (`claude --channels plugin:telegram@claude-plugins-official`, on the same bot token) — over writing a bot: the session already has the repo, the store and the skills, so the assistant costs no code.
+Alternative: a **Telegram long-polling bot** in the project (`getUpdates?timeout=50` needs no public URL) when the assistant must run with no Claude Code session.
+- **Slack** only once the reader has a workspace they read: a webhook is one URL per channel and carries no files, and a chart needs an app with `files:write` calling `files_upload_v2`, the only upload since November 2025.
+A workspace made for one job is a second inbox nobody opens.
+- **iMessage from a job** only when the job already runs on that Mac, never from the cloud: `osascript` telling Messages to `send (item 1 of argv) to chat id (item 2 of argv)` needs the Mac awake and signed in, the chat GUID from `~/Library/Messages/chat.db` (Full Disk Access) and an Automation permission granted at the first send.
+- **Discord** (a webhook, files to 20 MiB) needs a server the reader checks, so it is not a default; **Pushbullet** is not picked, as a product that has not moved in years.
+
+## Shape the message
+
+**Lead with what the reader would act on**, since a lock screen shows one line and a mail client a subject: `nightly failed: weather 503 x3, 2 of 3 sources stored`.
+
+- **An alert is one line** plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
+- **A digest carries the counts `status` prints** — rows per source, rejected rows, the last day stored — with the chart attached, so the message and the command agree.
+- **The body carries no secret and no personal data beyond what the reader needs**: a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
+
+## Send from the job
+
+Send from the driver, where the exit code is decided (`write-entry-points`), after the manifest is written, so a failed send cannot lose the record; the sender is an adapter the core never calls, and the stdlib covers both picks.
+
+```python
+import urllib.request
+
+
+def send_alert(text: str, *, title: str, topic: str) -> None:
+    """Push one urgent line to the reader's ntfy topic.
+
+    :param text: What the reader would act on, in one line.
+    :param title: The notification's heading.
+    :param topic: The unguessable topic, read from the environment.
+    """
+    request = urllib.request.Request(
+        f"https://ntfy.sh/{topic}",
+        data=text.encode(),
+        headers={"Title": title, "Priority": "urgent", "Tags": "warning"},
+    )
+    with urllib.request.urlopen(request, timeout=10) as response:
+        response.read()
+```
+
+```python
+import email.message
+import pathlib
+import smtplib
+
+
+def send_digest(
+    text: str, *, address: str, chart: pathlib.Path, password: str, subject: str
+) -> None:
+    """Mail the reader the digest from their own iCloud account, chart attached.
+
+    :param text: The counts status prints, one per line.
+    :param address: The reader's iCloud address, sender and recipient both.
+    :param chart: The PNG to attach.
+    :param password: The app-specific password, read from the environment.
+    :param subject: What the reader would act on, in one line.
+    """
+    message = email.message.EmailMessage()
+    message["From"] = address
+    message["To"] = address
+    message["Subject"] = subject
+    message.set_content(text)
+    message.add_attachment(
+        chart.read_bytes(), maintype="image", subtype="png", filename=chart.name
+    )
+    with smtplib.SMTP("smtp.mail.me.com", 587) as smtp:
+        smtp.starttls()
+        smtp.login(address, password)
+        smtp.send_message(message)
+```
+
+Gmail's `smtp.gmail.com:465` is `smtplib.SMTP_SSL` with no `starttls()` call.
+A failed send raises from the app's `error/` package like any adapter (`write-python`, Error handling); the driver logs it and keeps the job's own exit code, since an alert that could not be sent is a log line, not a second failure to alert on.
+
+## Keep the secret out
+
+**The topic, bot token or app password lives in the environment** — a `.env` the settings read, `EnvironmentFile=`, repository secrets — never in the unit file or the repo (`run-unattended`, Schedule it); the ntfy topic is a secret even though it reads like a name, so keep the request URL out of the log too.
+A leaked topic is replaced for free; a leaked app password is revoked in the account, and `use-git` says what to do when one lands in history.
+
+## Reach Claude
+
+- **Claude Code channels** (above) bridge a running local session to a chat, so the session is a service `run-unattended` keeps alive on a Mac that stays awake or on a host.
+- **An external job fires a cloud scheduled task** through its API trigger: `POST https://api.anthropic.com/v1/claude_code/routines/{id}/fire` with the task's own token, `anthropic-version: 2026-10-21` and a body of `{"text": ...}` up to 65,536 characters, at most 30 fires an hour.
+The task runs a full session that reads the log, triages and messages the reader through a connector, earned when the alert needs a diagnosis rather than a line and costing a session per fire.
+- **No API pushes into the Claude app and no inbound webhook reaches a claude.ai chat**, so "message Claude" means one of the two above.
