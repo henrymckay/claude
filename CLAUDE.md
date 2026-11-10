@@ -37,6 +37,7 @@ A reason you find yourself goes under Decisions as proposed, with its source and
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
 - **`build-project`** when building a project from its `PLAN.md`: milestone by milestone, gating each before it is ticked.
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost: the model and effort ladder.
+- **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud: the free-tier host per artefact and how it gets there.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
 - **`run-unattended`** when a job runs on a schedule with nobody watching: the day it fetches, the lock, catch-up, exit codes, `status`, logs, the scheduler unit.
 - **`review-plugin`** when reviewing this Claude repo: `review-project` plus drift across skills, `CLAUDE.md`, README, wiring and memory.

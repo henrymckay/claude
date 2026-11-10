@@ -28,6 +28,7 @@ The rest are the conventions those three apply.
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`build-project`](skills/build-project) builds a planned project milestone by milestone, passing a quality gate before each is ticked.
 - [`choose-model`](skills/choose-model) picks the model and effort for each stage of work, from Opus for planning and review to Haiku for graders, and how a skill or subagent sets its own.
+- [`deploy-project`](skills/deploy-project) puts each artefact on the best free or near-free host, from a [GitHub Actions](https://docs.github.com/en/actions) pipeline and [MotherDuck](https://motherduck.com/) to a Shiny dashboard on [Posit Connect Cloud](https://connect.posit.cloud/) and a static site on GitHub Pages.
 - [`plan-project`](skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
 - [`run-unattended`](skills/run-unattended) covers a job that runs on a schedule with nobody watching, from the lock and the missed night to the [`launchd`](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), [`systemd`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) or [GitHub Actions](https://docs.github.com/en/actions) unit.
 - [`review-plugin`](skills/review-plugin) extends `review-project` for this repo, from descriptions that no longer match their skills to rules duplicated across them.
