@@ -14,15 +14,18 @@ description: >-
   their cost, not yet), a design (inputs, data flow, outputs, interface as a
   command, endpoint table or screen list, errors, decisions with sources),
   delivery (verification, milestones) and open items (assumptions, questions,
-  ideas), and changes only with the user's sign-off. Use whenever starting a
-  new project or repo, or a build that adds a new input, output or interface;
-  when the user wants to think a project through, write a spec or design, or
-  decide what to build first; and whenever a PLAN.md needs changing — even if
-  the user just says "let's plan this", "new project" or "what should this
-  look like". Layers on write-markdown; points the design at setup-python,
-  structure-python, write-entry-points, be-functional, use-polars and
-  write-tests, hands the build to build-project, and the finished build to
-  review-project.
+  ideas the brief didn't ask for), whose requirements and decisions change
+  only with the user's sign-off; a fix or small change gets a short plan in
+  the conversation instead. It is written for Claude to follow: cited by ID,
+  shown not described, in the plan's own terms, pointing at skills rather than
+  restating them. Use whenever starting a new project or repo, or a build that
+  adds a new input, output or interface; when the user wants to think a
+  project through, write a spec or design, or decide what to build first; and
+  whenever a PLAN.md needs changing — even if the user just says "let's plan
+  this", "new project" or "what should this look like". Layers on
+  write-markdown; points the design at setup-python, structure-python,
+  write-entry-points, be-functional, use-polars and write-tests, hands the
+  build to build-project, and the finished build to review-project.
 ---
 
 # Plan the project
@@ -109,7 +112,7 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 ### Decisions
 
-- **<choice>** over <alternatives> — <why>; <source: the doc, tool or measurement that settled it>; <overrides `<skill>` where it does>.
+- **D1 <choice>** over <alternatives> — <why>; <cost>; <source: the doc, tool or measurement that settled it>; <overrides `<skill>`, <section>, where it does>; (proposed) until the user signs it off.
 
 ## Delivery
 
@@ -153,6 +156,9 @@ Where work arrives continuously, as issues or feedback, the milestones cover onl
 Draft the whole plan first and ask afterwards.
 Questions asked before a draft exists are guesses at what matters; a draft shows which gaps actually change the design, and lets the user answer by reacting rather than inventing.
 
+- **Wrong** — "What storage do you want? Which scheduler? How should errors be reported?", one message per section, each answered from nothing.
+- **Right** — a full draft with the house picks filled in, then one message: "A3 assumes Parquet; D2 picks launchd over cron because …; Q1 needs you — recommended: yes."
+
 1. **Start in plan mode**; its approval is the plan's sign-off.
 2. **Gather before asking.** Read the conversation, the repo, any neighbouring repo it reads from or feeds, and samples of the real input data.
    Where the input needs a credential, ask for it now and record a sample response; it becomes the first test fixture (see `write-tests`).
@@ -164,6 +170,7 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
    - **Place the project.** Who reads its outputs, which projects feed it or read from it, and what it plausibly grows into.
      Let that shape the names and the seams between stages, and put the growth itself under Not yet; building for it now is the structure-ahead-of-need mistake.
    - **Compare rival designs.** Sketch two or three for each structural choice, judged against how comparable tools do it and where they fall short, and record the losers under Decisions.
+   - **Keep what the brief didn't ask for.** A capability the research turned up, or a better shape for something the user fixed, goes under Ideas with its case, so the user sees it without it entering the design.
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
@@ -172,10 +179,10 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
    Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
 6. **Fill each gap with an assumption, not a question.** Take the house pick from the skills, or the answer the rest of the conversation implies, and record it under Assumptions with what changes if it is wrong.
    A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
-   A house pick is a default: where research shows it fits this project badly, choose otherwise and record it under Decisions with the source and the skill it overrides, so the deviation is visible rather than silent.
+   A house pick is a default: where research shows it fits this project badly, choose otherwise and record it under Decisions as proposed, with the source and the skill and section it overrides; the batch puts it to the user, and approval of the plan is its sign-off.
 7. **Raise as a question only what an assumption can't carry**: a choice that splits the design, a costly requirement whose purpose is unclear, a concern that could sink the project.
    Give each a recommended answer, so the user can reply "yes" or by number.
-8. **Ask once, in one batch**: the questions with their recommendations, as multiple choice where the options are few; the assumptions and Claude's decisions listed by ID, each with its alternatives, cost and source, for the user to override; and a line on what Claude would push back on in the brief.
+8. **Ask once, in one batch**: the questions with their recommendations, as multiple choice where the options are few; the assumptions, decisions and ideas listed by ID, each decision with its alternatives, cost and source, for the user to override or adopt; and a line on what Claude would push back on in the brief.
    The user reviews a list of calls, not a document, so each line stands alone.
    A second round only where an answer opened a question the first round couldn't have asked.
 9. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
@@ -186,14 +193,14 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 - **Cite by ID.** A milestone, check or plan-mode step that names R4 shows what it serves, and a requirement nothing cites is visibly unbuilt.
 - **Show, don't describe.** A real command line and a schema table fix an interface and an output; a paragraph about them leaves the details to be guessed.
 - **Use the Terms everywhere.** One name per concept, in the plan and in the code; a second name for the same thing reads as a second thing.
-- **Write what is decided as fact** — "Each day is written to its own file" — and put what is not under Open; a "could" in the Design gets built as either.
+- **Write what is decided as fact** — "Each day is written to its own file" — mark what Claude decided alone *(proposed)*, and put what only the user can settle under Open; a "could" in the Design gets built as either.
 - **Record what was rejected, and the source.** A decision without its rejected alternatives gets reopened, or quietly reversed by a build that thinks it is improving things; one without its source can only be trusted, never checked.
 - **Point at a skill instead of restating it.** The plan says what this project does; the skills say how every project does it, and a copy in the plan drifts from the skill.
 - **Keep only what changes the build.** A line no milestone or check would read differently without is background, and belongs in the README.
 
 ## Keep it current
 
-- **Change a requirement or decision only with the user's sign-off.** When work would overturn a decision or add a requirement, say so in a plan-mode plan, so the approval covers the change.
-- **Update it with the code.** Tick the milestone, move anything built out of Not yet, record what the build assumed, proposed or noticed under Open, and commit `PLAN.md` with the change that made it true.
-  Ideas and proposed decisions need no sign-off to record; they need it to build.
+- **Change a requirement or decision only with the user's sign-off.** When work would overturn a decision, add a requirement, build something from Not yet or override a skill, say so in a plan-mode plan, so the approval covers the change.
+- **Update it with the code.** Tick the milestone, move out of Not yet what the user signed off building, record the build's assumptions under Open, its calls under Decisions as proposed, and its ideas under Ideas, and commit `PLAN.md` with the change that made it true.
+A proposed decision that fills a gap the skills leave is built on and raised in the milestone report; one that overrides a skill waits for the sign-off above.
 A plan left behind becomes a second, wrong README.
