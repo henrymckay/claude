@@ -1,6 +1,6 @@
 # Scheduler units
 
-The principles are in `SKILL.md`; these are the three unit files, each running a nightly command after 02:00 UTC through a tool installed with `uv`.
+The principles are in `SKILL.md`; these are the two unit files for a machine you own, each running a nightly command after 02:00 UTC through a tool installed with `uv`.
 Keep them in the repo under `deploy/` and give the README the install line shown with each.
 
 ## launchd (macOS)
@@ -87,30 +87,4 @@ ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen myapp
 
 ## GitHub Actions (cloud)
 
-`.github/workflows/nightly.yml`, run on the default branch only; `workflow_dispatch` lets you run it by hand after a miss.
-
-```yaml
-name: nightly
-on:
-  schedule:
-    - cron: "0 2 * * *"
-  workflow_dispatch:
-concurrency:
-  group: nightly
-jobs:
-  nightly:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
-      - run: uv sync --locked --no-dev
-      - run: uv run myapp-cli nightly
-        env:
-          MYAPP_TOKEN: ${{ secrets.MYAPP_TOKEN }}
-```
-
-- `cron` is UTC unless a `timezone` key is set; the shortest interval is five minutes, and firings slip under load, so nothing downstream should assume the minute.
-- `concurrency` without `cancel-in-progress` queues an overlapping run instead of killing the one in flight, the same policy as the lock.
-- The runner has no data directory of its own, so the store is MotherDuck or an artefact uploaded at the end (see `store-data`); a workflow that writes to a local path keeps nothing.
-- Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors.
+The `schedule` workflow runs where `deploy-project` decides, so its file and notes live in that skill's `references/github-actions.md`; what Actions does with a missed run is in `SKILL.md`, Schedule it.

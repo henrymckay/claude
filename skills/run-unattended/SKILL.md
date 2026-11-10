@@ -14,8 +14,9 @@ description: >-
   status or health command, choosing where a job's logs go, or keeping a
   service running — even if the user just says "run this every night", "cron
   this", "make it restart" or "why did last night not run". Layers on
-  write-entry-points (the job driver) and store-data (the manifest); the
-  plist, timer and workflow files are in references/schedulers.md.
+  write-entry-points (the job driver) and store-data (the manifest); the plist
+  and timer files are in references/schedulers.md, the Actions workflow in
+  deploy-project's references/github-actions.md.
 ---
 
 # Run unattended
@@ -84,7 +85,7 @@ Doing both writes every line twice; an unrotated `FileHandler` grows until the d
 
 **Pick the scheduler by platform**, since each is already running there: a launchd agent in `~/Library/LaunchAgents` on macOS, a systemd user timer in `~/.config/systemd/user` on Linux, a `schedule` workflow on GitHub Actions when the job has no machine of its own.
 `cron` runs everywhere but fires into a bare environment with no log capture and no missed-run handling, which is the work the other three do for you.
-The files are in `references/schedulers.md`; the unit lives in the repo under `deploy/` with its install line in the README, so a new machine is a copy and one command.
+The launchd and systemd files are in `references/schedulers.md` and the Actions workflow in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, so a new machine is a copy and one command.
 
 - **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
 `--frozen` runs what is locked instead of re-resolving against the network every night.
@@ -98,4 +99,4 @@ Each is a gap `status` reports, not a job to repair.
 
 Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run` then finds the environment and installs nothing.
 Docker earns its place only when the target is a container platform; on a machine you own it adds an image to rebuild for every dependency bump, and the store ends up in a volume nobody can find.
-On Actions, `astral-sh/setup-uv` then `uv sync --locked` is the equivalent, failing the run when the lockfile is behind `pyproject.toml` instead of resolving silently.
+On Actions the equivalent is `deploy-project`'s workflow, whose `uv sync --locked` fails the run when the lockfile is behind `pyproject.toml` instead of resolving silently.
