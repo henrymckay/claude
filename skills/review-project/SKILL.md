@@ -1,5 +1,7 @@
 ---
 name: review-project
+model: opus
+effort: high
 description: >-
   How to review a whole project and then fix what the review finds — checking
   it against its PLAN.md where there is one, then correctness (the tests, the

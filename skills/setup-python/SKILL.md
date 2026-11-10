@@ -172,7 +172,7 @@ A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wron
 - **Storage** → hive-partitioned Parquet for pipeline output, DuckDB to query it, SQLite for small single-writer state; `store-data` has the picks and their cases.
 - **Tabular / columnar data** → `polars` (see `use-polars`), converting another library's `pandas` frame with `polars.from_pandas` plus `pyarrow`.
 - **Terminal output for a person** → `rich` for tables, progress bars, colour, and readable tracebacks; a command's data output stays plain bytes on standard output (see `write-entry-points`).
-- **Testing** → `pytest`, with `hypothesis` for property-based tests, `time-machine` for the clock and `pytest-cov` for coverage.
+- **Testing** → `pytest`, with `hypothesis` for property-based tests, `time-machine` for the clock, the `anyio` plugin for async code (not `pytest-asyncio`) and `pytest-cov` for coverage.
 - **Validation and settings** → `pydantic` v2 at a trust boundary (see `write-python`), `pydantic-settings` for typed config from the environment and a local `.env`.
 - **Web API** → `fastapi` (type-hint-driven, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **XML and other markup** → `lxml`, by XPath or CSS selector, over a hand-rolled parser or regex.

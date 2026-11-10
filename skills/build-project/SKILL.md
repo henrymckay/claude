@@ -1,5 +1,6 @@
 ---
 name: build-project
+model: sonnet
 description: >-
   How to build a planned project milestone by milestone with minimal input
   from the user — working through its PLAN.md in order, each milestone on its

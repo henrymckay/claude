@@ -37,6 +37,12 @@ Done looks like: a real project planned, built and reviewed with these skills, n
   - Cost: longer plans and one more surface to read; dropping it leaves the user supplying the knowledge.
 - **R8** The plugin maintains and improves itself as it is used: skill gaps are captured without relying on recall, worked through on a schedule, and fixes are checked by running, with the user reviewing the result.
   - Cost: a hook, a scheduled task, a trigger eval suite; dropping it leaves improvement to the user remembering to ask.
+- **R9** Each stage of a project, and of this plugin's upkeep, runs on the most appropriate model, effort and mode with an eye on cost, chosen by Claude where Claude can choose.
+  - Cost: a ladder to maintain as models and prices change; dropping it leaves every stage on whatever the session started with.
+- **R10** A project's deployment is decided in the plan and built by the skills — dashboards, pipelines, data and APIs on the best free or very-low-cost hosts — so none of it is a decision during the build.
+  - Cost: free tiers change yearly, so the picks need re-checking in each sweep.
+- **R11** A deployed project can message the user — alerts, digests, a two-way assistant — through channels the user reads, and a Claude Code session can reach them too.
+  - Cost: a secret per channel on each host; dropping it leaves outages unnoticed.
 
 ### Not yet
 
@@ -48,6 +54,8 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 - **Snapshot tests, mutation testing, a task runner, Docker, dev containers, docs generation** — each earned by the first project that needs it; the skills say "none" until then.
 - **Checked-in evaluation briefs** — earned by a brief general enough to suit any user; the trade briefs are archived in the rough repo.
 - **`agents/`, `commands/` and `rules/`** — the `~/.claude` symlinks for the first two already exist and dangle on purpose.
+- **Slack as a message channel** — earned once the user has a workspace they read; the skill names it as an alternative until then.
+- **An `advisor` second-model step mid-task** — Claude Code documents one; earned when a build stage keeps failing its gate on Sonnet.
 
 ## Design
 
@@ -122,6 +130,9 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
 - **A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
 - **A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
+- **The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
+- **The weekly sweep runs on Opus** on Mondays at 02:00 UTC (06:00 Dubai) with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
+- **Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
 
 ## Delivery
 
@@ -135,6 +146,9 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **R6** — the gap probe re-run (a fresh agent plans the generic nightly fetch → store → metrics → CLI → API → dashboard tool from the skills alone) leaves no decision open that a skill should settle, and names no rule it would have followed anyway.
 - **R7** — a plan written with plan-project shows the decision list with sources; the trio's files each state when and how to deviate from a skill; a review can flag a house pick as wrong for the project.
 - **R8** — the hook fires and files on a seeded gap; the scheduled task runs and opens a PR; `claude plugin eval . --ablation none` passes every case under `evaluate/triggers/`.
+- **R9** — `choose-model` exists; plan-, build-, review-project and review-plugin carry the ladder in their frontmatter; a subagent spawned by a review goes out on the ladder's model.
+- **R10** — `deploy-project` exists with a verified free-tier pick per artefact, `plan-project`'s skeleton has a Runs on section, and the gap probe (R6) leaves no deployment decision open.
+- **R11** — `send-messages` exists with a working send for each house channel, and `run-unattended` points at it for the alert it deferred.
 
 ### Milestones
 
@@ -147,6 +161,9 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [ ] **M8 Store and run** — R6; done when `store-data` and `run-unattended` exist, are listed in CLAUDE.md and the README, and the gap probe re-run (R6) passes.
 - [ ] **M9 Close the loop** — R8; done when the Stop hook, the weekly scheduled task and the trigger eval suite each pass their R8 check.
 - [ ] **M10 Sweep** — R2; done when review-plugin, with a fresh cold read, leaves no defects.
+- [ ] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort`.
+- [ ] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open.
+- [ ] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it.
 - [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin. Runs after M10.
 
 ## Open

@@ -1,5 +1,7 @@
 ---
 name: review-plugin
+model: opus
+effort: high
 description: >-
   How to review your own Claude Code plugin, or a repo serving as one, for
   drift — the checks a skills repo needs on top of review-project: working
