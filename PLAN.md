@@ -128,7 +128,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **D13 A skill's default is a default** (2026-11-10) — a `PLAN.md` decision the user signed off overrides a skill; a reason Claude finds is recorded as a proposed decision and raised before it is built on; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
 - **D14 Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
 - **D15 `functools.partial`, closures and `match`** over `toolz` and `plum` as defaults — `toolz` ships no type hints, so pyright loses every curried function; both stay mentioned for the case that earns them.
-- **D16 One error model** — raise from the app's `error/` package, catch only in drivers; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
+- **D16 One error model** — raise from the app's `error/` package; an adapter converts a library's failure or classifies an item's outcome at its seam, only a driver decides what the user sees, and nothing in the core catches; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
 - **D17 One record type** — `@dataclass(frozen=True, slots=True, kw_only=True)` in the core; `pydantic` only across a trust boundary; `NamedTuple` only for tuple semantics; never `attrs`.
 - **D18 `uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed.
 - **D19 pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
@@ -166,12 +166,12 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [x] **M3 Record the plan** — R3, R4; done when `PLAN.md` is committed, the README points at it, and memory holds only what this plan doesn't (2026-11-08).
 - [x] **M5 Unbox the process** — R7; done when CLAUDE.md and plan-, build-, review-project and review-plugin state the default-is-a-default rule, research with sources, the decision list in the batch, the fourth sweep outcome, and the gap probe's process contradictions are ruled on (2026-11-10).
 - [x] **M6 Settle the code skills** — R6; done when write-python, be-functional, be-oop, write-tests and their references carry the error model, record type, datetime, money, typing depth and async decisions, the wrong claims are fixed, the default-test cuts are made, and every code block and library claim runs (2026-11-10).
-- [ ] **M7 Settle the structure skills** — R6; done when setup-python, structure-python, write-entry-points, use-polars and use-git carry the house picks above, the ten gap-probe contradictions are ruled on, and every claim runs.
-- [ ] **M8 Store and run** — R6; done when `store-data` and `run-unattended` exist, are listed in CLAUDE.md and the README, and the gap probe re-run (R6) passes.
+- [x] **M7 Settle the structure skills** — R6; done when setup-python, structure-python, write-entry-points, use-polars and use-git carry the house picks above, the ten gap-probe contradictions are ruled on, and every claim runs (2026-11-11).
+- [x] **M8 Store and run** — R6; done when `store-data` and `run-unattended` exist, are listed in CLAUDE.md and the README, and the gap probe re-run (R6) passes (2026-11-11).
 - [ ] **M9 Close the loop** — R8; done when the Stop hook, the weekly scheduled task and the trigger eval suite each pass their R8 check.
-- [ ] **M10 Sweep** — R2; done when review-plugin, with a fresh cold read, leaves no defects.
+- [x] **M10 Sweep** — R2; done when review-plugin, with a fresh cold read, leaves no defects (2026-11-11).
 - [x] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort` (2026-11-10).
-- [ ] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open.
+- [x] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open (2026-11-11).
 - [x] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it (2026-11-10).
 - [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin; it runs after M10.
 
