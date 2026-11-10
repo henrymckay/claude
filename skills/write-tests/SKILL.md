@@ -7,15 +7,16 @@ description: >-
   custom assertion for a domain claim, where test data and expected values
   come from and how a recorded response is refreshed, table-driven and
   property-based testing with an imported oracle, testing the dependency
-  behaviour you rely on, the seams a paced client needs, checking that a
+  behaviour you rely on, the transport and sleep seams a paced client needs
+  and the one patch a pacing library's own sleep earns, checking that a
   fixture can exhibit the failure and a generator reaches the state, testing a
-  store and a dashboard, and checking a build against the real source by its
-  counts; no coverage target, no mutation testing, no snapshots until earned.
-  Use whenever writing, editing or reviewing tests, adding coverage, or
-  setting up a suite, even if the user just says "write a test", "add tests",
-  "test this", or names a runner like pytest. Language-agnostic principles
-  here; Python and pytest idioms in references/python.md. Layers on
-  write-python, since tests are code.
+  store, a dashboard and a CLI through its runner, and checking a build
+  against the real source by its counts; no coverage target, no mutation
+  testing, no snapshots until earned. Use whenever writing, editing or
+  reviewing tests, adding coverage, or setting up a suite, even if the user
+  just says "write a test", "add tests", "test this", or names a runner like
+  pytest. Language-agnostic principles here; Python and pytest idioms in
+  references/python.md. Layers on write-python, since tests are code.
 ---
 
 # Write tests
@@ -68,7 +69,8 @@ Keep the shell thin so little needs slow integration tests — the humble object
 Pin it against a saved response, passed straight to the parse function (see `structure-python` on splitting getting from parsing), covering the case the code was written for **and** a record missing the field.
 
 **Reach an owned client through one argument, not a patch.** An adapter keeps its library's client inside itself by design.
-For what is genuinely about the client — what it treats as failure, what it retries, how it paces — give the function that builds the client an optional transport defaulting to the real one, and a `sleep` the retry and pacing policy call, so the test hands it the library's in-process transport and a spy that counts the waits; patching the builder replaces the one function under test.
+For what is genuinely about the client — what it treats as failure, what it retries, how it paces — give the function that builds the client an optional transport defaulting to the real one, and the function that builds the retry a `sleep` it passes on, so the test hands it the library's in-process transport and a spy that counts the waits; patching the builder replaces the one function under test.
+A pacing library whose wait takes no parameter is patched at its own module's sleep — the external boundary the patch rule allows — never worked around with a busier loop in the adapter.
 
 **Never touch the real clock, randomness or network**, except in the marked real-surface run below; inject them (see `be-functional`) and pass fixed values or a seed, since a test that sleeps for real is a slow test that still proves nothing about the wait.
 
