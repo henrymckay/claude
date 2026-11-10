@@ -30,8 +30,8 @@ These skills encode my conventions and are mandatory, not advisory.
 Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
-A skill's default is still a default: a decision recorded in the repo's `PLAN.md` overrides it, and so does a researched reason you record there under Decisions, naming the skill and why.
-Deviate openly like that, never by quietly softening the rule.
+A skill's default is still a default: a decision I have signed off in the repo's `PLAN.md` overrides it.
+A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it (see `plan-project`); never skip or soften a rule without that line.
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
