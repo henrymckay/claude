@@ -43,7 +43,7 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 - **Packaging as an installable plugin** (`.claude-plugin/plugin.json`, marketplace) — earned when the skills need installing on another machine or by someone else; plugin skills are namespaced, so every cross-reference would change.
 - **A debugging skill** — earned when skill feedback shows debugging going wrong.
 - **References for a language other than Python** — earned by the first non-Python project; the scope is Python data, CLI, API and dashboards (2026-11-10).
-- **CI for projects** — declined again 2026-11-10; marginal for one-machine unattended tools. Earned by a project with a second contributor or a deploy.
+- **CI for projects** — declined again 2026-11-10 as marginal for one-machine unattended tools; earned by a project with a second contributor or a deploy.
 - **An evaluation per fixed issue** — declined as too big; the trigger suite (R8) checks only that descriptions fire.
 - **Snapshot tests, mutation testing, a task runner, Docker, dev containers, docs generation** — each earned by the first project that needs it; the skills say "none" until then.
 - **Checked-in evaluation briefs** — earned by a brief general enough to suit any user; the trade briefs are archived in the rough repo.
@@ -97,7 +97,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 ### Decisions
 
 - **Symlinks into `~/.claude`** over an installable plugin or symlinking all of `~/.claude` — no namespacing of names, and machine-local state stays out of git.
-- **Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default.
+- **Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default; the scheduled sweep's weekly PR is the one exception.
 - **Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, and not per-machine.
 - **The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
 - **`review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
@@ -108,16 +108,17 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback.
 - **The README points at this plan** with a short note on how the skills fit together, over copying it — the README is for humans, the plan for Claude.
 - **Memory holds only what this plan doesn't** — the plan is visible and versioned; memory is per-machine.
-- **A skill's default is a default** (2026-11-10) — a recorded `PLAN.md` decision overrides a skill, and a researched reason recorded under Decisions may too; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
+- **A skill's default is a default** (2026-11-10) — a `PLAN.md` decision the user signed off overrides a skill; a reason Claude finds is recorded as a proposed decision and raised before it is built on; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
 - **Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
 - **`functools.partial`, closures and `match`** over `toolz` and `plum` as defaults — `toolz` ships no type hints, so pyright loses every curried function; both stay mentioned for the case that earns them.
 - **One error model** — raise from the app's `error/` package, catch only in drivers; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
 - **One record type** — `@dataclass(frozen=True, slots=True, kw_only=True)` in the core; `pydantic` only across a trust boundary; `NamedTuple` only for tuple semantics; never `attrs`.
-- **`uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed. **pyright `strict`** on a greenfield project.
+- **`uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed.
+- **pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
 - **House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver that needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
 - **Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
 - **The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
-- **A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model; `SessionEnd` cannot. Hook text in the repo, the `settings.json` entry in the README.
+- **A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
 - **A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
 
 ## Delivery
@@ -138,7 +139,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [x] **M1 Sweep the skills** — R2; done when review-plugin left no defects (2026-11-08).
 - [x] **M2 Project trio and feedback loop** — R1, R3; done when plan-, build- and review-project and the skill-feedback rule were committed (2026-11-08).
 - [x] **M3 Record the plan** — R3, R4; done when `PLAN.md` is committed, the README points at it, and memory holds only what this plan doesn't (2026-11-08).
-- [ ] **M5 Unbox the process** — R7; done when CLAUDE.md and plan-, build-, review-project and review-plugin state the default-is-a-default rule, research with sources, the decision list in the batch, the fourth sweep outcome, and the gap probe's process contradictions are ruled on.
+- [x] **M5 Unbox the process** — R7; done when CLAUDE.md and plan-, build-, review-project and review-plugin state the default-is-a-default rule, research with sources, the decision list in the batch, the fourth sweep outcome, and the gap probe's process contradictions are ruled on (2026-11-10).
 - [ ] **M6 Settle the code skills** — R6; done when write-python, be-functional, be-oop, write-tests and their references carry the error model, record type, datetime, money, typing depth and async decisions, the wrong claims are fixed, the default-test cuts are made, and every code block and library claim runs.
 - [ ] **M7 Settle the structure skills** — R6; done when setup-python, structure-python, write-entry-points, use-polars and use-git carry the house picks above, the ten gap-probe contradictions are ruled on, and every claim runs.
 - [ ] **M8 Store and run** — R6; done when `store-data` and `run-unattended` exist, are listed in CLAUDE.md and the README, and the gap probe re-run (R6) passes.
@@ -154,5 +155,9 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **A2** The cloud scheduled task has an authenticated `gh` — undocumented; the first run tests it, and if absent the sweep reads issues through the GitHub REST API with the task's token.
 
 ### Questions
+
+None.
+
+### Ideas
 
 None.
