@@ -3,20 +3,23 @@ name: send-messages
 description: >-
   How a deployed job or assistant reaches a person — what deserves a message
   (a failure alert, a digest, a conversation, never a routine success),
-  picking the channel (ntfy.sh for the alert, email with the chart attached
-  for the digest, Claude Code channels for the conversation; Pushover,
-  Telegram, Slack, Discord and iMessage as the alternatives with the case that
-  earns each), leading with what the reader would act on, sending from the job
-  driver with the stdlib, keeping the topic, token or app password in the
-  environment, and reaching a Claude Code session through a channel or a
-  scheduled task's trigger. Use whenever adding a notification, alert, digest
-  or chat to a job, choosing between push, chat and email, wiring ntfy,
-  Pushover, Telegram, Slack, Discord, iMessage or SMTP, or deciding how an
-  unattended job tells someone it failed — even if the user just says "text me
-  when it breaks", "email me a summary" or "let me chat with it from my
-  phone". Layers on run-unattended (when a message is earned) and store-data
-  (the digest's counts); Claude Code's own hooks and PushNotification tool are
-  not covered.
+  alerting on a change of state recorded beside the manifest so a permanent
+  failure alerts once, a sender for each failure (the driver for a failed run,
+  a scheduled status for a night that never ran, the workflow's failure step
+  for a crash before the driver), picking the channel (ntfy.sh for the alert,
+  email with the chart attached for the digest, Claude Code channels for the
+  conversation; Pushover, Telegram, Slack, Discord and iMessage as the
+  alternatives with the case that earns each), leading with what the reader
+  would act on, sending from the job driver with the stdlib, keeping the
+  topic, token or app password a secret, and reaching a Claude Code session
+  through a channel or a scheduled task's trigger. Use whenever adding a
+  notification, alert, digest or chat to a job, choosing between push, chat
+  and email, wiring ntfy, Pushover, Telegram, Slack, Discord, iMessage or
+  SMTP, or deciding how an unattended job tells someone it failed or stopped
+  running — even if the user just says "text me when it breaks", "email me a
+  summary" or "let me chat with it from my phone". Layers on run-unattended
+  (when a message is earned) and store-data (the digest's counts); Claude
+  Code's own hooks and PushNotification tool are not covered.
 ---
 
 # Send messages
@@ -36,7 +39,15 @@ A nightly "job ran" trains the reader to swipe it away, and the failure a month 
 - **A digest** on the cadence the reader would otherwise run `status` or open the dashboard.
 - **A conversation** only for questions a digest cannot anticipate; a question asked the same way every day is a digest line.
 
-`run-unattended` leaves notification out of v1; the first outage nobody noticed earns it, recorded under Decisions.
+**Alert on a change of state, never on every run.** Keep each source's last alerted state — failing, stale or fresh — in `<data_dir>/alerts.json` beside the manifest, and send only when it changes, the return to fresh included; a source that dies for good then alerts once, not every night until someone fixes it.
+
+**Each failure has a sender that survives it:**
+
+- **A run that fails** alerts from its own driver (Send from the job).
+- **A night that never ran** cannot alert, so the stale alert comes from `status --alert` on its own schedule (`run-unattended`, Report the outcome).
+- **A failure outside the driver** — an install that fails before it, a commit that fails after it — is caught on Actions by the workflow's `if: failure()` step (`deploy-project`'s `references/github-actions.md`), which posts the run's link to the same topic.
+
+No notification is built until the plan requires one or the first outage goes unnoticed (`run-unattended`); record it under Decisions when it is.
 
 ## Pick the channel
 
@@ -123,7 +134,7 @@ A failed send raises from the app's `error/` package like any adapter (`write-py
 
 ## Keep the secret out
 
-**The topic, bot token or app password lives in the environment** — a `.env` the settings read, `EnvironmentFile=`, repository secrets — never in the unit file or the repo (`run-unattended`, Schedule it); the ntfy topic is a secret even though it reads like a name, so keep the request URL out of the log too.
+**The topic, bot token or app password is a secret**, kept where `run-unattended`'s Schedule it keeps every secret; the ntfy topic is one even though it reads like a name, so keep the request URL out of the log too.
 A leaked topic is replaced for free; a leaked app password is revoked in the account, and `use-git` says what to do when one lands in history.
 
 ## Reach Claude
