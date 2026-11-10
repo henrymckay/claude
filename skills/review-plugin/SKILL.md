@@ -90,6 +90,7 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 ## Adapt review-project
 
 - **Correctness is the claims.** Re-run every code block and library claim as `write-skills` requires, including in skills nobody edited; a release since the last review can remove an API or change a default, making a skill wrong without anything failing.
+Read every free-tier limit and price a skill quotes against the vendor's plan page too, and update the date beside it, since tiers move without a release.
 - **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps; it runs on `sonnet`, as does a gap probe, and only a trigger grader or a hook on `haiku` (see `choose-model`).
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
