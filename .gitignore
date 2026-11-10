@@ -3,3 +3,6 @@
 skills/synced/
 .claude/
 evaluate/triggers/results/
+__pycache__/
+.ruff_cache/
+.pytest_cache/

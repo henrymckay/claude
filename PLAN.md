@@ -30,7 +30,9 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 - **R3** Skills improve from real feedback, not speculation, without editing them mid-build.
   - Cost: the skill-feedback issue rule in `CLAUDE.md` and review-plugin's Work the feedback.
 - **R4** The repo is public: generic conventions only, no secrets, no project data, no machine-local state.
+  - Cost: every example in a domain any reader knows, and feedback issues that describe a shape, never a case.
 - **R5** Keep the evaluation scaffolding, with no briefs checked in for now.
+  - Cost: `evaluate/prompt.md` maintained with nothing exercising it until a brief general enough to publish exists.
 - **R6** The skills carry the pre-made decisions a Python data, CLI, API or dashboard project needs — process, design, packages, naming, organisation — so none has to be asked during planning, and nothing Claude does by default.
   - Cost: house picks the user can't verify alone and periodic re-checks against current releases; dropping it leaves every build to re-decide.
 - **R7** The skills don't box Claude in: it researches the domain and current practice, treats a skill's default as a default, proposes ideas beyond the brief and the skills, and puts its decisions, alternatives, costs and sources in front of the user so they can challenge them.
@@ -94,6 +96,13 @@ ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 
 Skills trigger from their descriptions or by name (`/plan-project`); "review the skills" runs `review-plugin`.
 
+### Runs on
+
+- **The skills and `CLAUDE.md`** — the user's machine, symlinked from `~/.claude`; nothing is deployed.
+- **The weekly sweep** — a Claude Code cloud scheduled task (`trig_01NmQMC42vGPjqQEDE8XrgzQ`), Mondays 02:00 UTC on Opus, cloning the public repo and opening one PR; no connectors; checked 2026-11-10.
+- **The Stop hook** — `~/.claude/settings.json` on the user's machine, from `hooks/stop-skill-feedback.json`.
+- **The trigger suite** — `claude plugin eval` on the user's machine, or in the sweep where the CLI is available.
+
 ### Errors
 
 - **A description fails to trigger, or fires on the wrong task** — found by review-plugin's trigger-overlap check or by skill feedback; fixed in the description.
@@ -104,35 +113,35 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 
 ### Decisions
 
-- **Symlinks into `~/.claude`** over an installable plugin or symlinking all of `~/.claude` — no namespacing of names, and machine-local state stays out of git.
-- **Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default; the scheduled sweep's weekly PR is the one exception.
-- **Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, and not per-machine.
-- **The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
-- **`review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
-- **`build-project`** over `develop-project` — matches "the build" wording across the skills.
-- **`be-functional` the default style, `be-oop` opt-in** over both opt-in.
-- **Evaluation briefs archived to the rough repo** over keeping trade-specific briefs here — they taught one domain.
-- **No performance budget** — nothing here runs.
-- **Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback.
-- **The README points at this plan** with a short note on how the skills fit together, over copying it — the README is for humans, the plan for Claude.
-- **Memory holds only what this plan doesn't** — the plan is visible and versioned; memory is per-machine.
-- **A skill's default is a default** (2026-11-10) — a `PLAN.md` decision the user signed off overrides a skill; a reason Claude finds is recorded as a proposed decision and raised before it is built on; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
-- **Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
-- **`functools.partial`, closures and `match`** over `toolz` and `plum` as defaults — `toolz` ships no type hints, so pyright loses every curried function; both stay mentioned for the case that earns them.
-- **One error model** — raise from the app's `error/` package, catch only in drivers; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
-- **One record type** — `@dataclass(frozen=True, slots=True, kw_only=True)` in the core; `pydantic` only across a trust boundary; `NamedTuple` only for tuple semantics; never `attrs`.
-- **`uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed.
-- **pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
-- **House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver or adapter whose framework or fan-out needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
-- **Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
-- **MotherDuck connects with `duckdb.connect("md:<db>")` and the token in `motherduck_token`**, lower case per its docs (checked 2026-11-10); A1 had it upper case.
-- **The trigger suite lives at `evaluate/triggers/`**, named by `.claude-plugin/plugin.json`'s `experimental.evals`, beside the brief-and-answers evaluations; the manifest sits at the repo root, outside `~/.claude/skills/`, so the loader never sees it and nothing is namespaced.
-- **The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
-- **A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
-- **A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
-- **The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
-- **The weekly sweep runs on Opus** on Mondays at 02:00 UTC (06:00 Dubai) with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
-- **Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
+- **D1 Symlinks into `~/.claude`** over an installable plugin or symlinking all of `~/.claude` — no namespacing of names, and machine-local state stays out of git.
+- **D2 Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default; the scheduled sweep's weekly PR is the one exception.
+- **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, and not per-machine.
+- **D4 The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
+- **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
+- **D6 `build-project`** over `develop-project` — matches "the build" wording across the skills.
+- **D7 `be-functional` the default style, `be-oop` opt-in** over both opt-in.
+- **D8 Evaluation briefs archived to the rough repo** over keeping trade-specific briefs here — they taught one domain.
+- **D9 No performance budget** — nothing here runs.
+- **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback.
+- **D11 The README points at this plan** with a short note on how the skills fit together, over copying it — the README is for humans, the plan for Claude.
+- **D12 Memory holds only what this plan doesn't** — the plan is visible and versioned; memory is per-machine.
+- **D13 A skill's default is a default** (2026-11-10) — a `PLAN.md` decision the user signed off overrides a skill; a reason Claude finds is recorded as a proposed decision and raised before it is built on; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
+- **D14 Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
+- **D15 `functools.partial`, closures and `match`** over `toolz` and `plum` as defaults — `toolz` ships no type hints, so pyright loses every curried function; both stay mentioned for the case that earns them.
+- **D16 One error model** — raise from the app's `error/` package, catch only in drivers; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
+- **D17 One record type** — `@dataclass(frozen=True, slots=True, kw_only=True)` in the core; `pydantic` only across a trust boundary; `NamedTuple` only for tuple semantics; never `attrs`.
+- **D18 `uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed.
+- **D19 pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
+- **D20 House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver or adapter whose framework or fan-out needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
+- **D21 Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
+- **D22 MotherDuck connects with `duckdb.connect("md:<db>")` and the token in `motherduck_token`**, lower case per its docs (checked 2026-11-10); A1 had it upper case.
+- **D23 The trigger suite lives at `evaluate/triggers/`**, named by `.claude-plugin/plugin.json`'s `experimental.evals`, beside the brief-and-answers evaluations; the manifest sits at the repo root, outside `~/.claude/skills/`, so the loader never sees it and nothing is namespaced.
+- **D24 The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
+- **D25 A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
+- **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
+- **D27 The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
+- **D28 The weekly sweep runs on Opus** on Mondays at 02:00 UTC (06:00 Dubai) with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
+- **D29 Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
 
 ## Delivery
 
@@ -164,7 +173,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [x] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort` (2026-11-10).
 - [ ] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open.
 - [x] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it (2026-11-10).
-- [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin. Runs after M10.
+- [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin; it runs after M10.
 
 ## Open
 

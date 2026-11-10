@@ -24,15 +24,15 @@ A project runs through three of them in turn:
 
 The rest are the conventions those three apply.
 
-- [`be-functional`](skills/be-functional) defines the default, language-agnostic functional style, with Python idioms via [`toolz`](https://toolz.readthedocs.io/) and [`plum`](https://beartype.github.io/plum/).
+- [`be-functional`](skills/be-functional) defines the default, language-agnostic functional style, with Python idioms built on `functools.partial`, frozen dataclasses and `match`.
 - [`be-oop`](skills/be-oop) defines language-agnostic object-oriented design.
 - [`build-project`](skills/build-project) builds a planned project milestone by milestone, passing a quality gate before each is ticked.
 - [`choose-model`](skills/choose-model) picks the model and effort for each stage of work, from Opus for planning and review to Haiku for graders, and how a skill or subagent sets its own.
 - [`deploy-project`](skills/deploy-project) puts each artefact on the best free or near-free host, from a [GitHub Actions](https://docs.github.com/en/actions) pipeline and [MotherDuck](https://motherduck.com/) to a Shiny dashboard on [Posit Connect Cloud](https://connect.posit.cloud/) and a static site on GitHub Pages.
 - [`plan-project`](skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
-- [`run-unattended`](skills/run-unattended) covers a job that runs on a schedule with nobody watching, from the lock and the missed night to the [`launchd`](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), [`systemd`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) or [GitHub Actions](https://docs.github.com/en/actions) unit.
 - [`review-plugin`](skills/review-plugin) extends `review-project` for this repo, from descriptions that no longer match their skills to rules duplicated across them.
 - [`review-project`](skills/review-project) reviews a project against its plan, the skills, its tests and current releases, then fixes what it finds.
+- [`run-unattended`](skills/run-unattended) covers a job that runs on a schedule with nobody watching, from the lock and the missed night to the [`launchd`](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), [`systemd`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) or [GitHub Actions](https://docs.github.com/en/actions) unit.
 - [`send-messages`](skills/send-messages) decides how a deployed job reaches you, from an [`ntfy`](https://ntfy.sh/) alert and an emailed digest to a chat through Claude Code channels, and what never deserves a message.
 - [`setup-python`](skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
 - [`store-data`](skills/store-data) decides where a project's data lives, from hive-partitioned [Parquet](https://parquet.apache.org/) queried with [DuckDB](https://duckdb.org/) or [MotherDuck](https://motherduck.com/) to atomic partitions, the raw archive and the run manifest.
@@ -78,7 +78,7 @@ These per-session controls shape *which model* runs it, *how hard* it thinks and
 - **Effort.** `/effort` sets reasoning depth: `low`, `medium`, `high`, `xhigh` or `max`.
 Raise it for a hard bug or design decision.
 Lower it for routine edits.
-- **Speed.** `/fast` toggles faster output on Opus at a higher per-token cost.
+- **Speed.** `/fast` toggles faster output on Opus and Fable at twice the per-token cost.
 - **Output style.** `/output-style` swaps Claude's behavioural preset.
 Default, Concise, Explanatory, Learning and Proactive ship with it.
 A custom one can be added.
@@ -132,7 +132,7 @@ Chain builds, each carrying on from the last, so structure scaffolded too early 
 
 ## 🤝 Contribute
 
-Contribute **only** `agents/`, `commands/`, `rules/`, `skills/` and `CLAUDE.md`.
+Contribute to `skills/`, `hooks/`, `evaluate/`, `CLAUDE.md`, `PLAN.md` and this README.
 
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.
