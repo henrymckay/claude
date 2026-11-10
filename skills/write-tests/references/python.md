@@ -14,8 +14,8 @@ The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers �
 
 ## Tests are code
 
-- Annotate every test `-> None` and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`); no `per-file-ignores` for `tests/`.
-- Fixture docstrings are imperative too (`ruff`'s `D401`): "Load the sample dataset", not "The sample dataset".
+- Annotate every test `-> None` and type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`).
+- No docstrings on tests or fixtures: `setup-python` ignores the `D` rules under `tests/`, since the name is the claim.
 
 ## Given, when, then
 
@@ -24,7 +24,6 @@ The three beats become the `pytest_` package's `given`, `when` and `then` module
 ```python
 # Wrong: the given is built in the body, so the scenario has no name.
 def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
-    """Every kept row is positive."""
     raw_sales = polars.DataFrame({"quantity": [2, 0, -1, 5]})
     kept = keep_valid(raw_sales)
     assert kept.get_column("quantity").to_list() == [2, 5]
@@ -34,7 +33,6 @@ def test_when_keep_valid_then_non_positive_rows_dropped() -> None:
 def test_when_keep_valid_then_non_positive_rows_dropped(
     raw_sales: polars.DataFrame,
 ) -> None:
-    """Every kept row is positive."""
     kept = keep_valid(raw_sales)
     then.every_row_positive(kept, column="quantity")
 ```
@@ -45,7 +43,7 @@ Supply the *given* through fixtures:
 - Put shared fixtures in `given.py`, registered with `addopts = "-p pytest_.given"` (see Pick a layout).
 - Widen a fixture's `scope` to `"module"` or `"session"` for expensive read-only setup.
 - Build files under the `tmp_path` fixture; never read or write the repo tree or a real home directory.
-- At a boundary you can't inject, patch with `monkeypatch` or `pytest-mock`.
+- At a boundary you can't inject, patch with `monkeypatch`; for the clock, `time-machine` freezes `datetime.now` and friends in C, where `monkeypatch` can only replace the module attribute the code happened to import.
 
 A fixture sources each input, and — harder — each expected value:
 
@@ -67,8 +65,7 @@ Parametrize independent scalar cases — never one whole-frame operation split i
 def test_when_revenue_then_quantity_times_price(
     quantity: int, unit_price: float, expected: float
 ) -> None:
-    """Revenue is quantity times unit price."""
-    then.equals(revenue(quantity, unit_price), expected=expected)
+    assert revenue(quantity, unit_price) == expected
 ```
 
 Give cases `ids` when the values don't read clearly in the output.
@@ -78,39 +75,42 @@ For a property that should hold across an input space, let `hypothesis` generate
 ```python
 @hypothesis.given(xs=hypothesis.strategies.lists(hypothesis.strategies.integers()))
 def test_when_sorted_twice_then_unchanged(xs: list[int]) -> None:
-    """Sorting an already-sorted list changes nothing."""
-    then.equals(sorted(sorted(xs)), expected=sorted(xs))
+    assert sorted(sorted(xs)) == sorted(xs)
 ```
 
 Bind the strategy to a module-level name when several properties share it, rather than repeating the `@hypothesis.given` argument, and set `@hypothesis.settings(deadline=None)` for anything doing real work per example.
+A property test takes no function-scoped fixture: `hypothesis` runs the body once per example but the fixture once per test, and fails the run with `HealthCheck.function_scoped_fixture` rather than let the examples share state; import the oracle from `pytest_.reference`, and widen any fixture it needs to `module` scope.
 
 To reach a state independent draws rarely produce, draw increments and accumulate them (`itertools.accumulate` over a drifting step), then count how many generated inputs reach the state — a throwaway loop, or `hypothesis.event(...)` in the test to keep the count in the run statistics.
 
 ## Assertions
 
-Prefer a `then_` custom assertion to a bare `assert` in the test body — even for a simple equality.
-Collect them in the `pytest_` package's `then` module, imported as `from pytest_ import then`, so every test reads the same way and each check is defined once:
+A bare `assert actual == expected` for an equality; a `then` assertion for a domain claim several tests share.
+Collect those in the `pytest_` package's `then` module, imported as `from pytest_ import then`, and register it for assert rewriting so a failure inside it shows `pytest`'s diff rather than a hand-written message:
+
+```python
+# tests/pytest_/__init__.py
+import pytest
+
+pytest.register_assert_rewrite("pytest_.then")
+```
 
 ```python
 # tests/pytest_/then.py
-def equals(actual: object, *, expected: object) -> None:
-    """Assert two values are equal."""
-    assert actual == expected, f"expected {expected!r}, got {actual!r}"
-
-
 def column_equals(
     frame: polars.DataFrame, *, column: str, values: collections.abc.Sequence[object]
 ) -> None:
     """Assert the frame's column holds exactly these values, in order."""
-    equals(frame.get_column(column).to_list(), expected=list(values))
+    assert frame.get_column(column).to_list() == list(values)
+
+
+def conserves(parts: polars.DataFrame, *, whole: polars.DataFrame, column: str) -> None:
+    """Assert the parts' column sums to the whole's."""
+    assert parts.get_column(column).sum() == whole.get_column(column).sum()
 ```
 
-A test body then reads `then.equals(code, expected=expected_code)` or `then.column_equals(priced, column="revenue", values=expected_revenue)`.
-Naming the expected side is what stops the classic transposition, where a swapped pair still passes but reports the failure backwards.
-
-- Give each helper a failure message, since `pytest` only rewrites asserts in test modules, not an imported one (or call `pytest.register_assert_rewrite("pytest_.then")`).
-- Assert an expected exception with `with pytest.raises(SomeError):`, checking the type or message.
-- Compare floats with `pytest.approx`, never `==`.
+A test body then reads `then.column_equals(priced, column="revenue", values=expected_revenue)`, and the keyword `values=` names the expected side so a swapped pair reports the failure the right way round.
+`pytest` rewrites asserts in test modules, `conftest.py` and plugins named by `-p` (so `pytest_.given`), but not in a sibling it merely imports; without the registration the `then` helpers fail with a bare `AssertionError`.
 
 Assert a frame transform on the **whole frame**, with expected values from a fixture — here `expected_revenue` derives `quantity * unit_price` from the raw data in plain Python:
 
@@ -118,7 +118,6 @@ Assert a frame transform on the **whole frame**, with expected values from a fix
 def test_when_add_revenue_then_revenue_is_quantity_times_price(
     sales: polars.LazyFrame, expected_revenue: list[float]
 ) -> None:
-    """Revenue is quantity times unit price for every row."""
     priced = pipeline.map_add_revenue(sales).collect()
     then.column_equals(priced, column="revenue", values=expected_revenue)
 ```
@@ -131,20 +130,17 @@ Pin a network-backed dependency through `httpx.MockTransport`, which answers fro
 
 ```python
 @pytest.fixture
-def missing_document() -> httpx.Client:
-    """Return a client answering every request the way a missing document does."""
-
+def missing_document() -> collections.abc.Iterator[httpx.Client]:
     def refuse(request: httpx.Request) -> httpx.Response:
-        """Answer with a 404."""
         return httpx.Response(404)
 
-    return httpx.Client(transport=httpx.MockTransport(refuse))
+    with httpx.Client(transport=httpx.MockTransport(refuse)) as client:
+        yield client
 
 
 def test_when_raise_for_status_then_a_not_found_raises(
     missing_document: httpx.Client,
 ) -> None:
-    """A 404 raises rather than handing back an empty body."""
     with pytest.raises(httpx.HTTPStatusError):
         missing_document.get("https://example.test/report.csv").raise_for_status()
 ```
@@ -152,73 +148,18 @@ def test_when_raise_for_status_then_a_not_found_raises(
 Keep the recorded response in `tests/data/` and load it through a fixture, the same as any other given.
 `respx` is the alternative where you want to assert on the request as well, but the transport is enough to pin behaviour and carries no extra dependency.
 
-## Coverage and speed
+**Record it with `tests/data/record.py`**, a PEP 723 script (see `setup-python`) that calls the real source with the key from the environment, strips the key from the saved request and response, and writes the file the fixture loads; re-run it when the source changes shape, so the fixture is always something the source actually sent.
 
-- `pytest-cov` reports coverage (`uv run pytest --cov`).
-- Mark slow or external tests with a custom marker (`@pytest.mark.slow`) so the default run stays quick.
+**Pace and retry through a seam.** The client builder takes `sleep: collections.abc.Callable[[float], None] = time.sleep`, passed on to the retry and rate-limit policy; the test passes a spy that records the waits, so a test of "backs off three times" runs in milliseconds.
 
-## Logging
+## Coverage, speed and logs
 
-To show logs from both the code under test and the tests during a run, `rich`-rendered to match the application's own handler, put a `RichHandler` on the root logger for the session and switch capture to `tee-sys`.
-Nothing goes in the test files — `pytest` attaches to the root logger, so any `logging.getLogger(__name__)` call flows through.
-
-Configure it in the `pytest_` package.
-A session fixture wires the handler; a `RichHandler` subclass opens each test's first log on a fresh line so it doesn't jam `pytest`'s progress line, reset per test by an autouse fixture:
-
-```python
-# tests/pytest_/given.py
-class _TestRichHandler(rich.logging.RichHandler):
-    """Rich handler that opens each test's first log line on a fresh row."""
-
-    def __init__(self) -> None:
-        """Create the handler, armed for the first test."""
-        super().__init__(rich_tracebacks=True)
-        self.new_test = True
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """Break onto a new line before a test's first record, then render it."""
-        if self.new_test:
-            self.console.print()
-            self.new_test = False
-        super().emit(record)
-
-
-_log_handler = _TestRichHandler()
-
-
-@pytest.fixture(autouse=True)
-def _reset_log_newline() -> None:
-    """Arm a fresh leading newline for each test's logs."""
-    _log_handler.new_test = True
-
-
-@pytest.fixture(scope="session", autouse=True)
-def _rich_logging() -> None:
-    """Route session logs through Rich, matching the app's handler."""
-    logging.basicConfig(
-        datefmt="[%X]",
-        force=True,
-        format="%(message)s",
-        handlers=[_log_handler],
-        level=logging.INFO,
-    )
-```
-
-```toml
-[tool.pytest.ini_options]
-addopts = "... --capture tee-sys"
-```
-
-- Use `--capture tee-sys`, not `--capture no`: it shows output live *and* keeps capturing, so `capsys` assertions and the captured-output report on a failing test still work.
-Never `log_cli` — `pytest`'s live logging installs its own handler that bypasses the `RichHandler`.
-- The cost: `tee-sys` streams **all** output live, so a chatty suite is noisier than the default capture-and-hide.
-A test that consumes its own output through `capsys` won't display its logs — correct, since it is asserting on that output.
-
-If you don't need `rich` specifically, the zero-code alternative is `pytest`'s native live logging (`log_cli = true` with `log_cli_level` and `log_cli_format`): logs stream live in `pytest`'s own format with capture left on.
+- Mark slow or external tests `@pytest.mark.slow`; the marker is registered in `setup-python`'s `pytest` block, whose `--strict-markers` turns a misspelt marker into an error instead of a silently unselected test.
+- Leave `pytest`'s log capture on: a failing test's report shows its logs, and `uv run pytest --log-cli-level INFO` streams them live for a debugging run.
+Don't wire a `RichHandler` into the suite to match the application's output; the fixture it needs is longer than any test and `tee-sys` then streams every test's output on every run.
 
 ## Run
 
-`pytest` is the entry point — a test file never has an `if __name__ == "__main__"`.
 Run everything under `testpaths`, or a slice by directory, name (`-k`) or marker (`-m`):
 
 ```bash

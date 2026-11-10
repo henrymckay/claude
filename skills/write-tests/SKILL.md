@@ -3,14 +3,17 @@ name: write-tests
 description: >-
   How to write and structure tests in any language — the given-when-then
   shape, naming a test by its behaviour, testing behaviour over
-  implementation, isolation, where test data and expected values come from,
-  table-driven and property-based testing, testing the dependency behaviour
-  you rely on, checking a build against the real source, and the paradigm and
-  pattern catalogue. Use whenever writing, editing or reviewing tests, adding
-  coverage, or setting up a suite, even if the user just says "write a test",
-  "add tests", "test this", or names a runner like pytest. Language-agnostic
-  principles here; Python and pytest idioms in references/python.md. Layers on
-  write-python, since tests are code.
+  implementation, a bare assert for equality and a custom assertion for a
+  domain claim, where test data and expected values come from and how a
+  recorded response is refreshed, table-driven and property-based testing with
+  an imported oracle, testing the dependency behaviour you rely on, the seams
+  a paced client needs, testing a store and a dashboard, and checking a build
+  against the real source; no coverage target, no mutation testing, no
+  snapshots until earned. Use whenever writing, editing or reviewing tests,
+  adding coverage, or setting up a suite, even if the user just says "write a
+  test", "add tests", "test this", or names a runner like pytest.
+  Language-agnostic principles here; Python and pytest idioms in
+  references/python.md. Layers on write-python, since tests are code.
 ---
 
 # Write tests
@@ -25,15 +28,15 @@ Three mistakes account for most weak suites: asserting on internals instead of t
 
 ## Tests are code
 
-Hold a test to the standard of the code it covers — documented, typed, named and ordered the same way, with no "it's only a test" exemption.
-A test's description states the behaviour, not its name again.
+Hold a test to the standard of the code it covers — typed, named and ordered the same way, with no "it's only a test" exemption.
+A test has no docstring: its name is the claim, and a docstring restating it is the waste `write-python` forbids.
 Factor shared construction into the runner's setup mechanism or small named helpers, never copied boilerplate.
 
 ## Given, when, then
 
 Structure every test as **given / when / then**, the behavioural form of setup, exercise, verify:
 
-- **Given** — the starting state, arriving **entirely through the test's parameters** (fixtures, including ones that load data files) — never a module global, never built in the body.
+- **Given** — the starting state, arriving **through the test's parameters** (fixtures, including ones that load data files) — never a module global, and built in the body only for a boundary literal with no scenario to name, such as an empty table with its schema.
 - **When** — the single action under test, on its own line, assigned to a well-named result.
 - **Then** — the assertions, ideally custom assertions from a shared `then` module (`then.<expectation>`).
 
@@ -46,7 +49,7 @@ Make the beats visible through structure and names, not `# given` comments.
 - **Wrong** — the test builds its sample data in the body, so the scenario has no name and the next test copies it.
 - **Right** — the sample arrives as a named fixture parameter, and the outcome is a named assertion reused across tests.
 
-**Prefer a custom assertion even for a bare equality**: it carries its own failure message, names the expected side so a transposed pair can't pass, and a shared set reads uniformly.
+**A bare `assert` for an equality, a custom assertion for a domain claim.** The runner's rewritten `assert` shows the diff between the two sides, which no hand-written message matches; a `then.conserves(...)` names a claim about the domain that several tests share, and a transposed pair there reports the failure backwards rather than passing.
 Add a `when.<action>` helper only where the action is compound; a single well-named call is its own clearest *when*.
 Grouped, the beats become shared `given`, `when` and `then` modules, so a body reads `when.summarise(sales)` then `then.conserves(...)`.
 
@@ -56,7 +59,7 @@ Test the observable contract — return values, raised errors, visible effects �
 Tests bound to implementation break on every refactor and stop being a safety net.
 
 **Lean hardest on the pure core** (see `be-functional`): it holds the logic, and it is deterministic and needs no setup.
-Keep the shell thin so little needs slow integration tests — the humble object pattern.
+Keep the shell thin so little needs slow integration tests — the humble object pattern — and lean toward integration where the units are trivial and the bugs live in the seams.
 
 **Mock sparingly.** A mock asserts on *how* code calls its collaborators, coupling the test to implementation.
 Prefer real objects and a fake at the seam you designed (a stub function, an in-memory double), and patch only at an external boundary you can't inject.
@@ -65,19 +68,15 @@ Prefer real objects and a fake at the seam you designed (a stub function, an in-
 Pin it against a saved response, passed straight to the parse function (see `structure-python` on splitting getting from parsing), covering the case the code was written for **and** a record missing the field.
 
 **Reach an owned client through one argument, not a patch.** An adapter keeps its library's client inside itself by design.
-For what is genuinely about the client — what it treats as failure, what it retries — give the function that builds the client an optional transport defaulting to the real one, and hand the test the library's in-process transport; patching the builder replaces the one function under test.
+For what is genuinely about the client — what it treats as failure, what it retries, how it paces — give the function that builds the client an optional transport defaulting to the real one, and a `sleep` the retry and pacing policy call, so the test hands it the library's in-process transport and a spy that counts the waits; patching the builder replaces the one function under test.
 
-## Isolation
-
-- **Pass in any order and alone** — no shared mutable state, no test depending on another.
-- **Never touch the real clock, randomness or network.** Inject them (see `be-functional`) and pass fixed values or a seed.
-- **Fix or delete a flaky test** — one that cries wolf trains everyone to ignore the suite.
+**Never touch the real clock, randomness or network.** Inject them (see `be-functional`) and pass fixed values or a seed; a test that sleeps for real is a slow test that still proves nothing about the wait.
 
 ## Test data
 
 Every given arrives through the signature; the questions are where a fixture gets it and, harder, where an *expected* value comes from.
 
-- **Inputs** come from a fixture, a builder, or a data file a fixture loads (CSV, Parquet, JSON kept out of the source).
+- **Inputs** come from a fixture, a builder, or a data file a fixture loads (CSV, Parquet, JSON kept out of the source); a fixture is fresh per test, and shared at module or session scope only for expensive read-only setup.
 Feed a function only the fields it reads.
 - **Expected values** come from a fixture or a stored answers file, passed into a custom assertion — never a literal buried in the body.
 - **Reach an expected value independently of the code under test** — a stored answer or a plain restatement of the spec; re-deriving it with the same transformation proves nothing.
@@ -103,7 +102,7 @@ Reach for it when you can state an invariant:
 **Check the generator reaches the states you test.** Independent random draws rarely produce a long run or a trend, so a property can pass a hundred examples without once exercising its logic.
 Bias the generator toward the interesting region (a drifting walk, not independent draws), then count over a few hundred inputs how many reach each state that matters; zero is a failure, not a pass.
 
-**A reference implementation is an oracle**, its own module beside `given`/`when`/`then`, reached through a fixture.
+**A reference implementation is an oracle**, its own module beside `given`/`when`/`then`, imported by the property test rather than injected: a per-test fixture under a property runs once for every generated example, and the generator's health check fails the test for it.
 Write it from the spec in the most obvious style, never by paraphrasing the implementation — the agreement is worth something only if they share no mechanism.
 
 ## Dependency tests
@@ -116,11 +115,16 @@ Assert the effect — that a timestamp is not converted to local time, that a ra
 
 **Pin a network-backed dependency without a network.** What you rely on — the status it raises on, the encoding, redirects — lives above the socket.
 Use the client's own in-process transport with a response recorded once from the real service, so every layer above the wire is the library's real code.
+**Record the response with a script kept beside the data**, run against the real source with its credential from the environment and redacting the credential before saving, so the fixture can be refreshed when the source changes shape rather than hand-edited into something the source never sent.
+
+**Test a store against the real file format on a temporary path**, with a round-trip property over generated records; the core gets an in-memory fake of the same port (see `structure-python`).
+A dashboard's test checks that its layout renders from a given frame; a browser test waits until a screen has a bug no render check would catch.
 
 ## Coverage and speed
 
-Use coverage to find untested paths, then read *which* branches are uncovered; chasing a percentage produces tests that execute code without checking it.
-Keep the default run fast, tagging slow or external tests to opt into in CI.
+Use coverage to find untested paths, then read *which* branches are uncovered; no percentage is targeted and nothing fails under a number, since chasing one produces tests that execute code without checking it.
+Mutation testing is not run, and approval or snapshot tests have no tool until a project earns one by rendering output too large to assert on.
+Keep the default run fast, tagging slow or external tests to opt into.
 
 **Run the real surface once before calling a build done.** A recorded response proves the parse, not that the source still serves it; exercise every input the tool claims against the real thing, as a marked test or a documented command.
 **Read the counts, not the exit code**, and assert sizes against something known beforehand rather than against zero:
@@ -128,31 +132,10 @@ Keep the default run fast, tagging slow or external tests to opt into in CI.
 - **Relations between runs** — an unbounded fetch returns more than a bounded one, a limit of 200 at least what 50 did — hold as data grows, and each catches a default silently taken (a listing quietly capped at one page).
 - **Categories separately from size** — "every region appeared" and "as many rows as expected" are two claims.
 
-## Paradigms
-
-- **TDD (Test-Driven Development)** — red, green, refactor; every line exists to satisfy a stated intent.
-- **BDD (Behaviour-Driven Development)** — given-when-then in domain language, the shape above.
-- **Property-based** — invariants over generated inputs (Many inputs).
-- **Test pyramid or trophy** — many unit, fewer integration, fewest end-to-end; lean toward integration where units are trivial and the bugs live in the seams.
-- **Characterisation** — capture current behaviour before refactoring unfamiliar code.
-- **Approval or snapshot** — compare complex output to a reviewed reference, and review the diff when it changes.
-- **Contract** — both sides of an integration verify a shared contract (Pact).
-- **Fuzz** — random or adversarial input for parsers and anything untrusted.
-- **Mutation** — inject faults to check the suite asserts rather than merely executes.
-
-## Patterns
-
-- **Test doubles** — *dummy* (unused filler), *stub* (canned answers), *spy* (records calls), *mock* (asserts on calls), *fake* (working lightweight implementation).
-- **Test data builder** — a valid object with overridable parts (`a_sale().with_quantity(0)`), for many-field objects varied one field at a time.
-- **Object mother** — named canonical objects (`Sales.typical()`) for a few standard scenarios.
-- **Fresh vs shared fixture** — default to fresh; share (module or session scope) only expensive, read-only setup.
-- **Suite layout** — separate the cases (mirroring the source, dependency tests apart), their data, and shared helpers.
-- **Runner as entry point** — no test file has a `main`; select a slice by directory, name or tag.
-
 ## Language specifics
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis`, custom assertions, `httpx.MockTransport`, logging, running).
+- **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis` and its health check, assert rewriting, `monkeypatch` and `time-machine`, `httpx.MockTransport` and the recording script, running).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
