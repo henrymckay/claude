@@ -4,10 +4,12 @@ description: >-
   House conventions for authoring a Claude Code skill in this repo — naming it
   verb-first, writing a description that triggers reliably, opening with the
   standard placement, failure modes and caveat, structuring the body so each
-  rule is stated once with an observable why, running every code block and
-  library claim, and splitting a language-agnostic skill from its language
-  reference. Use whenever creating or editing a SKILL.md or its references,
-  naming a skill, writing or reviewing a skill description, or splitting out a
+  rule is stated once with an observable why and its exception in the same
+  sentence, naming each house pick with its alternative and the case that
+  earns it, saying when to deviate, running every code block and library
+  claim, and splitting a language-agnostic skill from its language reference.
+  Use whenever creating or editing a SKILL.md or its references, naming a
+  skill, writing or reviewing a skill description, or splitting out a
   reference — even if the user just says "make a skill", "add a skill", or
   "fix this skill's description". Layers on write-markdown for prose
   mechanics, and defers the draft-eval-iterate loop, file anatomy, packaging
@@ -42,7 +44,7 @@ Each skill is `skills/<name>/SKILL.md` plus any `references/`; keep `skills/` fl
 
 The description is the trigger: it is all Claude sees when deciding whether to load the skill.
 
-**Draft it twice.** Write it before the body, so the skill is built toward a stated goal; rewrite it after, dropping what the body ended up not covering, adding what it grew to cover, and fixing any phrase that fires on the wrong task.
+**Draft it twice.** Write it before the body, so the skill is built toward a stated goal; rewrite it after, dropping what the body ended up not covering, adding what it grew to cover, checking that the body says when to deviate, and fixing any phrase that fires on the wrong task.
 A description identical to its first draft means the second pass didn't happen.
 
 Write plain prose with no backticks (see `write-markdown`), in this order, mirroring the skill's opening:
@@ -54,6 +56,7 @@ Cover the whole body and promise nothing it lacks.
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 5. **The reference pointer**, if any — "Language-agnostic principles here; Python <idioms/build-outs> in references/python.md." or, for a topic split, "Detailed cookbooks live in references/."
 6. **Neighbours** — "Layers on <skill>; <skill> is the <…> counterpart", the same skills the opening names.
+The description and the opening both name them on purpose — one is read when choosing a skill, the other when following it — so this is the one place a repeat is wanted; keep the two identical in substance.
 
 ## Open consistently
 
@@ -63,8 +66,8 @@ Every skill opens with these parts, in order:
 2. **Failure modes** — the two or three mistakes behind most of what goes wrong.
 Take them from what a real run got wrong; a mistake nobody makes spends attention the real ones needed.
 3. **Language pointer**, only with a language reference — `**Language-agnostic here.** The Python specifics live in references/python.md.`
-4. **Caveat**, one of two fixed forms:
-   - Applied to existing code: `**In an existing project, ask first.** Where a repo already has …, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.`
+4. **Caveat**, one of two fixed shapes, omitted only for a skill that applies to nothing but the user's own material:
+   - Applied to existing material: `**In an existing project, ask first.** Where a repo already has <X>, check with the user whether to keep it or apply <Y>, and prefer <Y> unless they choose to keep theirs.` — <Y> is this skill, or what it produces (`PLAN.md`).
    - Opt-in style: `**This is opt-in.** Reach for <X> where it genuinely fits (below), not by default.` — paired with a `## When to use` section and a closing fallback line.
 
 ## Structure the body
@@ -76,8 +79,11 @@ Fold one-line points into a catalogue section rather than giving them a stub hea
 - **Make the why an observable consequence.** "Define `__all__` to make the API explicit" gives a purpose nobody can check; "mark a re-export with a redundant alias, or the linter reads it as an unused import" says what happens, and a reader can watch it happen.
 A purpose-only why gets applied by feel and drifts; write the rule so that following and breaking it look different.
 Where nothing observable turns on a rule, label it a preference so the reader knows it bends.
-- **State a rule as a rule.** Write absolutes imperatively ("Write one method chain"); keep *prefer* for a genuine trade-off and give its exception in the same breath.
-If every rule hedges, the absolutes get broken as often as the defaults.
+- **State a rule as a rule, with its exception in the same sentence.** Write absolutes imperatively ("Order parameters alphabetically, except in a pipeline module, where they follow the data"); keep *prefer* for a genuine trade-off.
+A rule softened to *prefer* is ignored outright; a rule with a named exception is applied, and the exception with it.
+- **Name the pick, the alternative and the case that earns it.** "Use `functools.partial`; `toolz.curry` composes more freely but ships no type hints, so pyright loses the function's type — reach for it only where that cost is paid knowingly."
+A non-default stays mentioned without becoming the default, and the reader knows what reaching for it costs.
+- **Say when to deviate.** A skill is a set of defaults: state what evidence overrides one — a `PLAN.md` decision, a measurement, the current docs — so Claude deviates openly under Decisions rather than silently or never.
 - **Give a load-bearing rule its own line**, not the last sentence of a long paragraph, where it gets read past.
 - **Show the anti-pattern for the most-broken rule** as one compact wrong/right pair — a fenced pair in a language-bound skill, a named pair in prose in a language-agnostic one, so it doesn't quietly become a Python skill.
 - **Keep examples general.** An example drawn from the project that prompted a rule teaches its domain along with the rule; use the smallest example that shows the rule, from a domain any reader knows.
