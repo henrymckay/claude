@@ -8,26 +8,26 @@ description: >-
   it builds and injects it into an operation, designed as a public surface and
   built to compose with the tools around it: CSV with a header by default and
   a format option for JSON lines, a table or Parquet, the manifest row from a
-  command that acts, exit codes 0, 1 and 2 with configuration errors on 2, a
-  positional list overriding the configured one, date ranges inclusive at both
-  ends on the CLI and the API, resource paths bounded by date, an API and a
-  dashboard that read the store and never the source, and a dashboard that
-  refreshes from the run manifest. Use whenever adding or structuring an entry
-  point, designing a command's options or an API's surface, deciding what goes
-  to standard output and what to standard error, taking input from arguments,
-  files or standard input, exposing each pipeline stage as its own command,
-  choosing an exit code, wiring dependency injection at the boundary, reading
-  settings and finding the .env under a scheduler, mapping the app's errors to
-  HTTP statuses, sizing a fetch that needs warm-up history, picking the log
-  level a command runs at, splitting a driver into role and framework packages
+  command that acts, the exit codes run-unattended sets, a positional list
+  overriding the configured one, date ranges inclusive at both ends on the CLI
+  and the API, resource paths bounded by date, one handler mapping the app's
+  errors to statuses, an API and a dashboard that read the store and never the
+  source, and a dashboard that refreshes when the run manifest changes. Use
+  whenever adding or structuring an entry point, designing a command's options
+  or an API's surface, deciding what goes to standard output and what to
+  standard error, taking input from arguments, files or standard input,
+  exposing each pipeline stage as its own command, wiring dependency injection
+  at the boundary, reading settings and finding the .env under a scheduler,
+  sizing a fetch that needs warm-up history, picking a command's log
+  destination and level, splitting a driver into role and framework packages
   at the right rung, or naming a launch command — even if the user just says
   "add a CLI", "expose an API", "build a dashboard", "run this on a schedule",
   or names typer, fastapi, uvicorn, pydantic-settings, shiny, shinywidgets or
   a scheduler. Language-agnostic principles here; Python build-outs in
   references/python.md. Layers on structure-python's drive layer and
-  be-functional; run-unattended owns what the scheduled command does
-  unwatched, store-data the data it writes, and a PLAN.md decision overrides
-  any rule here.
+  be-functional; run-unattended owns what the scheduled command does unwatched
+  and its exit codes, store-data the data it writes, and a PLAN.md decision
+  overrides any rule here.
 ---
 
 # Write entry points
@@ -66,8 +66,6 @@ Design it against three demands at once:
 
 They pull against each other; resolve it with options that **combine rather than multiply** — orthogonal options mixed freely beat a flag per combination, and one option taking a value beats three variations.
 
-- **Spell the same idea the same way everywhere**, so one command predicts the next.
-- **Never make a prompt the only way in.** Anything asked interactively must also be settable by option, file or standard input.
 - **An option that duplicates the shell earns its place only where the shell can't do the job.** `--output PATH` does what `> PATH` does for text, but a binary form can't be typed at a terminal, so `--format parquet` requires `--output` and the option is shape; for text, say in a sentence that it duplicates `>` before building it, and keep it only by convention (`curl` and `sort` take `-o`).
 
 **Where the user or the plan fixes the option set, keep the shape and drop the extras.** Several rules here recommend options — a log destination, a format switch.
@@ -105,12 +103,11 @@ The form you check by hand is then never the form a script receives, and the par
 
 Dropping *colour* off a terminal is not this — the structure is identical, and the rendering library does it for you.
 
-**Every command emits rows on standard output, sized to what it did.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`) — what, how many, how long, with what outcome — so a scheduler's log shows the run without a second command and nothing is summarised twice; `status` emits key/value rows and exits 1 when anything is stale, so it doubles as the health check (see `run-unattended`).
+**Every command emits rows on standard output, sized to what it did.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`) — what, how many, how long, with what outcome — so a scheduler's log shows the run without a second command and nothing is summarised twice; `status` emits key/value rows.
 A command that prints prose on success has nothing a script can read.
 
-**Exit 0 on success, 1 on any failure and 2 on a usage or configuration error.** A partial failure — an item that failed in a source, a source that failed among four — stores what arrived, lists what failed on standard error and exits 1, since a `0` tells the scheduler the night is done; rows rejected by validation alone are a stored night and exit 0, because the quarantine already counts them.
-`2` is what `argparse` and `typer` already return for a bad invocation, and a missing token or an unreadable `.env` joins it, so a wrapper can tell "the tool failed" from "the machine is set up wrong" (the same split `run-unattended` reads).
-**Make log destination and level configurable**, defaulting to standard error; standard output is a log destination only for a service or job that emits no data on it, and rotation of a log file is `run-unattended`'s.
+**Exit with the codes `run-unattended`'s Report the outcome sets**, from every command, interactive or scheduled, so a script and a scheduler read one meaning.
+**Make log destination and level configurable**, defaulting to standard error at `warning` for a person; standard output is a log destination only for a service or job that emits no data on it, and the level and file a scheduled run takes are `run-unattended`'s.
 
 **Take input the way you give output**: from arguments or a named file, and from standard input otherwise.
 
@@ -119,7 +116,7 @@ Split across routes, each cleans what its own bytes obviously needed and what no
 - **The explicit routes union; standard input fills in.** Arguments and a named file were both typed, so both count.
 Standard input is often attached incidentally, so read it only when no explicit source was given — as `cat a b < c` ignores `c` — and silently; an explicit `-` among the arguments mixes it in.
 - **An argument is optional only when another route supplies the same value.** Optional for any other reason makes leaving it off change *what* the command does, which is a mode and belongs in an option.
-The user-editable list is such a route: `fetch ITEM...` fetches the items named and bare `fetch` reads `items.csv` (`store-data`), so a one-off re-fetch needs no edit to the file.
+The user-editable list is such a route: `fetch ITEM...` fetches the items named and bare `fetch` reads the active rows of `items.csv` (`structure-python`, Configuration), so a one-off re-fetch needs no edit to the file.
 - **A date range is inclusive at both ends**, `--from` and `--to` alike, since a person asking for Monday to Friday means Friday too; the API's `start` and `end` say the same, or one request gets two answers.
 
 ## HTTP surface
@@ -128,16 +125,20 @@ An API is the CLI's surface over HTTP, so the same options become query paramete
 
 - **A path names a resource, a query parameter narrows it**: `/readings?station=LHR&start=2026-01-01`, not `/getReadings`.
 - **Bound a range by date, never by offset.** `start` and `end` (inclusive, as the CLI's `--from`/`--to` are) give the same answer on every call; `offset=200` shifts as rows arrive, so a client paging through a live source skips or repeats rows and nothing tells it.
-- **An API and a dashboard read the store, never the source.** Each request calls an operation over the store adapter; a request that reached the rate-limited source would spend the quota a browser reload at a time, and show a different answer from the nightly's.
+- **An API and a dashboard read the store, never the source.** Each request calls an operation over the store's read port (`store-data`); a request that reached the rate-limited source would spend the quota a browser reload at a time, and show a different answer from the nightly's.
+- **A dashboard refreshes when the run manifest changes**, not on a clock of its own, so it re-reads once a night and shows its own staleness; the Python reference has the local and the hosted mechanics.
+- **One handler maps the app's errors to statuses** — an absent thing `404`, bounds out of range `422`, the rest `500` — so no route catches anything.
 - **No version prefix until a second client exists.** `/v1/` promises a `/v2/` nobody has asked for; add it when a breaking change meets a client you can't update.
 - **Bind to the loopback interface and skip authentication while the API is read-only on one machine**; the moment it binds beyond the machine or writes, both arrive together, since an unauthenticated writer on a network is a public form.
-- **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request; the Python reference has the mechanics.
-- **A handler is synchronous unless it awaits something** (see `write-python`).
+- **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request, synchronous as `write-python` says; the Python reference has the mechanics.
 
 ## Composition root
 
 The driver is the one place importing **both** an operation and a concrete adapter, injecting one into the other.
 Everywhere else the core depends only on its ports, so the import arrow points inward while the driver alone names the real adapter (see `structure-python`).
+
+**The root reads the settings once and binds each secret into the adapter it builds**, so no adapter reads the environment and no port carries a key (`structure-python`, Configuration).
+A scheduler starts the job outside the repo, so the settings find the `.env` by an absolute path, never one relative to the working directory; the Python reference has it.
 
 **One input can enter twice.** A bound the core filters on at the end often also sizes the fetch at the start — and a windowed computation (a running count, a moving average) needs history *before* the first row it reports.
 Fetch exactly the range asked for and the answer is fast and **wrong**; the fetch window is the requested range plus a warm-up margin.
@@ -170,6 +171,6 @@ Give each entry point a **launch command namespaced to the project** (`myapp-cli
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer`, `fastapi` and `shiny` build-outs, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, logging levels and launch).
+- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer`, `fastapi` and `shiny` build-outs, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, the log handler for a terminal, a capture and a file, and launch).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

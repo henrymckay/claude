@@ -52,12 +52,13 @@ rich_/
 `command.py` is the composition root (`SKILL.md`): it reads the settings once, opens the one client of the run with the key bound into it, builds the port's callable from the source module and the paced getter, and hands the result to `output`:
 
 ```python
+import datetime
 import functools
 import pathlib
 import typing
 
 from mypackage.code import operate
-from mypackage.code.adapt import httpx_, noaa
+from mypackage.code.adapt import httpx_, noaa, parquet
 from mypackage.code.drive import config
 from mypackage.code.drive.typer_ import argument, driver, option, output
 
@@ -71,18 +72,24 @@ def report(
     """Report the average temperature for each station."""
     settings = config.read_settings()
     constants = noaa.read_constants()
+    store = parquet.Store(settings.data_dir)
+    today = datetime.datetime.now(datetime.UTC).date()
     with httpx_.build_client(
         settings.api_key.get_secret_value(), timeout=constants.timeout
     ) as client:
-        get = httpx_.build_get_document(client, rate=constants.rate)
+        get = httpx_.build_get_document(
+            client,
+            budget=constants.daily - store.count_requests(today),
+            rates=constants.rates,
+        )
         averages = operate.report(
             stations, fetch=functools.partial(noaa.fetch_records, get=get)
         )
     output.display(averages, form=form, path=path)
 ```
 
-The key never leaves this function: `structure-python`'s Configuration says why the port carries no secret and the adapter reads no environment, and `rate` and `timeout` are the source's YAML constants, not settings.
-`fetch` and `nightly` add `store=parquet.Store(settings.data_dir)` and display the manifest row the store wrote (`SKILL.md`, Compose with other tools).
+The key never leaves this function: `structure-python`'s Configuration says why the port carries no secret and the adapter reads no environment, and `rates`, `daily` and `timeout` are the source's YAML constants, not settings; `budget` is the day's limit less the requests the manifest already records (`structure-python`, Write an adapter).
+`fetch` and `nightly` hand the operation the store's sinks — `parquet.Store`, then `motherduck.Store` when `motherduck_token` is set (`store-data`) — and display the manifest row they wrote (`SKILL.md`, Compose with other tools).
 
 
 `typer_/__init__.py` re-exports the app and imports the modules whose decorators register commands — a decorator runs only when its module is imported:
@@ -174,7 +181,7 @@ def display(report: polars.DataFrame, *, form: Form, path: pathlib.Path | None) 
 
 **Send logs and errors to standard error.** `rich.logging.RichHandler()` builds its own `Console()` on standard output, so give it `rich.console.Console(stderr=True)` (see Logging); print errors with `typer.echo(message, err=True)`.
 
-**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)` — or `typer.Exit(code=2)` for the `ConfigurationError` that `config.read_settings()` raises around `pydantic.ValidationError`, since a missing key is the machine's fault, not the run's (`SKILL.md`, Compose with other tools).
+**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)` — or `typer.Exit(code=2)` for the `ConfigurationError` that `config.read_settings()` raises around `pydantic.ValidationError`, joining the `2` `typer` already returns for a bad invocation (`run-unattended`, Report the outcome).
 It is `write-python`'s `handle` with `report=output.report`, and the one broad catch at a boundary; a `try` per command is missed on exactly the command that then shows a traceback.
 
 ## API
@@ -236,7 +243,7 @@ def store() -> port.Store:
 It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
 The API provides the store and no source adapter (`SKILL.md`, HTTP surface).
 
-A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan; a handler stays a plain `def` unless it awaits something (see `write-python`).
+A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan.
 
 ```python
 router = fastapi.APIRouter()
@@ -295,7 +302,7 @@ shiny_/
   callback.py   server(input, output, session) — the composition root
   driver.py     app = shiny.App(layout.root(), callback.server); run()
   layout.py     functions returning shiny.ui objects; root() is the top
-  provide.py    the settings, the store and the manifest path the callbacks read
+  provide.py    the settings, the store's read port and the manifest watch
 ```
 
 Layouts are functions, so a reused panel is a function `root()` calls rather than copied markup:
@@ -315,14 +322,12 @@ def root() -> htmltools.Tag:
 def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -> None:
     """Wire inputs to the core and render the results."""
 
-    @shiny.reactive.file_reader(provide.manifest_path())
+    @provide.watch_runs()
     def runs() -> polars.DataFrame:
-        """Re-read the run manifest whenever the nightly job rewrites it."""
-        return polars.read_parquet(provide.manifest_path())
+        return provide.store().read_runs()
 
     @shiny.render.data_frame
     def records() -> polars.DataFrame:
-        """Render the stored records for the items and days entered."""
         start, end = input.window()
         return operate.records(
             input.items().split(), end=end, start=start, store=provide.store()
@@ -330,7 +335,6 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
 
     @shinywidgets.render_plotly
     def chart() -> plotly.graph_objects.Figure:
-        """Chart the rows each source delivered last night."""
         return plotly.graph_objects.Figure(
             plotly.graph_objects.Bar(
                 x=runs().get_column("source").to_list(),
@@ -340,9 +344,12 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
 ```
 
 - **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, HTTP surface); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
-- **Refresh by watching the run manifest** (`store-data`): `shiny.reactive.file_reader` polls the file's modification time and re-runs its function when the nightly job rewrites it, so every output depending on `runs()` updates without a timer and the dashboard shows its own staleness.
+- **Refresh by watching the run manifest** (`store-data`), through `provide.watch_runs()`, which returns the decorator for wherever the store is, so `server` is the same on the laptop and the host.
+Over the data directory it is `shiny.reactive.file_reader` on `runs.parquet`, which checks the file's modification time each second and re-runs its function when the nightly rewrites it.
+Against MotherDuck there is no file, so it is `shiny.reactive.poll(read_last_run, interval_secs=300)` (`shiny` 1.9), where `read_last_run` asks the `runs` table for its latest `ended`: the manifest changes once a night, and every check is a query against MotherDuck's monthly compute, where the one-second default would run 86,400 a day per session.
+Either way every output depending on `runs()` updates without a timer of its own.
 - **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
-- **The blank line after `server`'s docstring** is `write-python`'s exception for a short function's beats.
+- **The callbacks nested in `server` carry no docstring**, as `write-python` says of a nested function; the blank line after `server`'s own docstring is that skill's exception for a short function's beats.
 
 `driver.py` builds `app = shiny.App(layout.root(), callback.server)` and a `run()` calling `shiny.run_app(app, port=8001)`: `shiny.run_app` and `uvicorn.run` both default to 8000, so the two launchers collide unless the dashboard moves.
 
@@ -364,8 +371,8 @@ class Settings(pydantic_settings.BaseSettings):
     """Application configuration, read from the environment and the project's .env."""
 
     model_config = pydantic_settings.SettingsConfigDict(
-        env_file=os.environ.get("MYPACKAGE_ENV_FILE", _ROOT / ".env"),
-        env_prefix="MYPACKAGE_",
+        env_file=os.environ.get("MYAPP_ENV_FILE", _ROOT / ".env"),
+        env_prefix="MYAPP_",
     )
 
     api_key: pydantic.SecretStr
@@ -373,7 +380,7 @@ class Settings(pydantic_settings.BaseSettings):
 
 `store-data` adds `data_dir`; `read_settings()` wraps `Settings()` in `write-python`'s `handle`, turning `pydantic.ValidationError` into the app's `ConfigurationError` that the CLI exits 2 on.
 
-- **`env_file` is an absolute path**: four parents above `src/mypackage/code/drive/config.py` is the checkout, which an editable install (`uv sync`'s default for the project) still points at, and `MYPACKAGE_ENV_FILE` overrides it for a wheel or a scheduler with its own secrets file.
+- **`env_file` is an absolute path**: four parents above `src/mypackage/code/drive/config.py` is the checkout, which an editable install (`uv sync`'s default for the project) still points at, and `MYAPP_ENV_FILE` overrides it for a wheel or a scheduler with its own secrets file.
 A bare `".env"` is resolved against the current directory, which under a scheduler is not the repo, so the key is silently absent and every night exits 2.
 - **`.env` is for the laptop and is ignored by git**; the environment wins over it, so a container sets variables and the file is never deployed.
 Commit a `.env.example` naming every variable with a placeholder, so a fresh clone knows what to set without reading the model.
@@ -387,39 +394,47 @@ It also keeps a required value honest, where a model invites a default.
 The composition root configures logging (`structure-python`) from a `typer` callback or a `fastapi` lifespan hook, through `drive/logging_.py`, with destination and level exposed as options:
 
 ```python
-def _file(path: pathlib.Path) -> logging.Handler:
-    """Return a handler writing plain, timestamped records to a file."""
-    handler = logging.FileHandler(path)
+def _plain(handler: logging.Handler) -> logging.Handler:
+    """Give a handler the timestamped plain format a file or a capture keeps."""
     handler.setFormatter(
         logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
     )
     return handler
 
 
-def _stderr() -> logging.Handler:
-    """Return a handler rendering records on standard error."""
-    return rich.logging.RichHandler(
-        console=rich.console.Console(stderr=True), rich_tracebacks=True
-    )
+def _pick_handler(path: pathlib.Path | None) -> logging.Handler:
+    """Return a rotated file, Rich for a person, or plain lines for a capture."""
+    if path is not None:
+        return _plain(
+            logging.handlers.TimedRotatingFileHandler(
+                path, backupCount=30, when="midnight"
+            )
+        )
+    if sys.stderr.isatty():
+        return rich.logging.RichHandler(
+            console=rich.console.Console(stderr=True), rich_tracebacks=True
+        )
+    return _plain(logging.StreamHandler(sys.stderr))
 
 
 def configure(
     *, level: int = logging.WARNING, path: pathlib.Path | None = None
 ) -> None:
-    """Route application logs to a file, or to standard error through Rich."""
+    """Route application logs to a file or to standard error."""
     logging.basicConfig(
         force=True,
         format="%(message)s",
-        handlers=[_file(path) if path else _stderr()],
+        handlers=[_pick_handler(path)],
         level=level,
     )
     for dependency in ("httpcore", "httpx"):
         logging.getLogger(dependency).setLevel(logging.WARNING)
 ```
 
-`basicConfig` applies `format` only to a handler without one, so the file keeps its timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
+**Rich when standard error is a terminal, the plain format when it is not**, so a person gets colour and a scheduler's or a runner's capture gets timestamped lines with no escape codes; this is the rendering library's colour rule from `SKILL.md`'s Compose with other tools, applied to the log.
+`basicConfig` applies `format` only to a handler without one, so the plain handlers keep their timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
 The default `WARNING` is for an interactive command; the scheduled `nightly` passes `logging.INFO`, so its log shows each adapter call at the level `structure-python`'s Logging gives it, and the two `httpx` loggers are pinned because they narrate every request at INFO.
-A file handler grows until the disk is full; rotating it is `run-unattended`'s, and JSON lines belong only behind a collector that indexes them.
+The file rotates at midnight and keeps thirty days, since a plain file handler grows until the disk is full; when a run takes `--log-file` is `run-unattended`'s, and JSON lines belong only behind a collector that indexes them.
 
 ## Run
 
