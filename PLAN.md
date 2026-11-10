@@ -163,7 +163,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [ ] **M10 Sweep** — R2; done when review-plugin, with a fresh cold read, leaves no defects.
 - [x] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort` (2026-11-10).
 - [ ] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open.
-- [ ] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it.
+- [x] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it (2026-11-10).
 - [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin. Runs after M10.
 
 ## Open

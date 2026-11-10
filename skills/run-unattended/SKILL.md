@@ -71,7 +71,7 @@ A log line is not a record — nothing queries it.
 - **`status` reads the manifest and exits 1 when any source is stale**, printing which and since when; it is the health check, so anything that can run a command can watch the job.
 Define stale per source from how often it publishes, with a default of two missed nights.
 - **No notification in v1**, and say so in the README: the exit code, the manifest and a dashboard that shows its own staleness are the signals.
-A mail or chat hook is earned by the first outage nobody noticed, and then costs a credential on the machine; record it under Decisions when it is.
+A mail or chat hook is earned by the first outage nobody noticed, and then costs a credential on the machine; record it under Decisions when it is, and build it as `send-messages` says.
 
 ## Log
 
