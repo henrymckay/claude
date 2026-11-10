@@ -3,27 +3,30 @@ name: run-unattended
 description: >-
   The operational side of a job that runs on a schedule with nobody watching —
   which day a nightly run fetches, the overlap lock, no silent catch-up and
-  backfill by range, exit codes and a partial fetch, the status command as the
-  health check and no notification in v1, the job's own rotated log at INFO
-  plus the scheduler's capture, picking the scheduler (a launchd agent on
-  macOS, a systemd timer on Linux, GitHub Actions in the cloud) and what each
-  does with a missed run, invoking the environment through uv, secrets outside
-  the unit file and a working directory inside it, keeping an API or dashboard
-  alive, and deploying with a clone and uv sync. Use whenever scheduling a
-  nightly or periodic job, writing a plist, timer or workflow, deciding what a
-  job does when a night is missed or a source fails, adding a status or health
-  command, choosing where a job's logs go, or keeping a service running — even
-  if the user just says "run this every night", "cron this", "make it restart"
-  or "why did last night not run". Layers on write-entry-points (the job
-  driver) and store-data (the manifest); the plist and timer files are in
-  references/schedulers.md, the Actions workflow in deploy-project's
+  backfill by range, exit codes for every command, a source's tolerance for
+  failed items and a partial fetch, the status command as the health check and
+  its own scheduled unit once an alert is earned, the job's own rotated log at
+  INFO on a machine and plain lines on standard error on Actions, plus the
+  scheduler's capture, picking the scheduler (a launchd agent on macOS, a
+  systemd timer on Linux, GitHub Actions in the cloud) and what each does with
+  a missed run, invoking the environment through uv, secrets outside the unit
+  file and a working directory inside it, keeping an API or dashboard alive,
+  and deploying with a clone and uv sync. Use whenever scheduling a nightly or
+  periodic job, writing a plist, timer or workflow, deciding what a job does
+  when a night is missed or a source or an item fails, choosing an exit code,
+  adding a status or health command, choosing where a job's logs go, or
+  keeping a service running — even if the user just says "run this every
+  night", "cron this", "make it restart" or "why did last night not run".
+  Layers on write-entry-points (the job driver) and store-data (the manifest);
+  send-messages builds the alert once one is earned; the plist and timer files
+  are in references/schedulers.md, the Actions workflows in deploy-project's
   references/github-actions.md.
 ---
 
 # Run unattended
 
 How a job behaves when a scheduler, not a person, starts it.
-The driver itself is `write-entry-points`' Jobs; the manifest it writes and the data directory it locks are `store-data`'s; this skill covers what happens between the two when nobody is watching.
+The driver itself is the Jobs section of `write-entry-points`' Python reference; the manifest it writes and the data directory it locks are `store-data`'s; this skill covers what happens between the two when nobody is watching.
 Three mistakes account for most quiet failures: a slow night overlapping the next so two runs write one partition; a job that repairs missed nights silently, so nobody learns the machine was off; and a unit file that works in the shell and fails under the scheduler, whose environment has no `PATH` worth the name and no `.env`.
 
 **In an existing project, ask first.** Where a repo already has a scheduler and run conventions, check with the user whether to keep them or apply these, and prefer these unless they choose to keep theirs.
@@ -64,34 +67,39 @@ Expose `fetch --from --to` for backfill, and let `status` report the gap.
 
 ## Report the outcome
 
-- **Exit `0` when every source stored, `1` when any failed, `2` for a usage or configuration error** — a missing token, a bad option.
+- **Exit `0` when every source stored, `1` when any is `partial` or `failed`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
 A scheduler and a shell both branch on non-zero; the split between 1 and 2 tells a reader of the log whether to look at the source or at the machine.
-- **A partial fetch stores what arrived**, lists the failed sources on standard error and exits 1.
+These codes hold for every command, interactive or scheduled.
+- **A source absorbs as many failed items a night as its YAML's `tolerance`** (default 0; `structure-python`, Configuration): at or below it the source is `stored` with the count in the manifest's `failed_items`, above it `partial`.
+An item that dies for good would otherwise turn every night red until someone edits `items.csv`; the tolerance says how many such losses are routine, and the manifest still counts each.
+Rows rejected by validation alone leave a source `stored`, since the quarantine already counts them.
+- **A partial fetch stores what arrived**, lists the failed sources and items on standard error and exits 1.
 Discarding the good sources because one failed turns one outage into a full missed night.
 - **The run manifest is the record**: one row per source per run, as `store-data` lays it out.
 A log line is not a record — nothing queries it.
 - **`status` reads the manifest and exits 1 when any source is stale**, printing which and since when; it is the health check, so anything that can run a command can watch the job.
 Define stale per source from how often it publishes, with a default of two missed nights.
-- **No notification in v1**, and say so in the README: the exit code, the manifest and a dashboard that shows its own staleness are the signals.
-A mail or chat hook is earned by the first outage nobody noticed, and then costs a credential on the machine; record it under Decisions when it is, and build it as `send-messages` says.
+- **No notification until the plan requires one or the first outage goes unnoticed**, and say so in the README: until then the exit code, the manifest and a dashboard that shows its own staleness are the signals, and an alert costs a credential on the machine.
+When one is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit a few hours after the nightly: a night that never ran sends nothing of its own, so only a separate run can notice it.
 
 ## Log
 
-- **The unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job writes its own log in `write-entry-points`' plain file format through a `TimedRotatingFileHandler` rolling at `midnight` with a `backupCount`; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
-- **The unit captures standard output and standard error to `<data_dir>/logs/<scheduler>.log`** as well, for the summary row and for anything that escapes before logging is configured — a traceback at import, a missing environment variable; the scheduler never rotates that file, so the job's own log stays the one to read.
-- **Keep `RichHandler` for a terminal**: its colour codes are noise in a file, which is why the scheduled command names a `--log-file` instead of letting the scheduler capture a Rich stream.
-- **Emit JSON lines only behind a collector** that indexes them; for a file a person reads, the timestamped plain format in `write-entry-points`' Logging is the one to grep.
+- **Under a scheduler with a disk, the unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job keeps its own log, rotated at midnight; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
+- **On Actions, the step passes `--log-level info` alone**: the runner's disk is gone when the job ends, so the log goes to standard error, which the run's own log keeps.
+- **Either way the format is chosen by `write-entry-points`' Python reference, Logging** — Rich only when standard error is a terminal, plain timestamped lines otherwise — so neither a file nor a capture fills with colour codes.
+- **The unit captures standard output and standard error** to `<data_dir>/logs/<scheduler>.log` or the journal as well, for the summary row and for anything that escapes before logging is configured — a traceback at import, a missing environment variable; launchd never rotates that file, so the job's own log stays the one to read.
+- **Emit JSON lines only behind a collector** that indexes them; for a log a person reads, the plain format is the one to grep.
 
 ## Schedule it
 
 **Pick the scheduler by platform**, since each is already running there: a launchd agent in `~/Library/LaunchAgents` on macOS, a systemd user timer in `~/.config/systemd/user` on Linux, a `schedule` workflow on GitHub Actions when the job has no machine of its own.
 `cron` runs everywhere but fires into a bare environment with no log capture and no missed-run handling, which is the work the other three do for you.
-The launchd and systemd files are in `references/schedulers.md` and the Actions workflow in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, which also names the absolute paths to edit, since a unit carries the machine's home directory and a copy alone points at the wrong one.
+The launchd and systemd files are in `references/schedulers.md` and the Actions workflows in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, which also names the absolute paths to edit, since a unit carries the machine's home directory and a copy alone points at the wrong one.
 
 - **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
 `--frozen` runs what is locked instead of re-resolving against the network every night.
-- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (see `write-entry-points`), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`.
-Set `WorkingDirectory` to the repo in every unit: a scheduler starts the job in `/`, so a relative `.env` or data path is never found and the first unattended run exits 2 for a missing key.
+- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (`write-entry-points`, Composition root), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`.
+- **Set `WorkingDirectory` to the repo in every unit**, since a scheduler starts the job in `/` and a relative path the command is given would resolve there; the `.env` is found by its absolute path either way.
 - **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays under load, and disables the schedule after sixty days without activity in a public repository.
 Each is a gap `status` reports, not a job to repair.
 
