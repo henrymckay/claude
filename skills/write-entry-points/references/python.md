@@ -2,7 +2,8 @@
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
 Every driver lives under `code/drive/` (see `structure-python`); the libraries are `setup-python`'s house picks.
-The running example is a weather app whose operation `operate.report(stations, fetch=...)` returns a `polars` frame of `station` and `average`, fetched through a `port.Fetch`.
+The running example is a weather app whose operation `operate.report(stations, fetch=...)` returns a `polars` frame of `station` and `average`, fetched through a `port.Records` that `noaa.fetch_records` satisfies, and whose `operate.records(items, *, end, start, store=...)` reads the store back (`store-data`).
+Settings live in `drive/config.py`, logging in `drive/logging_.py` (Configuration and Logging below).
 
 ## Role and framework split
 
@@ -48,14 +49,16 @@ rich_/
   render.py       builds the rich table and nothing else
 ```
 
-`command.py` is the composition root (`SKILL.md`), and hands the result to `output`:
+`command.py` is the composition root (`SKILL.md`): it reads the settings once, opens the one client of the run with the key bound into it, builds the port's callable from the source module and the paced getter, and hands the result to `output`:
 
 ```python
+import functools
 import pathlib
 import typing
 
 from mypackage.code import operate
-from mypackage.code.adapt import httpx_
+from mypackage.code.adapt import httpx_, noaa
+from mypackage.code.drive import config
 from mypackage.code.drive.typer_ import argument, driver, option, output
 
 
@@ -66,8 +69,20 @@ def report(
     path: typing.Annotated[pathlib.Path | None, option.output()] = None,
 ) -> None:
     """Report the average temperature for each station."""
-    output.display(operate.report(stations, fetch=httpx_.fetch), form=form, path=path)
+    settings = config.read_settings()
+    constants = noaa.read_constants()
+    with httpx_.build_client(
+        settings.api_key.get_secret_value(), timeout=constants.timeout
+    ) as client:
+        get = httpx_.build_get_document(client, rate=constants.rate)
+        averages = operate.report(
+            stations, fetch=functools.partial(noaa.fetch_records, get=get)
+        )
+    output.display(averages, form=form, path=path)
 ```
+
+The key never leaves this function: `structure-python`'s Configuration says why the port carries no secret and the adapter reads no environment, and `rate` and `timeout` are the source's YAML constants, not settings.
+`fetch` and `nightly` add `store=parquet.Store(settings.data_dir)` and display the manifest row the store wrote (`SKILL.md`, Compose with other tools).
 
 
 `typer_/__init__.py` re-exports the app and imports the modules whose decorators register commands — a decorator runs only when its module is imported:
@@ -159,7 +174,7 @@ def display(report: polars.DataFrame, *, form: Form, path: pathlib.Path | None) 
 
 **Send logs and errors to standard error.** `rich.logging.RichHandler()` builds its own `Console()` on standard output, so give it `rich.console.Console(stderr=True)` (see Logging); print errors with `typer.echo(message, err=True)`.
 
-**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)`.
+**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)` — or `typer.Exit(code=2)` for the `ConfigurationError` that `config.read_settings()` raises around `pydantic.ValidationError`, since a missing key is the machine's fault, not the run's (`SKILL.md`, Compose with other tools).
 It is `write-python`'s `handle` with `report=output.report`, and the one broad catch at a boundary; a `try` per command is missed on exactly the command that then shows a traceback.
 
 ## API
@@ -183,6 +198,7 @@ pydantic_/
 
 **A schema is not a domain type, even when the fields match.** The DTO (Data Transfer Object) is the external contract, the domain type the internal truth; separate, they evolve independently and untrusted input is validated at the boundary.
 Map between them in `route.py`.
+A `start`/`end` pair is inclusive at both ends, as `SKILL.md`'s Compose with other tools fixes for the CLI.
 
 - **`pydantic` validates at the API boundary — request and response models — and in `pydantic-settings`.** An adapter returning a frame declares a `polars` schema instead (see `structure-python`), since a model per row re-validates what the frame's dtypes already fix; one returning records parses with `pydantic` (see `write-python`), and the core takes frozen dataclasses either way.
 - **Never duplicate an enum**: a schema field references the domain's `enum.Enum` directly.
@@ -191,35 +207,34 @@ Map between them in `route.py`.
 **`fastapi` declares parameters as `typer` does**, `typing.Annotated[T, marker()]`, so `fastapi_` mirrors `typer_` with a factory module per marker (`query.py`, `path.py`, `body.py` as used):
 
 ```python
-def stations() -> fastapi.params.Query:
-    """Return the stations query parameter."""
-    return fastapi.Query(description="Station IDs.")
+def items() -> fastapi.params.Query:
+    """Return the items query parameter."""
+    return fastapi.Query(description="Item IDs.")
 ```
 
-**`Depends(fn)` calls `fn` and injects its return value**, so it wraps a *provider* returning the adapter — `Depends(provide.fetch)`, never `Depends(httpx_.fetch)`, which would have `fastapi` call the adapter and read its parameters as request inputs:
+**`Depends(fn)` calls `fn` and injects its return value**, so it wraps a *provider* returning the adapter — `Depends(provide.store)`, never `Depends(parquet.Store)`, which would have `fastapi` call the adapter and read its parameters as request inputs:
 
 ```python
-def fetch() -> fastapi.params.Depends:
-    """Inject the temperature source."""
-    return fastapi.Depends(provide.fetch)
+def store() -> fastapi.params.Depends:
+    """Inject the store."""
+    return fastapi.Depends(provide.store)
 ```
-
-```python
-def fetch() -> port.Fetch:
-    """Provide the temperature source adapter; overridden in tests."""
-    return httpx_.fetch
-```
-
-`provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Fetch` in its signature, and names `httpx_` only in its body.
-It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
-Settings take the same seam, read once per process:
 
 ```python
 @functools.cache
 def settings() -> config.Settings:
     """Provide the settings once per process; overridden in tests."""
-    return config.Settings()
+    return config.read_settings()
+
+
+def store() -> port.Store:
+    """Provide the store adapter; overridden in tests."""
+    return parquet.Store(settings().data_dir)
 ```
+
+`provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Store` in its signature, and names `parquet` only in its body.
+It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
+The API provides the store and no source adapter (`SKILL.md`, HTTP surface).
 
 A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan; a handler stays a plain `def` unless it awaits something (see `write-python`).
 
@@ -227,32 +242,44 @@ A date-range bound is a required `fastapi.Query()` with no default, so a call wi
 router = fastapi.APIRouter()
 
 
-@router.get("/report")
-def report(
-    stations: typing.Annotated[list[str], query.stations()],
-    fetch: typing.Annotated[port.Fetch, depend.fetch()],
-) -> list[schema.Reading]:
-    """Report the average temperature for each station."""
-    return [
-        schema.Reading(**row)
-        for row in operate.report(stations, fetch=fetch).iter_rows(named=True)
-    ]
+@router.get("/records")
+def records(
+    end: typing.Annotated[datetime.date, query.end()],
+    items: typing.Annotated[list[str], query.items()],
+    start: typing.Annotated[datetime.date, query.start()],
+    store: typing.Annotated[port.Store, depend.store()],
+) -> list[schema.Record]:
+    """Return the stored records for the items from start to end, inclusive."""
+    stored = operate.records(items, end=end, start=start, store=store)
+    return [schema.Record(**row) for row in stored.iter_rows(named=True)]
 ```
 
-An ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `driver.py` adds a launcher:
+An ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `driver.py` adds a launcher, and one `exception_handler` maps the app's errors to statuses, so no route catches anything:
 
 ```python
+_STATUS: typing.Final = {error.AbsentError: 404, error.BoundsError: 422}
+
 app = fastapi.FastAPI()
 app.include_router(route.router)
 
 
+@app.exception_handler(error.AppError)
+def explain(
+    request: fastapi.Request, failure: error.AppError
+) -> fastapi.responses.JSONResponse:
+    """Answer an app error with the status its kind maps to."""
+    return fastapi.responses.JSONResponse(
+        {"detail": str(failure)}, status_code=_STATUS.get(type(failure), 500)
+    )
+
+
 def run() -> None:
-    """Launch the API server."""
-    uvicorn.run(app)
+    """Launch the API server on port 8000; the dashboard takes 8001."""
+    uvicorn.run(app, port=8000)
 ```
 
 `uvicorn.run` binds `127.0.0.1` by default; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
-A test swaps the adapter with `app.dependency_overrides[provide.fetch] = lambda: fake_fetch` — no patching.
+A test swaps the adapter with `app.dependency_overrides[provide.store] = lambda: fake_store` — no patching.
 
 ## GUI
 
@@ -268,7 +295,7 @@ shiny_/
   callback.py   server(input, output, session) — the composition root
   driver.py     app = shiny.App(layout.root(), callback.server); run()
   layout.py     functions returning shiny.ui objects; root() is the top
-  provide.py    the settings and the manifest path the callbacks read
+  provide.py    the settings, the store and the manifest path the callbacks read
 ```
 
 Layouts are functions, so a reused panel is a function `root()` calls rather than copied markup:
@@ -277,8 +304,10 @@ Layouts are functions, so a reused panel is a function `root()` calls rather tha
 def root() -> htmltools.Tag:
     """Return the top-level layout."""
     return shiny.ui.page_fluid(
-        shiny.ui.input_text("stations", label="Stations", value="london tokyo"),
-        shiny.ui.output_data_frame("report"),
+        shiny.ui.input_text("items", label="Items", value="LHR MAN"),
+        shiny.ui.input_date_range("window", label="Days"),
+        shiny.ui.output_data_frame("records"),
+        shinywidgets.output_widget("chart"),
     )
 ```
 
@@ -292,9 +321,12 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
         return polars.read_parquet(provide.manifest_path())
 
     @shiny.render.data_frame
-    def report() -> polars.DataFrame:
-        """Render the report for the stations entered."""
-        return operate.report(input.stations().split(), fetch=httpx_.fetch)
+    def records() -> polars.DataFrame:
+        """Render the stored records for the items and days entered."""
+        start, end = input.window()
+        return operate.records(
+            input.items().split(), end=end, start=start, store=provide.store()
+        )
 
     @shinywidgets.render_plotly
     def chart() -> plotly.graph_objects.Figure:
@@ -307,12 +339,12 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
         )
 ```
 
-- **The dashboard calls `operate.*` directly**, as the CLI does; `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
+- **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, HTTP surface); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
 - **Refresh by watching the run manifest** (`store-data`): `shiny.reactive.file_reader` polls the file's modification time and re-runs its function when the nightly job rewrites it, so every output depending on `runs()` updates without a timer and the dashboard shows its own staleness.
 - **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
 - **The blank line after `server`'s docstring** is `write-python`'s exception for a short function's beats.
 
-`driver.py` builds `app = shiny.App(layout.root(), callback.server)` and a `run()` calling `shiny.run_app(app)`.
+`driver.py` builds `app = shiny.App(layout.root(), callback.server)` and a `run()` calling `shiny.run_app(app, port=8001)`: `shiny.run_app` and `uvicorn.run` both default to 8000, so the two launchers collide unless the dashboard moves.
 
 ## Jobs
 
@@ -321,33 +353,38 @@ A `job/` driver exists only for an event trigger — a queue message, a webhook 
 
 ## Configuration
 
-Load configuration once at the composition root and pass values into operations (see `structure-python`, which says which value lives in settings).
-A `pydantic-settings` model in a driver-side `config` module reads the environment and a local `.env`, and fails fast on a bad value:
+Load configuration once at the composition root and pass values into operations (see `structure-python`, which says which value lives in settings and which in a source's YAML).
+A `pydantic-settings` model in `drive/config.py` reads the environment and the project's `.env`, and fails fast on a bad value:
 
 ```python
+_ROOT = pathlib.Path(__file__).resolve().parents[4]
+
+
 class Settings(pydantic_settings.BaseSettings):
-    """Application configuration, read from the environment and a local .env."""
+    """Application configuration, read from the environment and the project's .env."""
 
     model_config = pydantic_settings.SettingsConfigDict(
-        env_file=".env", env_prefix="MYPACKAGE_"
+        env_file=os.environ.get("MYPACKAGE_ENV_FILE", _ROOT / ".env"),
+        env_prefix="MYPACKAGE_",
     )
 
     api_key: pydantic.SecretStr
-    rate: float = 0.05
-    timeout: float = 30.0
 ```
 
-- **`.env` is for the laptop and is ignored by git**; the environment wins over it, so a scheduler or a container sets variables and the file is never deployed.
+`store-data` adds `data_dir`; `read_settings()` wraps `Settings()` in `write-python`'s `handle`, turning `pydantic.ValidationError` into the app's `ConfigurationError` that the CLI exits 2 on.
+
+- **`env_file` is an absolute path**: four parents above `src/mypackage/code/drive/config.py` is the checkout, which an editable install (`uv sync`'s default for the project) still points at, and `MYPACKAGE_ENV_FILE` overrides it for a wheel or a scheduler with its own secrets file.
+A bare `".env"` is resolved against the current directory, which under a scheduler is not the repo, so the key is silently absent and every night exits 2.
+- **`.env` is for the laptop and is ignored by git**; the environment wins over it, so a container sets variables and the file is never deployed.
 Commit a `.env.example` naming every variable with a placeholder, so a fresh clone knows what to set without reading the model.
 - **A secret is a `pydantic.SecretStr` field** with no default, so a missing key fails at startup and a `repr` or a log line shows `**********`.
-
 - **One value is a function, not a model.** A function reading one variable and raising an error naming it when unset costs nothing; grow into the model at the second field, and call sites don't change.
 It also keeps a required value honest, where a model invites a default.
 - **Validate at startup only what the running command needs.** A `typer` callback runs before every command, so validating there makes `--version` or a listing command fail for a credential it never uses; check in the commands that need it.
 
 ## Logging
 
-The composition root configures logging (`structure-python`) from a `typer` callback or a `fastapi` lifespan hook, through a `logging_/` package, with destination and level exposed as options:
+The composition root configures logging (`structure-python`) from a `typer` callback or a `fastapi` lifespan hook, through `drive/logging_.py`, with destination and level exposed as options:
 
 ```python
 def _file(path: pathlib.Path) -> logging.Handler:
@@ -376,9 +413,12 @@ def configure(
         handlers=[_file(path) if path else _stderr()],
         level=level,
     )
+    for dependency in ("httpcore", "httpx"):
+        logging.getLogger(dependency).setLevel(logging.WARNING)
 ```
 
 `basicConfig` applies `format` only to a handler without one, so the file keeps its timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
+The default `WARNING` is for an interactive command; the scheduled `nightly` passes `logging.INFO`, so its log shows each adapter call at the level `structure-python`'s Logging gives it, and the two `httpx` loggers are pinned because they narrate every request at INFO.
 A file handler grows until the disk is full; rotating it is `run-unattended`'s, and JSON lines belong only behind a collector that indexes them.
 
 ## Run
