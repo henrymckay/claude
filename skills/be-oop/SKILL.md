@@ -1,10 +1,11 @@
 ---
 name: be-oop
 description: >-
-  Object-oriented design done well — when to reach for classes, composition
-  over inheritance, encapsulation, mixins, SOLID, and the classic design
-  patterns. Use when designing or reviewing class hierarchies, working in an
-  OOP codebase or framework (subclassing, overriding hooks), modelling stateful
+  Object-oriented design done well — when to reach for classes, value objects
+  as frozen dataclasses, structural interfaces, Liskov as the principle that
+  bites, mixins, and which classic design patterns collapse to a function or a
+  module. Use when designing or reviewing class hierarchies, working in an OOP
+  codebase or framework (subclassing, overriding hooks), modelling stateful
   long-lived objects, or when the user mentions OOP, classes, inheritance,
   interfaces, mixins, SOLID, or a design pattern by name — even if not
   explicitly. This is an opt-in style skill: reach for OOP where it genuinely
@@ -34,34 +35,13 @@ If none of these hold, a function (or a plain dataclass + functions) is simpler.
 
 ## Core principles
 
-- **Composition over inheritance.** Prefer building objects from other objects (has-a) over deep inheritance (is-a).
-Inheritance couples you to a base class's internals and is rigid; composition stays flexible.
-Reserve inheritance for genuine subtype relationships, not code reuse.
-- **Encapsulation.** Hide internal state behind a narrow public interface so the object controls its own invariants.
-Expose intent (methods), not raw fields to be poked; a leading underscore marks internals (see `write-python`).
-- **Program to an interface, not an implementation.** Depend on an abstraction so implementations are swappable — a structural interface where the language has one, rather than a base class.
-- **Keep hierarchies shallow.** One or two levels.
-Deep trees are fragile and hard to follow; if you're reaching for a third level, reconsider with composition.
-- **Immutable where you can.** Even in OOP, prefer immutable value objects (frozen dataclasses) for data; reserve mutability for things that genuinely model changing state.
+Composition over inheritance, encapsulation, programming to an interface and shallow hierarchies need no rule here; the house additions are these.
 
-## Mixins
-
-A **mixin** is a small class that *adds* a focused capability to otherwise unrelated classes by being inherited — the sanctioned use of multiple inheritance for **cross-cutting concerns**, distinct from is-a subclassing.
-
-- Keep it **behaviour-only and narrow** — a few related methods, ideally no state or `__init__` of its own — so several mixins stay orthogonal and combine cleanly.
-- Name it with a `Mixin` suffix (`SerializableMixin`).
-- Prefer composition instead when the behaviour carries its own state or lifecycle.
-
-## SOLID
-
-Several of these span paradigms:
-
-- **S — Single Responsibility.** One reason to change per class.
-- **O — Open/Closed.** Open to extension, closed to modification — add behaviour by adding code (see `be-functional`, "Choose axis of change").
-- **L — Liskov Substitution.** A subtype must work anywhere its base does, honouring the base's contract (don't strengthen preconditions or weaken postconditions).
-The genuinely OOP one — a broken override here is a real bug.
-- **I — Interface Segregation.** Many small interfaces beat one fat one; a client shouldn't depend on methods it doesn't use.
-- **D — Dependency Inversion.** Depend on abstractions and inject collaborators — the dependency injection of `be-functional`.
+- **A value object is a frozen dataclass** even inside an OOP design (see `write-python`); mutability is reserved for the object whose changing state *is* the model.
+- **A structural interface over a base class**: a `Protocol` where the language has one, so an implementation never has to inherit to qualify.
+- **Liskov is the SOLID principle that bites**: a subtype must work anywhere its base does, so an override that strengthens a precondition or weakens a postcondition is a bug the type checker can't see.
+The other four follow from `be-functional`'s injection and axis-of-change rules.
+- **A mixin is behaviour-only**, named with a `Mixin` suffix (`SerializableMixin`), and becomes composition the moment it carries its own state or lifecycle, since two stateful mixins fight over `__init__`.
 
 ## Design patterns
 
@@ -73,7 +53,7 @@ Patterns that usually **collapse** — what each is, then the simpler form:
 - **Strategy** — swap one of a family of interchangeable algorithms at runtime → pass a **function**.
 - **Command** — package an action as an object to store, queue, or undo → a **function** (or `functools.partial`).
 - **Factory** — centralise how objects get created → a **function** or `classmethod`.
-- **Singleton** — one shared instance for the whole program → a **module** (imported once).
+- **Singleton** — one shared instance for the whole program → a **module**, or a cached read of *immutable* settings at the composition root; mutable module state is injected instead (see `be-functional`).
 - **Observer** — notify dependents when state changes → a list of **callbacks** / pub-sub.
 - **Template Method** — fix an algorithm's skeleton but vary specific steps → pass in the varying **functions**, or a base hook.
 - **Iterator** — traverse a collection without exposing its internals → a **generator** / `__iter__`.
@@ -87,18 +67,10 @@ Patterns that stay **genuinely useful** as classes:
 - **State** — behaviour changes with internal state (a state machine).
 - **Facade** — a simple interface over a complex subsystem.
 
-## Avoid
-
-- **Inheritance for code reuse** — use composition; inherit only for true is-a.
-- **Deep hierarchies and god classes** — split responsibilities.
-- **Getters/setters for everything** — expose behaviour, or a `@property` for computed/validated access; don't Java-ify plain data.
-- **Mutable global singletons** — hard to test and reason about; inject instead.
-- **Premature abstraction** — no base class or interface until there's a second implementation (YAGNI; see `write-python`).
-
 ## Language specifics
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (dataclasses, `Protocol` vs ABC, properties, class/staticmethods, dunders, and patterns in Python).
+- **Python** → `references/python.md` (dataclasses for state, `Protocol` vs ABC with `override`, mixins and the MRO, the collapsed patterns in Python).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

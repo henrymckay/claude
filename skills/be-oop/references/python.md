@@ -1,35 +1,34 @@
 # Be object-oriented in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
-The theme: Python gives you a lot for free (dataclasses, protocols, generators, modules), so most "patterns" are lighter here than in Java/C++.
-Follow the `write-python` conventions in examples (qualified imports, annotate every function, docstrings).
+Python gives a lot for free — dataclasses, protocols, generators, modules — so most "patterns" are lighter here than in Java or C++.
 
 ## Dataclasses
 
-Use `dataclasses` for objects that hold state — they generate `__init__`, `__repr__`, `__eq__`, and (with `order=True`) comparisons:
+A `dataclass` holds an object's state and generates `__init__`, `__repr__` and `__eq__`; a stateful one is the exception to `write-python`'s frozen default, and says so by leaving `frozen` off:
 
 ```python
 import dataclasses
+import decimal
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(slots=True, kw_only=True)
 class Account:
-    """A bank account."""
+    """A bank account whose balance changes over time."""
 
     owner: str
-    balance: float = 0.0
+    balance: decimal.Decimal = decimal.Decimal(0)
 
-    def deposit(self, amount: float) -> None:
+    def deposit(self, amount: decimal.Decimal) -> None:
         """Add funds to the balance."""
         self.balance += amount
 ```
 
-Use `frozen=True` for immutable value objects and `slots=True` to save memory and reject stray attributes.
+Money is `decimal.Decimal`, never `float` (see `write-python`); `slots=True` rejects a stray attribute and saves memory.
 
 ## `Protocol` vs ABC
 
-- **`typing.Protocol`** — *structural* typing: any class with the right methods satisfies it, no inheritance needed.
-Prefer this for interfaces (interface segregation and dependency inversion) — it's duck typing the type checker understands.
+- **`typing.Protocol`** — *structural* typing: any class with the right methods satisfies it, no inheritance needed; the default for an interface.
   ```python
   import typing
 
@@ -39,44 +38,13 @@ Prefer this for interfaces (interface segregation and dependency inversion) — 
 
       def read(self) -> bytes: ...
   ```
-- **`abc.ABC` + `@abc.abstractmethod`** — *nominal* typing: subclasses must inherit and implement, enforced at instantiation.
-Use when you own a hierarchy and want shared base code plus enforcement.
-
-## Properties
-
-Don't write Java-style getters/setters.
-Expose a plain attribute, and upgrade to a `@property` only when you need computation or validation:
-
-```python
-import math
-
-
-class Circle:
-    """A circle."""
-
-    def __init__(self, radius: float) -> None:
-        """Create a circle of the given radius."""
-        self.radius = radius
-
-    @property
-    def area(self) -> float:
-        """Area, computed on access."""
-        return math.pi * self.radius**2
-```
-
-## Constructors and namespacing
-
-- **`@classmethod`** for alternative constructors (`Account.from_json(...)`).
-- **`@staticmethod`** for a function that lives in the class's namespace but needs no instance — though a module-level function is often simpler.
-
-## Dunder methods
-
-Implement the protocols the language uses: `__repr__` (dataclasses give you this), `__eq__`/`__hash__`, `__iter__`/`__next__` for iteration, `__enter__`/`__exit__` for context managers (or `contextlib.contextmanager`), `__call__` to make an instance callable.
+- **`abc.ABC` + `@abc.abstractmethod`** — *nominal* typing, enforced at instantiation; only when you own the hierarchy and want shared base code as well as the contract.
+- **`@typing.override` on every overriding method**, so a renamed base method fails type-checking instead of silently leaving the override unreached.
 
 ## Mixins
 
-Python can add behaviour to a class only through inheritance, which is why mixins are the idiom.
-List a mixin **left** of the base, so its methods win in the MRO (Method Resolution Order):
+A mixin shares behaviour across classes with no common base.
+List it **left** of the base, so its methods win in the MRO (Method Resolution Order):
 
 ```python
 class AsDictMixin:
@@ -95,14 +63,15 @@ class Widget(AsDictMixin):
 
 ## Enums
 
-`enum.Enum` for a closed set of named constants — a sum type (see `be-functional/references/python.md`).
+`enum.StrEnum` for a closed set of names that crosses a boundary; a sum type of dataclasses once the variants carry data (see `be-functional/references/python.md`).
 
 ## Design patterns
 
-Concrete versions of the simpler forms listed in `SKILL.md`:
+Concrete versions of the collapsed forms in `SKILL.md`:
 
 ```python
 import collections.abc
+import enum
 import functools
 
 
@@ -114,18 +83,25 @@ def process(
     return strategy(data)
 
 
-# Factory → a function
-def make_client(env: str) -> Client:
+class Environment(enum.StrEnum):
+    """Where the client runs."""
+
+    DEV = "dev"
+    PROD = "prod"
+
+
+# Factory → a function over a closed set
+def make_client(env: Environment) -> Client:
     """Build the client for an environment."""
-    return {"prod": ProdClient, "dev": DevClient}[env]()
+    return {Environment.PROD: ProdClient, Environment.DEV: DevClient}[env]()
 
 
-# Singleton → a module (imported once), or a cached factory
+# Singleton → a cached read of immutable settings, called from the composition root
 @functools.cache
-def get_settings() -> Settings:
-    """Return the single, lazily-built settings object."""
+def read_settings() -> Settings:
+    """Return the settings, read once."""
     return Settings.load()
 ```
 
 For **Observer**, keep a list of callbacks and call them; for **Visitor**, use `functools.singledispatch` or `match` (see `be-functional`).
-For **Adapter** / **Decorator** / **Composite** / **State**, a small class that wraps or holds state is the right tool — those don't collapse into a function.
+For **Adapter**, **Decorator**, **Composite** and **State**, a small class that wraps or holds state is the right tool — those don't collapse into a function.
