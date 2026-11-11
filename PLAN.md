@@ -11,13 +11,15 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 
 ### Terms
 
-- **skill** — a `skills/<name>/SKILL.md` with frontmatter, plus any `references/`, per the Agent Skills standard.
+- **skill** — a `plugins/<plugin>/skills/<name>/SKILL.md` with frontmatter, plus any `references/`, per the Agent Skills standard.
+- **plugin** — a folder under `plugins/` with a manifest, skills, a session-start hook and a trigger suite, installable on its own; the repo is a **marketplace** listing five.
+- **context file** — a plugin's `hooks/context.md`, its always-on skill list, printed at session start.
 - **description** — a skill's frontmatter trigger text, all Claude sees when deciding to load it.
 - **reference** — a file under a skill's `references/`, loaded only when the skill points there.
 - **instruction file** — `CLAUDE.md`, loaded every session.
 - **house pick** — a library or tool a skill chooses over its rivals.
 - **drift** — a skill's description, rules or examples falling out of line with its body, its neighbours or current tools.
-- **skill feedback** — a GitHub issue labelled `skill-feedback`, filed when a skill steered Claude wrong in real work.
+- **skill feedback** — a GitHub issue labelled `skill-feedback` on the owning plugin's repository, filed when a skill steered Claude wrong in real work; a machine that must not reach a public tracker records it to a file instead.
 - **evaluation** — a build from a `brief.md`, graded against its `answers.md`, driven by `evaluate/prompt.md`.
 - **build stream** / **skills stream** — building real projects with the skills as they stand / improving the skills from skill feedback and evaluations.
 
@@ -44,11 +46,15 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 - **R10** A project's deployment is decided in the plan and built by the skills — dashboards, pipelines, data and APIs on the best free or very-low-cost hosts — so none of it is a decision during the build.
   - Cost: free tiers change yearly, so the picks need re-checking in each sweep.
 - **R11** A deployed project can message the user — alerts, digests, a two-way assistant — through channels the user reads, and a Claude Code session can reach them too.
+- **R12** The skills install selectively and work beyond this repo and machine: grouped into plugins that stand alone and work together, usable by symlink where plugins cannot be installed, with the review and the feedback loop applying to any plugin whose source can be read (2026-11-11).
+  - Cost: five manifests, a context file per plugin duplicating `CLAUDE.md`'s list, a trigger suite per plugin, and cross-plugin pointers that must read correctly with the neighbour absent.
   - Cost: a secret per channel on each host; dropping it leaves outages unnoticed.
 
 ### Not yet
 
-- **Packaging as an installable plugin** (`.claude-plugin/plugin.json`, marketplace) — earned when the skills need installing on another machine or by someone else; plugin skills are namespaced, so every cross-reference would change.
+- **A repository per plugin** — earned when a plugin needs different visibility or another owner; one repo keeps one tracker, one weekly pull request and cross-plugin drift caught in one sweep, and the marketplace can list a plugin that lives elsewhere.
+- **A licence and icons** — earned by submitting to the public plugin directory; the licence is the user's choice.
+- **Toolchain skills other than `uv`** (Bazel and the like) — they belong in the repo that uses the toolchain, as project skills or a private plugin.
 - **A debugging skill** — earned when skill feedback shows debugging going wrong.
 - **References for a language other than Python** — earned by the first non-Python project; the scope is Python data, CLI, API and dashboards (2026-11-10).
 - **CI for projects** — declined again 2026-11-10 as marginal for one-machine unattended tools; earned by a project with a second contributor or a deploy.
@@ -70,17 +76,20 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 
 ### Data flow
 
-1. **Skill source** — `skills/<name>/SKILL.md` in this repo, edited only in the skills stream. (IO)
-2. **Wiring** — `~/.claude/skills` and `~/.claude/CLAUDE.md` are symlinks into the repo, so a commit takes effect in the next session. (IO)
-3. **Loading** — every session loads `CLAUDE.md` and each description; a skill's body loads when its description or `CLAUDE.md`'s list triggers it, a reference when the body points there.
+1. **Skill source** — `plugins/<plugin>/skills/<name>/SKILL.md` in this repo, edited only in the skills stream. (IO)
+2. **Wiring** — either the plugins are installed from the marketplace, or `~/.claude/skills` is a symlink to the repo's `skills/` folder of links into the plugins and `~/.claude/CLAUDE.md` a symlink to the repo's; never both on one machine, which would load every skill twice. (IO)
+3. **Loading** — every session loads each description and the always-on list (`CLAUDE.md` when symlinked, each installed plugin's context file otherwise); a skill's body loads when its description or the list triggers it, a reference when the body points there.
 4. **Applying** — Claude follows the loaded skills in real work in other repos.
-5. **Feedback** — a skill that steers wrong becomes a skill-feedback issue here. (IO)
+5. **Feedback** — a skill that steers wrong becomes skill feedback on the owning plugin's repository. (IO)
 6. **Sweep** — `review-plugin` works the issues, then checks for drift, and commits each skill's fixes, which loops back to stage 1.
 
 ### Outputs
 
-- **`skills/<name>/SKILL.md`** — frontmatter `name` and `description`, then a body laid out by `write-skills`; read by Claude.
-- **`skills/<name>/references/*.md`** — language or topic depth, per `write-skills`.
+- **`plugins/<plugin>/skills/<name>/SKILL.md`** — frontmatter `name` and `description`, then a body laid out by `write-skills`; read by Claude.
+- **`plugins/<plugin>/`** — `.claude-plugin/plugin.json`, `hooks/` (the context file and the script that prints it; `meta` adds the feedback rule and the Stop hook) and `evals/` (one trigger case per skill).
+- **`.claude-plugin/marketplace.json`** — lists the five plugins by relative path.
+- **`skills/<name>`** — a relative symlink to the skill in its plugin, for the symlink wiring.
+- **`plugins/<plugin>/skills/<name>/references/*.md`** — language or topic depth, per `write-skills`.
 - **`CLAUDE.md`** — Work, Answers and the mandatory Skills list; read by Claude every session.
 - **`README.md`** — for humans: what each skill does, setup, configuration, feedback, evaluation.
 - **`PLAN.md`** — this file.
@@ -88,19 +97,36 @@ Done looks like: a real project planned, built and reviewed with these skills, n
 
 ### Interface
 
+Installed, any subset:
+
+```bash
+claude plugin marketplace add henrymckay/claude
+claude plugin install project@henrymckay
+```
+
+Symlinked, where the skills are authored or plugins cannot be installed:
+
 ```bash
 git clone https://github.com/henrymckay/claude.git
 ln -s /path/to/claude/skills ~/.claude/skills
 ln -s /path/to/claude/CLAUDE.md ~/.claude/CLAUDE.md
 ```
 
-Skills trigger from their descriptions or by name (`/plan-project`); "review the skills" runs `review-plugin`.
+Skills trigger from their descriptions or by name (`/plan-project`, or `/project:plan-project` when installed); "review the skills" runs `review-plugin`.
+
+| Plugin | Skills |
+|---|---|
+| `meta` | `choose-model`, `review-plugin`, `write-skills`, the feedback rule and Stop hook |
+| `project` | `plan-project`, `build-project`, `review-project`, `use-git`, `write-markdown` |
+| `code` | `be-functional`, `be-oop`, `write-python`, `write-tests`, `use-polars` |
+| `scaffold` | `setup-python`, `structure-python`, `write-entry-points` |
+| `operate` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
 
 ### Runs on
 
-- **The skills and `CLAUDE.md`** — the user's machine, symlinked from `~/.claude`; nothing is deployed.
+- **The skills and `CLAUDE.md`** — the user's machine, symlinked from `~/.claude`; another machine installs plugins from the marketplace, or symlinks; nothing is deployed.
 - **The weekly sweep** — a Claude Code cloud scheduled task (`trig_01NmQMC42vGPjqQEDE8XrgzQ`), Mondays 02:00 UTC on Opus, cloning the public repo and opening one PR; no connectors; checked 2026-11-10.
-- **The Stop hook** — `~/.claude/settings.json` on the user's machine, from `hooks/stop-skill-feedback.json`.
+- **The Stop hook** — `~/.claude/settings.json` on the user's machine, copied from `plugins/meta/hooks/hooks.json`; an installed `meta` plugin carries it itself.
 - **The trigger suite** — `claude plugin eval` on the user's machine, or in the sweep where the CLI is available.
 
 ### Errors
@@ -113,7 +139,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 
 ### Decisions
 
-- **D1 Symlinks into `~/.claude`** over an installable plugin or symlinking all of `~/.claude` — no namespacing of names, and machine-local state stays out of git.
+- **D1 Symlinks into `~/.claude` on the authoring machine** over installing the plugins there — bare names, live edits and one personal `CLAUDE.md`; superseded as the only wiring by D30 (2026-11-11).
 - **D2 Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default; the scheduled sweep's weekly PR is the one exception.
 - **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, and not per-machine.
 - **D4 The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
@@ -135,13 +161,18 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **D20 House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver or adapter whose framework or fan-out needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
 - **D21 Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
 - **D22 MotherDuck connects with `duckdb.connect("md:<db>")` and the token in `motherduck_token`**, lower case per its docs (checked 2026-11-10); A1 had it upper case.
-- **D23 The trigger suite lives at `evaluate/triggers/`**, named by `.claude-plugin/plugin.json`'s `experimental.evals`, beside the brief-and-answers evaluations; the manifest sits at the repo root, outside `~/.claude/skills/`, so the loader never sees it and nothing is namespaced.
+- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the default folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin; the brief-and-answers evaluations stay under `evaluate/`.
 - **D24 The scheduled sweep lands as one weekly PR**; an on-demand sweep run in a session commits to `main` — the PR is the user's review point, and cloud tasks push to a branch by default.
 - **D25 A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
 - **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
 - **D27 The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
 - **D28 The weekly sweep runs on Opus** on Mondays at 02:00 UTC (06:00 Dubai) with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
 - **D29 Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
+- **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — the user installs some at work and not others; one repo keeps one tracker and one sweep (see Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace, checked 2026-11-11.
+- **D31 The groups**: `meta` (working with Claude Code itself), `project` (the lifecycle plus `use-git` and `write-markdown`, which any repo needs), `code` (style, toolchain-free), `scaffold` (set-up and structure, where `uv` lives) and `operate` (a project meeting the real world; personal free-tier picks, so not for work). `deploy-project` sits in `operate` because its body is host picks; `plan-project`'s Runs on is the lifecycle's deployment step. The name `claude` is reserved by the validator, hence `meta`.
+- **D32 Always-on instructions per plugin are a context file printed by a SessionStart hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` keeps the same lines for the symlink wiring, and `review-plugin` checks the two agree.
+- **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `meta`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker. Issues remain the default.
+- **D34 A toolchain's commands live in the skill that owns it** — `uv` in `setup-python`, with `operate` building on it; `project` and `code` name a `uv` command only as that toolchain's example, so they hold under Bazel or anything else.
 
 ## Delivery
 
@@ -154,10 +185,11 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - **R5** — `evaluate/prompt.md` present, no briefs under `evaluate/`.
 - **R6** — the gap probe re-run (a fresh agent plans the generic nightly fetch → store → metrics → CLI → API → dashboard tool from the skills alone) leaves no decision open that a skill should settle, and names no rule it would have followed anyway.
 - **R7** — a plan written with plan-project shows the decision list with sources; the trio's files each state when and how to deviate from a skill; a review can flag a house pick as wrong for the project.
-- **R8** — the hook fires and files on a seeded gap; the scheduled task runs and opens a PR; `claude plugin eval . --ablation none` passes every case under `evaluate/triggers/`.
+- **R8** — the hook fires and files on a seeded gap; the scheduled task runs and opens a PR; `claude plugin eval . --ablation none`, run in each plugin folder, passes every case under its `evals/`.
 - **R9** — `choose-model` exists; plan-, build-, review-project and review-plugin carry the ladder in their frontmatter; a subagent spawned by a review goes out on the ladder's model.
 - **R10** — `deploy-project` exists with a verified free-tier pick per artefact, `plan-project`'s skeleton has a Runs on section, and the gap probe (R6) leaves no deployment decision open.
 - **R11** — `send-messages` exists with a working send for each house channel, and `run-unattended` points at it for the alert it deferred.
+- **R12** — `claude plugin validate` passes on the marketplace and each plugin; a session loaded with `--plugin-dir` receives the context file and sees the skills; every link under `skills/` resolves; each plugin's trigger suite passes; no skill or hook names this repository.
 
 ### Milestones
 
@@ -173,13 +205,14 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 - [x] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort` (2026-11-10).
 - [x] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open (2026-11-11).
 - [x] **M13 Send messages** — R11; done when `send-messages` is committed with its sends run, and `run-unattended` and `CLAUDE.md` point at it (2026-11-10).
+- [x] **M14 Split into plugins** — R12; done when its verification passes and the README, the weekly sweep and memory describe the new layout (2026-11-11).
 - [ ] **M4 First real build** — R1; done when `market-data` is planned, built and reviewed with the trio in its own session, and its skill feedback is worked through by review-plugin; it runs after M10.
 
 ## Open
 
 ### Assumptions
 
-- **A2** The cloud scheduled task has an authenticated `gh` — undocumented; the first run tests it, and if absent the sweep reads issues through the GitHub REST API with the task's token.
+- **A2** Resolved 2026-11-10 by the first run: the cloud task's `gh` is authenticated for REST but GraphQL is blocked, so the sweep lists issues with `gh api` and can open a pull request; vendor pages outside the proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep.
 
 ### Questions
 

@@ -1,0 +1,17 @@
+{
+  "name": "meta",
+  "description": "Work with Claude Code itself: choose the model for each stage, author skills, and review any plugin for drift, with a hook that captures skill gaps as they surface.",
+  "version": "0.1.0",
+  "author": {
+    "name": "henrymckay"
+  },
+  "repository": "https://github.com/henrymckay/claude",
+  "userConfig": {
+    "feedback": {
+      "type": "string",
+      "title": "Skill feedback destination",
+      "description": "Where Claude records a skill gap it hits: issues (a GitHub issue on the owning plugin's repository), file (~/.claude/skill-feedback.md, for a machine whose work must not reach a public tracker) or off.",
+      "default": "issues"
+    }
+  }
+}

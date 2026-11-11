@@ -1,0 +1,12 @@
+{
+  "name": "henrymckay",
+  "owner": { "name": "henrymckay" },
+  "metadata": { "description": "Skills that let Claude Code plan, build, review and run a project from a few prompts, and keep the skills themselves improving." },
+  "plugins": [
+    { "name": "meta", "source": "./plugins/meta", "description": "Choose models, author skills, review any plugin for drift, capture skill gaps." },
+    { "name": "project", "source": "./plugins/project", "description": "Plan, build and review a project; git and Markdown conventions." },
+    { "name": "code", "source": "./plugins/code", "description": "Functional and object-oriented style, Python, tests, Polars." },
+    { "name": "scaffold", "source": "./plugins/scaffold", "description": "Set up and structure a Python application and its entry points." },
+    { "name": "operate", "source": "./plugins/operate", "description": "Data storage, unattended jobs, free-tier deployment, messaging." }
+  ]
+}

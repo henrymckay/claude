@@ -2,7 +2,7 @@
 .idea/
 skills/synced/
 .claude/
-evaluate/triggers/results/
+plugins/*/evals/results/
 __pycache__/
 .ruff_cache/
 .pytest_cache/

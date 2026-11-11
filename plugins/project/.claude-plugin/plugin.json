@@ -1,0 +1,7 @@
+{
+  "name": "project",
+  "description": "Take a project from a loose conversation to a reviewed build: plan it in one PLAN.md, build it milestone by milestone, review it, with the git and Markdown conventions any repo needs.",
+  "version": "0.1.0",
+  "author": { "name": "henrymckay" },
+  "repository": "https://github.com/henrymckay/claude"
+}

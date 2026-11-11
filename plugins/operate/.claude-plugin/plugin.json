@@ -1,0 +1,7 @@
+{
+  "name": "operate",
+  "description": "Run a project in the real world: where its data lives, scheduled jobs nobody watches, free-tier hosting, and messages back to its owner.",
+  "version": "0.1.0",
+  "author": { "name": "henrymckay" },
+  "repository": "https://github.com/henrymckay/claude"
+}
