@@ -4,11 +4,12 @@ description: >-
   How to write correct, idiomatic Polars (the Python DataFrame library) — the
   expression API, lazy vs eager execution, keeping every group in one
   long-form frame instead of looping, ordering a window with order_by rather
-  than a prior sort, calendar windows against row windows and the defaults to
-  pin, joining without silently multiplying rows, join_asof within groups, the
-  silent traps around nulls, NaN and dtypes, naming frames and pipe steps, and
-  the mental-model shifts coming from pandas. Load it before the first line of
-  any Polars code, even a snippet answered inline. Use whenever working with
+  than a prior sort, a reverse cumulative for every later row, calendar
+  windows against row windows and the defaults to pin, joining without
+  silently multiplying rows, join_asof within groups, the silent traps around
+  nulls, NaN and dtypes, naming frames and pipe steps, and the mental-model
+  shifts coming from pandas. Load it before the first line of any Polars code,
+  even a snippet answered inline. Use whenever working with
   Polars DataFrames or LazyFrames, writing data transformations or analytics
   in Polars, converting pandas code to Polars, joining or reshaping between
   long and wide, writing a rolling or windowed computation, or reading a query
@@ -161,6 +162,20 @@ runs = frame.with_columns(
 
 `.fill_null(value=True)` makes each group's first row start a run; without it the comparison against a null shift is null, so that row's `run_id` is null and it drops out of every window keyed on it.
 The `order_by` on each `.over` is what makes `.shift` and `.cum_sum` read the rows in order; the frame itself is never sorted.
+
+**A cumulative over every later row is the same window read backwards**: `reverse=True` on the cumulative under the same ascending `order_by`, after a `shift(n=-1)` that leaves the row itself out.
+
+```python
+remaining = payments.with_columns(
+    polars.col("amount")
+    .shift(n=-1, fill_value=0)
+    .cum_sum(reverse=True)
+    .over("account", order_by="day")
+    .alias("still_to_come")
+)
+```
+
+`fill_value` is the operation's identity, 0 for a sum and 1 for a product; a bare shift leaves each group's last row null, where the answer is that nothing is still to come.
 
 **A grouping axis is data however it arrives** — rows from a fetch, a list the caller passed, or a set the problem fixes (three scenarios, four quartiles).
 The closed set is easiest to miss, because it feels like structure.
