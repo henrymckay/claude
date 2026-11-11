@@ -127,26 +127,8 @@ A case scoring 0 at no cost with an API or timeout note never reached the model,
 cd plugins/write-code && claude plugin eval . --ablation none --no-publish --trust-plugin
 ```
 
-## 🎯 Evaluate
-
-Test how well the skills guide a build.
-Have Claude build from a `brief.md` using the skills alone.
-Then have it grade itself against `answers.md`.
-Fix each divergence in the skill that let it through, or in the brief if the requirement was never stated.
-Finish by bringing the build into line with those fixes.
-Drive the whole run from [`prompt.md`](evaluate/prompt.md), with its three placeholders filled in.
-
-Order every brief and every answers file the same way.
-
-- Briefs open with the domain, then what varies about it, then how the input arrives.
-- Briefs close with commands, output, options, examples and working style.
-- Answers argue before they declare.
-- Answers run shape, what the build earns, what should not exist yet, the declarations, the boundary, failure, the surface, verification and wrong turns.
-- Omit a section a file has nothing to say about rather than padding it out.
-
-Put each evaluation in its own folder, `evaluate/<name>/`, holding a `brief.md` and an `answers.md`.
-None are checked in at present.
-Chain builds, each carrying on from the last, so structure scaffolded too early shows up as a failure rather than a defensible choice.
+The trigger suites only show that a skill loads.
+A trial build shows whether it steers well: a real project planned, built and reviewed from one prompt with nobody answering, whose skill feedback the next sweep works through.
 
 ## 📚 Learn more
 
@@ -159,7 +141,7 @@ Chain builds, each carrying on from the last, so structure scaffolded too early 
 
 ## 🤝 Contribute
 
-Contribute to `plugins/`, `evaluate/`, `CLAUDE.md`, `PLAN.md` and this README.
+Contribute to `plugins/`, `CLAUDE.md`, `PLAN.md` and this README.
 
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.

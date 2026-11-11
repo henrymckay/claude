@@ -189,9 +189,9 @@ Numbers are stable; the groups are for reading.
 - **D24 Every sweep lands as one pull request**, scheduled or run in a session *(proposed change, issue 42; the user: "even a session sweep should probably be a PR")* — the pull request is the user's review point; was: a session sweep committed to `main`.
 - **D45 The sweep merges its own pull request only when every trigger suite passes and no rule was cut, generalised or left for the user; otherwise the user merges** *(proposed, issue 42)* — over the user merging every sweep, which keeps a routine sweep waiting on a read nobody needs; cost: a rule change the user never reads when the sweep judged it routine.
 - **D28 The weekly sweep runs on Opus** on Mondays at 02:00 UTC with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
-- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the default folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin; the brief-and-answers evaluations stay under `evaluate/`.
+- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the default folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin.
 - **D39 A requirement is verified by behaviour** over by a skill existing *(proposed)* — the ladder's milestone was ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line below names a run and what it must show, and carries its status.
-- **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8.
+- **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8; the folder and the README's Evaluate section were removed on 2026-11-12 (issue 57).
 
 **Models**
 
