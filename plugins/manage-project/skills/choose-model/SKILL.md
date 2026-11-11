@@ -1,21 +1,21 @@
 ---
 name: choose-model
 description: >-
-  How to pick the model, effort and mode for each stage of a project or of
-  this plugin's own upkeep, with an eye on cost — the ladder (Opus or Fable
-  for planning, reviews and skill edits; Sonnet for build milestones, cold
-  reads and research; Haiku for graders, hooks and trigger evals), the
+  How to pick the model, effort and mode for each stage of a project or of a
+  skills repo's upkeep, with an eye on cost — the ladder (Opus or Fable for
+  planning, reviews and skill edits; Sonnet for build milestones, cold reads
+  and stand-alone research; Haiku for graders, hooks and trigger evals), the
   mechanics Claude controls itself (a skill's frontmatter sets the turn's
-  effort and names its model, the Agent tool sets each subagent's, opusplan splits plan
-  from execution), holding a stage on its model whatever the session started
-  on by always handing it to a subagent, and the mechanics only the user sets
-  (/model, /effort, /fast),
-  the background model, current prices per million tokens, and keeping context
-  lean. Use whenever starting a stage of work, spawning a subagent, writing or
-  editing a skill that should run on a particular model, or when the user asks
-  which model to use, how to cut token cost, or whether to turn on fast mode —
-  even if they just say "this is expensive", "use a cheaper model" or "which
-  model for this". Layers on plan-project, build-project, review-project and
+  effort but not the model serving it, the Agent tool sets each subagent's,
+  opusplan splits plan from execution), holding a stage on its model whatever
+  the session started on by always handing it to a subagent, the mechanics
+  only the user sets (/model, /effort, /fast), the background model, current
+  prices per million tokens, and keeping context lean. Use whenever starting
+  a stage of work, spawning a subagent, writing or editing a skill that
+  should run on a particular model, or when the user asks which model to
+  use, how to cut token cost, or whether to turn on fast mode — even if they
+  just say "this is expensive", "use a cheaper model" or "which model for
+  this". Layers on plan-project, build-project, review-project and
   review-plugin, which each put their own stage on the ladder.
 ---
 
@@ -33,7 +33,7 @@ Three mistakes account for most wasted spend: running every stage on the largest
 |---|---|---|---|
 | Planning, reviewing, editing skills, ruling on a challenge | `opus` (`fable` for the hardest design) | high | One wrong call here is rebuilt across every milestone; the cost is paid once |
 | Build milestones | `sonnet` | medium | The plan has made the decisions; the gate catches what the model misses |
-| Cold reads, gap probes, web research | `sonnet` | medium | Many of them run; each returns conclusions, not files |
+| Cold reads, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
 | Graders, hooks, trigger evals | `haiku` | low | A yes/no over a short text, run on every turn or every case |
 
 A model one rung up is earned by a stage that keeps failing its gate on the cheaper one, recorded under Decisions with the gate that failed; a rung down is never earned for planning or review.
@@ -54,7 +54,7 @@ So a stage never trusts the reported model, the frontmatter or the user's `/mode
 - **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
 The Agent tool's `model` is the one setting that decides which model serves the work.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
-- **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself, and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
+- **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself — which stops it passing the stage on whole, not spawning the cold read or research the stage's skill calls for — and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
 A session briefed that way works directly; without that line it would load the skill and hand the stage on again.
 - **Check what comes back against the repo** — the suite, the commits, the plan's headings — before relaying it or handing over the next unit; a subagent reports a failed gate in the same register as a passed one.
 - **Read the model from the transcript when it matters**: each assistant message there records the model that served it, the only evidence that a stage ran where the ladder puts it.
@@ -83,4 +83,3 @@ Check the prices against the current pricing page before quoting them; a release
 
 - **Delegate the reading, keep the conclusion.** A subagent that reads twenty files returns a page; the same twenty files read in the main session stay in its context for the rest of the day.
 - **Compact before a long build**, after the plan is approved, so the build starts from the plan and the code, not from the conversation that produced them.
-- **Keep a description to what decides the trigger and the body's scope**, as `write-skills` says; every description is loaded on every turn of every session, so a rule restated there is paid thousands of times.
