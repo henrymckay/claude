@@ -6,22 +6,24 @@ description: >-
   for planning, reviews and skill edits; Sonnet for build milestones, cold
   reads and research; Haiku for graders, hooks and trigger evals), the
   mechanics Claude controls itself (a skill's frontmatter sets the turn's
-  model and effort, the Agent tool sets each subagent's, opusplan splits plan
-  from execution) and the ones only the user sets (/model, /effort, /fast),
+  effort and names its model, the Agent tool sets each subagent's, opusplan splits plan
+  from execution), holding a stage on its model whatever the session started
+  on by always handing it to a subagent, and the mechanics only the user sets
+  (/model, /effort, /fast),
   the background model, current prices per million tokens, and keeping context
   lean. Use whenever starting a stage of work, spawning a subagent, writing or
   editing a skill that should run on a particular model, or when the user asks
   which model to use, how to cut token cost, or whether to turn on fast mode —
   even if they just say "this is expensive", "use a cheaper model" or "which
   model for this". Layers on plan-project, build-project, review-project and
-  review-plugin, whose frontmatter applies the ladder.
+  review-plugin, which each put their own stage on the ladder.
 ---
 
 # Choose the model
 
 Which model, effort and mode each stage of work runs on, chosen for the stage rather than left at whatever the session started with.
-The project skills apply it through their frontmatter — `plan-project`, `review-project` and `review-plugin` pull Opus at high effort, `build-project` Sonnet at medium — and this skill says why and how to go further.
-Three mistakes account for most wasted spend: running every stage on the largest model, running a plan or a review on the cheapest, and relying on the user to switch by hand at each stage, which they forget.
+`plan-project`, `review-project` and `review-plugin` run on Opus at high effort and `build-project` on Sonnet at medium, each putting itself there; this skill says why, how, and how to go further.
+Three mistakes account for most wasted spend: running every stage on the largest model, running a plan or a review on the cheapest, and trusting a skill's frontmatter or the user's `/model` to hold a stage on its rung, when the first is not served and the second is forgotten.
 
 **In an existing project, ask first.** Where a repo already pins a model in its settings, check with the user whether to keep it or apply the ladder, and prefer the ladder unless they choose to keep theirs.
 
@@ -38,11 +40,24 @@ A model one rung up is earned by a stage that keeps failing its gate on the chea
 
 ## Set the model from inside Claude
 
-- **A skill's frontmatter sets the turn's model and effort**: `model: opus` and `effort: high` apply from the moment the skill is invoked to the end of that turn, then the session's own model resumes.
-This is how the project skills apply the ladder without the user touching `/model`; a skill that forks (`context: fork`) applies them to its subagent instead.
-- **A subagent takes its own model and effort** from the Agent tool's `model` (`sonnet`, `opus`, `haiku`, `fable`) and `effort` parameters, so a cold read, a gap probe or a research run goes out on Sonnet whatever the session is on, and a grader on Haiku.
+- **A skill's frontmatter sets the turn's effort, and its model at most**: `model: opus` and `effort: high` are documented to apply from the moment the skill is invoked to the end of that turn, the session's own resuming at the next prompt.
+The effort does and the model is not relied on (Hold a stage on its model, Claude Code 2.1.322); a skill that forks (`context: fork`) applies both to a subagent that sees none of the conversation.
+- **A subagent takes its own model and effort** from the Agent tool's `model` (`sonnet`, `opus`, `haiku`, `fable`) and `effort` parameters, which outrank the agent's definition, `CLAUDE_CODE_SUBAGENT_MODEL` and the session's model, so a cold read, a gap probe or a research run goes out on Sonnet whatever the session is on, and a grader on Haiku.
 - **`opusplan` is the session mode when no project skill is driving**: Opus in plan mode, Sonnet once the plan is approved, switching at the plan-mode boundary.
 - **The background model runs the hooks and prompt-type checks**; pin it with `ANTHROPIC_DEFAULT_HAIKU_MODEL` in the `env` block of `settings.json` when a hook must run on a specific model.
+
+## Hold a stage on its model
+
+The ladder holds whatever model the session started on, and a session cannot tell which model is serving it: loading a skill whose frontmatter names a model changes the model the session is *told* it is on, while in the runs measured, headless and interactive, every message went on being served by the session's default.
+So a stage never trusts the reported model, the frontmatter or the user's `/model`; it places itself.
+
+- **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
+The Agent tool's `model` is the one setting that decides which model serves the work.
+- **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
+- **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself, and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
+A session briefed that way works directly; without that line it would load the skill and hand the stage on again.
+- **Check what comes back against the repo** — the suite, the commits, the plan's headings — before relaying it or handing over the next unit; a subagent reports a failed gate in the same register as a passed one.
+- **Read the model from the transcript when it matters**: each assistant message there records the model that served it, the only evidence that a stage ran where the ladder puts it.
 
 ## Leave to the user
 
