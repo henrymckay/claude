@@ -2,10 +2,13 @@
 name: run-unattended
 description: >-
   The operational side of a job that runs on a schedule with nobody watching —
-  which day a nightly run fetches, the overlap lock, no silent catch-up and
-  backfill by range, exit codes for every command, a source's tolerance for
+  which day a nightly run fetches, the overlap lock and the run that finds it
+  held, no silent catch-up and backfill by range through the nightly's own
+  path, per day or per range as the source serves, exit codes for every
+  command, a source's tolerance for
   failed items and a partial fetch, the status command as the health check and
-  its own scheduled unit once an alert is earned, the job's own rotated log at
+  its own scheduled unit once an alert is earned, the scheduler's own
+  failed-run mail as the signal until then, the job's own rotated log at
   INFO on a machine and plain lines on standard error on Actions, plus the
   scheduler's capture, picking the scheduler (a launchd agent on macOS, a
   systemd timer on Linux, GitHub Actions in the cloud) and what each does with
@@ -49,7 +52,7 @@ Size the hour from when the source publishes, not from midnight: a feed that pos
 
 - **Lock the data directory with `fcntl.flock` on `<data_dir>/.lock`**, taken non-blocking at the top of every command that writes — `nightly`, `fetch`, `compute`, a backfill — and held to the end, from one `held()` in `adapt/lock.py` (see `structure-python`).
 The kernel releases it when the process dies, where a PID file outlives a crash and blocks every later run until someone deletes it; `fcntl` is Unix-only, which the house targets are.
-- **When the lock is held, log one line and exit 0.** The run in progress is the one that counts; a non-zero exit would make the scheduler record a failure and a restart policy fire a third copy.
+- **When the lock is held, log one line, write no manifest row, print nothing on standard output and exit 0.** The run in progress is the one that counts and writes the night's row; a row from the run that lost would be a second record of one night, and a non-zero exit would make the scheduler record a failure and a restart policy fire a third copy.
 
 ```python
 @contextlib.contextmanager
@@ -64,13 +67,14 @@ The second holder gets `BlockingIOError`; catch it in the driver, where the exit
 
 - **Never catch up on missed nights inside the nightly command.** A job that notices a gap and fills it hides that the machine was off, and a gap of a month becomes a surprise bulk fetch against someone else's rate limit.
 Expose `fetch --from --to` for backfill, and let `status` report the gap.
-- **Make backfill the same code path** as the nightly, called once per day, so a day fetched late lands in the same partition as a day fetched on time.
+- **Make backfill the same code path as the nightly**, so a day fetched late lands in the same partition as a day fetched on time: called once per day where the source answers one day per request, and once per range where its endpoint serves an item's whole range in one.
+A per-day loop over a ranged endpoint multiplies the requests by the days asked for, against someone else's rate limit, so there the fetch port takes a first and a last day (`structure-python`, Code), the store splits the answer into day partitions, the manifest row carries both days (`store-data`), and the nightly, `--days-back` and a backfill are one call with different bounds.
 
 ## Report the outcome
 
 - **Exit `0` when every source stored, `1` when any is `partial`, `failed` or `skipped`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
 A scheduler and a shell both branch on non-zero; the split between 1 and 2 tells a reader of the log whether to look at the source or at the machine.
-These codes hold for every command, interactive or scheduled.
+These codes hold for every command, interactive or scheduled; the one run that stores nothing and still exits 0 is the one that found the lock held (above).
 - **A source absorbs as many failed items a night as its YAML's `tolerance`** (default 0; `structure-python`, Configuration): at or below it the source is `stored` with the count in the manifest's `failed_items`, above it `partial`.
 An item that dies for good would otherwise turn every night red until someone edits `items.csv`; the tolerance says how many such losses are routine, and the manifest still counts each.
 Rows rejected by validation alone leave a source `stored`, since the quarantine already counts them.
@@ -81,6 +85,7 @@ A log line is not a record — nothing queries it.
 - **`status` reads the manifest and exits 1 when any source is stale**, printing which and since when; it is the health check, so anything that can run a command can watch the job.
 Define stale per source from how often it publishes, with a default of two missed nights.
 - **No notification until the plan requires one or the first outage goes unnoticed**, and say so in the README: until then the exit code, the manifest and a dashboard that shows its own staleness are the signals, and an alert costs a credential on the machine.
+On Actions the signal with no credential and no code is GitHub's own mail for a failed run, which `nightly` exits 1 into, as does `status` once it is scheduled: it goes to whoever last edited the workflow's cron, only if their notification settings send Actions mail, on every failed run rather than a change of state, and not at all once the schedule is disabled, so it counts as the signal, not as the alert, and the plan names it under Decisions when it is relied on.
 When one is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit a few hours after the nightly: a night that never ran sends nothing of its own, so only a separate run can notice it.
 
 ## Log
