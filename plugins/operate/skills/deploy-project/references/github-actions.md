@@ -100,7 +100,7 @@ jobs:
 - The commit takes the night's `records/` and `rejected/` partitions, one new file each per source, plus `metrics.parquet`, `runs.parquet` and `alerts.json`, rewritten whole; keep them out of `.gitignore` or the commit is empty.
 `raw/` and `logs/` are never committed: the pages go up as an artifact kept seven days, enough to re-parse a week after a parser fix (`store-data`), and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.
-- The `if: failure()` step alerts only when the run step itself did not fail, since the driver alerts on its own failures (`send-messages`); it covers an install that fails before the run and a commit that fails after it.
+- The `if: failure()` step and its `NTFY_TOPIC` secret are added once an alert is earned (`run-unattended`, Report the outcome); it alerts only when the run step itself did not fail, since the driver alerts on its own failures (`send-messages`); it covers an install that fails before the run and a commit that fails after it.
 - `permissions: contents: write` is what lets `GITHUB_TOKEN` push; the push triggers no workflow, so a `push` trigger on another workflow never sees it.
 - `site` needs `nightly`, so the page is never from a different night than the data, and runs on `!cancelled()`, so a partial night still publishes what it stored.
 Its checkout names `ref: ${{ github.ref_name }}`, because the default is the commit the run started from, which lacks the data the nightly job just pushed.
