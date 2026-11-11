@@ -179,7 +179,7 @@ Skills trigger from their descriptions or by name (`/plan-project`); "review the
 
 ### Assumptions
 
-- **A2** The cloud scheduled task has an authenticated `gh` — undocumented; the first run tests it, and if absent the sweep reads issues through the GitHub REST API with the task's token.
+- **A2** Resolved 2026-11-10 by the first run: the cloud task's `gh` is authenticated for REST but GraphQL is blocked, so the sweep lists issues with `gh api` and can open a pull request; vendor pages outside the proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep.
 
 ### Questions
 
