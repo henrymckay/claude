@@ -110,7 +110,7 @@ Separate defects from judgement calls and challenges, and list the checks skippe
 
 Fix the defects without waiting, in ranked order; a judgement call a precedent settles is fixed too, citing it (`make-decisions`), while one with no precedent, a challenge or a change to a requirement or decision in `PLAN.md` waits for the user's reply to the report (see `plan-project`).
 
-- **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action — creating a repository, publishing, spending money; filing skill feedback is not one.
+- **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action — creating a repository, publishing, spending or moving money, acting on an account; filing skill feedback is not one.
 - **A bug gets a regression test** that fails before the fix and passes after.
 - **Commit each fix on its own** (see `use-git`), so one can be reverted alone.
 - **Re-run every check at the end**, since one fix can break what another check passed.
