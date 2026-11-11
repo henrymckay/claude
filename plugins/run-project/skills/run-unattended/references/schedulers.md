@@ -21,6 +21,7 @@ Keep them in the repo under `deploy/` and give the README the install line shown
     <string>--project</string>
     <string>/Users/me/Git/myapp</string>
     <string>--frozen</string>
+    <string>--no-dev</string>
     <string>myapp-cli</string>
     <string>nightly</string>
     <string>--log-file</string>
@@ -50,7 +51,7 @@ Keep them in the repo under `deploy/` and give the README the install line shown
 </plist>
 ```
 
-- `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in British Summer Time; a missed interval runs once on wake.
+- `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in any zone up to two hours ahead of it; a missed interval runs once on wake.
 - `StandardOutPath` and `StandardErrorPath` catch the summary row and anything that escapes before logging is configured; the job's own log is the `--log-file`, rotated by the handler, since launchd never rotates.
 - `WorkingDirectory` is the repo, so a relative path resolves there; the settings find the `.env` by its absolute path, and secrets come from it, not from `EnvironmentVariables`.
 - The two `/Users/me/...` paths are the ones the README tells a new machine to edit.
@@ -86,7 +87,7 @@ Description=Fetch yesterday's readings
 Type=oneshot
 WorkingDirectory=/home/me/Git/myapp
 EnvironmentFile=/home/me/.config/myapp/env
-ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen myapp-cli nightly --log-file /home/me/.local/share/myapp/logs/nightly.log --log-level info
+ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen --no-dev myapp-cli nightly --log-file /home/me/.local/share/myapp/logs/nightly.log --log-level info
 ```
 
 - `OnCalendar` takes a zone suffix, so the hour is stated in UTC directly; `Persistent=true` runs a missed firing at the next boot.
