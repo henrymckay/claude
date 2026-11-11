@@ -79,7 +79,7 @@ Every skill opens with these parts, in order:
 - **Use punchy section headings**: imperative for an action (`Pick a layout`), a noun for a catalogue (`Patterns`), sentence case.
 - **Order by dependency.** Sections that define vocabulary come before those that spend it, so a reader never meets a term before its definition; synthesising sections (`Pick a layout`, `Run`) trail.
 - **Cut what Claude does unprompted.** For each rule ask whether Claude would follow it with no skill loaded — pure functions, no bare `except`, atomic commits — and cut it if so; it spends the reader's attention that the corrections, house picks and non-obvious traps needed, and it reads as reasonable advice, so word counts never catch it.
-Where the answer is in doubt and a run is cheap, settle it with a control: give a fresh subagent the case with the rule left out, and add the rule only if the control gets it wrong.
+Where the answer is in doubt, no real run has shown the failure and a control is cheap, settle it with one: give a fresh subagent the case with the rule left out, and add the rule only if the control gets it wrong; a failure seen in real work outranks a clean control, which runs without the load that caused it.
 - **State each rule exactly once.** A rule stated twice drifts as soon as one copy is edited, and a reader who meets both wonders whether they differ.
 Fold one-line points into a catalogue section rather than giving them a stub heading.
 - **Make the why an observable consequence.** "Define `__all__` to make the API explicit" gives a purpose nobody can check; "mark a re-export with a redundant alias, or the linter reads it as an unused import" says what happens, and a reader can watch it happen.
