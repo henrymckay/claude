@@ -83,6 +83,7 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 ## Check the instruction files
 
 - **The always-on skill list matches the skills both ways**, and each entry agrees with that skill's description: the list is each plugin's `hooks/context.md`, printed at session start, and the owner's `CLAUDE.md` where the skills are symlinked instead of installed; where both exist they carry the same line for a skill.
+Where they also map each plugin of a marketplace to its skills, so a plugin installed alone can name what it lacks, the map is identical in every copy and matches the plugin folders.
 - **`CLAUDE.md` carries no defaults** (see `write-markdown`).
 - **Read the README and `CLAUDE.md` whole**, never only the lines a fix touched.
 The README lists every skill, each described as its skill describes itself, and its other sections — setup, configuration, feedback — are still true against the repo and against the plan: a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
