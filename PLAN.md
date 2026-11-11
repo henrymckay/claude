@@ -242,7 +242,7 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 - [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
 - [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, `evaluate/` is removed (D40) and the first release is tagged (D41).
 - [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
-- [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
+- [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a dashboard over `market-data`'s store (the user's choice, 2026-11-11: it exercises a dashboard, a deployment, SQL and a message, which the first build did not) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
 
 ## Open
@@ -255,7 +255,6 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 ### Questions
 
 - **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q5** What is the second trial build? — recommended: a small dashboard over `market-data`'s store, since it exercises what the first did not (a dashboard, a deployment, SQL, a message) on data that already exists; an accounting or tax tool is the alternative and tests a new domain instead; blocks M18.
 - **Q6** What happens to `market-data`? — its plan is unsigned with eight questions open, and nothing is pushed; recommended: keep it as the store Q5's dashboard reads, answer its questions when convenient, and decide on a private GitHub repository then; blocks M18 only if Q5 is the dashboard.
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — only the user can find out; blocks M17's second-machine check.
 
