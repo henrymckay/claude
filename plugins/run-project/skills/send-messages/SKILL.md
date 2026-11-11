@@ -74,7 +74,7 @@ A workspace made for one job is a second inbox nobody opens.
 
 - **An alert is one line** plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
 - **A digest carries the counts `status` prints** — rows per source, rejected rows, the last day stored — with the chart attached, so the message and the command agree.
-- **The body carries no secret, and of private or personal data only counts** (`secure-project`): a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
+- **The body carries no secret, no personal data, and of private data only counts** (`secure-project`): a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
 
 ## Send from the job
 
@@ -136,7 +136,7 @@ A failed send raises from the app's `error/` package like any adapter (`write-py
 
 ## Keep the secret out
 
-**The topic, bot token or app password is a secret**, kept and rotated as `secure-project`'s Keep secrets out says; the ntfy topic is one even though it reads like a name, since anyone who knows it reads every message sent to it, so keep the request URL out of the log too.
+**The topic, bot token or app password is a secret**, kept as `secure-project`'s Keep secrets out says; the ntfy topic is one even though it reads like a name, since anyone who knows it reads every message sent to it, so keep the request URL out of the log too.
 
 ## Reach Claude
 
