@@ -7,26 +7,28 @@ description: >-
   project's read contract, a view for a question asked often); writing the
   dialect of the engine that runs it, a development dependency until an
   adapter queries with it, with pinned types, typed literals and named
-  columns; the house style; changing a stored schema without breaking its
+  columns; the house style, formatted and linted by sqlfluff from the first
+  .sql file; changing a stored schema without breaking its
   readers, and numbered forward-only migrations with no framework for a
-  database; and running every documented query in the suite against a tree
-  the real store wrote. Load it
+  database; and running and linting every documented query in the suite
+  against a tree the real store wrote. Load it
   before the first line of any SQL, even a query answered inline. Use whenever
   writing, editing or reviewing SQL, a .sql file, a view or a migration,
+  setting up a SQL linter or formatter,
   choosing between SQL and a DataFrame, documenting a query in a README, or
   adding, renaming or retyping a stored column — even if the user just says
   "write a query", "query the parquet", "add a column" or "add a migration".
   Dialect-neutral decisions here; DuckDB 2.x specifics in
   references/duckdb.md.
   Layers on write-python, use-polars and write-tests; store-data picks the
-  engine and lays out what a query reads, and structure-python places a
-  packaged .sql file.
+  engine and lays out what a query reads, structure-python places a
+  packaged .sql file, and setup-python wires the linter's hook.
 ---
 
 # Write SQL
 
 Where SQL belongs in a project, and how to write it so it stays true while the data under it changes.
-It layers on `write-python` for the code that runs a query, `use-polars` for the frames it meets and `write-tests` for the test that runs it; `store-data` picks the engine and lays out what a query reads, and `structure-python` places a packaged `.sql` file.
+It layers on `write-python` for the code that runs a query, `use-polars` for the frames it meets and `write-tests` for the test that runs it; `store-data` picks the engine and lays out what a query reads, `structure-python` places a packaged `.sql` file, and `setup-python` wires the linter's hook.
 Three mistakes account for most SQL that goes wrong: one result computed in both SQL and Polars, which then disagree; a documented query nobody runs, broken by the next schema change and found by its reader; and a type left to inference — a partition column, a date literal — that the engine guesses differently from the code.
 Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
@@ -59,7 +61,7 @@ Past a handful, each moves to `queries/<name>.sql` at the repository root and th
 
 - **Write for the engine that runs the query, and use its own forms where they do the work** — reading a file tree, an as-of join.
 A common subset written for an engine nobody runs costs the reader the clearer query and is tested against nothing.
-- **In a stored or documented query, pin every type the engine would otherwise infer**: a column read from a path or an untyped file gets the type the store's schema gives it, declared in the query.
+- **In a stored or documented query, pin every type the engine would otherwise infer**: a column read from a path or an untyped file gets the type the store's schema gives it, declared in the query, and a timestamp keeps the time zone the schema gives it (`store-data`, Shape a stored table).
 An inferred identifier of digits comes back a number, and the query and the code then disagree about one column with no error from either.
 - **Give a date or timestamp a typed literal**, `date '2026-01-31'`.
 Against a column that turned out to be text a typed literal fails the query, where a quoted string compares as text and `'2026-1-5'` matches nothing without a word.
@@ -69,6 +71,7 @@ A star's output changes when the table gains a column, and whatever read the res
 ## Style
 
 House preference: nothing observable turns on most of it, and one style keeps a diff to the change.
+The linter below enforces each line, so a breach fails a commit rather than waiting for a reader.
 
 - **Lower case** for keywords, functions and types; `snake_case` for names.
 - **One clause a line, one selected column a line**, indented four spaces, commas trailing.
@@ -97,7 +100,41 @@ inner join stations on daily.station = stations.station
 order by daily.station, daily.day;
 ```
 
-No formatter or linter is run on SQL until a project holds more than a handful of queries; `sqlfluff` with the engine's dialect is the one to try first, since its defaults pass the block above (4.5) though not every engine-specific form, and the pick is recorded under Decisions.
+**Format and lint every `.sql` file with `sqlfluff` from the project's first one**, as a development dependency run by the pre-commit hook `setup-python` wires, configured in `pyproject.toml` so the style above is checked rather than remembered:
+
+```toml
+[tool.sqlfluff.core]
+dialect = "duckdb"
+max_line_length = 88
+rules = "core, AL06, AM06"
+
+[tool.sqlfluff.rules."aliasing.length"]
+min_alias_length = 3
+
+[tool.sqlfluff.rules."ambiguous.column_references"]
+group_by_and_order_by_style = "explicit"
+
+[tool.sqlfluff.rules."capitalisation.keywords"]
+capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules."capitalisation.identifiers"]
+extended_capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules."capitalisation.functions"]
+extended_capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules."capitalisation.literals"]
+capitalisation_policy = "lower"
+
+[tool.sqlfluff.rules."capitalisation.types"]
+extended_capitalisation_policy = "lower"
+```
+
+- **`dialect` names the engine that runs the queries**; with the default `ansi` an engine's own forms fail to parse.
+- **The core rules leave case "consistent"**, so the policies pin lower case; `AL06` makes a table alias a word and `AM06` rejects `group by 1`, neither of them core (sqlfluff 4.5).
+- **`sqruff` is the alternative** when lint time is felt: on 200 files it took under a second where `sqlfluff` took thirteen (sqruff 0.44), at the cost of a pre-1.0 port that reads its own `.sqruff` file rather than `pyproject.toml`.
+- **`sqlfmt` is not picked**: it packs a select's columns onto one line, which the style above rejects, and has no option to stop it (shandy-sqlfmt 0.32).
+- **A fenced block in a README is beyond a file hook**, so the test that runs each documented query lints it too (Test a documented query).
 
 ## Change a schema
 
@@ -112,6 +149,7 @@ An undo is the next migration: a down script is the one path nobody runs until t
 **Every documented query runs in the suite**: one test takes each `sql` block from the README, or each file under `queries/`, runs it against a tree the real store adapter wrote to a temporary directory, from the directory its documented path starts at, and asserts on the rows that come back.
 A schema change then fails that test in the commit that makes it; a query checked once by hand fails for its reader instead, some weeks later.
 
+- **Lint each documented query in the same module** with `sqlfluff`'s Python API against the project's `pyproject.toml`, since the hook reads only `.sql` files.
 - **Write the fixture tree through the store adapter**, never by hand, so the fixture changes shape when the store does.
 - **Assert a query's answer where the contract promises one** — a join that must not multiply rows, a figure that must match the stored one — beside the shared check that each returns rows.
 - **Test a packaged query through the adapter that runs it**, against a real database in memory or on a temporary path.
@@ -121,6 +159,6 @@ A schema change then fails that test in the commit that makes it; a query checke
 
 Read the file for the engine that runs the query:
 
-- **DuckDB** → references/duckdb.md (reading a hive-partitioned Parquet tree with pinned types, files of differing shape, integer sums, a view's path, the schema version, and the test that runs the README's queries).
+- **DuckDB** → references/duckdb.md (reading a hive-partitioned Parquet tree with pinned types, files of differing shape, integer sums, a view's path, the schema version, and the tests that run and lint the README's queries).
 
 Add a new references/<dialect>.md when you write for another engine rather than adding its specifics to this file.
