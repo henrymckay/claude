@@ -72,7 +72,7 @@ A per-day loop over a ranged endpoint multiplies the requests by the days asked 
 
 ## Report the outcome
 
-- **Exit `0` when every source stored, `1` when any is `partial`, `failed` or `skipped`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
+- **Exit `0` when every source stored, `1` when any is `partial` or `failed`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
 A scheduler and a shell both branch on non-zero; the split between 1 and 2 tells a reader of the log whether to look at the source or at the machine.
 These codes hold for every command, interactive or scheduled; the one run that stores nothing and still exits 0 is the one that found the lock held (above).
 - **A source absorbs as many failed items a night as its YAML's `tolerance`** (default 0; `structure-python`, Configuration): at or below it the source is `stored` with the count in the manifest's `failed_items`, above it `partial`.

@@ -165,7 +165,7 @@ Numbers are stable; the groups are for reading.
 
 - **D13 A skill's default is a default** — a signed-off `PLAN.md` decision overrides a skill; a reason Claude finds is a proposed decision, raised before it is built on (in autonomous mode, recorded and built on); a rule stays imperative with its exception in the same sentence, because softened rules were ignored outright.
 - **D14 Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
-- **D35 Autonomous mode** (the user, 2026-11-11, issue 21) — with no user present, Claude proceeds on its recommended answers, records each as an assumption for the user's later review, keeps decisions marked proposed, and never takes an outward action such as creating a repository, publishing or spending money; `plan-project` defines it and `build-project` and `review-project` each state it. Skill feedback is still recorded as the feedback rule says *(that last clause proposed, from issue 29)*.
+- **D35 Autonomous mode** (the user, 2026-11-11, issue 21) — with no user present, Claude proceeds on its recommended answers, records each as an assumption for the user's later review, keeps decisions marked proposed, and never takes an outward action such as creating a repository, publishing or spending money; `plan-project` defines it and `build-project` and `review-project` each state it. Skill feedback is still recorded as the feedback rule says (issue 29; the user, 2026-11-11).
 - **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
 - **D6 `build-project`** over `develop-project` — matches "the build" wording across the skills.
 - **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
@@ -199,8 +199,8 @@ The skill named holds the pick, its alternative and its reason; the plan keeps t
 - **D22 MotherDuck's token variable is lower case**, `motherduck_token` — `store-data`.
 - **D29 Message channels**: ntfy for an alert, email for a digest, Claude Code channels for a chat; Slack once a workspace exists — `send-messages`.
 - **D36 A `write-sql` skill in `write-code`** (the user, 2026-11-11, issue 30) over a section of `store-data` — decisions only: SQL against Polars, where SQL lives, style, schema changes and testing a documented query, in a dialect-neutral body with a reference per dialect, DuckDB first.
-- **D37 `coverage run -m pytest`** over `pytest-cov` *(proposed, issue 31)* — the `-p` plugin `setup-python`'s own `addopts` loads imports the package before `--cov` measures, which read 33% for a true 83% on a two-module package (pytest-cov 7.1, coverage 7.17); cost: two commands where one flag did.
-- **D38 A run that finds the lock held writes no manifest row** *(proposed, issue 27)* over a `skipped` row — the run in progress records the night, and a `skipped` row would exit 1 where the lock rule exits 0; `skipped` stays for a source a run ended before reaching.
+- **D37 `coverage run -m pytest`** over `pytest-cov` (issue 31; the user, 2026-11-11) — the `-p` plugin `setup-python`'s own `addopts` loads imports the package before `--cov` measures, which read 33% for a true 83% on a two-module package (pytest-cov 7.1, coverage 7.17); cost: two commands where one flag did.
+- **D38 A run that finds the lock held writes no manifest row** (issue 27; the user, 2026-11-11) over a `skipped` row — the run in progress records the night, and a `skipped` row would exit 1 where the lock rule exits 0; the `skipped` outcome is deleted, since nothing produces it.
 
 **Superseded**
 
@@ -240,7 +240,7 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 
 - [x] **M4 First trial build** — R1, R8; `market-data` planned, built, reviewed, and its feedback swept (2026-11-11).
 - [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
-- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q4 is applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
+- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, `evaluate/` is removed (D40) and the first release is tagged (D41).
 - [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
 - [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
@@ -255,7 +255,6 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 ### Questions
 
 - **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q4** Confirm D37 (`coverage` over `pytest-cov`), D38 (no manifest row when the lock is held, and whether to delete the `skipped` outcome nothing produces), and D35's exemption of skill feedback from "no outward action"? — recommended: confirm all three and delete `skipped`; blocks M16.
 - **Q5** What is the second trial build? — recommended: a small dashboard over `market-data`'s store, since it exercises what the first did not (a dashboard, a deployment, SQL, a message) on data that already exists; an accounting or tax tool is the alternative and tests a new domain instead; blocks M18.
 - **Q6** What happens to `market-data`? — its plan is unsigned with eight questions open, and nothing is pushed; recommended: keep it as the store Q5's dashboard reads, answer its questions when convenient, and decide on a private GitHub repository then; blocks M18 only if Q5 is the dashboard.
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — only the user can find out; blocks M17's second-machine check.
