@@ -60,6 +60,7 @@ Use it for consistency within a module: if some calls of a kind run down the pag
 
 - **Aware datetimes only, in UTC inside the core**; attach a `zoneinfo.ZoneInfo` only where a person reads the value, and use `datetime.date` for a calendar day.
 A naive value a library hands back is converted at the adapter, once, so a local-time conversion never hides in the core.
+The same holds on disk: a stored timestamp column keeps its UTC zone (`store-data`, Shape a stored table).
 Never `pytz`, `arrow` or `pendulum`; the stdlib covers it, and inside a frame the temporal dtypes do.
 - **Money is `decimal.Decimal` or integer minor units in domain types, never `float`**; in a frame, `polars.Decimal` where the operations support it, else `Float64` rounded only at presentation, with a dependency test pinning the precision (see `write-tests`).
 
