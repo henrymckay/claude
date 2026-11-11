@@ -2,31 +2,27 @@
 name: deploy-project
 description: >-
   Where each artefact of a project runs in the cloud and how it gets there at
-  zero or near-zero cost — the nightly pipeline as a GitHub Actions schedule
-  in the project's own repository, writing to MotherDuck and committing the
-  data tree back to main, alerting when the driver could not, with a status
-  workflow for a night that never ran, and Modal when a job outgrows a runner;
-  MotherDuck Lite with one token per consumer, R2 past 10 GB; a Shiny
-  dashboard on Posit Connect Cloud Free from a public repo, shinylive on
-  GitHub Pages when it needs no secret, Streamlit Community Cloud when the app
-  is Streamlit or must be private; an API on Render only once a second
-  consumer earns one, Cloud Run when the wake matters; a static site built by
-  a second job of the same workflow; picking from the data's class, with
-  private data kept on the owner's machine and its dashboard reached over
-  Tailscale; what changes for a private repository; Neon or Supabase for a
-  multi-writer service, Koyeb and Vercel as the remaining API hosts; secrets
-  in each platform's own store; the hosts ruled out as dead or no longer
-  free; and re-reading the vendor's plan page before relying on a limit. Use whenever deploying, hosting or publishing a pipeline, dashboard,
-  API or site, choosing a free tier or cloud host, writing a workflow that
-  runs in the cloud, or filling a plan's Runs on section — even if the user
-  just says "put this online", "host the dashboard", "run it in the cloud" or
-  "is there a free tier for this". Facts checked 2026-11-11; the two workflow
-  files are in references/github-actions.md. Layers on run-unattended (what
-  the job does unwatched), store-data (the store and its tokens),
-  write-entry-points (the drivers deployed), send-messages (the alert) and
-  setup-python (uv, Docker, and CI, which the nightly workflow does not
-  bring); secure-project classes the data the hosts are picked from, and
-  plan-project's Runs on section records the choice.
+  zero or near-zero cost, picked from the data's class — the nightly pipeline
+  as a GitHub Actions schedule in the project's own repository, writing to
+  MotherDuck and committing the data tree back, with a status workflow for a
+  night that never ran and Modal when a job outgrows a runner; MotherDuck
+  Lite with one token per consumer; a Shiny dashboard on Posit Connect Cloud
+  Free, shinylive on GitHub Pages when it needs no secret, Streamlit
+  Community Cloud when it must be private; an API on Render only once a
+  second consumer earns one, Cloud Run when the wake matters; a static site
+  from the same workflow; private data kept on the owner's machine and its
+  dashboard reached over Tailscale; what changes for a private repository;
+  secrets in each platform's own store; the hosts ruled out; and re-reading
+  the vendor's plan page before relying on a limit. Use whenever deploying,
+  hosting or publishing a pipeline, dashboard, API or site, choosing a free
+  tier or cloud host, writing a workflow that runs in the cloud, or filling
+  a plan's Runs on section — even if the user just says "put this online",
+  "host the dashboard", "run it in the cloud" or "is there a free tier for
+  this". Facts checked 2026-11-11; the two workflow files are in
+  references/github-actions.md. Layers on run-unattended, store-data,
+  write-entry-points, send-messages and setup-python; secure-project classes
+  the data the hosts are picked from, and plan-project's Runs on section
+  records the choice.
 ---
 
 # Deploy a project
