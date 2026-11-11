@@ -4,24 +4,26 @@ effort: high
 description: >-
   How to review a Claude Code plugin, a marketplace of several, or a repo
   serving as one, for drift — the checks a skills repo needs on top of
-  review-project: working through its skill feedback, GitHub issues or a
-  feedback file (fixed, already covered, won't fix, or needs the user), an
-  inventory of word counts, each description against its body, bloat and
-  overfitted examples, rules duplicated or contradicted across skills and
-  across plugins, dead cross-references, trigger overlap, every code block and
-  library claim re-run, the always-on instructions, PLAN.md and the README
-  against the skills, the manifests, hooks, symlinks and feedback wiring, and
-  auto-memory, the trigger suites, and promoting a decision that recurs
-  across projects into its skill; landed as one pull request whether run in a
-  session or as a scheduled task, each skill's fixes committed with word
-  counts and every cut rule flagged; on a plugin you cannot push to, the same review ends in a
-  report, an issue or a pull request from a fork. Use after a run of skill
-  edits, when skill feedback has piled up, or whenever the user asks to
-  review, audit, tidy or sweep skills, a plugin or a Claude repo, theirs or
-  one whose source they can read, even if they just say "check the skills for
-  drift", "tidy up my skills" or "work through the skill feedback". Layers on
-  review-project, which runs the cold read, the fixes and the report, and on
-  write-skills and write-markdown, the standard it checks against.
+  review-project: its skill feedback first, from GitHub issues or a feedback
+  file, each settled as fixed, already covered, won't fix or needs the user
+  and each case run before and after the fix, with a trial build's
+  transcripts read for skills that never loaded; then every drift check,
+  whatever the brief names — word counts, each description against its body,
+  overfitted examples and rules Claude follows unprompted, duplicates and
+  contradictions across skills and plugins, dead cross-references, trigger
+  overlap, every code block and library claim re-run, the instruction files,
+  README and PLAN.md read whole, the manifests, hooks, symlinks and trigger
+  suites, and memory — and promoting a decision that recurs into its skill;
+  landed as one pull request whose report lists each check as done or
+  skipped, each skill's fixes committed with word counts; on a plugin you
+  cannot push to, a report, an issue or a pull request from a fork. Use after
+  a run of skill edits, when skill feedback has piled up, or whenever the
+  user asks to review, audit, tidy or sweep skills, a plugin or a Claude
+  repo, theirs or one whose source they can read, even if they just say
+  "check the skills for drift", "tidy up my skills" or "work through the
+  skill feedback". Layers on review-project, which runs the cold read, the
+  fixes and the report, and on write-skills and write-markdown, the standard
+  it checks against.
 ---
 
 # Review the plugin
@@ -31,6 +33,7 @@ It takes whatever plugin source it is pointed at: the checkout it runs in, a pat
 Where the user can push, it fixes and commits; where they cannot, it stops at the report and offers it as an issue or a pull request from a fork, since another owner's conventions may be deliberate.
 It runs `review-project` with the skills as the code under review and adds the checks below, judging against `write-skills` and `write-markdown` rather than restating them.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
+**Run every check below in every sweep, whatever the brief names.** A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
 
 - **Wrong** — the issue says a skill steered a build wrong; the sweep rewords the rule, reads it back, and closes the issue.
 - **Right** — the sweep reruns the build step the issue describes against the new wording, and closes the issue only when that run comes out right.
@@ -46,7 +49,8 @@ Verify each against the files, then settle it one of four ways:
 - **Won't fix** — no skill should cover it, with the reason in the closing comment.
 - **Needs the user** — it would change a `PLAN.md` decision or settle policy; leave it open with a recommended answer, and never decide it in an unattended run.
 
-Where an issue describes a case, verify the fix by running that case — a throwaway prompt or script — not by reading the new wording.
+Where an issue describes a case, verify the fix by running that case — a throwaway prompt or script — not by reading the new wording, and run it on the old wording first where that is cheap: a case that fails before and passes after shows the fix did the work, and one that already passed shows the rule was covered and went unapplied.
+**Read a trial build's transcripts** where they are on the machine, for a skill that should have loaded and never did, and a stage served by the wrong model; cite each finding's file and line, and file it as feedback, since a session that skipped a skill never reports the gap itself.
 Several reports against one skill mean its structure is wrong; rework the skill rather than patching each report.
 **Promote a decision that recurs.** Where feedback, or a plan the sweep can read, shows one decision made again by precedent from another project, or proposed alike in two, make it the owning skill's default with its reason (`make-decisions`), so the next project finds it in the skill instead of re-deciding it.
 
@@ -80,7 +84,8 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 
 - **The always-on skill list matches the skills both ways**, and each entry agrees with that skill's description: the list is each plugin's `hooks/context.md`, printed at session start, and the owner's `CLAUDE.md` where the skills are symlinked instead of installed; where both exist they carry the same line for a skill.
 - **`CLAUDE.md` carries no defaults** (see `write-markdown`).
-- **The README lists every skill**, each described as its skill describes itself, and its other sections — setup, configuration, feedback, evaluation — are still true.
+- **Read the README and `CLAUDE.md` whole**, never only the lines a fix touched.
+The README lists every skill, each described as its skill describes itself, and its other sections — setup, configuration, feedback — are still true against the repo and against the plan: a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
 
 ## Check the wiring
@@ -107,3 +112,4 @@ Read every free-tier limit and price a skill quotes against the vendor's plan pa
 - **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps; it runs on `sonnet`, as does a gap probe, and only a trigger grader or a hook on `haiku` (see `choose-model`).
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
+- **List every check in the report as done, with what it found, or skipped, with why** — one line each for the README, `CLAUDE.md` and each context file — so a check left out shows as a gap rather than passing unseen.
