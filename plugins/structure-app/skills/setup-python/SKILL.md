@@ -8,7 +8,8 @@ description: >-
   tenacity and pyrate-limiter, polars, shiny with plotly, pydantic-settings,
   rich logging), standalone scripts, pre-commit hooks run through uv, releases
   with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
-  strict pytest flags and an untyped dependency kept out of strict's way. Use
+  strict pytest flags and an untyped dependency kept out of strict's way, plus
+  sqlfluff's hook once the project holds SQL. Use
   whenever scaffolding a new Python project, package, script, or tool; adding
   packaging to existing code; setting up dependencies, virtual environments,
   project config or hooks; cutting a release; or choosing a house-pick library
@@ -40,6 +41,7 @@ Standardise on these five tools; set them up once and defer to them everywhere:
 `ty`, Astral's checker, is still a `0.0.x` pre-release that changes its diagnostics between versions, so a suite clean today fails on next week's install; switch when it reaches `1.0`.
 - **`pytest`** — tests in `tests/`.
 
+`sqlfluff` joins them for SQL once a project holds a `.sql` file (Pre-commit hooks).
 Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job that is deployed somewhere other than the machine it was built on, from the `ghcr.io/astral-sh/uv` image; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
 
 ## Configure the project
@@ -237,6 +239,20 @@ repos:
 
 - **`repo: local` hooks run the `ruff` and `taplo` that `uv.lock` pins**, so the hook, the editor and the suite agree on one version; the `ruff-pre-commit` mirror pins its own `rev`, which drifts from the lock until a commit passes the hook and fails `uv run ruff check`.
 - **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, the one hook that needs a `rev`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
+- **Add two `sqlfluff` hooks under `repo: local` in the commit that adds the project's first `.sql` file**, after `uv add --dev sqlfluff` and with the configuration `write-sql`'s Style gives in `pyproject.toml`; before then they would run on nothing:
+
+```yaml
+      - id: sqlfluff-format
+        name: sqlfluff format
+        entry: uv run sqlfluff format
+        language: system
+        types: [sql]
+      - id: sqlfluff-lint
+        name: sqlfluff lint
+        entry: uv run sqlfluff lint
+        language: system
+        types: [sql]
+```
 
 Then `pre-commit install` once per clone, and `pre-commit autoupdate` to bump the `rev`.
 If a hook changes files the commit stops so you can re-stage.
