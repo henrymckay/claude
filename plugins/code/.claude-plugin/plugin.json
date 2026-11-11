@@ -1,0 +1,7 @@
+{
+  "name": "code",
+  "description": "House conventions for the code itself: functional by default, object-oriented where it fits, Python, tests and Polars.",
+  "version": "0.1.0",
+  "author": { "name": "henrymckay" },
+  "repository": "https://github.com/henrymckay/claude"
+}
