@@ -2,40 +2,30 @@
 name: plan-project
 effort: high
 description: >-
-  How to plan a project before building it — turning a loose conversation into
-  one PLAN.md with minimal input from the user: gather what can be found,
-  research the domain and current practice with sources recorded, frame the
-  project wider than the brief (the domain's vocabulary, its wider context,
-  rival designs), draft every section, record assumptions in place of
-  questions, treat every house pick as a default to deviate from openly, then
-  put the questions, assumptions and decisions in front of the user in one
-  batch with recommended answers, through plan mode — or, in autonomous mode
-  with no user present, proceed on those recommended answers, recorded as
-  assumptions, with every decision left proposed and no outward action taken.
-  The plan has a fixed
-  layout for any kind of project — a program, a library, or a content repo
-  such as docs or skills: a brief (goal, terms, numbered requirements with
-  their cost, not yet), a design (inputs, data flow, outputs, interface as a
-  command, endpoint table or screen list, where each artefact runs, errors,
-  decisions with sources), delivery (verification, milestones) and open items
-  (assumptions, questions, ideas the brief didn't ask for), whose requirements
-  and decisions change only with the user's sign-off; a fix or small change
-  gets a short plan in the conversation instead. It plans on Opus whatever
-  model the session started on, by handing the draft to a subagent. It is
-  written for Claude to
-  follow: cited by ID, shown not described, in the plan's own terms, pointing
-  at skills rather than restating them. Use whenever starting a new project or
-  repo, or a build that adds a new input, output or interface; when the user
-  wants to think a project through, write a spec or design, or decide what to
-  build first; and whenever a PLAN.md needs changing or a whole plan is
-  rewritten around a restated aim — even if the user just
-  says "let's plan this", "new project" or "what should this look like".
-  Layers on write-markdown; settles open questions through make-decisions and
-  classes every input and output through secure-project; points the design at
-  setup-python, structure-python, write-entry-points, be-functional,
-  use-polars, write-sql, write-tests, store-data, deploy-project,
-  run-unattended and send-messages, hands the build to build-project, and the
-  finished build to review-project.
+  How to plan a project before building it — turning a loose conversation
+  into one PLAN.md with minimal input from the user: gather what can be
+  found, research the domain and current practice with sources recorded,
+  frame the project wider than the brief, draft every section, settle gaps
+  from precedent and record assumptions in place of questions, treat every
+  house pick as a default to deviate from openly, check the draft against
+  itself, then put the questions, assumptions and decisions in front of the
+  user in one batch with recommended answers, through plan mode — or, in
+  autonomous mode with no user present, proceed on those answers, recorded as
+  assumptions, with every decision left proposed and no outward action
+  taken. The plan has one layout for any kind of project, a program, a
+  library or a content repo: brief, design, delivery and open items, whose
+  requirements and decisions change only with the user's sign-off; a fix or
+  small change gets a short plan in the conversation instead. It plans on
+  Opus whatever model the session started on, by handing the draft to a
+  subagent. Use whenever starting a new project or repo, or a build that adds
+  a new input, output or interface; when the user wants to think a project
+  through, write a spec or design, or decide what to build first; and
+  whenever a PLAN.md needs changing or a whole plan is rewritten around a
+  restated aim — even if the user just says "let's plan this", "new project"
+  or "what should this look like". Layers on write-markdown; settles open
+  questions through make-decisions, classes every input and output through
+  secure-project, points the design at the skills that own each part, hands
+  the build to build-project, and the finished build to review-project.
 ---
 
 # Plan the project
@@ -179,7 +169,7 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 - **Wrong** — "What storage do you want? Which scheduler? How should errors be reported?", one message per section, each answered from nothing.
 - **Right** — a full draft with the house picks filled in, then one message: "A3 assumes Parquet; D2 picks launchd over cron because …; Q1 needs you — recommended: yes."
 
-**Plan on Opus at high effort, whatever the session started on: hand steps 2 to 7 — the gathering, the research and the draft — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
+**Plan on Opus at high effort, whatever the session started on: hand steps 2 to 8 — the gathering, the research, the draft and its self-check — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
 A session briefed as that subagent works directly; any other hands over (`choose-model`, Hold a stage on its model).
 
 1. **Start in plan mode**; its approval is the plan's sign-off.
@@ -209,11 +199,13 @@ A session briefed as that subagent works directly; any other hands over (`choose
    A house pick is a default: where research shows it fits this project badly, choose otherwise and record it under Decisions as proposed, with the source and the skill and section it overrides; the batch puts it to the user, and approval of the plan is its sign-off.
 7. **Raise as a question only what `make-decisions` escalates**, and a costly requirement whose purpose is unclear.
    Give each a recommended answer, so the user can reply "yes" or by number.
-8. **Ask once, in one batch**: the questions with their recommendations, as multiple choice where the options are few; the proposed decisions, assumptions and ideas listed by ID, each decision with its alternatives, cost and source, for the user to override or adopt; the decisions settled by precedent as one counted line (`make-decisions`); and a line on what Claude would push back on in the brief.
+8. **Check the draft against itself** before asking: every requirement cited by a milestone and a Verification line, every term used in one sense, every decision consistent with the Outputs, Interface and Runs on it touches, and every requirement checkable — a vague word such as fast, secure or robust gets a measure or a question.
+   A gap found here is a one-line edit; found by the build, it is a milestone built on one reading of two.
+9. **Ask once, in one batch**: the questions with their recommendations, as multiple choice where the options are few; the proposed decisions, assumptions and ideas listed by ID, each decision with its alternatives, cost and source, for the user to override or adopt; the decisions settled by precedent as one counted line (`make-decisions`); and a line on what Claude would push back on in the brief.
    The user reviews a list of calls, not a document, so each line stands alone.
    A second round only where an answer opened a question the first round couldn't have asked.
-9. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
-10. **Call the plan complete when every question is answered** — an assumption the user's reply leaves alone counts as confirmed, and a question only the build can settle stays under Open — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
+10. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
+11. **Call the plan complete when every question is answered** — an assumption the user's reply leaves alone counts as confirmed, and a question only the build can settle stays under Open — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
 
 ## Plan with no user present
 
@@ -223,9 +215,9 @@ Every step above holds except the ones that wait for the user:
 - **Write `PLAN.md` directly**, skipping plan mode, and open it with a line saying the plan is unsigned, the date and who asked for the run.
 - **Proceed on each question's recommended answer**, recorded under Assumptions with the question it replaced, for the user's later review.
 - **Leave every decision *(proposed)* or *(by precedent)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
-- **Take no outward action** — creating a repository, publishing, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
+- **Take no outward action** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
 Skill feedback is not such an action: it is recorded as the session's feedback rule says.
-- **Put the batch of step 8 in the final reply**, so the first thing the user reads is the list of calls to confirm or change.
+- **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change.
 
 ## Write it for Claude
 
