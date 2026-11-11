@@ -49,7 +49,7 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
 **Private or personal data stays on the owner's machine** unless a plan decision names a host for it: the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8000` shares the port with their own devices only; the Personal plan is free for up to six users).
-Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — MotherDuck behind Streamlit's private app — sends every row to two outside services, the call `secure-project` escalates.
+Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — MotherDuck behind Streamlit's private app — sends every row to two outside services, which `secure-project` allows only under a signed-off decision naming them.
 
 **A private repository holding public data changes three of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; Pages and Connect Cloud Free take public repositories only, so the dashboard moves to Streamlit Community Cloud's one private app, whose viewers sign in by invitation, or to Connect Cloud Basic at $19 a month, which publishes from a private repository but still to anyone with the link (private sharing is its Enhanced plan); MotherDuck and Render are unaffected.
 
@@ -108,7 +108,7 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 
 - **One token per consumer** (`secure-project`): the pipeline's read/write token, the dashboard's and API's read-scaling token, which MotherDuck limits to reads.
 - **Repository secrets for Actions**, set with `gh secret set NAME` and read as `${{ secrets.NAME }}`; environment secrets need Pro or Team on a private repository.
-- **Each other host's own store for the rest** — Connect Cloud's secret variables, Streamlit's TOML, Render's environment variables, Cloud Run's Secret Manager — never a committed file (`use-git`: rotate it), never a static bundle.
+- **Each other host's own store for the rest** — Connect Cloud's secret variables, Streamlit's TOML, Render's environment variables, Cloud Run's Secret Manager — never a committed file or a static bundle (`secure-project`).
 
 ## Re-check the tiers
 
