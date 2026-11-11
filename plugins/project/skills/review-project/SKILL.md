@@ -12,8 +12,10 @@ description: >-
   challenges to a house pick or a plan decision separately, with evidence;
   then fixing the defects by impact, each with its own commit and, for a bug,
   a regression test, then re-running every check and bringing PLAN.md and the
-  README up to date; the rest waits on the user's reply. Use whenever the user
-  asks to review, audit, critique or tidy a repo or project, check it against
+  README up to date; the rest waits on the user's reply, in the report itself
+  when the review runs in autonomous mode with no user present. It reviews on
+  Opus whatever model the session started on, by handing the review to a
+  subagent. Use whenever the user asks to review, audit, critique or tidy a repo or project, check it against
   its plan or the conventions, find what is out of date, or fix what a review
   found — even if they just say "review this repo", "what's wrong with this
   project", or "is this up to date". Works without a PLAN.md. Layers on
@@ -34,6 +36,9 @@ Three mistakes account for most weak reviews: reading code instead of running it
 **In an existing project, ask first.** Where a repo already has its own conventions, check with the user whether to review against them or against the skills, and prefer the skills unless they choose to match.
 
 ## Set the standard
+
+**Review on Opus at high effort, whatever the session started on: hand the review and its fixes to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the review's subagent that does the work itself, with the repo, this skill by name and whether the run is autonomous, and relay its report.
+A session briefed as that subagent works directly; any other hands over, since it cannot tell which model serves it: the frontmatter changes the model a session is told it is on, not the one that answers (`choose-model`).
 
 Judge the project against what it set out to do and what the skills require, never against taste.
 
@@ -64,12 +69,12 @@ Without a budget, time the real surface anyway and flag only what is slow at its
 
 ## Check the tests
 
-Measure coverage, then read *which* branches are uncovered, and hold the suite to `write-tests` — above all that each fixture can exhibit the failure its test looks for, and that every overridden library default is pinned by its effect.
+Measure branch coverage with the toolchain's own command (`setup-python`, Libraries), check the report shows the package's import lines as run before trusting its number, then read *which* branches are uncovered, and hold the suite to `write-tests` — above all that each fixture can exhibit the failure its test looks for, and that every overridden library default is pinned by its effect.
 A high percentage over tests that assert nothing is a finding, not a pass.
 
 ## Check against the skills
 
-Read the code against each skill invoked above: the layout against `setup-python`, the layers against `structure-python`, the drivers against `write-entry-points`, and the code against `write-python`, `be-functional` and, for frames, `use-polars`.
+Read the code against each skill invoked above: the layout against `setup-python`, the layers against `structure-python`, the drivers against `write-entry-points`, and the code against `write-python`, `be-functional`, for frames `use-polars` and for queries `write-sql`.
 Quote the rule a finding breaks.
 A rule the project breaks under a `PLAN.md` decision naming the skill is not a defect; it can still be challenged.
 
@@ -92,6 +97,7 @@ Read the changelog before recommending a major upgrade.
 
 After your own pass, give a fresh agent on `sonnet` (see `choose-model`) the files and the standard, never your conclusions, and ask what breaks the plan or the skills.
 An agent handed your findings tends to confirm them; one reading cold finds what your pass was blind to.
+Where the skills live outside the directories the agent may read — an installed plugin, in a session that cannot grant the read — put the rules themselves in the brief, and report a cold read that never saw the standard as partial.
 Verify each finding against the files before keeping it — an agent's mistakes read as confidently as its catches.
 
 ## Report
@@ -103,6 +109,7 @@ Separate defects from judgement calls and challenges, and list the checks skippe
 
 Fix the defects without waiting, in ranked order; a judgement call, a challenge or a change to a requirement or decision in `PLAN.md` waits for the user's reply to the report (see `plan-project`).
 
+- **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action — creating a repository, publishing, spending money; filing skill feedback is not one.
 - **A bug gets a regression test** that fails before the fix and passes after.
 - **Commit each fix on its own** (see `use-git`), so one can be reverted alone.
 - **Re-run every check at the end**, since one fix can break what another check passed.
