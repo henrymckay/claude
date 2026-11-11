@@ -16,7 +16,8 @@ description: >-
   source's schema changes, malformed rows and a publisher's unstated terms,
   the error package, the three homes of a configuration value (settings for
   deployment values and every secret, package YAML for a source's constants
-  and its tolerance, a user-editable CSV of active items), the log level per
+  and its tolerance and catch-up window, a user-editable CSV of active items),
+  the log level per
   event, and where logging, runtime data assets and the test suite sit. Use
   when organising an app into layers, deciding where configuration, a module,
   entry point, IO adapter, data asset, constant, secret or test belongs,
@@ -293,7 +294,7 @@ An adapter reading `os.environ` works on the laptop and fails under a scheduler,
 
 - **Settings** — per-deployment values and every secret, which differ between the laptop and the server: the data directory, the API key.
 `pydantic-settings` reads them from the environment and a `.env` (see `write-entry-points`); a secret is never committed (see `use-git`).
-- **Package YAML in `data/adapt/<source>.yaml`** — per-source constants the code was written against: the base URL, the rates, the page size, the timeout, a field map, and `tolerance`, the number of failed items a night absorbs before the source counts as partial (default 0; `run-unattended`, Report the outcome).
+- **Package YAML in `data/adapt/<source>.yaml`** — per-source constants the code was written against: the base URL, the rates, the page size, the timeout, a field map, `tolerance`, the number of failed items a night absorbs before the source counts as partial (default 0; `run-unattended`, Report the outcome), and `catch_up_days`, how many days before yesterday the nightly refills when they are missing (default 3; `run-unattended`, Make a run rerunnable).
 Changing one is a code change and ships with the package; the source module reads its own file through `importlib.resources` into a frozen dataclass (`noaa.read_constants()`), and the root hands the values to the builders.
 - **A user-editable CSV in the app's data directory** (`items.csv`, see `store-data`) — a list the user maintains between runs: the items to follow, as `source,item,active`, where an inactive row is skipped, so pausing an item keeps its history and its line.
 In package data it would force a reinstall per edit, and a setting can't hold a table.

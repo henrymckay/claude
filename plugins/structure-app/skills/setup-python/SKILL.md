@@ -8,13 +8,14 @@ description: >-
   tenacity and pyrate-limiter, polars, shiny with plotly, pydantic-settings,
   rich logging), standalone scripts, pre-commit hooks run through uv, releases
   with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
-  strict pytest flags and an untyped dependency kept out of strict's way. Use
+  strict pytest flags and an untyped dependency kept out of strict's way, plus
+  sqlfluff's hook once the project holds SQL. Use
   whenever scaffolding a new Python project, package, script, or tool; adding
   packaging to existing code; setting up dependencies, virtual environments,
   project config or hooks; cutting a release; or choosing a house-pick library
   for a task — even if the user just says "set this up", "add a dependency",
   or "make this a package". Standardises on uv, ruff, taplo, pyright and
-  pytest, with no task runner, Docker only for a deployed API or job, and no
+  pytest, with no task runner, Docker only for a container platform, and no
   CI until a project earns it; a PLAN.md decision overrides any pick. Plan a
   new project first with plan-project. For how to organise the application's
   code into layers, see structure-python; for in-code style, write-python; for
@@ -40,7 +41,8 @@ Standardise on these five tools; set them up once and defer to them everywhere:
 `ty`, Astral's checker, is still a `0.0.x` pre-release that changes its diagnostics between versions, so a suite clean today fails on next week's install; switch when it reaches `1.0`.
 - **`pytest`** — tests in `tests/`.
 
-Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job that is deployed somewhere other than the machine it was built on, from the `ghcr.io/astral-sh/uv` image; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
+`sqlfluff` joins them for SQL once a project holds a `.sql` file (Pre-commit hooks).
+Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job deployed to a container platform such as Cloud Run (`deploy-project`), from the `ghcr.io/astral-sh/uv` image, since a machine you own and an Actions runner both install from `uv.lock`; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
 
 ## Configure the project
 
@@ -169,7 +171,7 @@ No optional-extras split (`mypackage[dashboard]`): one install carries every dri
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s Write an adapter has the mechanics.
 A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered; the client is sync as `write-python`'s Sync and async says.
-- **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person, and JSON lines only where a collector reads them (see `run-unattended`); never `loguru`, which replaces the logger every dependency already writes to.
+- **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
 - **Plotting** → `plotly`, rendered in `shiny` through `shinywidgets`; `matplotlib` only for a static image a report embeds.
@@ -236,7 +238,21 @@ repos:
 ```
 
 - **`repo: local` hooks run the `ruff` and `taplo` that `uv.lock` pins**, so the hook, the editor and the suite agree on one version; the `ruff-pre-commit` mirror pins its own `rev`, which drifts from the lock until a commit passes the hook and fails `uv run ruff check`.
-- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, the one hook that needs a `rev`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
+- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, pinned by `rev` like any hook from its own repository, such as `secure-project`'s `gitleaks`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
+- **Add two `sqlfluff` hooks under `repo: local` in the commit that adds the project's first `.sql` file**, after `uv add --dev sqlfluff` and with the configuration `write-sql`'s Style gives in `pyproject.toml`; before then they would run on nothing:
+
+```yaml
+      - id: sqlfluff-format
+        name: sqlfluff format
+        entry: uv run sqlfluff format
+        language: system
+        types: [sql]
+      - id: sqlfluff-lint
+        name: sqlfluff lint
+        entry: uv run sqlfluff lint
+        language: system
+        types: [sql]
+```
 
 Then `pre-commit install` once per clone, and `pre-commit autoupdate` to bump the `rev`.
 If a hook changes files the commit stops so you can re-stage.

@@ -28,7 +28,7 @@ They ship as five plugins that stand alone and work together.
 | Plugin | For | Skills |
 |---|---|---|
 | `maintain-plugin` | Maintaining plugins, yours or anyone's | `review-plugin`, `write-skills` |
-| `manage-project` | A project's lifecycle in any repo | `plan-project`, `build-project`, `review-project`, `choose-model`, `use-git`, `write-markdown` |
+| `manage-project` | A project's lifecycle in any repo | `plan-project`, `build-project`, `review-project`, `choose-model`, `make-decisions`, `secure-project`, `use-git`, `write-markdown` |
 | `write-code` | The code itself, whatever the toolchain | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
 | `structure-app` | Setting up and structuring a Python app | `setup-python`, `structure-python`, `write-entry-points` |
 | `run-project` | A project running in the real world | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
@@ -38,10 +38,12 @@ They ship as five plugins that stand alone and work together.
 - [`build-project`](plugins/manage-project/skills/build-project) builds a planned project milestone by milestone, passing a quality gate before each is ticked.
 - [`choose-model`](plugins/manage-project/skills/choose-model) picks the model and effort for each stage of work, from Opus for planning and review to Haiku for graders, and how a stage holds itself on its model whatever the session started on.
 - [`deploy-project`](plugins/run-project/skills/deploy-project) puts each artefact on the best free or near-free host, from a [GitHub Actions](https://docs.github.com/en/actions) pipeline and [MotherDuck](https://motherduck.com/) to a Shiny dashboard on [Posit Connect Cloud](https://connect.posit.cloud/) and a static site on GitHub Pages.
+- [`make-decisions`](plugins/manage-project/skills/make-decisions) settles a question the skills leave open from the nearest answered precedent, citing it, so only the irreversible, outward, costly or security calls reach you.
 - [`plan-project`](plugins/manage-project/skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
 - [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) extends `review-project` for any plugin or skills repo, from descriptions that no longer match their skills to rules duplicated across them.
 - [`review-project`](plugins/manage-project/skills/review-project) reviews a project against its plan, the skills, its tests and current releases, then fixes what it finds.
 - [`run-unattended`](plugins/run-project/skills/run-unattended) covers a job that runs on a schedule with nobody watching, from the lock and the missed night to the [`launchd`](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), [`systemd`](https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html) or [GitHub Actions](https://docs.github.com/en/actions) unit.
+- [`secure-project`](plugins/manage-project/skills/secure-project) classifies a project's data as public, licensed, private or personal, private by default, and decides from the class where it may go, how credentials for an account with money in it are held, and what is audited.
 - [`send-messages`](plugins/run-project/skills/send-messages) decides how a deployed job reaches you, from an [`ntfy`](https://ntfy.sh/) alert and an emailed digest to a chat through Claude Code channels, and what never deserves a message.
 - [`setup-python`](plugins/structure-app/skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
 - [`store-data`](plugins/run-project/skills/store-data) decides where a project's data lives, from hive-partitioned [Parquet](https://parquet.apache.org/) queried with [DuckDB](https://duckdb.org/) or [MotherDuck](https://motherduck.com/) to atomic partitions, the raw archive and the run manifest.
@@ -114,13 +116,15 @@ A [`Stop` hook](plugins/maintain-plugin/hooks/hooks.json) backs the rule: at the
 The `maintain-plugin` plugin installs it; with symlinks, merge the file's `Stop` entry into `~/.claude/settings.json`.
 The issue goes to the repository of the plugin that owns the skill, so the same loop serves any plugin, and `review-plugin` reviews any plugin whose source it can read.
 [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) works through the open issues first, fixing each in the skill that owns it, closing it with a reason, or leaving it open for a decision only you can make.
-A weekly scheduled run of it opens one pull request with the sweep's report, so the week's skill changes are reviewed in one place.
+Every sweep, scheduled weekly or run in a session, opens one pull request with its report, so the skill changes are reviewed in one place.
 
 Each plugin's `evals/` folder holds one casual prompt per skill with a grader that checks the skill fired.
 Run it from a plugin's folder to catch a description that has stopped triggering.
+`--trust-plugin` lets it run where no terminal can ask whether to trust the folder, so pass it only for a plugin whose source you have read.
+A case scoring 0 at no cost with an API or timeout note never reached the model, so rerun it rather than read it as a failed trigger.
 
 ```bash
-cd plugins/write-code && claude plugin eval . --ablation none --no-publish
+cd plugins/write-code && claude plugin eval . --ablation none --no-publish --trust-plugin
 ```
 
 ## 🎯 Evaluate

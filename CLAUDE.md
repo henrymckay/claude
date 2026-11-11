@@ -31,6 +31,7 @@ These skills encode my conventions and are mandatory, not advisory.
 Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
+Check it again before each file you write, since a long session drifts from it: a skill whose text is no longer in view, or that was loaded under a name this list no longer uses, counts as not loaded.
 A skill's default is still a default: a decision I have signed off in the repo's `PLAN.md` overrides it.
 A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it — or, when I am not there to ask, built on and left proposed for my review (see `plan-project`, Plan with no user present); never skip or soften a rule without that line.
 A skill named in this list or in another skill may belong to a plugin that is not installed here (`maintain-plugin`, `manage-project`, `write-code`, `structure-app` and `run-project` ship separately): when loading it fails, decide what it would have settled yourself, record each such call as a proposed decision, and tell me which plugin was missing.
@@ -40,10 +41,12 @@ A skill named in this list or in another skill may belong to a plugin that is no
 - **`build-project`** when building a project from its `PLAN.md`: milestone by milestone, gating each before it is ticked.
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost: the model and effort ladder.
 - **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud: the free-tier host per artefact and how it gets there.
+- **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision: the nearest answered precedent, cited, and what still goes to the user.
 - **`plan-project`** before building a new project or a new input, output or interface: the `PLAN.md`.
 - **`review-plugin`** when reviewing a Claude Code plugin or skills repo: `review-project` plus drift across skills, instructions, README, wiring and memory.
 - **`review-project`** when reviewing, auditing or fixing a project: against its `PLAN.md`, the skills, correctness, tests and modernity.
 - **`run-unattended`** when a job runs on a schedule with nobody watching: the day it fetches, the lock, catch-up, exit codes, `status`, logs, the scheduler unit.
+- **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, or serves something: the data's class, where it may go, secrets, access, the audit.
 - **`send-messages`** when a job or assistant must reach me: a failure alert, a digest with a chart, a two-way chat; which channel and what never to send.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
 - **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.

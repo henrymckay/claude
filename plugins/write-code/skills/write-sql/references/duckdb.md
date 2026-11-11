@@ -12,12 +12,13 @@ select
     station,
     day,
     value
-from read_parquet(
-    'data/readings/**/*.parquet',
-    hive_partitioning = true,
-    hive_types = {'source': varchar, 'day': date},
-    union_by_name = true
-)
+from
+    read_parquet(
+        'data/readings/**/*.parquet',
+        hive_partitioning = true,
+        hive_types = { 'source': varchar, 'day': date },
+        union_by_name = true
+    )
 where day >= date '2026-01-01';
 ```
 
@@ -40,17 +41,24 @@ DuckDB has no `user_version` pragma, which is SQLite's: a DuckDB file keeps the 
 For a tree committed in the repository, where the documented paths start at its root:
 
 ```python
-README = pathlib.Path(__file__).parents[2] / "README.md"
+ROOT = pathlib.Path(__file__).parents[2]
 SQL_BLOCK = re.compile(r"```sql\n(.*?)```", flags=re.DOTALL)
+QUERIES = SQL_BLOCK.findall((ROOT / "README.md").read_text())
 
 
-@pytest.mark.parametrize("query", argvalues=SQL_BLOCK.findall(README.read_text()))
+@pytest.mark.parametrize("query", argvalues=QUERIES)
 def test_when_documented_query_runs_then_rows_come_back(
     query: str, stored_tree: pathlib.Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.chdir(stored_tree)
     assert duckdb.sql(query).fetchall()
+
+
+@pytest.mark.parametrize("query", argvalues=QUERIES)
+def test_when_documented_query_is_linted_then_it_keeps_the_style(query: str) -> None:
+    assert not sqlfluff.lint(query, config_path=str(ROOT / "pyproject.toml"))
 ```
 
-`stored_tree` is the fixture that writes a few partitions through the real store adapter under `tmp_path` and returns it; `duckdb` sits in the development dependency group, and `parents[2]` is the repository root from `tests/suite/`.
+`stored_tree` is the fixture that writes a few partitions through the real store adapter under `tmp_path` and returns it; `duckdb` and `sqlfluff` sit in the development dependency group, and `parents[2]` is the repository root from `tests/suite/`.
+Without `config_path`, `sqlfluff.lint` checks against the `ansi` dialect and its default rules, so a query in the house style fails on rules the project never chose (sqlfluff 4.5).
 A query the README documents and this test has not run is the one a schema change breaks unseen, so a block in another fence language — `duckdb`, a bare fence — is a block the test misses: fence every query as `sql`.

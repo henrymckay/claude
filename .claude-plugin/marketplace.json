@@ -15,7 +15,7 @@
     {
       "name": "manage-project",
       "source": "./plugins/manage-project",
-      "description": "Plan, build and review a project on the right model for each stage; git and Markdown conventions."
+      "description": "Plan, build and review a project on the right model for each stage, deciding from precedent and keeping private data safe; git and Markdown conventions."
     },
     {
       "name": "write-code",

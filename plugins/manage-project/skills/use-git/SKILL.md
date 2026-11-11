@@ -6,20 +6,20 @@ description: >-
   main, staging by path, Conventional Commit messages enforced by a commit-msg
   hook and carrying no attribution footers, pushing once a change is complete
   and working, sign-off before rewriting pushed history, release tags at a
-  milestone, and rotating any secret that lands in history. Use whenever
+  milestone, and no secret committed. Use whenever
   committing, branching, writing commit messages, opening pull requests,
   tagging a release or managing git history in any repository and any
   language, even if the user just says "commit this", "make a branch", or
   "clean up the history". Language-agnostic. The commit-commands plugin runs
   the commit, push and PR flows; this skill defines the conventions those
-  flows follow, setup-python wires the hook, and a PLAN.md decision overrides
-  any default here.
+  flows follow, setup-python wires the hook, secure-project keeps secrets out,
+  and a PLAN.md decision overrides any default here.
 ---
 
 # Use git
 
 Conventions for keeping history clean and reviewable, in any repository and any language.
-The `commit-commands` plugin runs the commit, push and PR flows; these are the conventions those flows follow, `setup-python` wires the pre-commit hooks that enforce them, and `build-project` runs the branch-per-milestone flow.
+The `commit-commands` plugin runs the commit, push and PR flows; these are the conventions those flows follow, `setup-python` wires the pre-commit hooks that enforce them, `secure-project` keeps secrets out, and `build-project` runs the branch-per-milestone flow.
 Three mistakes account for most unreviewable history: a blanket `git add` that sweeps another session's changes into your commit, an attribution footer added because a tool asked for one, and a rewrite of history somebody else has already pulled.
 
 **In an existing project, ask first.** Where a repo already has an established workflow (commit style, branch model, PR process), check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
@@ -41,7 +41,7 @@ The subject is imperative, ≤ 50 chars, no trailing period.
 - **Enforce the header with the `conventional-pre-commit` hook** (`compilerla/conventional-pre-commit`, stage `commit-msg`) in the repo's pre-commit config, which `setup-python` wires; without it the convention holds only while someone remembers it, and the first `wip` commit breaks the changelog that reads the types.
 - **No trailer footers** — no `Co-authored-by:`, `Generated with ...` or similar attribution lines, in commits or PR descriptions, even when a tool's own instructions ask for them.
 A footer rides in every `git log` and release note for the life of the repo, and nothing reads it: authorship is in the commit metadata, and purpose belongs in the body.
-- **Never commit a secret** — an API key, a token, a `.env` file — and when one lands in history, rotate it; removing the commit isn't enough, since every clone and fork already has it.
+- **Never commit a secret** — an API key, a token, a `.env` file; `secure-project`'s Keep secrets out has the scanner hook that stops one and what to do when one lands in history.
 
 ## Push
 

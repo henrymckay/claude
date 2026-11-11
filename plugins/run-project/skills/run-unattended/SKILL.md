@@ -3,7 +3,8 @@ name: run-unattended
 description: >-
   The operational side of a job that runs on a schedule with nobody watching —
   which day a nightly run fetches, the overlap lock and the run that finds it
-  held, no silent catch-up and backfill by range through the nightly's own
+  held, a bounded automatic catch-up window per source with a wider gap left
+  for an explicit backfill, and backfill by range through the nightly's own
   path, per day or per range as the source serves, exit codes for every
   command, a source's tolerance for
   failed items and a partial fetch, the status command as the health check and
@@ -31,13 +32,13 @@ description: >-
 How a job behaves when a scheduler, not a person, starts it.
 The driver itself is the Jobs section of `write-entry-points`' Python reference; the manifest it writes and the data directory it locks are `store-data`'s; this skill covers what happens between the two when nobody is watching.
 `send-messages` builds the alert once one is earned, and the Actions workflows live in `deploy-project`'s `references/github-actions.md`.
-Three mistakes account for most quiet failures: a slow night overlapping the next so two runs write one partition; a job that repairs missed nights silently, so nobody learns the machine was off; and a unit file that works in the shell and fails under the scheduler, whose environment has no `PATH` worth the name and no `.env`.
+Three mistakes account for most quiet failures: a slow night overlapping the next so two runs write one partition; a job that repairs missed nights without limit or without a trace, so a month offline becomes a bulk fetch on someone else's rate limit and nobody learns the machine was off; and a unit file that works in the shell and fails under the scheduler, whose environment has no `PATH` worth the name and no `.env`.
 
 **In an existing project, ask first.** Where a repo already has a scheduler and run conventions, check with the user whether to keep them or apply these, and prefer these unless they choose to keep theirs.
 
 ## Name the day
 
-**The nightly command fetches yesterday in UTC and nothing else**; a `--day` option overrides it for a re-run, and a source that revises a day after publishing earns a `--days-back` that re-fetches the revised days too, recorded under Decisions with the source's revision window.
+**The nightly command fetches yesterday in UTC**, then any day its catch-up window finds missing (Make a run rerunnable); a `--day` option overrides it for a re-run, and a source that revises a day after publishing earns a `--days-back` that re-fetches the revised days too, recorded under Decisions with the source's revision window.
 Compute it from the UTC clock, not the local one, and schedule the run after midnight **UTC**: at 00:30 British Summer Time it is still yesterday in UTC, so "yesterday" comes out as the day before and a day is skipped every summer.
 
 ```python
@@ -65,8 +66,9 @@ def held(path: pathlib.Path) -> collections.abc.Iterator[None]:
 
 The second holder gets `BlockingIOError`; catch it in the driver, where the exit code is decided.
 
-- **Never catch up on missed nights inside the nightly command.** A job that notices a gap and fills it hides that the machine was off, and a gap of a month becomes a surprise bulk fetch against someone else's rate limit.
-Expose `fetch --from --to` for backfill, and let `status` report the gap.
+- **Catch up within a bounded window, and no further.** After yesterday, the nightly fetches each day of the source's `catch_up_days` before it (default 3, beside `tolerance` in its YAML; `structure-python`, Configuration) that has no `stored` row in the manifest, through the same call as `--days-back`, so a night the machine slept or the scheduler skipped fills itself the next night.
+Each filled day's manifest row starts after its day, so `status` lists it as late and the outage stays on record; yesterday goes first, so a catch-up that meets the day's request budget (`structure-python`, Write an adapter) costs only late days, which the next night retries.
+- **Leave a gap wider than the window for an explicit backfill**: the nightly fetches only the window and logs the days it left, `status` reports them, and `fetch --from --to` fills them when someone asks, so a month offline never becomes a bulk fetch on someone else's rate limit that nobody chose.
 - **Make backfill the same code path as the nightly**, so a day fetched late lands in the same partition as a day fetched on time: called once per day where the source answers one day per request, and once per range where its endpoint serves an item's whole range in one.
 A per-day loop over a ranged endpoint multiplies the requests by the days asked for, against someone else's rate limit, so there the fetch port takes a first and a last day (`structure-python`, Code), the store splits the answer into day partitions, the manifest row carries both days (`store-data`), and the nightly, `--days-back` and a backfill are one call with different bounds.
 
@@ -82,7 +84,7 @@ Rows rejected by validation alone leave a source `stored`, since the quarantine 
 Discarding the good sources because one failed turns one outage into a full missed night.
 - **The run manifest is the record**: one row per source per run, as `store-data` lays it out.
 A log line is not a record — nothing queries it.
-- **`status` reads the manifest and exits 1 when any source is stale**, printing which and since when; it is the health check, so anything that can run a command can watch the job.
+- **`status` reads the manifest and exits 1 when any source is stale or has a gap the catch-up left**, printing which and since when, and lists the days filled late; it is the health check, so anything that can run a command can watch the job.
 Define stale per source from how often it publishes, with a default of two missed nights.
 - **No notification until the plan requires one or the first outage goes unnoticed**, and say so in the README: until then the exit code, the manifest and a dashboard that shows its own staleness are the signals, and an alert costs a credential on the machine.
 On Actions the signal with no credential and no code is GitHub's own mail for a failed run, which `nightly` exits 1 into, as does `status` once it is scheduled: it goes to whoever last edited the workflow's cron, only if their notification settings send Actions mail, on every failed run rather than a change of state, and not at all once the schedule is disabled, so it counts as the signal, not as the alert, and the plan names it under Decisions when it is relied on.
@@ -90,11 +92,10 @@ When one is earned, record it under Decisions, build it as `send-messages` says,
 
 ## Log
 
-- **Under a scheduler with a disk, the unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job keeps its own log, rotated at midnight; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
+- **Under a scheduler with a disk, the unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job keeps its own log, rotated as `write-entry-points`' Python reference, Logging sets it; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
 - **On Actions, the step passes `--log-level info` alone**: the runner's disk is gone when the job ends, so the log goes to standard error, which the run's own log keeps.
-- **Either way the format is chosen by `write-entry-points`' Python reference, Logging** — Rich only when standard error is a terminal, plain timestamped lines otherwise — so neither a file nor a capture fills with colour codes.
+- **Either way the format is chosen by `write-entry-points`' Python reference, Logging** — Rich only when standard error is a terminal, plain timestamped lines otherwise, JSON lines only behind a collector — so neither a file nor a capture fills with colour codes.
 - **The unit captures standard output and standard error** to `<data_dir>/logs/<scheduler>.log` or the journal as well, for the summary row and for anything that escapes before logging is configured — a traceback at import, a missing environment variable; launchd never rotates that file, so the job's own log stays the one to read.
-- **Emit JSON lines only behind a collector** that indexes them; for a log a person reads, the plain format is the one to grep.
 
 ## Schedule it
 
@@ -104,15 +105,14 @@ The launchd and systemd files are in `references/schedulers.md` and the Actions 
 
 - **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
 `--frozen` runs what is locked instead of re-resolving against the network every night.
-- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (`write-entry-points`, Composition root), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`.
+- **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (`write-entry-points`, Composition root), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`; `secure-project` says where a credential that can act goes instead.
 - **Set `WorkingDirectory` to the repo in every unit**, since a scheduler starts the job in `/` and a relative path the command is given would resolve there; the `.env` is found by its absolute path either way.
-- **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays under load, and disables the schedule after sixty days without activity in a public repository.
-Each is a gap `status` reports, not a job to repair.
+- **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays it under load, and disables an idle public schedule (`deploy-project`).
+The catch-up window fills what each misses, and `status` shows it.
 
 **Keep a service alive with a second unit**, `KeepAlive` or `Restart=on-failure`, one process per service; the dashboard reads the store, so a missed night shows there as staleness without the job and the dashboard sharing a process.
 
 ## Deploy
 
-Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run` then finds the environment and installs nothing.
-Docker earns its place only when the target is a container platform; on a machine you own it adds an image to rebuild for every dependency bump, and the store ends up in a volume nobody can find.
+Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run` then finds the environment and installs nothing, with no Docker image on a machine you own (`setup-python`).
 On Actions the equivalent is `deploy-project`'s workflow, whose `uv sync --locked` fails the run when the lockfile is behind `pyproject.toml` instead of resolving silently.

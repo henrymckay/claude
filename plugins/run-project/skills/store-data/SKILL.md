@@ -3,7 +3,8 @@ name: store-data
 description: >-
   Where a project's data lives and how it is written and read —
   hive-partitioned Parquet for pipeline output, read by Polars in code and
-  queried across the tree by DuckDB, MotherDuck when another machine or a
+  queried across the tree by DuckDB, Delta Lake once a write spans several
+  partitions or corrects rows in place, MotherDuck when another machine or a
   phone chat must reach it, SQLite for small single-writer state, Postgres
   only for a multi-writer service, and no ORM; the data directory, its
   environment override and its tree, named in the plan's terms, with a tree
@@ -12,7 +13,8 @@ description: >-
   port, a Parquet adapter bound to the directory that writes everything a
   fetch returned, and a MotherDuck adapter loading the records, metrics and
   manifest when the token is set while the raw archive stays local; one file
-  per partition, overwritten atomically so a re-run is idempotent, and an
+  per partition, its columns in alphabetical order and its timestamps UTC
+  with their zone, overwritten atomically so a re-run is idempotent, and an
   empty day stored as an empty partition; the raw archive one file per page,
   the quarantine's one schema for rejected rows and failed items, the run
   manifest with its counts, requests and outcomes, and long-form metrics
@@ -25,14 +27,15 @@ description: >-
   hosted dashboard — even if the user just says "save the results", "where
   should this live" or "add a database". Targets Polars 2.x and DuckDB 2.x.
   Layers on structure-python (the store is an adapter) and use-polars;
-  run-unattended reads the manifest and holds the lock, and write-sql covers
-  the SQL written against the store.
+  run-unattended reads the manifest and holds the lock, write-sql covers
+  the SQL written against the store, and secure-project decides which data
+  may leave the machine.
 ---
 
 # Store data
 
 Where a project's data lives, how it is written so a re-run is safe, and how it is read back.
-The store is a driven adapter in `structure-python`'s terms, the frames it moves obey `use-polars`, `run-unattended` reads the manifest it keeps, and `write-sql` covers the SQL written against it.
+The store is a driven adapter in `structure-python`'s terms, the frames it moves obey `use-polars`, `run-unattended` reads the manifest it keeps, `write-sql` covers the SQL written against it, and `secure-project` decides which of its data may leave the machine.
 Three mistakes account for most lost data: appending on a re-run, so a retried night doubles its rows; writing a file in place, so a crash leaves a half-file every later scan trips over; and discarding the raw response, so a parser fix cannot reach history.
 
 **In an existing project, ask first.** Where a repo already has a store, check with the user whether to keep it or apply this layout, and prefer this layout unless they choose to keep theirs.
@@ -43,9 +46,13 @@ Each pick is the default for its need; a `PLAN.md` decision overrides it, and a 
 
 - **Hive-partitioned Parquet** for pipeline output — `records/source=<s>/day=<d>/part.parquet`, scanned as one table.
 A single DuckDB file would be simpler to hand around, but it is one writer's binary blob: a crash mid-write risks the whole table where Parquet risks one day, and nothing but DuckDB can read it.
+- **Delta Lake through `deltalake`** once a write must change several partitions as one, correct rows in place, or read the store as it stood on an earlier date: it needs no catalog, Polars reads and writes it (`scan_delta`, `write_delta` with a `predicate` overwrite for one day) and DuckDB and MotherDuck read it with `delta_scan`.
+The cost is a dependency, a `vacuum` routine, and a tree that reads true only through Delta, since a replaced day's old file stays on disk until vacuumed and a plain Parquet scan returns both (deltalake 1.6, checked 2026-11-11).
+DuckLake fits DuckDB and MotherDuck best but adds a catalog database to back up, without which the files lose their table, and Polars has no reader of its own; Iceberg needs a catalog and many metadata files to serve one writer.
 - **Polars to read the tree in code**, and **DuckDB for a question across it** — `read_parquet` over the whole tree at a SQL prompt, or a view for a question asked often (Read).
 The read port is Polars because the core speaks frames; DuckDB earns its place where a person asks something no operation answers, joining and aggregating every partition without writing an operation for a one-off.
 - **MotherDuck** when more than one machine, or a phone chat, must reach the data: the same SQL over `duckdb.connect("md:<db>")`, with the token in the environment as `motherduck_token` (lower case, per MotherDuck's docs).
+It is an outside service, so private or personal data goes there only under a plan decision naming it (`secure-project`).
 Syncing Parquet to a bucket is the alternative and costs a sync step and credentials on every reader.
 - **SQLite** for small single-writer app state — a watermark table, a key-value cache — through the stdlib `sqlite3`.
 A JSON file is the alternative and loses atomic updates the moment two fields change together.
@@ -96,7 +103,16 @@ The API and the dashboard take only `port.Store`, so a stray write from either i
 **When `motherduck_token` is set, the root adds `adapt/motherduck.py`**, a second adapter satisfying both ports over `records`, `metrics` and `runs` tables, and hands the nightly both sinks, the tree first as the record, so a hosted dashboard and `status` read the manifest where they run.
 A second target inside `parquet.py` would be less code, but the hosted dashboard needs a MotherDuck reader anyway, and keeping the network out of `parquet.py` keeps its tests to a temporary directory.
 The load replaces the source's day in one transaction, the table's form of overwriting a partition, and a failed load raises after the tree is written, so the night exits 1 and a `fetch --day` re-run reloads it.
-**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`).
+**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`); a public repository's artifacts are readable by anyone signed in to GitHub, so there it holds public data only.
+
+## Shape a stored table
+
+**Order a stored table's columns alphabetically**: `frame.select(sorted(frame.columns))` in the adapter just before it writes, and the same order in a database table's definition.
+A join or `with_columns` appends its column at the end, so without the sort one table's files carry whatever order each frame happened to be built in; with it, `polars.testing.assert_frame_equal`, which checks column order, compares a write with its read-back directly, and the plan's schema table, the file and `describe` list each column in one place.
+The partition keys are the exception: they live in the path, not the file (Write a partition), and a scan appends them after the file's columns.
+
+**Store every timestamp as a UTC datetime with its time zone** — `polars.Datetime("us", "UTC")`, `timestamp with time zone` to DuckDB — never a naive one, and a calendar day as a `Date`.
+Polars raises `SchemaError` comparing a naive column with the core's aware values, and DuckDB compares a naive timestamp with an aware one in the session's time zone, so a query from a machine set to another zone is wrong by hours with no error (Polars 2.1, DuckDB 2.0).
 
 ## Write a partition
 
@@ -126,14 +142,14 @@ A frame that arrives carrying them (the quarantine's does) has them dropped on w
 
 - **Archive the raw response** under `raw/source=<s>/day=<d>/page-NNN.json`, one file per page in the wire format it arrived in, before parsing.
 A parser fix then re-parses history offline; without it the fix applies from tonight and every earlier day keeps the bug.
-- **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `record` (the raw record as a string, or the item's name where nothing arrived), `reason`, `source`, `day`.
+- **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `reason` and `record` (the raw record as a string, or the item's name where nothing arrived), with `source` and `day` from the path.
 Dropping them silently makes a schema change at the source look like a quiet day; the quarantine makes it a count, and one schema lets the whole tree be read as one table.
-- **Write a run manifest**, `runs.parquet`: one row per source per run with `source`, `day`, `rows`, `rejected`, `failed_items`, `requests`, `started`, `ended` and `outcome`.
-`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`, Write an adapter); `outcome` is an `enum.StrEnum` of `stored` (failed items within the source's tolerance, whatever was rejected), `partial` (more failed than it tolerates), and `failed` (nothing stored), as `run-unattended`'s Report the outcome reads them, and the `compute` stage writes its own row with `source="metrics"`.
-A fetch that covers a range (`run-unattended`, Make a run rerunnable) writes one row with `day` the range's first day and a `last_day` column its last, equal to `day` on a one-day row, and files its raw pages and failed items under that first day.
+- **Write a run manifest**, `runs.parquet`: one row per source per run with `day`, `ended`, `failed_items`, `last_day`, `outcome`, `rejected`, `requests`, `rows`, `source` and `started`.
+`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`, Write an adapter); `outcome` is an `enum.StrEnum` of `stored`, `partial` and `failed`, set as `run-unattended`'s Report the outcome says; `started` and `ended` are UTC timestamps, so a day filled late shows as a row started after its `day`, which `status` reports; and the `compute` stage writes its own row with `source="metrics"`.
+A fetch that covers a range (`run-unattended`, Make a run rerunnable) writes one row with `day` the range's first day and `last_day` its last, equal to `day` on a one-day row, and files its raw pages and failed items under that first day.
 It is small, so append by reading, concatenating and overwriting the file atomically; `run-unattended`'s `status` command reads it, and nothing else records that a night happened.
 - **Store metrics as a full recompute** overwriting `metrics.parquet` from the records, until a timed check shows the recompute exceeding the nightly window; an incremental update is a second code path that drifts from the full one, so it is earned by that measurement and nothing else.
-The file is long — `item`, `day`, `metric`, `value` — so a new metric is rows, not a column every reader must learn (`use-polars`).
+The file is long — `day`, `item`, `metric`, `value` — so a new metric is rows, not a column every reader must learn (`use-polars`).
 
 ## Read
 
