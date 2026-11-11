@@ -1,6 +1,5 @@
 ---
 name: review-project
-model: opus
 effort: high
 description: >-
   How to review a whole project and then fix what the review finds — checking

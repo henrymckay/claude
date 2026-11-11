@@ -1,6 +1,5 @@
 ---
 name: plan-project
-model: opus
 effort: high
 description: >-
   How to plan a project before building it — turning a loose conversation into

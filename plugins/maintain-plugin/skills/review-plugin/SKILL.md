@@ -1,6 +1,5 @@
 ---
 name: review-plugin
-model: opus
 effort: high
 description: >-
   How to review a Claude Code plugin, a marketplace of several, or a repo

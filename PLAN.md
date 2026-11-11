@@ -211,6 +211,7 @@ The skill named holds the pick, its alternative and its reason; the plan keeps t
 - **D39 A requirement is verified by behaviour** over by a skill existing *(proposed)* — the ladder's milestone was ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line below names a run and what it must show, and carries its status.
 - **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8.
 - **D41 A release is a tag on `main`** *(proposed)*, `v<major>.<minor>` cut after a sweep is merged and its suites pass, over installing from the tip — a work install pins a tag, so a sweep at home cannot change behaviour at work mid-week; cost: one tag per sweep.
+- **D42 No skill names a model in its frontmatter** (the user, 2026-11-11, issue 36) over keeping the lines as documentation — a `model` line changes the model a session is told it is on, not the one serving it, so it only misleads; the hand-off in D27 places each stage, and the `effort` lines stay.
 
 ## Delivery
 
@@ -237,7 +238,7 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 
 - [x] **M4 First trial build** — R1, R8; `market-data` planned, built, reviewed, and its feedback swept (2026-11-11).
 - [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
-- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q2 to Q4 are applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
+- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q3 and Q4 are applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
 - [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
 - [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
@@ -252,7 +253,6 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 ### Questions
 
 - **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q2** Drop the frontmatter `model` and `effort` lines from the four skills (issue 36)? — they tell a session it is on a model that is not serving it, and the hand-off now does the work; recommended: drop; blocks M16.
 - **Q3** Which licence? — recommended: MIT, the usual choice for a public skills repository an employer may need to approve; blocks M16.
 - **Q4** Confirm D37 (`coverage` over `pytest-cov`), D38 (no manifest row when the lock is held, and whether to delete the `skipped` outcome nothing produces), and D35's exemption of skill feedback from "no outward action"? — recommended: confirm all three and delete `skipped`; blocks M16.
 - **Q5** What is the second trial build? — recommended: a small dashboard over `market-data`'s store, since it exercises what the first did not (a dashboard, a deployment, SQL, a message) on data that already exists; an accounting or tax tool is the alternative and tests a new domain instead; blocks M18.

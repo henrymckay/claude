@@ -1,6 +1,5 @@
 ---
 name: build-project
-model: sonnet
 effort: medium
 description: >-
   How to build a planned project milestone by milestone with minimal input
