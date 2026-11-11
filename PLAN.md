@@ -25,7 +25,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 - **drift** — a skill's description, rules or examples falling out of line with its body, its neighbours or current tools.
 - **skill feedback** — a GitHub issue labelled `skill-feedback` on the owning plugin's repository, filed when a skill steered Claude wrong in real work; a machine that must not reach a public tracker records it to a file instead.
 - **autonomous mode** — a run with no user present: Claude proceeds on its recommended answers, records each as an assumption, and takes no outward action (D35).
-- **outward action** — creating a repository, publishing, deploying, messaging or spending money.
+- **outward action** — creating a repository, publishing, deploying, messaging, spending or moving money, or acting on an account.
 - **the ladder** — which model and effort runs each stage (D27).
 - **trial build** — a real project planned, built and reviewed with the plugins to test them, its skill feedback worked through by a sweep.
 - **build stream** / **skills stream** — building real projects with the skills as they stand / improving the skills from skill feedback and evaluations.
