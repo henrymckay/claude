@@ -160,3 +160,7 @@ Contribute to `plugins/`, `evaluate/`, `CLAUDE.md`, `PLAN.md` and this README.
 > [!WARNING]
 > **Never** commit Claude Code's runtime state.
 > Its sessions, history and caches must stay local to `~/.claude`.
+
+## 📄 Licence
+
+Released under the [MIT licence](LICENSE).

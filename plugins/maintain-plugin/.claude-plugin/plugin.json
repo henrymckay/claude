@@ -13,5 +13,6 @@
       "description": "Where Claude records a skill gap it hits: issues (a GitHub issue on the owning plugin's repository), file (~/.claude/skill-feedback.md, for a machine whose work must not reach a public tracker) or off.",
       "default": "issues"
     }
-  }
+  },
+  "license": "MIT"
 }

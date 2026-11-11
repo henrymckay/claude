@@ -43,14 +43,14 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 - **R5 `structure-app`** gives Claude a Python application's set-up and shape: the `uv` toolchain, house-pick libraries, layers, entry points.
   - Cost: the one plugin tied to a toolchain.
 - **R6 `run-project`** gives Claude a project's life after the build: its data, a job nobody watches, a free or near-free host per artefact, messages to the user.
-  - Cost: free tiers change yearly; the picks are personal, so it is not for work.
-- **R7 `maintain-plugin`** lets Claude maintain any plugin whose source it can read, the user's at home or at work: author a skill, review for drift, capture gaps.
+  - Cost: free tiers change yearly; the picks are one person's, so an install with its own infrastructure leaves it out.
+- **R7 `maintain-plugin`** lets Claude maintain any plugin whose source it can read, on any machine: author a skill, review for drift, capture gaps.
 It assumes no particular repository, tracker or toolchain.
   - Cost: a feedback destination per install; a report where it cannot push.
 - **R8 Self-improving.** A skill gap is captured when it surfaces, worked through on a schedule and on demand, and each fix verified by running the case; the user reviews the result, and no skill is edited mid-build.
   - Cost: a hook, a scheduled task, a trigger suite per plugin, trial builds.
-- **R9 Alone or together.** Each plugin installs and works on its own, at work included, and they work as a group; a machine that cannot install plugins symlinks them.
-  - Cost: a context file per plugin, pointers that must read correctly alone, releases a work install can pin.
+- **R9 Alone or together.** Each plugin installs and works on its own, on any machine, and they work as a group; a machine that cannot install plugins symlinks them.
+  - Cost: a context file per plugin, pointers that must read correctly alone, releases an install can pin.
 - **R10 Not boxed in.** A skill's default is a default: Claude researches, proposes ideas beyond the brief and the skills, and shows its decisions, alternatives, costs and sources for the user to challenge.
   - Cost: longer plans.
 - **R11 Skills worth loading.** Each is clear, concise, consistent with its neighbours, general, and holds nothing Claude does unprompted.
@@ -60,7 +60,7 @@ It assumes no particular repository, tracker or toolchain.
 ### Not yet
 
 - **A repository per plugin** — earned when a plugin needs different visibility or another owner; one repo keeps one tracker, one weekly pull request and cross-plugin drift caught in one sweep, and the marketplace can list a plugin that lives elsewhere.
-- **Icons, and a listing in the public plugin directory** — earned by wanting other people to find the plugins; the licence is Q3.
+- **Icons, and a listing in the public plugin directory** — earned by wanting other people to find the plugins.
 - **Toolchain skills other than `uv`** (Bazel and the like) — they belong in the repo that uses the toolchain, as project skills or a private plugin.
 - **A debugging skill** — earned when skill feedback shows debugging going wrong.
 - **References for a language other than Python** — earned by the first non-Python project; the scope is Python data, CLI, API and dashboards (2026-11-10).
@@ -150,8 +150,8 @@ Numbers are stable; the groups are for reading.
 
 **The repository and its wiring**
 
-- **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — the user installs some at work and not others; one repo keeps one tracker and one sweep (see Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace, checked 2026-11-11.
-- **D31 The groups, each named verb-first for the ability it gives** (the user, 2026-11-11): `maintain-plugin` (author skills, review any plugin, capture gaps), `manage-project` (the lifecycle, the model ladder, and `use-git` and `write-markdown`, which any repo needs), `write-code` (style, toolchain-free), `structure-app` (set-up and structure, where `uv` lives) and `run-project` (a project meeting the real world; personal free-tier picks, so not for work). `deploy-project` sits in `run-project` because its body is host picks; `plan-project`'s Runs on is the lifecycle's deployment step. `choose-model` sits in `manage-project` because the ladder is about a project's stages and three of the four skills it governs live there. The name `claude` is reserved by the validator.
+- **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — an install takes some and not others; one repo keeps one tracker and one sweep (see Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace, checked 2026-11-11.
+- **D31 The groups, each named verb-first for the ability it gives** (the user, 2026-11-11): `maintain-plugin` (author skills, review any plugin, capture gaps), `manage-project` (the lifecycle, the model ladder, and `use-git` and `write-markdown`, which any repo needs), `write-code` (style, toolchain-free), `structure-app` (set-up and structure, where `uv` lives) and `run-project` (a project meeting the real world; one person's free-tier picks, so the plugin an install is likeliest to leave out). `deploy-project` sits in `run-project` because its body is host picks; `plan-project`'s Runs on is the lifecycle's deployment step. `choose-model` sits in `manage-project` because the ladder is about a project's stages and three of the four skills it governs live there. The name `claude` is reserved by the validator.
 - **D1 Symlinks into `~/.claude`** remain a supported wiring for a machine that cannot install plugins; the authoring machine moved to the installed plugins on 2026-11-11 so it runs what others install (D30).
 - **D32 Always-on instructions per plugin are a context file printed by a SessionStart hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` keeps the same lines for the symlink wiring, and `review-plugin` checks the two agree.
 - **D34 A toolchain's commands live in the skill that owns it** — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under Bazel or anything else.
@@ -210,8 +210,10 @@ The skill named holds the pick, its alternative and its reason; the plan keeps t
 
 - **D39 A requirement is verified by behaviour** over by a skill existing *(proposed)* — the ladder's milestone was ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line below names a run and what it must show, and carries its status.
 - **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8.
-- **D41 A release is a tag on `main`** *(proposed)*, `v<major>.<minor>` cut after a sweep is merged and its suites pass, over installing from the tip — a work install pins a tag, so a sweep at home cannot change behaviour at work mid-week; cost: one tag per sweep.
+- **D41 A release is a tag on `main`** *(proposed)*, `v<major>.<minor>` cut after a sweep is merged and its suites pass, over installing from the tip — an install pins a tag, so a sweep cannot change behaviour on another machine mid-week; cost: one tag per sweep.
 - **D42 No skill names a model in its frontmatter** (the user, 2026-11-11, issue 36) over keeping the lines as documentation — a `model` line changes the model a session is told it is on, not the one serving it, so it only misleads; the hand-off in D27 places each stage, and the `effort` lines stay.
+- **D43 The MIT licence** (the user, 2026-11-11) over Apache 2.0 or none — without one nobody else may use the plugins, and MIT is the one an organisation approves most readily.
+- **D44 Nothing in the repo distinguishes home from work** (the user, 2026-11-11) — the plugins are for anyone on any machine; a constraint is named for what it is (a tracker that must stay private, a toolchain other than `uv`, a marketplace that is not allowed).
 
 ## Delivery
 
@@ -238,7 +240,7 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 
 - [x] **M4 First trial build** — R1, R8; `market-data` planned, built, reviewed, and its feedback swept (2026-11-11).
 - [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
-- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q3 and Q4 are applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
+- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q4 is applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
 - [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
 - [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
@@ -253,14 +255,13 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 ### Questions
 
 - **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q3** Which licence? — recommended: MIT, the usual choice for a public skills repository an employer may need to approve; blocks M16.
 - **Q4** Confirm D37 (`coverage` over `pytest-cov`), D38 (no manifest row when the lock is held, and whether to delete the `skipped` outcome nothing produces), and D35's exemption of skill feedback from "no outward action"? — recommended: confirm all three and delete `skipped`; blocks M16.
 - **Q5** What is the second trial build? — recommended: a small dashboard over `market-data`'s store, since it exercises what the first did not (a dashboard, a deployment, SQL, a message) on data that already exists; an accounting or tax tool is the alternative and tests a new domain instead; blocks M18.
 - **Q6** What happens to `market-data`? — its plan is unsigned with eight questions open, and nothing is pushed; recommended: keep it as the store Q5's dashboard reads, answer its questions when convenient, and decide on a private GitHub repository then; blocks M18 only if Q5 is the dashboard.
-- **Q7** At work, is a third-party marketplace allowed, or is it the symlink route? — only the user can find out; blocks M17's second-machine check.
+- **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — only the user can find out; blocks M17's second-machine check.
 
 ### Ideas
 
-- **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would turn M17's checks into something a work install runs on day one; costs a script to maintain; not built.
+- **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would turn M17's checks into something a new install runs on day one; costs a script to maintain; not built.
 - **I2** Have `build-project` write a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by a coordinator reading transcripts; costs a section in one skill; not built.
 - **I3** A budget line in `plan-project`'s Runs on for the build itself (expected stage cost at the ladder's prices) — the user asked about cost twice during the first trial; costs an estimate that will often be wrong; not built.
