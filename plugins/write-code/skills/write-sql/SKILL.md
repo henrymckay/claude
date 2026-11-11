@@ -30,7 +30,6 @@ description: >-
 Where SQL belongs in a project, and how to write it so it stays true while the data under it changes.
 It layers on `write-python` for the code that runs a query, `use-polars` for the frames it meets and `write-tests` for the test that runs it; `store-data` picks the engine and lays out what a query reads, `structure-python` places a packaged `.sql` file, and `setup-python` wires the linter's hook.
 Three mistakes account for most SQL that goes wrong: one result computed in both SQL and Polars, which then disagree; a documented query nobody runs, broken by the next schema change and found by its reader; and a type left to inference — a partition column, a date literal — that the engine guesses differently from the code.
-Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 - **Wrong** — the README's query is pasted into a prompt once, returns rows, and breaks for its reader the month a column is renamed.
 - **Right** — the suite runs the README's query against a tree the store wrote, so the rename fails a test in its own commit.
