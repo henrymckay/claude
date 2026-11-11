@@ -49,7 +49,7 @@ A skill named in this list or in another skill may belong to a plugin that is no
 - **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, or serves something: the data's class, where it may go, secrets, access, the audit.
 - **`send-messages`** when a job or assistant must reach me: a failure alert, a digest with a chart, a two-way chat; which channel and what never to send.
 - **`setup-python`** when scaffolding, packaging, or configuring a Python project (layout, `uv`, tooling).
-- **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.
+- **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, a table format, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.
 - **`structure-python`** when organising a Python application into layers: hexagonal core, ports/adapters, entry-point drivers.
 - **`use-git`** for any `git` operation: committing, branching, PRs, history (Conventional Commits; no `Co-authored-by` / "Generated with" footers).
 - **`use-polars`** when working with `polars`.

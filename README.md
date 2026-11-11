@@ -46,7 +46,7 @@ They ship as five plugins that stand alone and work together.
 - [`secure-project`](plugins/manage-project/skills/secure-project) classifies a project's data as public, licensed, private or personal, private by default, and decides from the class where it may go, how credentials for an account with money in it are held, and what is audited.
 - [`send-messages`](plugins/run-project/skills/send-messages) decides how a deployed job reaches you, from an [`ntfy`](https://ntfy.sh/) alert and an emailed digest to a chat through Claude Code channels, and what never deserves a message.
 - [`setup-python`](plugins/structure-app/skills/setup-python) scaffolds and configures a Python project with [`uv`](https://docs.astral.sh/uv/), [`ruff`](https://docs.astral.sh/ruff/), [`taplo`](https://taplo.tamasfe.dev/), [`pyright`](https://microsoft.github.io/pyright/), [`pytest`](https://docs.pytest.org/) and house-pick libraries for common tasks.
-- [`store-data`](plugins/run-project/skills/store-data) decides where a project's data lives, from hive-partitioned [Parquet](https://parquet.apache.org/) queried with [DuckDB](https://duckdb.org/) or [MotherDuck](https://motherduck.com/) to atomic partitions, the raw archive and the run manifest.
+- [`store-data`](plugins/run-project/skills/store-data) decides where a project's data lives, from hive-partitioned [Parquet](https://parquet.apache.org/) queried with [DuckDB](https://duckdb.org/) or [MotherDuck](https://motherduck.com/), and [DuckLake](https://ducklake.select/) or [Delta Lake](https://delta.io/) once a table format is earned, to atomic partitions, the raw archive and the run manifest.
 - [`structure-python`](plugins/structure-app/skills/structure-python) structures a Python application into hexagonal layers of a pure core behind ports, driven adapters and entry-point drivers over a `code`/`data`/`tests` layout.
 - [`use-git`](plugins/manage-project/skills/use-git) defines a `git` workflow from branching to [Conventional Commits](https://www.conventionalcommits.org).
 - [`use-polars`](plugins/write-code/skills/use-polars) covers idiomatic [`polars`](https://pola.rs), from the expression API to keeping every group in one frame instead of looping.
@@ -86,6 +86,7 @@ To take only some, link those entries one by one into `~/.claude/skills/` and co
 > [!TIP]
 > Other plugins live outside the repo under `~/.claude/plugins`.
 > From the [marketplace](https://github.com/anthropics/claude-plugins-official), `skill-creator`, `pyright-lsp` and `commit-commands` pair well with these skills.
+> `claude-security` is the security review `secure-project` prefers where it is installed, and `security-guidance` adds hooks that warn on a risky edit as it is made.
 
 ## 🎛️ Configure
 
