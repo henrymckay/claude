@@ -9,8 +9,9 @@ description: >-
   property-based testing with an imported oracle, testing the dependency
   behaviour you rely on, the transport and sleep seams a paced client needs
   and the one patch a pacing library's own sleep earns, checking that a
-  fixture can exhibit the failure and a generator reaches the state, testing a
-  store, a dashboard and a CLI through its runner, and checking a build
+  fixture can exhibit the failure and a generator reaches the state, a wait
+  helper that fails on its timeout, testing a store, a dashboard and a CLI
+  through its runner, and checking a build
   against the real source by its counts; no coverage target, no mutation
   testing, no snapshots until earned. Use whenever writing, editing or
   reviewing tests, adding coverage, or setting up a suite, even if the user
@@ -73,6 +74,7 @@ For what is genuinely about the client — what it treats as failure, what it re
 A pacing library whose wait takes no parameter is patched at its own module's sleep — the external boundary the patch rule allows — never worked around with a busier loop in the adapter.
 
 **Never touch the real clock, randomness or network**, except in the marked real-surface run below; inject them (see `be-functional`) and pass fixed values or a seed, since a test that sleeps for real is a slow test that still proves nothing about the wait.
+**A helper that polls for a condition waits only for what the test reads, under a timeout, and fails when the timeout passes**, naming what never arrived; one that carries on after its budget asserts on unsettled state, and spends the whole budget in every test whose condition never comes.
 
 ## Test data
 
