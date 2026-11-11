@@ -11,9 +11,10 @@ description: >-
   across plugins, dead cross-references, trigger overlap, every code block and
   library claim re-run, the always-on instructions, PLAN.md and the README
   against the skills, the manifests, hooks, symlinks and feedback wiring, and
-  auto-memory; run in a session or unattended as a scheduled task that opens
-  one pull request, each skill's fixes committed with word counts and every
-  cut rule flagged; on a plugin you cannot push to, the same review ends in a
+  auto-memory, the trigger suites, and promoting a decision that recurs
+  across projects into its skill; landed as one pull request whether run in a
+  session or as a scheduled task, each skill's fixes committed with word
+  counts and every cut rule flagged; on a plugin you cannot push to, the same review ends in a
   report, an issue or a pull request from a fork. Use after a run of skill
   edits, when skill feedback has piled up, or whenever the user asks to
   review, audit, tidy or sweep skills, a plugin or a Claude repo, theirs or
@@ -47,10 +48,12 @@ Verify each against the files, then settle it one of four ways:
 
 Where an issue describes a case, verify the fix by running that case — a throwaway prompt or script — not by reading the new wording.
 Several reports against one skill mean its structure is wrong; rework the skill rather than patching each report.
+**Promote a decision that recurs.** Where feedback, or a plan the sweep can read, shows one decision made again by precedent from another project, or proposed alike in two, make it the owning skill's default with its reason (`make-decisions`), so the next project finds it in the skill instead of re-deciding it.
 
-## Run unattended
+## Land it as one pull request
 
-As a scheduled task, work on a branch and open one pull request carrying the report as its body, so the user reviews the week's changes in one place; in a session, commit as the plan decides.
+Work on one branch and open one pull request carrying the report as its body, whether the sweep runs as a scheduled task or in a session, so the user reviews every skill change in one place before it reaches an install.
+Who merges is the plan's decision; without one, the user does.
 
 ## Take an inventory
 
@@ -87,6 +90,8 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 - **Every symlink resolves**, into `~/.claude` and from a top-level `skills/` folder into the plugins, or is dangling on purpose.
 - **`.gitignore` covers what should never be committed**: editor folders, caches, OS files, folders synced in by other tools.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
+- **Each trigger suite passes**, run from every plugin folder the sweep touched: `claude plugin eval . --ablation none --no-publish --trust-plugin`.
+`--trust-plugin` stands in for the trust prompt no unattended run can answer, so pass it only for a plugin whose source the sweep has read; a case scoring 0 at no cost with an API or timeout note never reached the model, so rerun it rather than reword its description.
 - **The feedback wiring works**: the `skill-feedback` label exists on the plugin's repository and `gh issue list` runs authenticated (`gh api` where GraphQL is blocked).
 
 ## Check memory
