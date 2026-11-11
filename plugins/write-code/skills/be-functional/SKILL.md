@@ -61,7 +61,7 @@ Where the default goes depends on the effect:
 - **Ambient standard-library effects** (clock, environment, randomness) default to the real thing in place; callers pass nothing, tests pass a value (patterns in `references/python.md`).
 In a layered app the core takes them with no default and the driver passes the real thing, since `structure-python` keeps the core free of IO.
 - **A library- or service-coupled dependency** gets **no default in the core**, which would import the library inward.
-The core types it as a *port* it defines, and the entry point injects the concrete adapter — `structure-python`'s composition root.
+The core types it as a *port* it defines, and the entry point injects the concrete adapter — `write-entry-points`' Composition root.
 
 ## Functions over classes
 
