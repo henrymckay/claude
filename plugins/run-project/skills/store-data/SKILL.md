@@ -3,33 +3,28 @@ name: store-data
 description: >-
   Where a project's data lives and how it is written and read —
   hive-partitioned Parquet for pipeline output, read by Polars in code and
-  queried across the tree by DuckDB, Delta Lake once a write spans several
-  partitions or corrects rows in place, MotherDuck when another machine or a
-  phone chat must reach it, SQLite for small single-writer state, Postgres
-  only for a multi-writer service, and no ORM; the data directory, its
-  environment override and its tree, named in the plan's terms, with a tree
-  per dataset once a second schema arrives; the store as a write port and a
-  read
-  port, a Parquet adapter bound to the directory that writes everything a
-  fetch returned, and a MotherDuck adapter loading the records, metrics and
-  manifest when the token is set while the raw archive stays local; one file
-  per partition, its columns in alphabetical order and its timestamps UTC
-  with their zone, overwritten atomically so a re-run is idempotent, and an
-  empty day stored as an empty partition; the raw archive one file per page,
-  the quarantine's one schema for rejected rows and failed items, the run
-  manifest with its counts, requests and outcomes, and long-form metrics
-  recomputed whole; compacting only once measured; and testing a store on a
-  temporary directory with an in-memory fake for the core. Use whenever
-  deciding where a project's output goes, writing a store adapter, choosing
-  between Parquet, DuckDB, SQLite or Postgres, laying out a data directory,
+  queried across the tree by DuckDB; DuckLake or Delta Lake once a write
+  spans partitions, corrects rows or must read an earlier state, and what
+  each costs; MotherDuck when another machine or a phone chat must reach it,
+  with the DuckDB client it accepts; SQLite for small single-writer state,
+  Postgres only for a multi-writer service, and no ORM; the data directory
+  and its tree, named in the plan's terms; the store as a write port and a
+  read port over a Parquet adapter and a MotherDuck adapter; one file per
+  partition, its columns in alphabetical order and its timestamps UTC,
+  overwritten atomically so a re-run is idempotent, and an empty day stored
+  as an empty partition; the raw archive, the quarantine and the run
+  manifest; metrics recomputed whole, compacting only once measured, and
+  testing a store on a temporary directory. Use whenever deciding where a
+  project's output goes, writing a store adapter, choosing between Parquet,
+  a table format, DuckDB, SQLite or Postgres, laying out a data directory,
   writing or scanning Parquet, deciding what to keep when a row or an item
   fails, recording what a run did, or sharing data with another machine or a
   hosted dashboard — even if the user just says "save the results", "where
   should this live" or "add a database". Targets Polars 2.x and DuckDB 2.x.
   Layers on structure-python (the store is an adapter) and use-polars;
-  run-unattended reads the manifest and holds the lock, write-sql covers
-  the SQL written against the store, and secure-project decides which data
-  may leave the machine.
+  run-unattended reads the manifest and holds the lock, write-sql covers the
+  SQL written against the store, and secure-project decides which data may
+  leave the machine.
 ---
 
 # Store data
@@ -46,19 +41,36 @@ Each pick is the default for its need; a `PLAN.md` decision overrides it, and a 
 
 - **Hive-partitioned Parquet** for pipeline output — `records/source=<s>/day=<d>/part.parquet`, scanned as one table.
 A single DuckDB file would be simpler to hand around, but it is one writer's binary blob: a crash mid-write risks the whole table where Parquet risks one day, and nothing but DuckDB can read it.
-- **Delta Lake through `deltalake`** once a write must change several partitions as one, correct rows in place, or read the store as it stood on an earlier date: it needs no catalog, Polars reads and writes it (`scan_delta`, `write_delta` with a `predicate` overwrite for one day) and DuckDB and MotherDuck read it with `delta_scan`.
-The cost is a dependency, a `vacuum` routine, and a tree that reads true only through Delta, since a replaced day's old file stays on disk until vacuumed and a plain Parquet scan returns both (deltalake 1.6, checked 2026-11-11).
-DuckLake fits DuckDB and MotherDuck best but adds a catalog database to back up, without which the files lose their table, and Polars has no reader of its own; Iceberg needs a catalog and many metadata files to serve one writer.
+- **A table format — DuckLake or Delta Lake — once a write must change several partitions as one, correct rows in place, or read the store as it stood on an earlier date** (Pick a table format).
 - **Polars to read the tree in code**, and **DuckDB for a question across it** — `read_parquet` over the whole tree at a SQL prompt, or a view for a question asked often (Read).
 The read port is Polars because the core speaks frames; DuckDB earns its place where a person asks something no operation answers, joining and aggregating every partition without writing an operation for a one-off.
 - **MotherDuck** when more than one machine, or a phone chat, must reach the data: the same SQL over `duckdb.connect("md:<db>")`, with the token in the environment as `motherduck_token` (lower case, per MotherDuck's docs).
 It is an outside service, so private or personal data goes there only under a plan decision naming it (`secure-project`).
+**Pin `duckdb` to the client versions MotherDuck accepts**, which its docs list: 1.4.1 to 1.5.6 on 2026-11-12, when a 2.0 client's `motherduck` extension refused to load ("not yet supported by MotherDuck").
+1.5.6 ships wheels up to Python 3.14 only, so until MotherDuck accepts 2.0 a project that reaches it sets `requires-python` below `setup-python`'s floor, recorded as a proposed decision naming that pin.
 Syncing Parquet to a bucket is the alternative and costs a sync step and credentials on every reader.
 - **SQLite** for small single-writer app state — a watermark table, a key-value cache — through the stdlib `sqlite3`.
 A JSON file is the alternative and loses atomic updates the moment two fields change together.
 - **Postgres** only for a multi-writer service; it earns a server to run, so a `PLAN.md` decision names it.
 
 **No ORM.** Frames cross the boundary as frames: `polars.read_database` with a `sqlite3` connection, `write_database(..., engine="adbc")` with `adbc-driver-sqlite` installed — the default `sqlalchemy` engine refuses without `pandas`.
+
+## Pick a table format
+
+**Hive-partitioned Parquet stays the default for one writer's output**: any reader reads it correctly with no catalog or log, Write a partition's atomic rename makes a re-run safe, and a new column costs `missing_columns="insert"` at the read.
+A table format earns its place when the plan needs what the tree cannot give by hand — several partitions or tables changed as one, rows corrected in place, the store as it stood on an earlier date, or more than one writer — and every format leaves files that read true only through it: a replaced day's old file stays on disk until cleaned up, and a plain Parquet scan of both trial tables returned the old rows beside the new.
+
+- **DuckLake pairs best with DuckDB and MotherDuck.** A catalog database — a DuckDB or SQLite file beside the data, Postgres for several writers, or MotherDuck — records the table, and the data is Parquet under a hive-style path (`ATTACH 'ducklake:catalog.ducklake' AS lake (DATA_PATH 'data/')`, then `ALTER TABLE ... SET PARTITIONED BY (day)`).
+A day is replaced by `DELETE` then `INSERT` in one transaction, which is one snapshot; a column is added without rewriting a file; `AT (VERSION => n)` reads an earlier snapshot.
+The read port queries it through DuckDB and hands the result over with `.pl()`, or `.pl(lazy=True)` for a `LazyFrame`, so the core still receives frames and its tests use a DuckLake under `tmp_path`.
+The costs: the catalog is part of the data, backed up with the files, and a DuckDB-file catalog admits one writing process at a time; a write under ten rows is kept in the catalog, not a file, unless the attach sets `DATA_INLINING_ROW_LIMIT 0`; old files stay until `ducklake_expire_snapshots` and `ducklake_cleanup_old_files` run; and Polars has no reader of its own.
+With MotherDuck holding the catalog the back-up moves there, but the client pin above applies and data on MotherDuck's own storage is not reachable from your compute, only data in your bucket (MotherDuck's docs, read, not run).
+- **Delta Lake through `deltalake`** where Polars or an engine other than DuckDB must write the table: no catalog, since the log sits in the table's folder; Polars reads and writes it (`scan_delta`; `write_delta` with `mode="overwrite"` and a `predicate` in `delta_write_options` replacing one day, `schema_mode="merge"` adding a column); DuckDB reads it with `delta_scan` and appends but cannot delete or update; MotherDuck only reads it.
+The costs are a dependency and an `optimize` and `vacuum` routine.
+- **Iceberg** needs a REST catalog before DuckDB will write it, so it earns its place only where a platform already serves one.
+
+Pick DuckLake with a local catalog where every reader goes through DuckDB, Delta where a Polars or non-DuckDB writer needs the same guarantees, and record either as a decision with the need that earned it.
+Checked 2026-11-12 by running DuckDB 2.0.0 with DuckLake 1.1, deltalake 1.6.6 and Polars 2.1.0 in throwaway scripts.
 
 ## Lay out the data directory
 
