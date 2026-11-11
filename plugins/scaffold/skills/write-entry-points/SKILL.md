@@ -104,7 +104,7 @@ The form you check by hand is then never the form a script receives, and the par
 
 Dropping *colour* off a terminal is not this — the structure is identical, and the rendering library does it for you.
 
-**Every command emits rows on standard output, sized to what it did.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`) — what, how many, how long, with what outcome — so a scheduler's log shows the run without a second command and nothing is summarised twice; `status` emits key/value rows.
+**Every command emits rows on standard output, sized to what it did.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`) — what, how many, how long, with what outcome, and nothing when it found the lock held and wrote none (`run-unattended`) — so a scheduler's log shows the run without a second command and nothing is summarised twice; `status` emits key/value rows.
 A command that prints prose on success has nothing a script can read.
 
 **Exit with the codes `run-unattended`'s Report the outcome sets**, from every command, interactive or scheduled, so a script and a scheduler read one meaning.
