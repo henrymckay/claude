@@ -15,7 +15,7 @@ description: >-
   project config or hooks; cutting a release; or choosing a house-pick library
   for a task — even if the user just says "set this up", "add a dependency",
   or "make this a package". Standardises on uv, ruff, taplo, pyright and
-  pytest, with no task runner, Docker only for a deployed API or job, and no
+  pytest, with no task runner, Docker only for a container platform, and no
   CI until a project earns it; a PLAN.md decision overrides any pick. Plan a
   new project first with plan-project. For how to organise the application's
   code into layers, see structure-python; for in-code style, write-python; for
@@ -42,7 +42,7 @@ Standardise on these five tools; set them up once and defer to them everywhere:
 - **`pytest`** — tests in `tests/`.
 
 `sqlfluff` joins them for SQL once a project holds a `.sql` file (Pre-commit hooks).
-Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job that is deployed somewhere other than the machine it was built on, from the `ghcr.io/astral-sh/uv` image; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
+Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job deployed to a container platform such as Cloud Run (`deploy-project`), from the `ghcr.io/astral-sh/uv` image, since a machine you own and an Actions runner both install from `uv.lock`; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
 
 ## Configure the project
 
@@ -171,7 +171,7 @@ No optional-extras split (`mypackage[dashboard]`): one install carries every dri
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s Write an adapter has the mechanics.
 A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered; the client is sync as `write-python`'s Sync and async says.
-- **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person, and JSON lines only where a collector reads them (see `run-unattended`); never `loguru`, which replaces the logger every dependency already writes to.
+- **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
 - **Plotting** → `plotly`, rendered in `shiny` through `shinywidgets`; `matplotlib` only for a static image a report embeds.
