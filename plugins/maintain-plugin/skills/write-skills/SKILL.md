@@ -54,7 +54,7 @@ Write plain prose with no backticks (see `write-markdown`), in this order, mirro
 
 1. **What it is** — a phrase naming the skill and its key topics; counterparts use parallel forms ("Functional programming done well — …" / "Object-oriented design done well — …").
 2. **When to use it** — "Use when/whenever …", the contexts that should invoke it, ending with the casual phrasings ("even if the user just says '…'").
-   Cover the whole body and promise nothing it lacks, at the level of its topics rather than its rules: every description is loaded on every turn of every session, so a rule restated there is paid thousands of times, and one past about 200 words has started listing rules.
+   Cover the whole body and promise nothing it lacks, at the level of its topics rather than its rules: every description is loaded on every turn of every session, so a rule restated there is paid thousands of times, and one past about 250 words has started listing rules.
    For a skill that governs work a model can answer inline — a snippet, a function, a README — open this part with "Load it before the first line of …, even …", since the model otherwise answers without loading anything.
 3. **What it targets**, only where a version matters — "Targets Polars 2.x."
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
