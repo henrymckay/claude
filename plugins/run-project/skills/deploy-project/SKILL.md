@@ -48,7 +48,7 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **API** — a Render free web service, once a second consumer earns one.
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
-**Private or personal data stays on the owner's machine** unless a plan decision names a host for it: the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8000` shares the port with their own devices only; the Personal plan is free for up to six users).
+**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8001` shares the dashboard's port with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
 Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — MotherDuck behind Streamlit's private app — sends every row to two outside services, which `secure-project` allows only under a signed-off decision naming them.
 
 **A private repository holding public data changes three of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; Pages and Connect Cloud Free take public repositories only, so the dashboard moves to Streamlit Community Cloud's one private app, whose viewers sign in by invitation, or to Connect Cloud Basic at $19 a month, which publishes from a private repository but still to anyone with the link (private sharing is its Enhanced plan); MotherDuck and Render are unaffected.
@@ -59,7 +59,7 @@ A weather project, say, fetches yesterday's observations each night into MotherD
 
 ## Run the pipeline
 
-**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked` then `uv run myapp-cli nightly --log-level info`; the file is in `references/github-actions.md`.
+**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked --no-dev` then `uv run --no-dev myapp-cli nightly --log-level info`, the second flag so the run does not install the dev group the sync left out; the file is in `references/github-actions.md`.
 A public repository runs it free; a job must finish inside six hours, and the cron fires on the default branch only, at most every five minutes, and late under load, so pick a minute other than `:00` and let `run-unattended`'s day rule set the hour.
 
 - **Write to MotherDuck and commit the data tree back** — the night's `records/` and `rejected/` partitions, `metrics.parquet`, `runs.parquet` and `alerts.json` — with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
@@ -113,6 +113,6 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 ## Re-check the tiers
 
 Free tiers moved several times between 2024 and 2026; every figure above not marked otherwise was read from the vendor's page on 2026-11-11.
-**Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; the weekly `review-plugin` sweep re-checks the picks in this skill.
+**Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
 Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need PRO); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).
