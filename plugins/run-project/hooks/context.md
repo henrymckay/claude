@@ -10,4 +10,4 @@ A skill named in this list or in another skill may belong to a plugin that is no
 - **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud: the free-tier host per artefact and how it gets there.
 - **`run-unattended`** when a job runs on a schedule with nobody watching: the day it fetches, the lock, catch-up, exit codes, `status`, logs, the scheduler unit.
 - **`send-messages`** when a job or assistant must reach the user: a failure alert, a digest with a chart, a two-way chat; which channel and what never to send.
-- **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.
+- **`store-data`** when deciding where a project's data lives and how it is written and read: Parquet, a table format, DuckDB, MotherDuck, SQLite; the data directory, atomic partitions, the raw archive, quarantine and the run manifest.

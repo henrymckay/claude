@@ -4,40 +4,36 @@ description: >-
   How to build an application's entry points — the drivers that invoke it: a
   command-line interface, an HTTP API, a GUI or dashboard, and the scheduled
   command a scheduler calls. Each is a thin shell over the pure core and the
-  composition root that reads settings once, binds the secret into the adapter
-  it builds and injects it into an operation, designed as a public surface and
-  built to compose with the tools around it: CSV with a header by default and
-  a format option for JSON lines, a table or Parquet, the manifest row from a
-  command that acts, the exit codes run-unattended sets, a positional list
-  overriding the configured one, date ranges inclusive at both ends on the CLI
-  and the API, resource paths bounded by date, one handler mapping the app's
-  errors to statuses, an API and a dashboard that read the store and never the
-  source, and a dashboard that refreshes when the run manifest changes. Load
-  it before adding or changing a CLI, API, dashboard or scheduled command,
-  even before reading the package. Use whenever adding or structuring an entry
-  point, designing a command's options or an API's surface, deciding what goes
-  to standard output and what to standard error, taking input from arguments,
-  files or standard input, exposing each pipeline stage as its own command,
+  composition root that reads settings once and binds each secret into the
+  adapter it builds, designed as a public surface that composes with the
+  tools around it: CSV with a header by default and a format option for the
+  rest, the manifest row from a command that acts, run-unattended's exit
+  codes, date ranges inclusive at both ends, one handler mapping the app's
+  errors to statuses, a loopback server guarded by its Host and Origin, an
+  API and a dashboard that read the store and never the source, and a
+  dashboard that refreshes when the run manifest changes and shows the last
+  run's age. Load it before adding or changing a CLI, API, dashboard or
+  scheduled command, even before reading the package. Use whenever adding or
+  structuring an entry point, designing a command's options or an API's
+  surface, deciding what goes to standard output and what to standard error,
   wiring dependency injection at the boundary, reading settings and finding
   the .env under a scheduler, sizing a fetch that needs warm-up history,
-  picking a command's log destination and level, splitting a driver into role
-  and framework packages at the right rung, or naming a launch command — even
-  if the user just says "add a CLI", "expose an API", "build a dashboard",
-  "run this on a schedule", or names typer, fastapi, uvicorn,
-  pydantic-settings, shiny, shinywidgets or a scheduler. Language-agnostic
-  principles here; Python build-outs in references/python.md. Layers on
-  structure-python's drive layer and be-functional; run-unattended owns what
-  the scheduled command does unwatched and its exit codes, store-data the data
-  it writes, and a PLAN.md decision overrides any rule here.
+  testing a dashboard, or naming a launch command — even if the user just
+  says "add a CLI", "expose an API", "build a dashboard", "run this on a
+  schedule", or names typer, fastapi, uvicorn, pydantic-settings, shiny or
+  shinywidgets. Language-agnostic principles here; Python build-outs in
+  references/python.md. Layers on structure-python's drive layer and
+  be-functional; run-unattended owns what the scheduled command does
+  unwatched and its exit codes, store-data the data it writes, and
+  secure-project what a served surface must guard.
 ---
 
 # Write entry points
 
 An **entry point** is a **driver**: a thin shell over the core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell); what a scheduled command does when nobody is watching is `run-unattended`'s, and the data it writes is `store-data`'s.
+It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell); what a scheduled command does when nobody is watching is `run-unattended`'s, the data it writes is `store-data`'s, and what a served surface must guard is `secure-project`'s.
 Three mistakes account for most of what goes wrong: logic that settles in the shell instead of the core, output shaped for a person while something is piping it, and a capability reachable only as a side effect of asking for something else.
-Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
 
@@ -127,10 +123,11 @@ An API is the CLI's surface over HTTP, so the same options become query paramete
 - **A path names a resource, a query parameter narrows it**: `/readings?station=LHR&start=2026-01-01`, not `/getReadings`.
 - **Bound a range by date, never by offset.** `start` and `end` (inclusive, as the CLI's `--from`/`--to` are) give the same answer on every call; `offset=200` shifts as rows arrive, so a client paging through a live source skips or repeats rows and nothing tells it.
 - **An API and a dashboard read the store, never the source.** Each request calls an operation over the store's read port (`store-data`); a request that reached the rate-limited source would spend the quota a browser reload at a time, and show a different answer from the nightly's.
-- **A dashboard refreshes when the run manifest changes**, not on a clock of its own, so it re-reads once a night and shows its own staleness; the Python reference has the local and the hosted mechanics.
+- **A dashboard re-reads the store when the run manifest changes**, not on a clock of its own, so it reads once a night; **and shows the last run's age, re-judged on a slow clock** — an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
+The Python reference has the local and the hosted mechanics.
 - **One handler maps the app's errors to statuses** — an absent thing `404`, bounds out of range `422`, the rest `500` — so no route catches anything.
 - **No version prefix until a second client exists.** `/v1/` promises a `/v2/` nobody has asked for; add it when a breaking change meets a client you can't update.
-- **Bind to the loopback interface and skip authentication while the API is read-only on one machine**; the moment it binds beyond the machine or writes, both arrive together, since an unauthenticated writer on a network is a public form.
+- **Bind to the loopback interface and skip authentication while the API is read-only on one machine**, checking `Host` and `Origin` as `secure-project`'s Guard what is served says; the moment it binds beyond the machine or writes, authentication arrives, since an unauthenticated writer on a network is a public form.
 - **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request, synchronous as `write-python` says; the Python reference has the mechanics.
 
 ## Composition root
@@ -172,6 +169,6 @@ Give each entry point a **launch command namespaced to the project** (`myapp-cli
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer`, `fastapi` and `shiny` build-outs, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, the log handler for a terminal, a capture and a file, and launch).
+- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer`, `fastapi` and `shiny` build-outs and testing the dashboard in process, the loopback guard, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, the log handler for a terminal, a capture and a file, and launch).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

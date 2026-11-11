@@ -13,7 +13,7 @@ description: >-
   "clean up the history". Language-agnostic. The commit-commands plugin runs
   the commit, push and PR flows; this skill defines the conventions those
   flows follow, setup-python wires the hook, secure-project keeps secrets out,
-  and a PLAN.md decision overrides any default here.
+  and build-project runs the branch-per-milestone flow.
 ---
 
 # Use git
@@ -28,7 +28,7 @@ Three mistakes account for most unreviewable history: a blanket `git add` that s
 
 - **Work on a branch off `main` and integrate by pull request, squash-merged or merged per the repo's convention, except where the repo's `PLAN.md` records a decision to commit straight to `main`** — a solo repo with nothing to merge, such as a docs repo, or a scheduled job's data commits (`deploy-project`) — in which case commit there and skip the PR (see `build-project`).
 The decision wins over this default, as the session's always-on instructions say of every skill default; a plan that says nothing branches.
-- **A brand-new repository's scaffold is its first commit on `main`**, since there is nothing to branch off yet; `build-project` says where it falls in M1.
+- **A brand-new repository's scaffold is its first commit on `main`**, since there is nothing to branch off yet; `plan-project`'s Go from conversation to plan makes it part of M1.
 
 ## Commit
 

@@ -33,7 +33,7 @@ jobs:
       - id: day
         run: echo "day=$(date -u -d yesterday +%F)" >> "$GITHUB_OUTPUT"
       - id: run
-        run: uv run myapp-cli nightly --log-level info
+        run: uv run --no-dev myapp-cli nightly --log-level info
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
           MYAPP_NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
@@ -74,7 +74,7 @@ jobs:
       - run: uv sync --locked --no-dev
       - run: uvx shinylive export app site
       - run: mkdir -p site/data
-      - run: uv run myapp-cli export metrics --format parquet --output site/data/metrics.parquet
+      - run: uv run --no-dev myapp-cli export metrics --format parquet --output site/data/metrics.parquet
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
       - uses: actions/upload-pages-artifact@v5
@@ -134,7 +134,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
-      - run: uv run myapp-cli status --alert
+      - run: uv run --no-dev myapp-cli status --alert
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
           MYAPP_NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}

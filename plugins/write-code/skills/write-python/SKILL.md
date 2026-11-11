@@ -9,9 +9,8 @@ description: >-
   ordering, simplicity, the one error model (raise from the app's error
   package, convert or classify at an adapter's seam, decide what the user sees
   in a driver, nothing caught in the core, X | None only for a lookup miss),
-  sync by default, and idioms, opening with the magic trailing comma and
-  closing with the Avoid list. A rule that bends carries its exception, and a
-  PLAN.md decision overrides any of them. Load it before the first line of any
+  sync by default, and idioms, with what to avoid. A rule that bends carries
+  its exception. Load it before the first line of any
   Python, even a one-off function answered inline. Use whenever writing,
   editing, refactoring or reviewing Python code, even if the user doesn't
   mention "conventions", "style", or "clean code". Targets the Python floor
@@ -29,7 +28,6 @@ It is the baseline that `be-functional`, `be-oop` and `write-tests` layer on; pr
 Three habits account for most of what goes wrong: importing names instead of modules, leaving a function unannotated or undocumented, and reaching for a class or abstraction before a second case calls for one.
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
-Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 ## Formatting
 

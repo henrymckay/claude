@@ -2,36 +2,28 @@
 name: structure-python
 description: >-
   How to structure a non-trivial Python application — the hexagonal
-  (ports-and-adapters) layers of a pure core (domain types, logic, and use
+  (ports-and-adapters) layers of a pure core (domain types, logic and use
   cases behind ports) and an outer edge (driven adapters for IO, entry-point
-  drivers at a composition root), how to declare a port as a noun satisfied by
-  a verb and split one whose halves differ, how to write an adapter that maps
-  into the port's shared schema, fetches one source for one day politely
-  through one httpx client the composition root opens with the key bound in,
-  paced by pyrate-limiter at every window the service states within the day's
-  budget and retried by tenacity with a transport and a sleep as test seams,
-  pages to exhaustion, and returns what it got — records, rejected rows, raw
-  pages and failed items — for the store to write, failing an item rather than
-  the source and treating an empty answer as an empty day, how it absorbs a
-  source's schema changes, malformed rows and a publisher's unstated terms,
-  the error package, the three homes of a configuration value (settings for
-  deployment values and every secret, package YAML for a source's constants
-  and its tolerance and catch-up window, a user-editable CSV of active items),
-  the log level per
-  event, and where logging, runtime data assets and the test suite sit. Use
-  when organising an app into layers, deciding where configuration, a module,
-  entry point, IO adapter, data asset, constant, secret or test belongs,
-  naming adapter modules for several sources, designing a port or an adapter's
-  output, deciding what happens when one item of a fetch fails or the day's
-  requests run out, choosing whether a data file should be CSV, YAML or TOML,
-  deciding whether a lookup is a file or an enum, packaging data through
-  importlib.resources, applying dependency injection, or laying out the
-  code/data/tests directories — even if the user just says "structure this
-  app", "where does this go", or "clean/hexagonal architecture". Layers on
-  write-python and be-functional; for building the entry points themselves,
-  see write-entry-points; for where the data lives, store-data; for
-  scaffolding, packaging and tooling, setup-python. A PLAN.md decision
-  overrides any rule here.
+  drivers at a composition root); how to declare a port as a noun satisfied
+  by a verb and split one whose halves differ; how to write an adapter that
+  maps into the port's shared schema, returns what it got for the store to
+  write, fails an item rather than the source, treats an empty answer as an
+  empty day and absorbs a source's changes, calling an outside service
+  through one paced, retried httpx client; the error package; the three
+  homes of a configuration value (settings for deployment values and every
+  secret, package YAML for a source's constants, a user-editable CSV of
+  active items); the log level per event; and where runtime data assets and
+  the test suite sit. Use when organising an app into layers, deciding where
+  configuration, a module, entry point, IO adapter, data asset, constant,
+  secret or test belongs, designing a port or an adapter's output, deciding
+  what happens when one item of a fetch fails or the day's requests run out,
+  choosing whether a data file should be CSV, YAML or TOML, applying
+  dependency injection, or laying out the code/data/tests directories — even
+  if the user just says "structure this app", "where does this go", or
+  "clean/hexagonal architecture". Layers on write-python and be-functional;
+  for building the entry points themselves, see write-entry-points; for
+  where the data lives, store-data; for scaffolding, packaging and tooling,
+  setup-python. The HTTP client mechanics are in references/http.md.
 ---
 
 # Structure a Python application
@@ -39,7 +31,6 @@ description: >-
 How to organise a non-trivial application — its layers, the boundaries between them, and where each module, adapter and asset belongs.
 It sits above `write-python`'s in-code conventions and `be-functional`'s core/shell split; the drivers are built out in `write-entry-points`, storage in `store-data`, and scaffolding and tooling live in `setup-python`.
 Three mistakes account for most of what goes wrong: an import that points from the core outward, an adapter that hands on the library's own type instead of yours, and a lookup table left in code because it looked too small for a file.
-Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 **In an existing project, ask first.** Where a repo already has an established layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -185,100 +176,8 @@ Wait for the second caller, and count what's really shared — where the library
 **Give a convention several sources share its own edge member**, named for the convention (an identifier scheme, a country-code prefix), holding the rule and its table.
 The core still mustn't know it exists, and it isn't a source, so it stays out of the mapping of adapters a driver can fetch from.
 
-**Call services you don't own through one `httpx.Client`, sync as `write-python`'s Sync and async says, with a timeout, a user agent and the key in a header, paced by `pyrate-limiter` and retried by `tenacity`.** `httpx_.py` holds two builders: the client the composition root opens once per run and closes, and the getter each source module composes with its parse:
-
-```python
-def _retryable(failure: BaseException) -> bool:
-    """Retry a transport fault, a throttle or a server fault, never a client error."""
-    if isinstance(failure, httpx.TransportError):
-        return True
-    return isinstance(failure, httpx.HTTPStatusError) and (
-        failure.response.status_code == 429 or failure.response.status_code >= 500
-    )
-
-
-def _wait(state: tenacity.RetryCallState) -> float:
-    """Wait as long as the service asked, else back off with jitter."""
-    failure = state.outcome.exception() if state.outcome else None
-    header = (
-        failure.response.headers.get("Retry-After")
-        if isinstance(failure, httpx.HTTPStatusError)
-        else None
-    )
-    if header is not None and header.isdigit():
-        return float(header)
-    return tenacity.wait_exponential_jitter(initial=1, max=60)(state)
-
-
-def build_client(
-    api_key: str,
-    *,
-    timeout: float,
-    transport: httpx.BaseTransport | None = None,
-) -> httpx.Client:
-    """Return the one client a run shares; the composition root closes it."""
-    return httpx.Client(
-        headers={
-            "User-Agent": f"mypackage/{importlib.metadata.version('mypackage')}",
-            "X-API-Key": api_key,
-        },
-        timeout=timeout,
-        transport=transport,
-    )
-
-
-def build_get_document(
-    client: httpx.Client,
-    *,
-    budget: int,
-    rates: list[pyrate_limiter.Rate],
-    sleep: collections.abc.Callable[[float], None] = time.sleep,
-) -> collections.abc.Callable[[str], str]:
-    """Return a getter over the client, paced at every rate, capped and retried."""
-    limiter = pyrate_limiter.Limiter(rates)
-    sent = itertools.count(1)
-    retrying = tenacity.Retrying(
-        reraise=True,
-        retry=tenacity.retry_if_exception(_retryable),
-        sleep=sleep,
-        stop=tenacity.stop_after_attempt(5),
-        wait=_wait,
-    )
-
-    def attempt(url: str) -> str:
-        if next(sent) > budget or not limiter.try_acquire("source", timeout=60):
-            raise error.QuotaError(f"The day's requests ran out before {url}")
-        return client.get(url).raise_for_status().text
-
-    def get_document(url: str) -> str:
-        return retrying(attempt, url)
-
-    return get_document
-```
-
-- **The composition root builds one client per run and passes it in** — `with httpx_.build_client(key, timeout=...) as client:` — binding the key from settings as it does (see Configuration); a `functools.cache`d module-level client has no owner to close it and no seam for a test transport.
-`timeout` and `rates` are the source's constants from its package YAML, not literals here, so a second source over the same module states its own.
-- **`transport` and `sleep` are the test seams** (`write-tests`): `httpx.MockTransport` answers in-process and a spy `sleep` records what the retry would have waited, so "backs off three times" runs in milliseconds.
-`pyrate-limiter` takes no sleep of its own, so a pacing test patches its module's, the one patch the seam rule allows (`write-tests`' Python reference).
-- **Send your own user agent**: a library's default gets refused unevenly by whatever fronts the service, so the same code works on two hosts and 403s on a third.
-`importlib.metadata.version` names the tool and release; a service that accepts only a browser string is a fact found by trying it, not a default.
-- **The key goes in a header, never the query string**, which every proxy, access log and shared link records.
-- **Pace every window the service states.** The source's YAML lists one `Rate` per window — `Rate(2, Duration.SECOND)`, `Rate(5000, Duration.DAY)` — and `Limiter` takes the list (hand-rolled pacing is `setup-python`'s Libraries).
-The day's cap is shared by every process that runs that day — the nightly, a backfill, a manual `fetch` — and a limiter counts only its own, so the composition root also passes `budget`, the day's limit less the `requests` the manifest records for today (`store-data`), and the getter raises `QuotaError` past it.
-`try_acquire(..., timeout=60)` caps a wait at a minute, so the limiter's own day window refuses rather than sleeping until it rolls over; either refusal fails the item and every one after it without asking, since each would get the same answer.
-`Limiter` (`pyrate-limiter` 4.5.1) rejects a list whose limits don't rise with the interval, so the list holds the windows as the service states them, never a day's limit cut below a shorter window's.
-- **`tenacity` retries** only the outcomes the predicate names — a dropped connection or timeout (`httpx.TransportError`), a `429` or a `5xx` — honouring `Retry-After`, with `reraise=True` so the caller sees the real exception; a `4xx` is your bug and retrying it only hides which request was wrong (see `write-python` on classifying outcomes).
-Pacing sits inside the attempt, so a retry takes a slot too.
-- **Page to exhaustion and assert the count**: follow the next-page link until the service sends none, then compare the rows against the total the first page states, since a loop stopping at a fixed page count caps the data silently (see `write-tests`).
-
-**Recognise a publisher's unstated terms**, since all three look like your bug and none appears in a test:
-
-- **A burst is throttled, not refused**: after enough requests the service answers `200` with an HTML page instead of the file.
-The tell is a failure that follows the request count; retry the same call after a pause.
-- **A rate is stated somewhere you haven't read**: a `Crawl-delay` in `robots.txt`, or a `429` past an API's per-minute cap.
-Back off long enough to outlast the window; pace a walk you chose (paging through results) and leave a single requested fetch alone.
-- **Some documents need cookies first**: the first request redirects to a consent page whose cookies the second needs.
-Give the HTTP module an optional page to visit first, beside the timeout and user agent.
+**Call services you don't own through one `httpx.Client` the composition root opens per run, sync as `write-python`'s Sync and async says, with a timeout, your own user agent and the key in a header, paced by `pyrate-limiter` at every window the service states within the day's budget, retried by `tenacity` on a transport fault, a `429` or a `5xx` only, and paged to exhaustion.**
+The builders, their test seams, the budget shared across a day's processes, and the terms a publisher never states are in `references/http.md`.
 
 ## Configuration
 
@@ -294,7 +193,7 @@ An adapter reading `os.environ` works on the laptop and fails under a scheduler,
 
 - **Settings** — per-deployment values and every secret, which differ between the laptop and the server: the data directory, the API key.
 `pydantic-settings` reads them from the environment and a `.env` (see `write-entry-points`); a secret is never committed (see `use-git`).
-- **Package YAML in `data/adapt/<source>.yaml`** — per-source constants the code was written against: the base URL, the rates, the page size, the timeout, a field map, `tolerance`, the number of failed items a night absorbs before the source counts as partial (default 0; `run-unattended`, Report the outcome), and `catch_up_days`, how many days before yesterday the nightly refills when they are missing (default 3; `run-unattended`, Make a run rerunnable).
+- **Package YAML in `data/adapt/<source>.yaml`** — per-source constants the code was written against: the base URL, the rates, the page size, the timeout, a field map, `tolerance`, the failed items a night absorbs before the source counts as partial (`run-unattended`, Report the outcome), and `catch_up_days`, the days before yesterday the nightly refills when missing (`run-unattended`, Make a run rerunnable), each defaulting as that skill says.
 Changing one is a code change and ships with the package; the source module reads its own file through `importlib.resources` into a frozen dataclass (`noaa.read_constants()`), and the root hands the values to the builders.
 - **A user-editable CSV in the app's data directory** (`items.csv`, see `store-data`) — a list the user maintains between runs: the items to follow, as `source,item,active`, where an inactive row is skipped, so pausing an item keeps its history and its line.
 In package data it would force a reinstall per edit, and a setting can't hold a table.
@@ -311,7 +210,7 @@ A library or core module calling `logging.basicConfig` hijacks its host; a modul
 Where that happens, set that library's logger level at the composition root, by name — adopting its records is then a decision; `httpx` and `httpcore` narrate every request at INFO, so the root sets both to WARNING.
 - **The edge narrates; the core stays quiet.** Log at the edge; the core returns its results and is pinned by tests.
 - **One level per event**: a request is DEBUG, an adapter call INFO, a failure caught and handled (a rejected row, a failed item) WARNING, a failed source ERROR.
-A level picked per line makes `--log-level INFO` show a different story in each module; `write-entry-points` sets the level an interactive and a scheduled command run at.
+A level picked per line makes `--log-level INFO` show a different story in each module; `write-entry-points` sets the level an interactive command runs at, and `run-unattended` a scheduled one's.
 
 ## Data
 
@@ -390,3 +289,7 @@ It is not a package: `--import-mode importlib` collects files by path, so same-n
 
 `setup-python`'s `pytest` settings serve this layout (`testpaths`, `pythonpath = ["tests"]`, `-p pytest_.given`); scaffold `given.py` up front, since `-p` fails without it.
 How to write the tests is `write-tests`.
+
+## Reference cookbooks
+
+- **HTTP** → `references/http.md` (the client and getter builders, their test seams, pacing every stated window within the day's budget, retrying, paging to exhaustion, and a publisher's unstated terms).

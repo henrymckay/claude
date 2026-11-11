@@ -161,7 +161,7 @@ Keep the recorded response under `tests/data/<source>/` and load it through a fi
 
 **Record it with `tests/data/<source>/record.py`**, a PEP 723 script (see `setup-python`) that calls the real source with the key from the environment, strips the key from the saved request and response, and writes the file the fixture loads; re-run it when the source changes shape, so the fixture is always something the source actually sent.
 
-**Pace and retry through the adapter's seams** (`structure-python`, Write an adapter, has the adapter):
+**Pace and retry through the adapter's seams** (`structure-python`'s `references/http.md` has the adapter):
 
 ```python
 def build_client(

@@ -2,31 +2,27 @@
 name: deploy-project
 description: >-
   Where each artefact of a project runs in the cloud and how it gets there at
-  zero or near-zero cost — the nightly pipeline as a GitHub Actions schedule
-  in the project's own repository, writing to MotherDuck and committing the
-  data tree back to main, alerting when the driver could not, with a status
-  workflow for a night that never ran, and Modal when a job outgrows a runner;
-  MotherDuck Lite with one token per consumer, R2 past 10 GB; a Shiny
-  dashboard on Posit Connect Cloud Free from a public repo, shinylive on
-  GitHub Pages when it needs no secret, Streamlit Community Cloud when the app
-  is Streamlit or must be private; an API on Render only once a second
-  consumer earns one, Cloud Run when the wake matters; a static site built by
-  a second job of the same workflow; picking from the data's class, with
-  private data kept on the owner's machine and its dashboard reached over
-  Tailscale; what changes for a private repository; Neon or Supabase for a
-  multi-writer service, Koyeb and Vercel as the remaining API hosts; secrets
-  in each platform's own store; the hosts ruled out as dead or no longer
-  free; and re-reading the vendor's plan page before relying on a limit. Use whenever deploying, hosting or publishing a pipeline, dashboard,
-  API or site, choosing a free tier or cloud host, writing a workflow that
-  runs in the cloud, or filling a plan's Runs on section — even if the user
-  just says "put this online", "host the dashboard", "run it in the cloud" or
-  "is there a free tier for this". Facts checked 2026-11-11; the two workflow
-  files are in references/github-actions.md. Layers on run-unattended (what
-  the job does unwatched), store-data (the store and its tokens),
-  write-entry-points (the drivers deployed), send-messages (the alert) and
-  setup-python (uv, Docker, and CI, which the nightly workflow does not
-  bring); secure-project classes the data the hosts are picked from, and
-  plan-project's Runs on section records the choice.
+  zero or near-zero cost, picked from the data's class — the nightly pipeline
+  as a GitHub Actions schedule in the project's own repository, writing to
+  MotherDuck and committing the data tree back, with a status workflow for a
+  night that never ran and Modal when a job outgrows a runner; MotherDuck
+  Lite with one token per consumer; a Shiny dashboard on Posit Connect Cloud
+  Free, shinylive on GitHub Pages when it needs no secret, Streamlit
+  Community Cloud when it must be private; an API on Render only once a
+  second consumer earns one, Cloud Run when the wake matters; a static site
+  from the same workflow; private data kept on the owner's machine and its
+  dashboard reached over Tailscale; what changes for a private repository;
+  secrets in each platform's own store; the hosts ruled out; and re-reading
+  the vendor's plan page before relying on a limit. Use whenever deploying,
+  hosting or publishing a pipeline, dashboard, API or site, choosing a free
+  tier or cloud host, writing a workflow that runs in the cloud, or filling
+  a plan's Runs on section — even if the user just says "put this online",
+  "host the dashboard", "run it in the cloud" or "is there a free tier for
+  this". Facts checked 2026-11-11; the two workflow files are in
+  references/github-actions.md. Layers on run-unattended, store-data,
+  write-entry-points, send-messages and setup-python; secure-project classes
+  the data the hosts are picked from, and plan-project's Runs on section
+  records the choice.
 ---
 
 # Deploy a project
@@ -48,7 +44,7 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **API** — a Render free web service, once a second consumer earns one.
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
-**Private or personal data stays on the owner's machine** unless a plan decision names a host for it: the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8000` shares the port with their own devices only; the Personal plan is free for up to six users).
+**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8001` shares the dashboard's port with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
 Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — MotherDuck behind Streamlit's private app — sends every row to two outside services, which `secure-project` allows only under a signed-off decision naming them.
 
 **A private repository holding public data changes three of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; Pages and Connect Cloud Free take public repositories only, so the dashboard moves to Streamlit Community Cloud's one private app, whose viewers sign in by invitation, or to Connect Cloud Basic at $19 a month, which publishes from a private repository but still to anyone with the link (private sharing is its Enhanced plan); MotherDuck and Render are unaffected.
@@ -59,7 +55,7 @@ A weather project, say, fetches yesterday's observations each night into MotherD
 
 ## Run the pipeline
 
-**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked` then `uv run myapp-cli nightly --log-level info`; the file is in `references/github-actions.md`.
+**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked --no-dev` then `uv run --no-dev myapp-cli nightly --log-level info`, the second flag so the run does not install the dev group the sync left out; the file is in `references/github-actions.md`.
 A public repository runs it free; a job must finish inside six hours, and the cron fires on the default branch only, at most every five minutes, and late under load, so pick a minute other than `:00` and let `run-unattended`'s day rule set the hour.
 
 - **Write to MotherDuck and commit the data tree back** — the night's `records/` and `rejected/` partitions, `metrics.parquet`, `runs.parquet` and `alerts.json` — with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
@@ -113,6 +109,6 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 ## Re-check the tiers
 
 Free tiers moved several times between 2024 and 2026; every figure above not marked otherwise was read from the vendor's page on 2026-11-11.
-**Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; the weekly `review-plugin` sweep re-checks the picks in this skill.
+**Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
 Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need PRO); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).

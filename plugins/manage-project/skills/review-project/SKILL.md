@@ -6,18 +6,19 @@ description: >-
   it against its PLAN.md where there is one, then correctness (the tests, the
   real surface, performance, a bug hunt), the test suite, conformance to the
   skills, modernity (current releases, no deprecated APIs, the latest
-  language, each house pick still standing), the README and CLAUDE.md, and
-  safety, with an unanchored cold read; reporting defects, judgement calls and
-  challenges to a house pick or a plan decision separately, with evidence;
-  then fixing the defects by impact, each with its own commit and, for a bug,
-  a regression test, then re-running every check and bringing PLAN.md and the
-  README up to date; a judgement call a precedent settles is fixed too, and
-  the rest waits on the user's reply, in the report itself
-  when the review runs in autonomous mode with no user present. It reviews on
-  Opus whatever model the session started on, by handing the review to a
-  subagent. Use whenever the user asks to review, audit, critique or tidy a repo or project, check it against
-  its plan or the conventions, find what is out of date, or fix what a review
-  found — even if they just say "review this repo", "what's wrong with this
+  language, each house pick still standing), the README against the code and
+  the plan, CLAUDE.md, and safety, with an unanchored cold read; reporting
+  defects, judgement calls and challenges to a house pick or a plan decision
+  separately, each with evidence re-run before it is kept; then fixing the
+  defects by impact, each with its own commit and, for a bug, a regression
+  test, re-running every check and bringing PLAN.md and the README up to
+  date; a judgement call a precedent settles is fixed too, and the rest waits
+  on the user's reply, in the report itself when the review runs in
+  autonomous mode. It reviews on Opus whatever model the session started on,
+  by handing the review to a subagent. Use whenever the user asks to review,
+  audit, critique or tidy a repo or project, check it against its plan or
+  the conventions, find what is out of date, or fix what a review found —
+  even if they just say "review this repo", "what's wrong with this
   project", or "is this up to date". Works without a PLAN.md. Layers on
   plan-project and every skill the project's code falls under, using the
   built-in code-review for the bug hunt, secure-project for the safety checks
@@ -90,27 +91,29 @@ Read the changelog before recommending a major upgrade.
 
 ## Check documentation and safety
 
-- **The README matches the code** — run its commands as written, and check each claim about an outside tool against that tool's current docs.
+- **The README matches the code and the plan** — run its commands as written, check each claim about an outside tool against that tool's current docs, and read it against Decisions: a section describing something a decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **The project's `CLAUDE.md` is current** — no stale path or command, no default Claude follows anyway (see `write-markdown`), nothing a skill contradicts.
-- **The project keeps `secure-project`** — every input and output classed and nowhere its class forbids, no secret in the tree or its history, and the dependency audit and `/security-review` clean, run as its Review it says.
+- **The project keeps `secure-project`** — every input and output classed and nowhere its class forbids, no secret in the tree or its history, and the dependency audit and the security review clean, run as its Review it says.
 
 ## Get a cold read
 
 After your own pass, give a fresh agent on `sonnet` (see `choose-model`) the files and the standard, never your conclusions, and ask what breaks the plan or the skills.
+Spawn it even when the review was itself handed over with "do the work yourself": that line stops the review being passed on whole, and the cold read is a second reader, not a hand-off of the review.
 An agent handed your findings tends to confirm them; one reading cold finds what your pass was blind to.
 Where the skills live outside the directories the agent may read — an installed plugin, in a session that cannot grant the read — put the rules themselves in the brief, and report a cold read that never saw the standard as partial.
-Verify each finding against the files before keeping it — an agent's mistakes read as confidently as its catches.
+Verify each finding, the cold read's and your own, by re-running its evidence — open the line, run the command — before it enters the report; an agent's mistakes read as confidently as its catches, and `/code-review` and `claude-security` already have independent agents confirm theirs.
 
 ## Report
 
 Rank the findings by what they would change — a wrong answer before a missing test, a missing test before a style breach — and give each its evidence and the rule it breaks.
 Separate defects from judgement calls and challenges, and list the checks skipped and why.
+Every claim that a check passed or a fix works names the command that showed it and what it printed; one with no run behind it is reported as not run.
 
 ## Fix
 
 Fix the defects without waiting, in ranked order; a judgement call a precedent settles is fixed too, citing it (`make-decisions`), while one with no precedent, a challenge or a change to a requirement or decision in `PLAN.md` waits for the user's reply to the report (see `plan-project`).
 
-- **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action — creating a repository, publishing, spending or moving money, acting on an account; filing skill feedback is not one.
+- **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action, as that section lists them.
 - **A bug gets a regression test** that fails before the fix and passes after.
 - **Commit each fix on its own** (see `use-git`), so one can be reverted alone.
 - **Re-run every check at the end**, since one fix can break what another check passed.

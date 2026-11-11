@@ -1,30 +1,25 @@
 ---
 name: run-unattended
 description: >-
-  The operational side of a job that runs on a schedule with nobody watching —
-  which day a nightly run fetches, the overlap lock and the run that finds it
-  held, a bounded automatic catch-up window per source with a wider gap left
-  for an explicit backfill, and backfill by range through the nightly's own
-  path, per day or per range as the source serves, exit codes for every
-  command, a source's tolerance for
-  failed items and a partial fetch, the status command as the health check and
-  its own scheduled unit once an alert is earned, the scheduler's own
-  failed-run mail as the signal until then, the job's own rotated log at
-  INFO on a machine and plain lines on standard error on Actions, plus the
-  scheduler's capture, picking the scheduler (a launchd agent on macOS, a
-  systemd timer on Linux, GitHub Actions in the cloud) and what each does with
-  a missed run, invoking the environment through uv, secrets outside the unit
-  file and a working directory inside it, keeping an API or dashboard alive,
-  and deploying with a clone and uv sync. Use whenever scheduling a nightly or
-  periodic job, writing a plist, timer or workflow, deciding what a job does
-  when a night is missed or a source or an item fails, choosing an exit code,
-  adding a status or health command, choosing where a job's logs go, or
-  keeping a service running — even if the user just says "run this every
-  night", "cron this", "make it restart" or "why did last night not run".
-  Layers on write-entry-points (the job driver) and store-data (the manifest);
-  send-messages builds the alert once one is earned; the plist and timer files
-  are in references/schedulers.md, the Actions workflows in deploy-project's
-  references/github-actions.md.
+  The operational side of a job that runs on a schedule with nobody watching
+  — which day a nightly run fetches, the overlap lock, a bounded catch-up
+  window with a wider gap left for an explicit backfill by range through the
+  nightly's own path, exit codes for every command, a source's tolerance for
+  failed items, the status command as the health check, the scheduler's own
+  failed-run mail as the signal until an alert is earned, the job's rotated
+  log, picking the scheduler (launchd on macOS, a systemd timer on Linux,
+  GitHub Actions in the cloud) and what each does with a missed run, invoking
+  the environment through uv, secrets outside the unit file, keeping an API
+  or dashboard alive, and deploying with a clone and uv sync. Use whenever
+  scheduling a nightly or periodic job, writing a plist, timer or workflow,
+  deciding what a job does when a night is missed or a source or an item
+  fails, choosing an exit code, adding a status or health command, choosing
+  where a job's logs go, or keeping a service running — even if the user just
+  says "run this every night", "cron this", "make it restart" or "why did
+  last night not run". Layers on write-entry-points (the job driver) and
+  store-data (the manifest); send-messages builds the alert once one is
+  earned; the plist and timer files are in references/schedulers.md, the
+  Actions workflows in deploy-project's references/github-actions.md.
 ---
 
 # Run unattended
@@ -39,7 +34,7 @@ Three mistakes account for most quiet failures: a slow night overlapping the nex
 ## Name the day
 
 **The nightly command fetches yesterday in UTC**, then any day its catch-up window finds missing (Make a run rerunnable); a `--day` option overrides it for a re-run, and a source that revises a day after publishing earns a `--days-back` that re-fetches the revised days too, recorded under Decisions with the source's revision window.
-Compute it from the UTC clock, not the local one, and schedule the run after midnight **UTC**: at 00:30 British Summer Time it is still yesterday in UTC, so "yesterday" comes out as the day before and a day is skipped every summer.
+Compute it from the UTC clock, not the local one, and schedule the run after midnight **UTC**: at 00:30 local time in a zone an hour ahead of UTC it is still yesterday in UTC, so "yesterday" comes out as the day before and a day is skipped while that offset holds.
 
 ```python
 def yesterday(now: datetime.datetime) -> datetime.date:
@@ -103,8 +98,8 @@ When one is earned, record it under Decisions, build it as `send-messages` says,
 `cron` runs everywhere but fires into a bare environment with no log capture and no missed-run handling, which is the work the other three do for you.
 The launchd and systemd files are in `references/schedulers.md` and the Actions workflows in `deploy-project`'s `references/github-actions.md`; the unit lives in the repo under `deploy/` with its install line in the README, which also names the absolute paths to edit, since a unit carries the machine's home directory and a copy alone points at the wrong one.
 
-- **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
-`--frozen` runs what is locked instead of re-resolving against the network every night.
+- **Invoke through the project's environment**: `uv run --project /path/to/repo --frozen --no-dev myapp-cli nightly`, with `uv` by absolute path — the scheduler's `PATH` lacks the shell's additions.
+`--frozen` runs what is locked instead of re-resolving against the network every night, and `--no-dev` matches the deploy's sync: a bare `uv run` syncs the default groups first, so it installs the dev group the deploy left out (uv 0.11).
 - **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (`write-entry-points`, Composition root), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`; `secure-project` says where a credential that can act goes instead.
 - **Set `WorkingDirectory` to the repo in every unit**, since a scheduler starts the job in `/` and a relative path the command is given would resolve there; the `.env` is found by its absolute path either way.
 - **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays it under load, and disables an idle public schedule (`deploy-project`).
@@ -114,5 +109,5 @@ The catch-up window fills what each misses, and `status` shows it.
 
 ## Deploy
 
-Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run` then finds the environment and installs nothing, with no Docker image on a machine you own (`setup-python`).
+Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run --no-dev` then finds the environment as synced and installs nothing, with no Docker image on a machine you own (`setup-python`).
 On Actions the equivalent is `deploy-project`'s workflow, whose `uv sync --locked` fails the run when the lockfile is behind `pyproject.toml` instead of resolving silently.

@@ -2,27 +2,26 @@
 name: secure-project
 description: >-
   How a project keeps what is private private — classifying every input and
-  output in the plan as public, licensed (with its redistribution terms),
+  output in the plan as public, licensed (with its terms, read strictly),
   private or personal, private until the plan says otherwise, and deciding
   from the class which repositories, hosts, logs, messages and outside
   services, an LLM API included, each may reach; credentials for an account
-  that holds money or can spend it (a broker, an exchange, a bank, a cloud
-  account) — read-only by default, one per consumer, behind an IP allow-list,
-  kept out of the checkout, rotated, built against a paper account, and an
-  order or a transfer only under a signed-off plan decision with a person
-  confirming each one, never in autonomous mode; secrets in general, the
-  secret scanner in the pre-commit hooks and over the history, and rotating
-  first when one leaks; access control on a served dashboard or API, and
-  nothing private in a static site; the dependency audit; and the built-in
-  security review in the build gate and the project review. Use
-  whenever a project reads data that is not public, holds a credential,
-  touches an account with money in it, serves something over the network or
-  decides where its data or logs go — even if the user just says "connect it
-  to my broker", "this data is private", "who can see the dashboard" or "is
-  this safe to push". Layers on plan-project, which records each class and
-  decision; deploy-project, store-data and send-messages pick from the class,
-  run-unattended and use-git point here for secrets, and build-project and
-  review-project run its checks.
+  that holds money or can spend it — read-only by default, one per consumer,
+  kept out of the checkout, rotated, and an order or a transfer only under a
+  signed-off plan decision with a person confirming each one, never in
+  autonomous mode; secrets in general, the secret scanner and rotating first
+  when one leaks; access control on a served dashboard or API, the Host and
+  Origin check on a loopback server, and nothing private in a static site;
+  the dependency audit and the security review in the build gate and the
+  project review, with or without a remote. Use whenever a project reads data
+  that is not public, holds a credential, touches an account with money in
+  it, serves something over the network or decides where its data or logs go
+  — even if the user just says "connect it to my broker", "this data is
+  private", "who can see the dashboard" or "is this safe to push". Layers on
+  plan-project, which records each class and decision; deploy-project,
+  store-data and send-messages pick from the class, run-unattended and
+  use-git point here for secrets, and build-project and review-project run
+  its checks.
 ---
 
 # Secure the project
@@ -62,6 +61,7 @@ A class looser than private is the user's call, raised as a question in the plan
 | An issue, skill feedback, a public tracker | yes | no | no | no |
 
 - **A project holding any private or personal data lives in a private repository** and keeps the data itself out of it, as `deploy-project`'s private-data picks do.
+- **Read "as the terms allow" strictly.** Terms that allow personal use only, or that say nothing about where the data may be held, make licensed data private for every row above, since a hosted copy is one the licensor never allowed, however few can see it.
 - **A signed-off decision means the user's**, never one left proposed in autonomous mode, since a row sent out on a guess cannot be called back.
 - **A public repository's workflow logs and artifacts are readable by anyone signed in to GitHub**, so on one they carry public data only (GitHub docs, 2026-11-11).
 - **A GitHub Pages site is public even from a private repository** on every plan below Enterprise Cloud, so it serves public data only (2026-11-11).
@@ -104,13 +104,17 @@ A tool or connector that can act on such an account counts the same: Claude plac
 ## Guard what is served
 
 - **A dashboard or API showing private or personal data sits behind the host's own access control** — a viewer list, an identity-aware proxy, a token per consumer — or runs on the owner's machine, reached from elsewhere over a private network (`deploy-project`); an unlisted URL is not access control, since links are shared, logged and indexed.
-- **An API checks a token per consumer on every request**, compared with `secrets.compare_digest` so its timing gives nothing away, and refuses before it reads the store.
+- **An API reached from beyond the machine, or one that writes, checks a token per consumer on every request**, compared with `secrets.compare_digest` so its timing gives nothing away, and refuses before it reads the store.
+- **A server on loopback with no authentication checks `Host` on every request and `Origin` on every WebSocket** against the names it is reached by — its loopback names and port, and the machine's private-network name when served over Tailscale — and refuses anything else, including a repeated header.
+Binding to `127.0.0.1` keeps other machines out but not the owner's browser: a page they visit can point its own name at `127.0.0.1` (a foreign `Host`) or open a WebSocket to the port (a foreign `Origin`) and read what the server shows.
+Shiny 1.9 under uvicorn 0.54 answered both, and Starlette's `TrustedHostMiddleware` stops only the first; `write-entry-points`' Python reference has a guard that stops both.
 - **A static site or a browser-side app ships everything it shows to every viewer**, so it holds public data only and no token at all.
 
 ## Review it
 
 - **Audit the locked dependencies for known vulnerabilities** in every milestone's gate that changes the dependency lock file and in every review: under `setup-python`'s toolchain, `uv export --format requirements-txt --no-emit-project > requirements.txt`, then `uvx pip-audit -r requirements.txt --disable-pip`.
-- **Run the built-in `/security-review`** on a milestone's branch in `build-project`'s gate whenever the milestone touches a credential, an outside call, a served surface or a class boundary, and on the whole project in `review-project`.
+- **Run a security review** on a milestone's branch in `build-project`'s gate whenever the milestone touches a credential, an outside call, a served surface or a class boundary, and on the whole project in `review-project`: the `claude-security` plugin where it is installed, since it has independent agents try to disprove each finding and falls back to the local `main` without a remote, else the built-in `/security-review`.
+The built-in diffs against `origin/HEAD` and stops in a repository with no remote; there, read the surface by hand instead — each input that reaches a path, a query or a shell, the bind address, the `Host` and `Origin` check, every write and every outside call — and say in the report that the built-in could not run.
 - **Scan the whole history for secrets in every review** with `gitleaks git`, which the commit hook cannot do for what was committed before it was added.
 - **Check the plan against this skill**: every input and output classed, every destination allowed for its class, every credential read-only or covered by a decision.
 

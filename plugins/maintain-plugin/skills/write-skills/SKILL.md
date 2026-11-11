@@ -6,7 +6,8 @@ description: >-
   placement, failure modes and caveat, structuring the body so each rule is
   stated once with an observable why and its exception in the same sentence,
   naming each house pick with its alternative and the case that earns it,
-  saying when to deviate, cutting what Claude does unprompted, keeping
+  saying when to deviate, cutting what Claude does unprompted and checking a
+  doubtful rule against a run without it, keeping
   examples general and cross-references live, running every code block and
   library claim, and splitting a language-agnostic skill from its language
   reference, or a library-bound skill into topic cookbooks. Use whenever
@@ -53,12 +54,12 @@ Write plain prose with no backticks (see `write-markdown`), in this order, mirro
 
 1. **What it is** — a phrase naming the skill and its key topics; counterparts use parallel forms ("Functional programming done well — …" / "Object-oriented design done well — …").
 2. **When to use it** — "Use when/whenever …", the contexts that should invoke it, ending with the casual phrasings ("even if the user just says '…'").
-   Cover the whole body and promise nothing it lacks.
+   Cover the whole body and promise nothing it lacks, at the level of its topics rather than its rules: every description is loaded on every turn of every session, so a rule restated there is paid thousands of times, and one past about 250 words has started listing rules.
    For a skill that governs work a model can answer inline — a snippet, a function, a README — open this part with "Load it before the first line of …, even …", since the model otherwise answers without loading anything.
 3. **What it targets**, only where a version matters — "Targets Polars 2.x."
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "This is an opt-in style skill: reach for <X> where it genuinely fits, not by default."
 5. **The reference pointer**, if any — "Language-agnostic principles here; Python <idioms/build-outs> in references/python.md." or, for a topic split, "Detailed cookbooks live in references/."
-6. **Neighbours** — "Layers on <skill>; <skill> is the <…> counterpart", the same skills the opening names.
+6. **Neighbours** — "Layers on <skill>; <skill> is the <…> counterpart", the same skills the opening names; where the opening points at many for one purpose, name the purpose ("points the design at the skills that own each part").
    The description and the opening both name them on purpose — one is read when choosing a skill, the other when following it — so this is the one place a repeat is wanted; keep the two identical in substance.
 
 ## Open consistently
@@ -78,6 +79,7 @@ Every skill opens with these parts, in order:
 - **Use punchy section headings**: imperative for an action (`Pick a layout`), a noun for a catalogue (`Patterns`), sentence case.
 - **Order by dependency.** Sections that define vocabulary come before those that spend it, so a reader never meets a term before its definition; synthesising sections (`Pick a layout`, `Run`) trail.
 - **Cut what Claude does unprompted.** For each rule ask whether Claude would follow it with no skill loaded — pure functions, no bare `except`, atomic commits — and cut it if so; it spends the reader's attention that the corrections, house picks and non-obvious traps needed, and it reads as reasonable advice, so word counts never catch it.
+Where the answer is in doubt, no real run has shown the failure and a control is cheap, settle it with one: give a fresh subagent the case with the rule left out, and add the rule only if the control gets it wrong; a failure seen in real work outranks a clean control, which runs without the load that caused it.
 - **State each rule exactly once.** A rule stated twice drifts as soon as one copy is edited, and a reader who meets both wonders whether they differ.
 Fold one-line points into a catalogue section rather than giving them a stub heading.
 - **Make the why an observable consequence.** "Define `__all__` to make the API explicit" gives a purpose nobody can check; "mark a re-export with a redundant alias, or the linter reads it as an unused import" says what happens, and a reader can watch it happen.
