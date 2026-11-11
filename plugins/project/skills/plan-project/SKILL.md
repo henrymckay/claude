@@ -10,7 +10,10 @@ description: >-
   rival designs), draft every section, record assumptions in place of
   questions, treat every house pick as a default to deviate from openly, then
   put the questions, assumptions and decisions in front of the user in one
-  batch with recommended answers, through plan mode. The plan has a fixed
+  batch with recommended answers, through plan mode — or, in autonomous mode
+  with no user present, proceed on those recommended answers, recorded as
+  assumptions, with every decision left proposed and no outward action taken.
+  The plan has a fixed
   layout for any kind of project — a program, a library, or a content repo
   such as docs or skills: a brief (goal, terms, numbered requirements with
   their cost, not yet), a design (inputs, data flow, outputs, interface as a
@@ -18,7 +21,9 @@ description: >-
   decisions with sources), delivery (verification, milestones) and open items
   (assumptions, questions, ideas the brief didn't ask for), whose requirements
   and decisions change only with the user's sign-off; a fix or small change
-  gets a short plan in the conversation instead. It is written for Claude to
+  gets a short plan in the conversation instead. It plans on Opus whatever
+  model the session started on, by handing the draft to a subagent. It is
+  written for Claude to
   follow: cited by ID, shown not described, in the plan's own terms, pointing
   at skills rather than restating them. Use whenever starting a new project or
   repo, or a build that adds a new input, output or interface; when the user
@@ -26,7 +31,7 @@ description: >-
   build first; and whenever a PLAN.md needs changing — even if the user just
   says "let's plan this", "new project" or "what should this look like".
   Layers on write-markdown; points the design at setup-python,
-  structure-python, write-entry-points, be-functional, use-polars,
+  structure-python, write-entry-points, be-functional, use-polars, write-sql,
   write-tests, store-data, deploy-project, run-unattended and send-messages,
   hands the build to build-project, and the finished build to review-project.
 ---
@@ -35,7 +40,7 @@ description: >-
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
 It is written with the user before the build and kept current as the build proceeds.
-It layers on `write-markdown`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
+It layers on `write-markdown`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -166,12 +171,17 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 - **Wrong** — "What storage do you want? Which scheduler? How should errors be reported?", one message per section, each answered from nothing.
 - **Right** — a full draft with the house picks filled in, then one message: "A3 assumes Parquet; D2 picks launchd over cron because …; Q1 needs you — recommended: yes."
 
+**Plan on Opus at high effort, whatever the session started on: hand steps 2 to 7 — the gathering, the research and the draft — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
+A session briefed as that subagent works directly; any other hands over, since it cannot tell which model serves it: the frontmatter changes the model a session is told it is on, not the one that answers (`choose-model`).
+
 1. **Start in plan mode**; its approval is the plan's sign-off.
+   With nobody to approve it, see Plan with no user present.
 2. **Gather before asking.** Read the conversation, the repo, any neighbouring repo it reads from or feeds, and samples of the real input data.
    Where the input needs a credential, ask for it now and record a sample response; it becomes the first test fixture (see `write-tests`).
    Never ask what a file, a command or a quick check can answer.
 3. **Frame it wider than the brief.** A brief names what the user thought of today, in the words they happened to use; the design has to fit the domain and outlast the next request.
    Search the web and read the current docs of the libraries and the comparable tools, not memory alone, and record each source beside the assumption or decision it informed, so the user can check the claim rather than trust it.
+   A claim that could not be checked — no search available, a page that will not load — is an assumption marked unverified, never a decision's source.
    - **Learn the domain's language.** Look up how practitioners name the things involved, the standard data shapes and units, and the formats and libraries to reuse rather than build.
      Take the Terms from it; where the user's word differs, use the domain's and record the choice as an assumption.
    - **Place the project.** Who reads its outputs, which projects feed it or read from it, and what it plausibly grows into.
@@ -181,9 +191,10 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
-5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, Runs on from `deploy-project` and `run-unattended`, and any message to the user from `send-messages`.
+5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, and any message to the user from `send-messages`.
    For a Python project M1 is the scaffold from `setup-python`, logging, and the first real path from input to output, however thin; each Verification line is a check `write-tests` would accept.
-   For a job that runs unattended, M2 makes it run and alert with nobody watching — the schedule, the lock, `status` and the alert — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
+   For a job that runs unattended, M2 makes it run and fail visibly with nobody watching — the schedule, the lock, the exit codes and `status` — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
+   A notification is part of M2 only when a requirement asks for one; `run-unattended`'s Report the outcome says what signals a failure until then.
    Size the work from the inputs' size and frequency: where speed or memory matters, state the budget as a requirement with a timed check in Verification; where it plainly doesn't, write that under Decisions, so nobody optimises it.
 6. **Fill each gap with an assumption, not a question.** Take the house pick from the skills, or the answer the rest of the conversation implies, and record it under Assumptions with what changes if it is wrong.
    A requirement Claude inferred rather than heard is an assumption too, so the Brief stays the user's.
@@ -195,6 +206,18 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
    A second round only where an answer opened a question the first round couldn't have asked.
 9. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
 10. **Call the plan complete when every question is answered** — an assumption the user's reply leaves alone counts as confirmed, and a question only the build can settle stays under Open — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
+
+## Plan with no user present
+
+**Autonomous mode** is a session with nobody to answer it: a headless or scheduled run, or one the user told to ask nothing and carry on without them.
+Every step above holds except the ones that wait for the user:
+
+- **Write `PLAN.md` directly**, skipping plan mode, and open it with a line saying the plan is unsigned, the date and who asked for the run.
+- **Proceed on each question's recommended answer**, recorded under Assumptions with the question it replaced, for the user's later review.
+- **Leave every decision *(proposed)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
+- **Take no outward action** — creating a repository, publishing, spending money; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
+Skill feedback is not such an action: it is recorded as the session's feedback rule says.
+- **Put the batch of step 8 in the final reply**, so the first thing the user reads is the list of calls to confirm or change.
 
 ## Write it for Claude
 
