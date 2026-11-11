@@ -255,7 +255,7 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 ### Questions
 
 - **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q6** What happens to `market-data`? — its plan is unsigned with eight questions open, and nothing is pushed; recommended: keep it as the store Q5's dashboard reads, answer its questions when convenient, and decide on a private GitHub repository then; blocks M18 only if Q5 is the dashboard.
+- **Q6** May the second trial build deploy its dashboard, and to which account? — `market-data` is kept only as that build's data source and deleted after it (the user, 2026-11-11), with no GitHub repository of its own; the build stops before any outward action and lists the deployment for the user; recommended: decide when the build reports; blocks only the deployed half of M18.
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — only the user can find out; blocks M17's second-machine check.
 
 ### Ideas
