@@ -107,6 +107,7 @@ That source accepts nearly any argument, so a wrong-typed call there is caught b
 A small tool that keeps `tests/` flat drops them and sets `testpaths = ["tests"]`.
 
 **TOML formatting.** Run `taplo fmt` — it keeps arrays on one line until they overflow the line width, and collapses what `uv add` leaves expanded.
+Scaffold a `.taplo.toml` holding `exclude = [".venv/**"]` beside it: `taplo` does not read `.gitignore`, so a bare run otherwise walks the virtual environment, fails `fmt --check` on TOML its packages ship and rewrites it on `fmt` (taplo 0.9.3); the pre-commit hook passes staged paths and hides this.
 
 ## Pick a layout
 
@@ -154,6 +155,7 @@ The published library still carries only `pyproject.toml`'s ranges, so consumers
 
 **Target the latest stable Python release**, 3.15 at the time of writing, in `.python-version` and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
 Go one release back only when a dependency has no wheels for it and `uv sync` fails to resolve, and record that under the plan's Decisions so the next sweep tries again; never a pre-release.
+When `uv python list` offers only a pre-release of it, check `uv` before stepping back: a `uv` lists no Python released after itself, so `uvx uv@latest python list 3.15` shows whether the final exists and `uv self update` brings it.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
 ## Libraries
@@ -177,7 +179,8 @@ A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wron
 - **Storage** → hive-partitioned Parquet for pipeline output, DuckDB to query it, SQLite for small single-writer state, and `platformdirs` for the data directory's default; `store-data` has the picks and their cases.
 - **Tabular / columnar data** → `polars` (see `use-polars`), converting another library's `pandas` frame with `polars.from_pandas` plus `pyarrow`.
 - **Terminal output for a person** → `rich` for tables, progress bars, colour, and readable tracebacks; a command's data output stays plain bytes on standard output (see `write-entry-points`).
-- **Testing** → `pytest`, with `hypothesis` for property-based tests, `time-machine` for the clock, the `anyio` plugin for async code (not `pytest-asyncio`) and `pytest-cov` for coverage.
+- **Testing** → `pytest`, with `hypothesis` for property-based tests, `time-machine` for the clock, the `anyio` plugin for async code (not `pytest-asyncio`) and `coverage` for coverage: `uv run coverage run -m pytest`, then `uv run coverage report --show-missing`, with `branch = true` and `source = ["mypackage"]` under `[tool.coverage.run]`.
+Not `pytest-cov`: a `-p` plugin in `addopts` that imports the package does so before `--cov` starts measuring, so every import line and each module of nothing but declarations reads as missed and the total comes out far too low, with a `module-not-measured` warning the only sign (pytest-cov 7.1).
 - **Validation and settings** → `pydantic` v2 at a trust boundary (see `write-python`), `pydantic-settings` for typed config from the environment and a local `.env`, and `pyyaml` for the per-source constants in package data (see `structure-python`).
 - **Web API** → `fastapi` (type-hint-driven, OpenAPI docs for free), served with `uvicorn` and pairing with `pydantic`.
 - **XML and other markup** → `lxml`, by XPath or CSS selector, over a hand-rolled parser or regex.
