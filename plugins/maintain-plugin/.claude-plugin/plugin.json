@@ -1,6 +1,6 @@
 {
-  "name": "meta",
-  "description": "Work with Claude Code itself: choose the model for each stage, author skills, and review any plugin for drift, with a hook that captures skill gaps as they surface.",
+  "name": "maintain-plugin",
+  "description": "Maintain Claude Code plugins: author skills, review any plugin for drift, and capture skill gaps as they surface with a hook.",
   "version": "0.1.0",
   "author": {
     "name": "henrymckay"

@@ -1,12 +1,36 @@
 {
   "name": "henrymckay",
-  "owner": { "name": "henrymckay" },
-  "metadata": { "description": "Skills that let Claude Code plan, build, review and run a project from a few prompts, and keep the skills themselves improving." },
+  "owner": {
+    "name": "henrymckay"
+  },
+  "metadata": {
+    "description": "Skills that let Claude Code plan, build, review and run a project from a few prompts, and keep the skills themselves improving."
+  },
   "plugins": [
-    { "name": "meta", "source": "./plugins/meta", "description": "Choose models, author skills, review any plugin for drift, capture skill gaps." },
-    { "name": "project", "source": "./plugins/project", "description": "Plan, build and review a project; git and Markdown conventions." },
-    { "name": "code", "source": "./plugins/code", "description": "Functional and object-oriented style, Python, SQL, tests, Polars." },
-    { "name": "scaffold", "source": "./plugins/scaffold", "description": "Set up and structure a Python application and its entry points." },
-    { "name": "operate", "source": "./plugins/operate", "description": "Data storage, unattended jobs, free-tier deployment, messaging." }
+    {
+      "name": "maintain-plugin",
+      "source": "./plugins/maintain-plugin",
+      "description": "Author skills and review any plugin for drift; capture skill gaps as they surface."
+    },
+    {
+      "name": "manage-project",
+      "source": "./plugins/manage-project",
+      "description": "Plan, build and review a project on the right model for each stage; git and Markdown conventions."
+    },
+    {
+      "name": "write-code",
+      "source": "./plugins/write-code",
+      "description": "Functional and object-oriented style, Python, SQL, tests, Polars."
+    },
+    {
+      "name": "structure-app",
+      "source": "./plugins/structure-app",
+      "description": "Set up and structure a Python application and its entry points."
+    },
+    {
+      "name": "run-project",
+      "source": "./plugins/run-project",
+      "description": "Data storage, unattended jobs, free-tier deployment, messaging."
+    }
   ]
 }

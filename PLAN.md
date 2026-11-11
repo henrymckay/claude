@@ -101,7 +101,7 @@ Installed, any subset:
 
 ```bash
 claude plugin marketplace add henrymckay/claude
-claude plugin install project@henrymckay
+claude plugin install manage-project@henrymckay
 ```
 
 Symlinked, where the skills are authored or plugins cannot be installed:
@@ -116,17 +116,17 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 
 | Plugin | Skills |
 |---|---|
-| `meta` | `choose-model`, `review-plugin`, `write-skills`, the feedback rule and Stop hook |
-| `project` | `plan-project`, `build-project`, `review-project`, `use-git`, `write-markdown` |
-| `code` | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
-| `scaffold` | `setup-python`, `structure-python`, `write-entry-points` |
-| `operate` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
+| `maintain-plugin` | `choose-model`, `review-plugin`, `write-skills`, the feedback rule and Stop hook |
+| `manage-project` | `plan-project`, `build-project`, `review-project`, `use-git`, `write-markdown` |
+| `write-code` | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
+| `structure-app` | `setup-python`, `structure-python`, `write-entry-points` |
+| `run-project` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
 
 ### Runs on
 
 - **The skills and `CLAUDE.md`** — the user's machine: the five plugins installed from the repo as a local marketplace, which loads them in place so edits stay live, and `~/.claude/CLAUDE.md` symlinked; another machine installs from GitHub, or symlinks `skills/`; nothing is deployed.
 - **The weekly sweep** — a Claude Code cloud scheduled task (`trig_01NmQMC42vGPjqQEDE8XrgzQ`), Mondays 02:00 UTC on Opus, cloning the public repo and opening one PR; no connectors; checked 2026-11-10.
-- **The Stop hook** — carried by the installed `meta` plugin (`plugins/meta/hooks/hooks.json`); with the symlink wiring its `Stop` entry is merged into `~/.claude/settings.json`.
+- **The Stop hook** — carried by the installed `meta` plugin (`plugins/maintain-plugin/hooks/hooks.json`); with the symlink wiring its `Stop` entry is merged into `~/.claude/settings.json`.
 - **The trigger suite** — `claude plugin eval` on the user's machine, or in the sweep where the CLI is available.
 
 ### Errors
