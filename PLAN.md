@@ -118,7 +118,7 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 |---|---|
 | `meta` | `choose-model`, `review-plugin`, `write-skills`, the feedback rule and Stop hook |
 | `project` | `plan-project`, `build-project`, `review-project`, `use-git`, `write-markdown` |
-| `code` | `be-functional`, `be-oop`, `write-python`, `write-tests`, `use-polars` |
+| `code` | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
 | `scaffold` | `setup-python`, `structure-python`, `write-entry-points` |
 | `operate` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
 
@@ -166,6 +166,7 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 - **D25 A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
 - **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
 - **D27 The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
+The ladder holds whatever the session's default model is (the user, 2026-11-11, issue 25): the frontmatter changed the model a session was told it was on and not the one serving it, in a headless plan and build and in an interactive sweep (Claude Code 2.1.322, read from each transcript's per-message model), so each stage always hands its work to a subagent with the Agent tool's model and effort set, and the frontmatter is kept for its effort alone.
 - **D28 The weekly sweep runs on Opus** on Mondays at 02:00 UTC (06:00 Dubai) with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
 - **D29 Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
 - **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — the user installs some at work and not others; one repo keeps one tracker and one sweep (see Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace, checked 2026-11-11.
@@ -173,6 +174,11 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 - **D32 Always-on instructions per plugin are a context file printed by a SessionStart hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` keeps the same lines for the symlink wiring, and `review-plugin` checks the two agree.
 - **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `meta`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker. Issues remain the default.
 - **D34 A toolchain's commands live in the skill that owns it** — `uv` in `setup-python`, with `operate` building on it; `project` and `code` name a `uv` command only as that toolchain's example, so they hold under Bazel or anything else.
+
+- **D35 Autonomous mode** (the user, 2026-11-11, issue 21) — with no user present, Claude proceeds on its recommended answers, records each as an assumption for the user's later review, keeps decisions marked proposed, and never takes an outward action such as creating a repository, publishing or spending money; `plan-project` defines it and `build-project` and `review-project` each state it. Skill feedback is still recorded as the feedback rule says *(that last clause proposed, from issue 29)*.
+- **D36 A `write-sql` skill in `code`** (the user, 2026-11-11, issue 30) over a section of `store-data` — decisions only: SQL against Polars, where SQL lives, style, schema changes and testing a documented query, in a dialect-neutral body with a reference per dialect, DuckDB first.
+- **D37 `coverage run -m pytest`** over `pytest-cov` *(proposed, issue 31)* — the `-p` plugin `setup-python`'s own `addopts` loads imports the package before `--cov` measures, which read 33% for a true 83% on a two-module package (pytest-cov 7.1, coverage 7.17); cost: two commands where one flag did.
+- **D38 A run that finds the lock held writes no manifest row** *(proposed, issue 27)* over a `skipped` row — the run in progress records the night, and a `skipped` row would exit 1 where the lock rule exits 0; `skipped` stays for a source a run ended before reaching.
 
 ## Delivery
 
