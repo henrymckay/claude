@@ -17,19 +17,19 @@ description: >-
   the user can read — even if the user just says "decide it yourself", "stop
   asking me", "too many questions" or "what would we normally do". Layers on
   plan-project, where each decision is recorded; plan-project, build-project
-  and review-project use it at their decision steps, secure-project names
-  what always escalates, and review-plugin promotes a decision that recurs
+  and review-project use it at their decision steps, secure-project says
+  which security calls wait for the user, and review-plugin promotes a decision that recurs
   into the skill that should own it.
 ---
 
 # Make decisions
 
 How to settle a question the skills and the plan leave open, so the user reads only the calls that need them.
-It layers on `plan-project`, whose Decisions, Assumptions and Questions hold the result; `plan-project`, `build-project` and `review-project` use it wherever they would ask, assume or propose, `secure-project` names what always escalates, and `review-plugin` promotes a decision that recurs into the skill that should own it.
+It layers on `plan-project`, whose Decisions, Assumptions and Questions hold the result; `plan-project`, `build-project` and `review-project` use it wherever they would ask, assume or propose, `secure-project` says which security calls wait for the user, and `review-plugin` promotes a decision that recurs into the skill that should own it.
 Three mistakes account for most of what goes wrong: asking the user what an earlier answer already settles, so the batch grows past what anyone can read; deciding by taste with no precedent named, so the call can be neither checked nor reopened by number; and carrying a precedent across a difference that matters, where its reason does not hold.
 
 - **Wrong** — "Q4: where should the saved filters live: a JSON file, SQLite or Postgres?"
-- **Right** — "D9 Saved filters in SQLite over a JSON file — by precedent: `store-data`, Pick the engine (small single-writer state whose fields change together)."
+- **Right** — "D9 Saved filters in SQLite over a JSON file — `store-data`, Pick the engine (small single-writer state whose fields change together) *(by precedent)*."
 
 **In an existing project, ask first.** Where a repo already has its own way of recording decisions, such as an architecture decision log, check with the user whether to keep it or apply this skill, and prefer this skill unless they choose to keep theirs.
 
@@ -53,7 +53,7 @@ Before asking a question, recording an assumption or proposing a decision, look 
 1. **A signed-off decision in this plan.**
 2. **A skill's house pick and the reason it gives.**
 3. **A signed-off decision in a neighbouring project's `PLAN.md`** — one this project reads from or feeds, or another of the user's repositories on this machine.
-4. **The principles above.**
+4. **The principles above**, last because a principle fits more cases than any decision and so settles fewer of them for certain.
 
 **Settle by analogy only where the precedent's reason holds here.** Name the property the reason turns on — "small single-writer state whose fields change together" — and check the new case has it; where it does not, the precedent does not apply, and the search goes on.
 A proposed decision in another plan is a hint, never a precedent, since nobody has agreed to it.
@@ -63,22 +63,23 @@ A proposed decision in another plan is a hint, never a precedent, since nobody h
 Write the decision under Decisions with its source, marked *(by precedent)* where `plan-project` would mark it *(proposed)*, and build on it:
 
 ```markdown
-- **D9 Saved filters in SQLite** over a JSON file — by precedent: `store-data`, Pick the engine (small single-writer state whose fields change together) *(by precedent)*.
+- **D9 Saved filters in SQLite** over a JSON file — `store-data`, Pick the engine (small single-writer state whose fields change together) *(by precedent)*.
 ```
 
 The user can still override it by number; the mark says the call was derived, not invented.
-Where the precedent is another project's decision rather than a skill's, also file skill feedback naming the decision and the skill that should hold it, so a sweep can make it a default.
+A call with no precedent that shapes nothing else is decided too, and marked *(proposed)* as `plan-project` says.
+Where the precedent is another project's decision rather than a skill's, also file skill feedback naming the decision, by its shape and never the project's data, and the skill that should hold it, so a sweep can make it a default.
 
 ## Escalate only these
 
 - **Irreversible** — deleting data, rewriting pushed history, a schema change a reader cannot survive, anything published.
 - **Outward-facing** — an outward action as `plan-project`'s Plan with no user present lists them, or anything another person sees or receives.
 - **Costly** — money, a paid tier, or work that would take longer to undo than the milestone took to build.
-- **Security** — a data class looser than private, a credential that can act, a new outside service for private data (`secure-project`).
+- **Security** — a data class looser than private, a credential for an account with money in it beyond read-only, private data sent to an outside service (`secure-project`).
 - **A change to the Brief or an override of a skill** — the user's alone, as `plan-project`'s Keep it current says.
 - **No precedent, or precedents that disagree**, on a choice that shapes the design.
 
-Each escalation goes into the batch as a question with a recommended answer; in autonomous mode it becomes an assumption on that answer, as `plan-project` says, and leads the final reply.
+Each escalation goes into the batch as a question with a recommended answer; in autonomous mode it becomes an assumption on that answer, as `plan-project` says, and leads the final reply, except a security escalation, which takes the more private answer and waits (`secure-project`).
 
 ## Report the rest as a count
 
