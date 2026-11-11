@@ -34,7 +34,6 @@ Once you have applied a convention a few times, keep checking for it rather than
 Check it again before each file you write, since a long session drifts from it: a skill whose text is no longer in view, or that was loaded under a name this list no longer uses, counts as not loaded.
 A skill's default is still a default: a decision I have signed off in the repo's `PLAN.md` overrides it.
 A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it — or, when I am not there to ask, built on and left proposed for my review (see `plan-project`, Plan with no user present); never skip or soften a rule without that line.
-A skill named in this list or in another skill may belong to a plugin that is not installed here (`maintain-plugin`, `manage-project`, `write-code`, `structure-app` and `run-project` ship separately): when loading it fails, decide what it would have settled yourself, record each such call as a proposed decision, and tell me which plugin was missing.
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
@@ -59,3 +58,15 @@ A skill named in this list or in another skill may belong to a plugin that is no
 - **`write-skills`** when authoring or editing a skill: its name, description, opening, structure, and the skill/reference split.
 - **`write-sql`** when writing SQL or deciding where it belongs: SQL against Polars, where a query lives, the engine's dialect, style, schema changes, testing a documented query.
 - **`write-tests`** for writing or editing tests, in any language (`pytest` for Python).
+
+### Missing plugins
+
+The five plugins ship separately, so a skill that the task, this list or a loaded skill calls for may sit in one not installed here.
+Before a task, check the skills it needs against the map below: one that is not among this session's available skills, under any plugin prefix, is missing — don't try to load it.
+Decide yourself what it would have settled, record each such call as a proposed decision, and end your report by naming each missing skill and the plugin that holds it; when none is missing, say nothing of it.
+
+- `maintain-plugin`: `review-plugin`, `write-skills`
+- `manage-project`: `build-project`, `choose-model`, `make-decisions`, `plan-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
+- `run-project`: `deploy-project`, `run-unattended`, `send-messages`, `store-data`
+- `structure-app`: `setup-python`, `structure-python`, `write-entry-points`
+- `write-code`: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`

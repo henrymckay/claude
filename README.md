@@ -70,6 +70,7 @@ claude plugin install write-code@henrymckay
 ```
 
 Each plugin prints its mandatory skill list at session start, so no `CLAUDE.md` is needed.
+It also prints which plugin holds each skill, so a plugin installed without the others names the skills it lacks and the plugin to add.
 `maintain-plugin` takes one option, set with `claude plugin configure maintain-plugin`: `feedback` is `issues` (the default), `file` or `off`.
 
 **Symlink** where you author the skills, or where plugins cannot be installed.
