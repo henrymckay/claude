@@ -2,6 +2,7 @@
 
 The principles are in `SKILL.md`; these are the two workflow files, both scheduled after 02:00 UTC at an off-peak minute and both installing the project with `uv`.
 They live in the repo under `.github/workflows/` and run on the default branch only; `workflow_dispatch` lets you run either by hand after a miss.
+Both commit the data tree to the repository and publish its logs and artifacts there, so they serve public data only; private data stays on the owner's machine (`SKILL.md`, Decide what runs where).
 What the nightly command does once it runs is `run-unattended`'s; the launchd and systemd units for a machine you own are in its `references/schedulers.md`.
 
 ## Nightly pipeline and site
@@ -98,7 +99,7 @@ jobs:
 - The runner has no data directory of its own, so `MYAPP_DATA_DIR` points `store-data`'s tree into the checkout, where last night's commits already hold the records `compute` reads, and with `motherduck_token` set the store also loads the night into MotherDuck.
 - `--log-level info` sends the run's INFO lines to standard error in the plain format, which the run's log keeps (`run-unattended`, Log).
 - The commit takes the night's `records/` and `rejected/` partitions, one new file each per source, plus `metrics.parquet`, `runs.parquet` and `alerts.json`, rewritten whole; keep them out of `.gitignore` or the commit is empty.
-`raw/` and `logs/` are never committed: the pages go up as an artifact kept seven days, enough to re-parse a week after a parser fix (`store-data`), and the log is the run's own.
+`raw/` and `logs/` are never committed: the pages go up as the artifact `store-data` keeps, and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.
 - The `if: failure()` step and its `NTFY_TOPIC` secret are added once an alert is earned (`run-unattended`, Report the outcome); it alerts only when the run step itself did not fail, since the driver alerts on its own failures (`send-messages`); it covers an install that fails before the run and a commit that fails after it.
 - `permissions: contents: write` is what lets `GITHUB_TOKEN` push; the push triggers no workflow, so a `push` trigger on another workflow never sees it.
