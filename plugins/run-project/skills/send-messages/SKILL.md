@@ -11,21 +11,23 @@ description: >-
   conversation; Pushover, Telegram, Slack, Discord and iMessage as the
   alternatives with the case that earns each), leading with what the reader
   would act on, sending from the job driver with the stdlib, keeping the
-  topic, token or app password a secret, and reaching a Claude Code session
+  topic, token or app password a secret and private data out of the body,
+  and reaching a Claude Code session
   through a channel or a scheduled task's trigger. Use whenever adding a
   notification, alert, digest or chat to a job, choosing between push, chat
   and email, wiring ntfy, Pushover, Telegram, Slack, Discord, iMessage or
   SMTP, or deciding how an unattended job tells someone it failed or stopped
   running — even if the user just says "text me when it breaks", "email me a
   summary" or "let me chat with it from my phone". Layers on run-unattended
-  (when a message is earned) and store-data (the digest's counts); Claude
+  (when a message is earned), store-data (the digest's counts) and
+  secure-project (what a message may carry); Claude
   Code's own hooks and PushNotification tool are not covered.
 ---
 
 # Send messages
 
 How a deployed job or assistant reaches a person: the failure alert, the digest with its chart, the two-way conversation, and how a job reaches a Claude Code session.
-It builds on `run-unattended`, whose exit code and `status` command say when a message is earned, and `store-data`, whose manifest holds the digest's counts; the Stop and Notification hooks and the PushNotification tool are Claude Code's own and not covered here.
+It builds on `run-unattended`, whose exit code and `status` command say when a message is earned, `store-data`, whose manifest holds the digest's counts, and `secure-project`, which says what a message may carry; the Stop and Notification hooks and the PushNotification tool are Claude Code's own and not covered here.
 Three mistakes account for most messages nobody reads: a success message every night, so the one failure scrolls past with the rest; a secret pasted into the unit file or the message body; and a channel that needs a Mac awake, chosen for a job that runs in the cloud.
 
 **In an existing project, ask first.** Where a repo already has a notification channel, check with the user whether to keep it or apply these picks, and prefer these unless they choose to keep theirs.
@@ -72,7 +74,7 @@ A workspace made for one job is a second inbox nobody opens.
 
 - **An alert is one line** plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
 - **A digest carries the counts `status` prints** — rows per source, rejected rows, the last day stored — with the chart attached, so the message and the command agree.
-- **The body carries no secret and no personal data beyond what the reader needs**: a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
+- **The body carries no secret, and of private or personal data only counts** (`secure-project`): a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
 
 ## Send from the job
 
@@ -134,12 +136,11 @@ A failed send raises from the app's `error/` package like any adapter (`write-py
 
 ## Keep the secret out
 
-**The topic, bot token or app password is a secret**, kept where `run-unattended`'s Schedule it keeps every secret; the ntfy topic is one even though it reads like a name, so keep the request URL out of the log too.
-A leaked topic is replaced for free; a leaked app password is revoked in the account, and `use-git` says what to do when one lands in history.
+**The topic, bot token or app password is a secret**, kept and rotated as `secure-project`'s Keep secrets out says; the ntfy topic is one even though it reads like a name, since anyone who knows it reads every message sent to it, so keep the request URL out of the log too.
 
 ## Reach Claude
 
 - **Claude Code channels** (above) bridge a running local session to a chat, so the session is a service `run-unattended` keeps alive on a Mac that stays awake or on a host.
-- **An external job fires a cloud scheduled task** through its API trigger: `POST https://api.anthropic.com/v1/claude_code/routines/{id}/fire` with the task's own token, `anthropic-version: 2026-10-21` and a body of `{"text": ...}` up to 65,536 characters, at most 30 fires an hour.
+- **An external job fires a cloud scheduled task** through its API trigger: `POST https://api.anthropic.com/v1/claude_code/routines/{id}/fire` with the task's own token, `anthropic-version: 2026-10-21` and a body of `{"text": ...}` up to 65,536 characters, at most 30 fires an hour per task and 100 per account.
 The task runs a full session that reads the log, triages and messages the reader through a connector, earned when the alert needs a diagnosis rather than a line and costing a session per fire.
 - **No API pushes into the Claude app and no inbound webhook reaches a claude.ai chat**, so "message Claude" means one of the two above.
