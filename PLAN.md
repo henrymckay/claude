@@ -2,8 +2,9 @@
 
 A family of Claude Code plugins that let Claude design, build and run a development project end to end from a short prompt, and that improve themselves as they are used.
 
-Status: re-planned 2026-11-11.
-The requirement wording, D39 to D41 and M15 onward are *(proposed)* until the user answers Q1; R13, M20, D45 to D51 and the changes to D2 and D24 are *(proposed)* until the user answers Q8.
+Status: re-planned 2026-11-11; brought up to date by the 2026-11-12 sweep (pull request 63).
+The plan as a whole is *(proposed)* until the user answers Q1: the requirement wording, D39 to D41, M15 onward, and every line still marked *(proposed)*.
+The security policy — R13, D47 and `secure-project` — is accepted by the user for now and open to refinement as real projects reach it (Q8, answered 2026-11-11).
 
 ## Brief
 
@@ -59,7 +60,7 @@ It assumes no particular repository, tracker or toolchain.
 - **R11 Skills worth loading.** Each is clear, concise, consistent with its neighbours, general, and holds nothing Claude does unprompted.
   - Cost: sweeps and the `write-skills` rules.
 - **R12 Public.** Generic conventions only: no secrets, no project data, no machine-local state.
-- **R13 Safe with private data** *(proposed)*. A project whose data is private, or which holds a credential for an account with money in it, exposes neither, without the user having to notice: the data is private until the plan says otherwise, and nothing moves money without a person confirming it.
+- **R13 Safe with private data** *(accepted for now, the user, 2026-11-11; see D47)*. A project whose data is private, or which holds a credential for an account with money in it, exposes neither, without the user having to notice: the data is private until the plan says otherwise, and nothing moves money without a person confirming it.
   - Cost: a class per input and output in every plan, hosts picked from it, the owner's machine in place of the free public hosts for private data, and a security step in every gate.
 
 ### Not yet
@@ -85,7 +86,7 @@ It assumes no particular repository, tracker or toolchain.
 - **The user's conversations and corrections** — the requirements and most rules; corrections about skills arrive as skill feedback.
 - **Skill feedback issues** — `gh issue list -R henrymckay/claude --label skill-feedback`.
 - **Current tool docs and releases** — Claude Code, uv, ruff, Polars and the rest; every skill claim is checked against the current release.
-- **Trial builds** — `market-data` on 2026-11-11, which filed sixteen issues; each later one feeds the same loop.
+- **Trial builds** — `market-data` on 2026-11-11, which filed sixteen issues, and a dashboard over its store the same day, which filed five (58 to 62); each later one feeds the same loop.
 
 ### Data flow
 
@@ -178,7 +179,7 @@ Numbers are stable; the groups are for reading.
 - **D6 `build-project`** over `develop-project` — matches "the build" wording across the skills.
 - **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
 - **D46 Settle an open question from precedent** (the user, 2026-11-11, issue 40: "yes to make-decisions"): a skill in `manage-project` finds the nearest answered decision and cites it, escalating only the irreversible, outward-facing, costly, security-touching or unprecedented; the mark *(by precedent)* beside *(proposed)* and reporting those as a count are *(proposed)* — over every gap becoming a question or a proposed decision, which left a first autonomous build with more calls than the user could read.
-- **D47 `secure-project` in `manage-project`, and private by default** *(proposed, issue 46)* — over a section of `deploy-project` or a sixth plugin: every project needs it whatever its hosts, `run-project` is the plugin an install is likeliest to leave out (D31), and plan, build and review call it; an input or output with no class is private, a looser class is the user's call, and nothing that moves money happens without a signed-off decision and a person confirming each action, never in autonomous mode.
+- **D47 `secure-project` in `manage-project`, and private by default** (issue 46; the user, 2026-11-11, on the policy inside it: "some of those security things we probably need to refine as we get to them but they are fine for now" — accepted for now, not a full sign-off, and refined as real projects reach it; the 2026-11-12 refinements, a loopback server's `Host` and `Origin` check (issue 59) and licensed data under personal-use terms treated as private (issue 60), are *(proposed)*) — over a section of `deploy-project` or a sixth plugin: every project needs it whatever its hosts, `run-project` is the plugin an install is likeliest to leave out (D31), and plan, build and review call it; an input or output with no class is private, a looser class is the user's call, and nothing that moves money happens without a signed-off decision and a person confirming each action, never in autonomous mode.
 
 **The feedback loop**
 
@@ -186,12 +187,12 @@ Numbers are stable; the groups are for reading.
 - **D4 The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
 - **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `maintain-plugin`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker. Issues remain the default.
 - **D25 A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot; hook text in the repo, the `settings.json` entry in the README.
-- **D24 Every sweep lands as one pull request**, scheduled or run in a session *(proposed change, issue 42; the user: "even a session sweep should probably be a PR")* — the pull request is the user's review point; was: a session sweep committed to `main`.
-- **D45 The sweep merges its own pull request only when every trigger suite passes and no rule was cut, generalised or left for the user; otherwise the user merges** *(proposed, issue 42)* — over the user merging every sweep, which keeps a routine sweep waiting on a read nobody needs; cost: a rule change the user never reads when the sweep judged it routine.
+- **D24 Every sweep lands as one pull request**, scheduled or run in a session *(proposed change, issue 42; the user: "even a session sweep should probably be a PR")* — the pull request is where a sweep is reviewed, by whoever D45 names; was: a session sweep committed to `main`.
+- **D45 The coordinating session reviews and merges a sweep's pull request** (the user, 2026-11-11: "im not going to review the PR, it is up to you to review and merge") — over the user merging every sweep, and over the sweep merging its own; the sweep opens the pull request and stops, and the coordinating session reads the report, checks it against the branch and merges; cost: a rule change the user never reads unless the report flags it, which is why every rule cut, generalised or left for the user is listed there.
 - **D28 The weekly sweep runs on Opus** on Mondays at 02:00 UTC with no connectors — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
 - **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the default folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin.
 - **D39 A requirement is verified by behaviour** over by a skill existing *(proposed)* — the ladder's milestone was ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line below names a run and what it must show, and carries its status.
-- **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8; the folder and the README's Evaluate section were removed on 2026-11-12 (issue 57).
+- **D40 The `evaluate/` folder and its brief-and-answers evaluations are removed** *(proposed; done 2026-11-12)* — trial builds and the per-plugin trigger suites do its job with real feedback; no brief was ever checked in; replaces the old R5 and D8; the folder and the README's Evaluate section were removed on 2026-11-12 (issue 57).
 
 **Models**
 
@@ -218,7 +219,11 @@ The skill named holds the pick, its alternative and its reason; the plan keeps t
 - **D48 A stored table's columns in alphabetical order, its timestamps UTC with their zone** (the user, 2026-11-11, issue 41) — `store-data`, Shape a stored table; the exceptions — partition keys in the path, the manifest and a plan's schema table following the rule — are *(proposed)*.
 - **D49 A bounded catch-up window**, default three days set per source, over no automatic catch-up (the user's direction, 2026-11-11, issue 45; the default *(proposed)*) — `run-unattended`; a wider gap is reported and left for an explicit backfill.
 - **D50 `sqlfluff` for SQL from a project's first `.sql` file** *(proposed, issue 43)* over `sqruff` (17 times faster on 200 files but pre-1.0) and `sqlfmt` (packs columns onto one line) — `write-sql` names it, `setup-python` wires the hook.
-- **D51 Hive-partitioned Parquet kept over a table format** *(proposed, issue 44)* — Delta Lake is the named alternative once a write spans partitions or corrects rows; DuckLake needs a catalog to back up and has no Polars reader; checked 2026-11-11 against deltalake 1.6, DuckDB 2.0 and Polars 2.1 — `store-data`.
+- **D51 Hive-partitioned Parquet stays the default; DuckLake is the table format where every reader goes through DuckDB, Delta Lake where Polars or another engine must write** *(proposed, issues 44 and 56)* — `store-data`, Pick a table format.
+  Reopened by the user (2026-11-11, issue 56): "it sounds like we should at least include info on delta lake and duck lake in the skill, especially if duck lake pairs well with motherduck and duckdb ? we can query first with duckdb before using polars, I don't think we should reject on polars behalf".
+  No format is now ruled out for lacking a Polars reader, since DuckDB hands a frame over with `.pl()`.
+  The default stays because one writer's nightly output needs nothing a table format adds, and every format leaves files that read wrong without it until cleanup — a plain scan of each returned the replaced rows beside the new (run 2026-11-12 on DuckDB 2.0.0 with DuckLake 1.1, deltalake 1.6.6, Polars 2.1.0).
+  DuckLake with MotherDuck holding the catalog cannot run on the house floor today: MotherDuck accepts DuckDB 1.4.1 to 1.5.6, a 2.0 client's extension refuses to load, and 1.5.6 has no Python 3.15 wheel (run 2026-11-12; motherduck.com/docs/integrations/file-formats/ducklake, read 2026-11-12) — Q9 asks whether to revisit then.
 
 **Superseded**
 
@@ -228,18 +233,18 @@ The skill named holds the pick, its alternative and its reason; the plan keeps t
 
 ### Verification
 
-Each line names the run that shows it, then its status on 2026-11-11.
+Each line names the run that shows it, then its status on 2026-11-12.
 
-- **R1** — two trial builds of different kinds, each from one prompt, each leaving `review-project` no defect. **Partly**: `market-data` planned, built and reviewed (130 tests; four defects fixed, six decisions left to the owner); nothing deployed; no second build.
-- **R2** — a trial build with no user answers ends with an unsigned plan, every answer an assumption, no outward action. **Partly**: a headless plan did it unaided; no whole build yet.
-- **R3** — a stage started on a default that is not its model shows its work on the ladder's model in the transcript's per-message counts. **Met for plan and build** (30 of 30 on Opus from Sonnet; 100 of 100 on Sonnet from Opus); review unmeasured.
+- **R1** — two trial builds of different kinds, each from one prompt, each leaving `review-project` no defect. **Partly**: two builds of different kinds — `market-data`'s pipeline (130 tests; four defects fixed, six decisions left to the owner) and a dashboard over its store (M18), each planned, built and reviewed from one prompt; nothing deployed, so neither is shown end to end.
+- **R2** — a trial build with no user answers ends with an unsigned plan, every answer an assumption, no outward action. **Met once** (M18): a whole build from one prompt with no user answers, every answer an assumption, nothing pushed or deployed.
+- **R3** — a stage started on a default that is not its model shows its work on the ladder's model in the transcript's per-message counts. **Met** for plan and build (30 of 30 on Opus from Sonnet; 100 of 100 on Sonnet from Opus), and in M18 from an Opus default: plan and review on Opus, the build milestone and cold reads on Sonnet.
 - **R4, R5** — a trial build's review finds no stated convention broken, and files as feedback what the build decided alone. **Met once** (issues 28, 30 to 33, closed).
 - **R6** — the same for storage and scheduling; one artefact deployed to a house-pick host; one message delivered. **Partly**: local only (issues 22 to 24 and 27, closed).
 - **R7** — `review-plugin` on a plugin outside this repository ends in a report with no push; `maintain-plugin` alone on a second machine records feedback to a file. **Not met**.
-- **R8** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run. **Met** (issue 20; pull request 19; issues 21 to 34).
+- **R8** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run. **Met** (issue 20; pull request 19; issues 21 to 34; sweeps 1 and 2, pull requests 55 and 63, each fix's case run).
 - **R9** — `claude plugin validate` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine. **Partly**: the first three pass; the rest not run.
 - **R10** — a plan shows its decisions with sources and its ideas; a review can challenge a house pick. **Met once** (`market-data`'s plan).
-- **R11** — a sweep with a fresh cold read leaves no defect open. **Partly**: the 2026-11-11 sweep settled issues 35 to 46 and listed its cold read's leftovers in its pull request.
+- **R11** — a sweep with a fresh cold read leaves no defect open. **Partly**: sweep 1 settled issues 35 to 46; sweep 2 settled issues 47 to 62 with every drift check run and listed, and its cold read's leftovers are in pull request 63.
 - **R12** — `review-project`'s secret check; no project data in any issue. **Met** each sweep.
 - **R13** — a trial build over private data, run autonomously, plans every input and output private, keeps them off public hosts and GitHub, holds a read-only credential and prepares no order. **Partly**: a headless plan did all four (2026-11-11); no build yet.
 
@@ -247,12 +252,13 @@ Each line names the run that shows it, then its status on 2026-11-11.
 
 M1 to M14 are done (2026-11-08 to 11; git history has them), M4 being the first trial build.
 M11 was ticked on a skill existing and failed in use, hence D39.
+Sweeps are not milestones: sweep 1 landed as pull request 55 (2026-11-11), sweep 2 as pull request 63 (2026-11-12).
 
-- [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
-- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, `evaluate/` is removed (D40) and the first release is tagged (D41).
-- [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
-- [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a dashboard over `market-data`'s store (the user's choice, 2026-11-11: it exercises a dashboard, a deployment, SQL and a message, which the first build did not) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
-- [ ] **M20 Third trial build, over private data** *(proposed)* — R13, R2; done when a project over the user's own account data runs from one prompt in autonomous mode, holds only a read-only credential, and its review finds nothing `secure-project` forbids.
+- [ ] **M15 Re-plan and rename** — R9; the plugins carry their verb-first names (2026-11-11); waits on the user's sign-off (Q1).
+- [ ] **M16 Tidy** — R11; issues 35 to 37 settled (sweep 1) and `evaluate/` removed (sweep 2, D40); left: tag the first release (D41) once sweep 2 is merged and its suites pass. Next.
+- [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass; after M16; the second-machine check waits on Q7.
+- [x] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done 2026-11-11: a dashboard over `market-data`'s store, built from one prompt with no user answers on an Opus default, the ladder holding (plan and review on Opus, the build milestone and cold reads on Sonnet); it filed issues 58 to 62, which sweep 2 settled; nothing was pushed or deployed and no message sent, since the user has not allowed either (Q6).
+- [ ] **M20 Third trial build, over private data** *(proposed)* — R13, R2; done when a project over the user's own account data runs from one prompt in autonomous mode, holds only a read-only credential, and its review finds nothing `secure-project` forbids; after M17.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
 
 ## Open
@@ -264,13 +270,15 @@ M11 was ticked on a skill existing and failed in use, hence D39.
 
 ### Questions
 
-- **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, and M15 to M19? — recommended: yes; blocks M15.
-- **Q6** May the second trial build deploy its dashboard, and to which account? — `market-data` is kept only as that build's data source and deleted after it (the user, 2026-11-11), with no GitHub repository of its own; the build stops before any outward action and lists the deployment for the user; recommended: decide when the build reports; blocks only the deployed half of M18.
+- **Q1** Sign off this re-plan: R1 to R12 as worded, D39 to D41, M15 to M20, and every line still marked *(proposed)* — among them the proposed parts of D46 and D48 to D51, the changes to D2 and D24, and the 2026-11-12 refinements to D47? — recommended: yes; blocks M15.
+- **Q6** May the second trial build deploy its dashboard, and to which account? — `market-data` is kept only as that build's data source and deleted after it (the user, 2026-11-11), with no GitHub repository of its own; the build stops before any outward action and lists the deployment for the user; the build has reported (M18) and deployed nothing; recommended: no hosted deployment, since its data is licensed for personal use only and so private (`secure-project`, issue 60) — serve it from the owner's machine over Tailscale if it is wanted on a phone; blocks only that step and its message.
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — only the user can find out; blocks M17's second-machine check.
-- **Q8** Sign off the 2026-11-11 sweep's proposals: R13, M20, D45, D47, the proposed parts of D46 and D48 to D51, and the changes to D2 and D24? — recommended: yes, by merging its pull request; the policy calls inside `secure-project` and `make-decisions` are listed there one by one.
+- **Q9** Once MotherDuck accepts the current DuckDB client, should a project already on MotherDuck replace its two stores — the Parquet tree and the MotherDuck tables `store-data` loads beside it — with one DuckLake whose catalog MotherDuck holds and whose files sit in the project's own bucket? — recommended: yes, as a trial in the next project that needs MotherDuck, keeping the tree as the default elsewhere; costs a bucket and its credential on every writer, and the files read true only through the catalog (D51).
+- **Q10** With another method plugin installed and driving — one that plans, debugs or tests first, such as `superpowers` — should `manage-project`'s `plan-project`, `build-project` and `review-project` stand down unless named? (issue 54) — a trial on 2026-11-12 ran three prompts in a scratch project with `superpowers` 7.0.2 loaded by `--plugin-dir` beside these plugins: its start-up text was injected, yet `plan-project`, `write-python` and `be-functional` claimed the prompts, no `superpowers` skill ran, nothing loaded twice, and nothing contradicted openly; so today this family wins silently. Recommended: yes, stand down when the user or the project names the other method, and say so in `manage-project`'s context file; the convention plugins apply under any method already.
 
 ### Ideas
 
 - **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would turn M17's checks into something a new install runs on day one; costs a script to maintain; not built.
 - **I2** Have `build-project` write a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by a coordinator reading transcripts; costs a section in one skill; not built.
 - **I3** A budget line in `plan-project`'s Runs on for the build itself (expected stage cost at the ladder's prices) — the user asked about cost twice during the first trial; costs an estimate that will often be wrong; not built.
+- **I4** More rules enforced by hooks (issue 53) — today only the feedback `Stop` hook enforces; a secret in an edit is caught by `secure-project`'s commit hook, and the official `security-guidance` plugin warns on risky edits as they are made; a hook earns its place when a trial build breaks a rule a hook could have caught; not built.
