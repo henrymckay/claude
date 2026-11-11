@@ -32,6 +32,7 @@ Their trigger descriptions sit in a passive menu that is easy to skip on routine
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
 A skill's default is still a default: a decision I have signed off in the repo's `PLAN.md` overrides it.
 A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it (see `plan-project`); never skip or soften a rule without that line.
+A skill named in this list or in another skill may belong to a plugin that is not installed here (`meta`, `project`, `code`, `scaffold` and `operate` ship separately): when loading it fails, decide what it would have settled yourself, record each such call as a proposed decision, and tell me which plugin was missing.
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, SOLID, patterns.
