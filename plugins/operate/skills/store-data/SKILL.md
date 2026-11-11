@@ -6,7 +6,9 @@ description: >-
   queried across the tree by DuckDB, MotherDuck when another machine or a
   phone chat must reach it, SQLite for small single-writer state, Postgres
   only for a multi-writer service, and no ORM; the data directory, its
-  environment override and its tree; the store as a write port and a read
+  environment override and its tree, named in the plan's terms, with a tree
+  per dataset once a second schema arrives; the store as a write port and a
+  read
   port, a Parquet adapter bound to the directory that writes everything a
   fetch returned, and a MotherDuck adapter loading the records, metrics and
   manifest when the token is set while the raw archive stays local; one file
@@ -23,13 +25,14 @@ description: >-
   hosted dashboard — even if the user just says "save the results", "where
   should this live" or "add a database". Targets Polars 2.x and DuckDB 2.x.
   Layers on structure-python (the store is an adapter) and use-polars;
-  run-unattended reads the manifest and holds the lock.
+  run-unattended reads the manifest and holds the lock, and write-sql covers
+  the SQL written against the store.
 ---
 
 # Store data
 
 Where a project's data lives, how it is written so a re-run is safe, and how it is read back.
-The store is a driven adapter in `structure-python`'s terms, the frames it moves obey `use-polars`, and `run-unattended` reads the manifest it keeps.
+The store is a driven adapter in `structure-python`'s terms, the frames it moves obey `use-polars`, `run-unattended` reads the manifest it keeps, and `write-sql` covers the SQL written against it.
 Three mistakes account for most lost data: appending on a re-run, so a retried night doubles its rows; writing a file in place, so a crash leaves a half-file every later scan trips over; and discarding the raw response, so a parser fix cannot reach history.
 
 **In an existing project, ask first.** Where a repo already has a store, check with the user whether to keep it or apply this layout, and prefer this layout unless they choose to keep theirs.
@@ -81,6 +84,11 @@ Settings mechanics are in `write-entry-points`' Python reference; `platformdirs`
 
 A tiny tool with one output is one Parquet file at the root; grow the tree when a second source or a second kind of output arrives.
 
+**The tree's names are placeholders for the plan's Terms**: a project whose items are stations keeps `stations.csv` with a `station` column and calls `records/` what it holds (`readings/`), with no decision needed to say so.
+
+**A second kind of record with its own schema gets its own tree beside the first**, each named for its dataset and keeping the `source=<s>/day=<d>` partitions, while `raw/` and `rejected/` gain a leading `dataset=<name>` level and the manifest a `dataset` column, so the quarantine and the manifest each stay one table.
+Two schemas under one `records/` fail the scan that reads it as one table (`SchemaError` on the first column the files don't share).
+
 **The store is two ports**, since its writer and its readers differ (`structure-python`, Declare a port): a write port, `port.Sink`, taking what a fetch returned, the manifest row and the metrics; and a read port, `port.Store`, answering records over a range, the metrics and the manifest.
 The API and the dashboard take only `port.Store`, so a stray write from either is a type error.
 `adapt/parquet.py` satisfies both over the tree: a frozen dataclass holding `data_dir`, built by the composition root, writing records, rejected rows, raw pages, metrics and the manifest row, so the fetch adapter never sees the directory.
@@ -121,7 +129,8 @@ A parser fix then re-parses history offline; without it the fix applies from ton
 - **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `record` (the raw record as a string, or the item's name where nothing arrived), `reason`, `source`, `day`.
 Dropping them silently makes a schema change at the source look like a quiet day; the quarantine makes it a count, and one schema lets the whole tree be read as one table.
 - **Write a run manifest**, `runs.parquet`: one row per source per run with `source`, `day`, `rows`, `rejected`, `failed_items`, `requests`, `started`, `ended` and `outcome`.
-`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`, Write an adapter); `outcome` is an `enum.StrEnum` of `stored` (failed items within the source's tolerance, whatever was rejected), `partial` (more failed than it tolerates), `failed` (nothing stored) and `skipped` (the run never reached it), as `run-unattended`'s Report the outcome reads them, and the `compute` stage writes its own row with `source="metrics"`.
+`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`, Write an adapter); `outcome` is an `enum.StrEnum` of `stored` (failed items within the source's tolerance, whatever was rejected), `partial` (more failed than it tolerates), `failed` (nothing stored) and `skipped` (the run ended before reaching it, as when a time limit stops a night part-way; never a run that found the lock held, which writes no row), as `run-unattended`'s Report the outcome reads them, and the `compute` stage writes its own row with `source="metrics"`.
+A fetch that covers a range (`run-unattended`, Make a run rerunnable) writes one row with `day` the range's first day and a `last_day` column its last, equal to `day` on a one-day row, and files its raw pages and failed items under that first day.
 It is small, so append by reading, concatenating and overwriting the file atomically; `run-unattended`'s `status` command reads it, and nothing else records that a night happened.
 - **Store metrics as a full recompute** overwriting `metrics.parquet` from the records, until a timed check shows the recompute exceeding the nightly window; an incremental update is a second code path that drifts from the full one, so it is earned by that measurement and nothing else.
 The file is long — `item`, `day`, `metric`, `value` — so a new metric is rows, not a column every reader must learn (`use-polars`).
@@ -139,10 +148,12 @@ readings = (
 ```
 
 `hive_partitioning=True` adds `source` and `day` as columns, with `day` inferred as `Date` from `YYYY-MM-DD`; pass `hive_schema` when inference guesses wrong, such as a numeric-looking identifier that must stay a string.
+Once a column has been added to the records, pass `schema=` naming every column with `missing_columns="insert"`, so the days written before it read as null; without both the scan raises `SchemaError` at the first file that holds the new column.
 
 At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`.
 Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()` — which needs `pyarrow` installed, a dependency the Parquet path never needed.
-A Polars frame in scope is queryable by name (`duckdb.sql("select * from readings")`), so a transform written in SQL costs no export step.
+A Polars frame in scope is queryable by name (`duckdb.sql("select * from readings")`), so a question asked of one in SQL costs no export step.
+When a query belongs in SQL rather than Polars, where it is kept and how a documented one is tested are `write-sql`'s.
 
 **Compact only when the file count hurts** — thousands of files, a scan whose planning is visible — and then by closed year: rewrite each year's days into `history/source=<s>/year=<y>/part.parquet`, keeping `day` as a column, and read `records` and `history` as a `polars.concat` of two scans.
 Rewriting earlier is a second layout to maintain for a cost nobody has measured.
