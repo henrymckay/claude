@@ -11,7 +11,8 @@ description: >-
   challenges to a house pick or a plan decision separately, with evidence;
   then fixing the defects by impact, each with its own commit and, for a bug,
   a regression test, then re-running every check and bringing PLAN.md and the
-  README up to date; the rest waits on the user's reply, in the report itself
+  README up to date; a judgement call a precedent settles is fixed too, and
+  the rest waits on the user's reply, in the report itself
   when the review runs in autonomous mode with no user present. It reviews on
   Opus whatever model the session started on, by handing the review to a
   subagent. Use whenever the user asks to review, audit, critique or tidy a repo or project, check it against
@@ -19,14 +20,15 @@ description: >-
   found — even if they just say "review this repo", "what's wrong with this
   project", or "is this up to date". Works without a PLAN.md. Layers on
   plan-project and every skill the project's code falls under, using the
-  built-in code-review for the bug hunt; review-plugin extends it for a Claude
-  Code plugin.
+  built-in code-review for the bug hunt, secure-project for the safety checks
+  and make-decisions for the judgement calls; review-plugin extends it for a
+  Claude Code plugin.
 ---
 
 # Review the project
 
 A review of a whole project against its plan, the skills and the current state of its tools, followed by fixing what it finds.
-It layers on `plan-project` (the plan it checks against) and on every skill the code falls under, and uses the built-in `/code-review` for the bug hunt rather than reimplementing one; `review-plugin` extends it for a Claude Code plugin.
+It layers on `plan-project` (the plan it checks against) and on every skill the code falls under, uses the built-in `/code-review` for the bug hunt rather than reimplementing one, `secure-project` for the safety checks and `make-decisions` for the judgement calls; `review-plugin` extends it for a Claude Code plugin.
 Three mistakes account for most weak reviews: reading code instead of running it, reporting a preference as a defect when no plan or skill backs it, and fixing everything in one sweep, with no regression test and a recorded decision quietly overturned.
 
 - **Wrong** — "Defect: the adapter should use a dataclass here" with no rule cited, fixed in the same sweep as a real bug.
@@ -37,7 +39,7 @@ Three mistakes account for most weak reviews: reading code instead of running it
 ## Set the standard
 
 **Review on Opus at high effort, whatever the session started on: hand the review and its fixes to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the review's subagent that does the work itself, with the repo, this skill by name and whether the run is autonomous, and relay its report.
-A session briefed as that subagent works directly; any other hands over, since it cannot tell which model serves it: the frontmatter changes the model a session is told it is on, not the one that answers (`choose-model`).
+A session briefed as that subagent works directly; any other hands over (`choose-model`, Hold a stage on its model).
 
 Judge the project against what it set out to do and what the skills require, never against taste.
 
@@ -90,7 +92,7 @@ Read the changelog before recommending a major upgrade.
 
 - **The README matches the code** — run its commands as written, and check each claim about an outside tool against that tool's current docs.
 - **The project's `CLAUDE.md` is current** — no stale path or command, no default Claude follows anyway (see `write-markdown`), nothing a skill contradicts.
-- **No secret in the tree or its history, and no known vulnerability in the locked dependencies** — under `setup-python`'s toolchain, `uv export --format requirements-txt --no-emit-project > requirements.txt`, then `uvx pip-audit -r requirements.txt --disable-pip`.
+- **The project keeps `secure-project`** — every input and output classed and nowhere its class forbids, no secret in the tree or its history, and the dependency audit and `/security-review` clean, run as its Review it says.
 
 ## Get a cold read
 
@@ -106,7 +108,7 @@ Separate defects from judgement calls and challenges, and list the checks skippe
 
 ## Fix
 
-Fix the defects without waiting, in ranked order; a judgement call, a challenge or a change to a requirement or decision in `PLAN.md` waits for the user's reply to the report (see `plan-project`).
+Fix the defects without waiting, in ranked order; a judgement call a precedent settles is fixed too, citing it (`make-decisions`), while one with no precedent, a challenge or a change to a requirement or decision in `PLAN.md` waits for the user's reply to the report (see `plan-project`).
 
 - **In autonomous mode — nobody present to answer, as `plan-project`'s Plan with no user present defines it — the report is the batch.** Review against the skills where the opening would have asked, fix the defects, leave each judgement call, challenge and decision change in the report with a recommended answer and every decision *(proposed)*, record what was assumed under the plan's Assumptions, and take no outward action — creating a repository, publishing, spending money; filing skill feedback is not one.
 - **A bug gets a regression test** that fails before the fix and passes after.
