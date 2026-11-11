@@ -106,6 +106,8 @@ A language-agnostic skill states the principles; `references/<language>.md` show
 - **A build-out reference leads with its structure** (the package tree) and closes with `Run`; a style reference has neither and orders by dependency alone.
 - **The reference never restates a principle** — it shows the mechanics for one the skill states.
 
+A skill whose specifics vary along another axis splits the same way under that axis's name — `write-sql` by engine, with `**Dialect-neutral here.**`, `references/duckdb.md` and a closing `## Dialect specifics`.
+
 A skill tied to one library has no language axis, so it splits by **topic** instead: `references/<topic>.md` cookbooks, each with its own H1 and scope line, and a closing `## Reference cookbooks` section.
 
 **A reference earns its place by holding what the skill cannot**: mechanics too long for the body, a worked trap, a framework build-out.
