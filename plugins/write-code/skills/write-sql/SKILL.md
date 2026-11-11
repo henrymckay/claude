@@ -100,7 +100,7 @@ inner join stations on daily.station = stations.station
 order by daily.station, daily.day;
 ```
 
-**Format and lint every `.sql` file with `sqlfluff` from the project's first one**, as a development dependency run by the pre-commit hook `setup-python` wires, configured in `pyproject.toml` so the style above is checked rather than remembered:
+**Format and lint every `.sql` file with `sqlfluff` from the project's first one**, as a development dependency run by a pre-commit hook, configured so the style above is checked rather than remembered; under `setup-python`'s toolchain the hook is its to wire and the configuration sits in `pyproject.toml`, and elsewhere the same sections go in a `.sqlfluff` file:
 
 ```toml
 [tool.sqlfluff.core]
@@ -149,7 +149,7 @@ An undo is the next migration: a down script is the one path nobody runs until t
 **Every documented query runs in the suite**: one test takes each `sql` block from the README, or each file under `queries/`, runs it against a tree the real store adapter wrote to a temporary directory, from the directory its documented path starts at, and asserts on the rows that come back.
 A schema change then fails that test in the commit that makes it; a query checked once by hand fails for its reader instead, some weeks later.
 
-- **Lint each documented query in the same module** with `sqlfluff`'s Python API against the project's `pyproject.toml`, since the hook reads only `.sql` files.
+- **Lint each documented query in the same module** with `sqlfluff`'s Python API against the project's configuration, since the hook reads only `.sql` files.
 - **Write the fixture tree through the store adapter**, never by hand, so the fixture changes shape when the store does.
 - **Assert a query's answer where the contract promises one** — a join that must not multiply rows, a figure that must match the stored one — beside the shared check that each returns rows.
 - **Test a packaged query through the adapter that runs it**, against a real database in memory or on a temporary path.
