@@ -124,7 +124,7 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 ### Runs on
 
-- **<artefact>** — <host and tier, its limit that matters, how it is deployed from the repo, where its secret lives; the date the tier was checked>.
+- **<artefact>** — <host and tier, its limit that matters, how it is deployed from the repo, where its secret lives and when it next rotates; the date the tier was checked>.
 
 ### Errors
 
@@ -223,7 +223,7 @@ Every step above holds except the ones that wait for the user:
 - **Write `PLAN.md` directly**, skipping plan mode, and open it with a line saying the plan is unsigned, the date and who asked for the run.
 - **Proceed on each question's recommended answer**, recorded under Assumptions with the question it replaced, for the user's later review.
 - **Leave every decision *(proposed)* or *(by precedent)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
-- **Take no outward action** — creating a repository, publishing, spending money; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
+- **Take no outward action** — creating a repository, publishing, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
 Skill feedback is not such an action: it is recorded as the session's feedback rule says.
 - **Put the batch of step 8 in the final reply**, so the first thing the user reads is the list of calls to confirm or change.
 
