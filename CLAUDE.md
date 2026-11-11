@@ -8,6 +8,7 @@
 - When a skill steered you wrong, said nothing where it should have, or contradicted another skill, or I corrected you on something a skill should cover, file an issue and carry on: `gh issue create -R henrymckay/claude --label skill-feedback`.
 Name the skill and section, what happened, what should have happened, and the kind of project.
 The repo is public, so describe the shape of the case, never the project's data.
+An instruction to keep a project local, private or unpushed governs that project's repository, not this: the feedback carries none of its data, so file it all the same unless the user says not to, and never park it in the project's plan or notes, where no sweep reads it.
 File skill corrections there, not in memory, and edit a skill only in a `review-plugin` sweep, never mid-task.
 - Get my explicit sign-off before force-pushing, rewriting shared history, or running destructive commands.
 - When a requirement I have given turns out to be the thing forcing the design's complexity, come back and ask what it is for before building around it, and tell me what it costs.
@@ -31,7 +32,7 @@ Before starting any task below, invoke the matching skill and follow it.
 Their trigger descriptions sit in a passive menu that is easy to skip on routine work, so check this list every time — not only when I name a skill.
 Once you have applied a convention a few times, keep checking for it rather than assuming it is handled.
 A skill's default is still a default: a decision I have signed off in the repo's `PLAN.md` overrides it.
-A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it (see `plan-project`); never skip or soften a rule without that line.
+A reason you find yourself goes under Decisions as proposed, with its source and the skill and section it overrides, and is raised with me before you build on it — or, when I am not there to ask, built on and left proposed for my review (see `plan-project`, Plan with no user present); never skip or soften a rule without that line.
 A skill named in this list or in another skill may belong to a plugin that is not installed here (`meta`, `project`, `code`, `scaffold` and `operate` ship separately): when loading it fails, decide what it would have settled yourself, record each such call as a proposed decision, and tell me which plugin was missing.
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
@@ -53,4 +54,5 @@ A skill named in this list or in another skill may belong to a plugin that is no
 - **`write-markdown`** for any Markdown, for humans or LLMs: READMEs, docs, `SKILL.md`, `CLAUDE.md`, prompts.
 - **`write-python`** when writing or editing Python.
 - **`write-skills`** when authoring or editing a skill: its name, description, opening, structure, and the skill/reference split.
+- **`write-sql`** when writing SQL or deciding where it belongs: SQL against Polars, where a query lives, the engine's dialect, style, schema changes, testing a documented query.
 - **`write-tests`** for writing or editing tests, in any language (`pytest` for Python).

@@ -5,4 +5,5 @@ When a skill from any plugin steered you wrong, said nothing where it should hav
 The repository is the one the user's `CLAUDE.md` names for skill feedback, else the `repository` in the owning plugin's `.claude-plugin/plugin.json`, two folders above the skill's own.
 Name the skill and section, what happened, what should have happened, and the kind of project.
 Describe the shape of the case, never the project's data: the tracker may be public.
+An instruction to keep a project local, private or unpushed governs that project's repository, not this: the feedback carries none of its data, so file it all the same unless the user says not to, and never park it in the project's plan or notes, where no sweep reads it.
 Record skill corrections there, not in memory, and edit a skill only in a `review-plugin` sweep, never mid-task.
