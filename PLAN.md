@@ -124,9 +124,9 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 
 ### Runs on
 
-- **The skills and `CLAUDE.md`** — the user's machine, symlinked from `~/.claude`; another machine installs plugins from the marketplace, or symlinks; nothing is deployed.
+- **The skills and `CLAUDE.md`** — the user's machine: the five plugins installed from the repo as a local marketplace, which loads them in place so edits stay live, and `~/.claude/CLAUDE.md` symlinked; another machine installs from GitHub, or symlinks `skills/`; nothing is deployed.
 - **The weekly sweep** — a Claude Code cloud scheduled task (`trig_01NmQMC42vGPjqQEDE8XrgzQ`), Mondays 02:00 UTC on Opus, cloning the public repo and opening one PR; no connectors; checked 2026-11-10.
-- **The Stop hook** — `~/.claude/settings.json` on the user's machine, copied from `plugins/meta/hooks/hooks.json`; an installed `meta` plugin carries it itself.
+- **The Stop hook** — carried by the installed `meta` plugin (`plugins/meta/hooks/hooks.json`); with the symlink wiring its `Stop` entry is merged into `~/.claude/settings.json`.
 - **The trigger suite** — `claude plugin eval` on the user's machine, or in the sweep where the CLI is available.
 
 ### Errors
@@ -139,7 +139,7 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 
 ### Decisions
 
-- **D1 Symlinks into `~/.claude` on the authoring machine** over installing the plugins there — bare names, live edits and one personal `CLAUDE.md`; superseded as the only wiring by D30 (2026-11-11).
+- **D1 Symlinks into `~/.claude`** remain a supported wiring for a machine that cannot install plugins; the authoring machine moved to the installed plugins on 2026-11-11 so it runs what others install (D30).
 - **D2 Commit straight to `main`** as `henrymckay <henrymckay@users.noreply.github.com>`, `docs(<skill>): …` over feature branches — a solo docs repo with nothing to merge; overrides `use-git`'s branch default; the scheduled sweep's weekly PR is the one exception.
 - **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, and not per-machine.
 - **D4 The filing rule in `CLAUDE.md`** over a skill — a skill only loads for a matching task, and feedback arises mid-task in any work.
@@ -200,7 +200,7 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/project
 - [x] **M6 Settle the code skills** — R6; done when write-python, be-functional, be-oop, write-tests and their references carry the error model, record type, datetime, money, typing depth and async decisions, the wrong claims are fixed, the default-test cuts are made, and every code block and library claim runs (2026-11-10).
 - [x] **M7 Settle the structure skills** — R6; done when setup-python, structure-python, write-entry-points, use-polars and use-git carry the house picks above, the ten gap-probe contradictions are ruled on, and every claim runs (2026-11-11).
 - [x] **M8 Store and run** — R6; done when `store-data` and `run-unattended` exist, are listed in CLAUDE.md and the README, and the gap probe re-run (R6) passes (2026-11-11).
-- [ ] **M9 Close the loop** — R8; done when the Stop hook, the weekly scheduled task and the trigger eval suite each pass their R8 check.
+- [x] **M9 Close the loop** — R8; done when the Stop hook, the weekly scheduled task and the trigger eval suite each pass their R8 check (2026-11-11: the hook, from the installed `meta` plugin, filed seeded issue #20; the sweep opened pull request 19; 20 of 20 trigger cases pass).
 - [x] **M10 Sweep** — R2; done when review-plugin, with a fresh cold read, leaves no defects (2026-11-11).
 - [x] **M11 Choose the model** — R9; done when `choose-model` is committed and the four project skills carry `model` and `effort` (2026-11-10).
 - [x] **M12 Deploy** — R10; done when `deploy-project` is committed with sources for every free-tier claim, `plan-project` has Runs on, and the gap probe leaves no deployment decision open (2026-11-11).
