@@ -238,7 +238,7 @@ repos:
 ```
 
 - **`repo: local` hooks run the `ruff` and `taplo` that `uv.lock` pins**, so the hook, the editor and the suite agree on one version; the `ruff-pre-commit` mirror pins its own `rev`, which drifts from the lock until a commit passes the hook and fails `uv run ruff check`.
-- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, the one hook that needs a `rev`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
+- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, pinned by `rev` like any hook from its own repository, such as `secure-project`'s `gitleaks`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
 - **Add two `sqlfluff` hooks under `repo: local` in the commit that adds the project's first `.sql` file**, after `uv add --dev sqlfluff` and with the configuration `write-sql`'s Style gives in `pyproject.toml`; before then they would run on nothing:
 
 ```yaml
