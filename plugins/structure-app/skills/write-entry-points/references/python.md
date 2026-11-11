@@ -285,7 +285,7 @@ def run() -> None:
     uvicorn.run(app, port=8000)
 ```
 
-`uvicorn.run` binds `127.0.0.1` by default; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
+`uvicorn.run` binds `127.0.0.1` by default, so wrap `app` in the Loopback guard below; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
 A test swaps the adapter with `app.dependency_overrides[provide.store] = lambda: fake_store` — no patching.
 
 ## GUI
@@ -345,13 +345,87 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
 
 - **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, HTTP surface); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
 - **Refresh by watching the run manifest** (`store-data`), through `provide.watch_runs()`, which returns the decorator for wherever the store is, so `server` is the same on the laptop and the host.
-Over the data directory it is `shiny.reactive.file_reader` on `runs.parquet`, which checks the file's modification time each second and re-runs its function when the nightly rewrites it.
-Against MotherDuck there is no file, so it is `shiny.reactive.poll(read_last_run, interval_secs=300)` (`shiny` 1.9), where `read_last_run` asks the `runs` table for its latest `ended`: the manifest changes once a night, and every check is a query against MotherDuck's monthly compute, where the one-second default would run 86,400 a day per session.
-Either way every output depending on `runs()` updates without a timer of its own.
+Over the data directory it is `shiny.reactive.poll` on the file's modification time and size, read as `None` while the file does not exist, since `shiny.reactive.file_reader` raises `FileNotFoundError` on a fresh store with no manifest yet and ends the session (`shiny` 1.9):
+
+```python
+type _Reader = collections.abc.Callable[[], polars.DataFrame]
+
+
+def _stamp(path: pathlib.Path) -> tuple[int, int] | None:
+    """Return the file's modification time and size, or None before it exists."""
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return None
+    return (stat.st_mtime_ns, stat.st_size)
+
+
+def watch_runs() -> collections.abc.Callable[[_Reader], _Reader]:
+    """Re-run the decorated reader whenever the nightly rewrites the manifest."""
+    manifest = settings().data_dir / "runs.parquet"
+    return shiny.reactive.poll(functools.partial(_stamp, manifest), interval_secs=1)
+```
+
+Against MotherDuck there is no file, so it is `shiny.reactive.poll(read_last_run, interval_secs=300)`, where `read_last_run` asks the `runs` table for its latest `ended`: the manifest changes once a night, and every check is a query against MotherDuck's monthly compute, where the one-second default would run 86,400 a day per session.
+Either way every output depending on `runs()` updates without a timer of its own, and `read_runs` answers an empty frame before the first run.
+- **Show the last run's age, re-judged on a slow clock**: the output that says how old the data is calls `shiny.reactive.invalidate_later(3600)` and compares the latest `ended` with now, since a night that never ran rewrites nothing and a tab left open would otherwise show yesterday's verdict for ever.
+- **Read the store in a `shiny.reactive.calc` or the render function, never a `shiny.reactive.effect`.** An exception raised in an effect ends the session — every output unrendered, "Session fatal error" — while one raised in a calc shows as an error in the outputs that read it and nowhere else (`shiny` 1.9).
 - **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
+`shinywidgets` brings the IPython and `ipywidgets` stack, 24 packages over `shiny` and `plotly` (`shinywidgets` 0.8.2); a figure rendered with `fig.to_html(include_plotlyjs=False, full_html=False)` through `shiny.render.ui`, with `plotly.js` served from the app's `static_assets`, avoids them and loses the widget's in-place updates.
 - **The callbacks nested in `server` carry no docstring**, as `write-python` says of a nested function; the blank line after `server`'s own docstring is that skill's exception for a short function's beats.
 
-`driver.py` builds `app = shiny.App(layout.root(), callback.server)` and a `run()` calling `shiny.run_app(app, port=8001)`: `shiny.run_app` and `uvicorn.run` both default to 8000, so the two launchers collide unless the dashboard moves.
+`driver.py` builds `app = starlette_.loopback_only(shiny.App(layout.root(), callback.server), port=8001)` (Loopback guard) and a `run()` calling `shiny.run_app(app, port=8001)`: `shiny.run_app`, `shiny run` and `uvicorn.run` all default to 8000, so the two launchers collide unless the dashboard moves.
+
+**Test the server in process with `shiny.testserver.test_server(app)`** (`shiny` 1.9): set inputs, let the graph settle, and assert each output's `status` and `value`, with no browser; a widget output's value is only its model id, so test each figure at the plain function that builds it, and raise `timeout_secs` past its five-second default where the first import of the widget stack is slow.
+
+## Loopback guard
+
+A server answering on loopback with no authentication checks `Host` and any `Origin`, as `secure-project`'s Guard what is served says.
+`drive/starlette_.py` wraps any app that runs on Starlette, the dashboard's and the API's alike, since `starlette.middleware.trustedhost.TrustedHostMiddleware` checks `Host` but lets a WebSocket from a foreign `Origin` through:
+
+```python
+_LOOPBACK = ("127.0.0.1", "localhost")
+
+
+def loopback_only(
+    app: starlette.types.ASGIApp,
+    *,
+    names: collections.abc.Sequence[str] = (),
+    port: int,
+) -> starlette.types.ASGIApp:
+    """Refuse a request whose Host, or a WebSocket whose Origin, names elsewhere."""
+    hosts = {f"{name}:{port}" for name in _LOOPBACK} | set(names)
+    origins = {f"{scheme}://{host}" for host in hosts for scheme in ("http", "https")}
+
+    async def guarded(
+        scope: starlette.types.Scope,
+        receive: starlette.types.Receive,
+        send: starlette.types.Send,
+    ) -> None:
+        if scope["type"] not in ("http", "websocket"):
+            await app(scope, receive, send)
+            return
+        host = [value.decode() for key, value in scope["headers"] if key == b"host"]
+        origin = [value.decode() for key, value in scope["headers"] if key == b"origin"]
+        foreign = (
+            len(host) != 1
+            or host[0] not in hosts
+            or len(origin) > 1
+            or any(value not in origins for value in origin)
+        )
+        if not foreign:
+            await app(scope, receive, send)
+        elif scope["type"] == "websocket":
+            await send({"code": 1008, "type": "websocket.close"})
+        else:
+            await send({"headers": [], "status": 403, "type": "http.response.start"})
+            await send({"body": b"", "type": "http.response.body"})
+
+    return guarded
+```
+
+It reads the header list, not a mapping, so a repeated header is refused rather than resolved to whichever copy a mapping keeps; `names` takes the machine's Tailscale name when the server is shared over it (`deploy-project`).
+Run against Shiny 1.9 under uvicorn 0.54, it refused a foreign `Host` and a foreign-`Origin` WebSocket that the bare app answered.
 
 ## Jobs
 
@@ -439,4 +513,4 @@ The file rotates at midnight and keeps thirty days, since a plain file handler g
 ## Run
 
 Each entry point is a `[project.scripts]` command in `setup-python`'s `pyproject.toml`, named as `SKILL.md`'s Run says: `mypackage-cli = "mypackage.code.drive.cli:app"` for the callable `typer` app, and `mypackage-api = "mypackage.code.drive.api:run"` or `mypackage-gui = "...gui:run"` for a `run()` launcher.
-The API and GUI also run under their dev servers: `uvicorn mypackage.code.drive.api:app`, `shiny run mypackage.code.drive.gui:app`.
+The API and GUI also run under their dev servers: `uvicorn mypackage.code.drive.api:app`, `shiny run --port 8001 mypackage.code.drive.gui:app`, the port given because `shiny run` defaults to the API's 8000.
