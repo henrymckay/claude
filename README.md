@@ -29,14 +29,14 @@ They ship as five plugins that stand alone and work together.
 |---|---|---|
 | `meta` | Working with Claude Code itself | `choose-model`, `review-plugin`, `write-skills` |
 | `project` | A project's lifecycle in any repo | `plan-project`, `build-project`, `review-project`, `use-git`, `write-markdown` |
-| `code` | The code itself, whatever the toolchain | `be-functional`, `be-oop`, `write-python`, `write-tests`, `use-polars` |
+| `code` | The code itself, whatever the toolchain | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
 | `scaffold` | Setting up and structuring a Python app | `setup-python`, `structure-python`, `write-entry-points` |
 | `operate` | A project running in the real world | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
 
 - [`be-functional`](plugins/code/skills/be-functional) defines the default, language-agnostic functional style, with Python idioms built on `functools.partial`, frozen dataclasses and `match`.
 - [`be-oop`](plugins/code/skills/be-oop) defines language-agnostic object-oriented design.
 - [`build-project`](plugins/project/skills/build-project) builds a planned project milestone by milestone, passing a quality gate before each is ticked.
-- [`choose-model`](plugins/meta/skills/choose-model) picks the model and effort for each stage of work, from Opus for planning and review to Haiku for graders, and how a skill or subagent sets its own.
+- [`choose-model`](plugins/meta/skills/choose-model) picks the model and effort for each stage of work, from Opus for planning and review to Haiku for graders, and how a stage holds itself on its model whatever the session started on.
 - [`deploy-project`](plugins/operate/skills/deploy-project) puts each artefact on the best free or near-free host, from a [GitHub Actions](https://docs.github.com/en/actions) pipeline and [MotherDuck](https://motherduck.com/) to a Shiny dashboard on [Posit Connect Cloud](https://connect.posit.cloud/) and a static site on GitHub Pages.
 - [`plan-project`](plugins/project/skills/plan-project) plans a project in one `PLAN.md` with standard sections, from numbered requirements to milestones.
 - [`review-plugin`](plugins/meta/skills/review-plugin) extends `review-project` for any plugin or skills repo, from descriptions that no longer match their skills to rules duplicated across them.
@@ -52,6 +52,7 @@ They ship as five plugins that stand alone and work together.
 - [`write-markdown`](plugins/project/skills/write-markdown) covers writing Markdown for humans and LLMs (Large Language Models).
 - [`write-python`](plugins/code/skills/write-python) defines in-code Python conventions, from typing and naming to error handling.
 - [`write-skills`](plugins/meta/skills/write-skills) defines house conventions for authoring a skill, from its name and description to its structure and the language-agnostic skill/reference split.
+- [`write-sql`](plugins/code/skills/write-sql) decides where SQL belongs in a project, from SQL against `polars` and where a query lives to schema changes and testing a documented query, with a [DuckDB](https://duckdb.org/) reference.
 - [`write-tests`](plugins/code/skills/write-tests) defines language-agnostic testing conventions with a `pytest` reference for Python.
 
 ## 🛠️ Set up
