@@ -210,7 +210,7 @@ A library or core module calling `logging.basicConfig` hijacks its host; a modul
 Where that happens, set that library's logger level at the composition root, by name — adopting its records is then a decision; `httpx` and `httpcore` narrate every request at INFO, so the root sets both to WARNING.
 - **The edge narrates; the core stays quiet.** Log at the edge; the core returns its results and is pinned by tests.
 - **One level per event**: a request is DEBUG, an adapter call INFO, a failure caught and handled (a rejected row, a failed item) WARNING, a failed source ERROR.
-A level picked per line makes `--log-level INFO` show a different story in each module; `write-entry-points` sets the level an interactive and a scheduled command run at.
+A level picked per line makes `--log-level INFO` show a different story in each module; `write-entry-points` sets the level an interactive command runs at, and `run-unattended` a scheduled one's.
 
 ## Data
 
