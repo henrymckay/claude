@@ -9,16 +9,17 @@ description: >-
   ordering, simplicity, the one error model (raise from the app's error
   package, convert or classify at an adapter's seam, decide what the user sees
   in a driver, nothing caught in the core, X | None only for a lookup miss),
-  sync by default, and idioms. The magic trailing comma and the Avoid list
-  close it. A rule that bends carries its exception, and a PLAN.md decision
-  overrides any of them. Use whenever writing, editing, refactoring or
-  reviewing Python code, even if the user doesn't mention "conventions",
-  "style", or "clean code". Targets the Python floor setup-python sets, 3.14
-  today. Formatting and linting are delegated to ruff and type-checking to
-  pyright in strict mode; this skill covers only the judgement calls they
-  can't make. The baseline for all Python: be-functional, be-oop and
-  write-tests layer on it; for project structure see structure-python, for
-  packaging and tooling setup-python.
+  sync by default, and idioms, opening with the magic trailing comma and
+  closing with the Avoid list. A rule that bends carries its exception, and a
+  PLAN.md decision overrides any of them. Load it before the first line of any
+  Python, even a one-off function answered inline. Use whenever writing,
+  editing, refactoring or reviewing Python code, even if the user doesn't
+  mention "conventions", "style", or "clean code". Targets the Python floor
+  setup-python sets, 3.15 today. Formatting and linting are delegated to ruff
+  and type-checking to pyright in strict mode; this skill covers only the
+  judgement calls they can't make. The baseline for all Python: be-functional,
+  be-oop and write-tests layer on it; for project structure see
+  structure-python, for packaging and tooling setup-python.
 ---
 
 # Write Python
@@ -28,6 +29,7 @@ It is the baseline that `be-functional`, `be-oop` and `write-tests` layer on; pr
 Three habits account for most of what goes wrong: importing names instead of modules, leaving a function unannotated or undocumented, and reaching for a class or abstraction before a second case calls for one.
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
+Every rule here is a default a decision in the project's `PLAN.md` overrides.
 
 ## Formatting
 
@@ -52,7 +54,7 @@ Use it for consistency within a module: if some calls of a kind run down the pag
 - **`typing.Protocol` for a structural interface** rather than an ABC (Abstract Base Class) hierarchy, and **`typing.override`** on every overridden method, so a renamed base method fails type-checking instead of silently detaching the override.
 - **End every `match` over a sum type with `case _: typing.assert_never(value)`**, which makes a forgotten variant a type error rather than a missing return.
 - **A type that spans a line becomes a PEP 695 `type` alias**, so names stay qualified and the signature stays readable (see Convert with a decorator).
-- **Write for the floor `setup-python` sets**, today 3.14, except in a library published for others, which keeps the floor its users need: annotations are deferred, so no `from __future__ import annotations` and no quoted forward references; `warnings.deprecated` marks a deprecation; `copy.replace`, not `dataclasses.replace`, updates a record, since it works for any type with `__replace__`.
+- **Write for the floor `setup-python` sets**, today 3.15, except in a library published for others, which keeps the floor its users need: annotations are deferred, so no `from __future__ import annotations` and no quoted forward references; `warnings.deprecated` marks a deprecation; `copy.replace`, not `dataclasses.replace`, updates a record, since it works for any type with `__replace__`.
 
 ## Time and money
 

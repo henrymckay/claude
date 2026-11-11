@@ -80,7 +80,7 @@ import functools
 
 def get_many(source: Source, *, n: int) -> list[Item]:
     """Fetch n items from a source."""
-    ...
+    return source.fetch(limit=n)
 
 
 def get_one(source: Source) -> Item:

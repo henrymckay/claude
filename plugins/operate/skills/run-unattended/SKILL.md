@@ -27,6 +27,7 @@ description: >-
 
 How a job behaves when a scheduler, not a person, starts it.
 The driver itself is the Jobs section of `write-entry-points`' Python reference; the manifest it writes and the data directory it locks are `store-data`'s; this skill covers what happens between the two when nobody is watching.
+`send-messages` builds the alert once one is earned, and the Actions workflows live in `deploy-project`'s `references/github-actions.md`.
 Three mistakes account for most quiet failures: a slow night overlapping the next so two runs write one partition; a job that repairs missed nights silently, so nobody learns the machine was off; and a unit file that works in the shell and fails under the scheduler, whose environment has no `PATH` worth the name and no `.env`.
 
 **In an existing project, ask first.** Where a repo already has a scheduler and run conventions, check with the user whether to keep them or apply these, and prefer these unless they choose to keep theirs.
@@ -67,7 +68,7 @@ Expose `fetch --from --to` for backfill, and let `status` report the gap.
 
 ## Report the outcome
 
-- **Exit `0` when every source stored, `1` when any is `partial` or `failed`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
+- **Exit `0` when every source stored, `1` when any is `partial`, `failed` or `skipped`, `2` for a usage or configuration error** — a bad option, a missing token, an unreadable `.env` — joining the `2` `typer` already returns for a bad invocation.
 A scheduler and a shell both branch on non-zero; the split between 1 and 2 tells a reader of the log whether to look at the source or at the machine.
 These codes hold for every command, interactive or scheduled.
 - **A source absorbs as many failed items a night as its YAML's `tolerance`** (default 0; `structure-python`, Configuration): at or below it the source is `stored` with the count in the manifest's `failed_items`, above it `partial`.
