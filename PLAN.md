@@ -1,19 +1,17 @@
 # claude
 
-A family of Claude Code plugins that let Claude design, build, review and run a development project end to end from a short prompt, close to autonomously, and that improve themselves as they are used.
+A family of Claude Code plugins that let Claude design, build and run a development project end to end from a short prompt, and that improve themselves as they are used.
 
-Status: re-planned 2026-11-11 around the aim the user restated that day.
-The goal, the plugin names and groups, autonomous mode and the ladder rule are the user's; the wording of R1 to R12, D39 to D41, the verification statuses and M15 onward are *(proposed)* until the user answers Open.
-Decisions D1 to D38 keep their numbers and standing from the plan this replaces (git history holds it).
+Status: re-planned 2026-11-11.
+The requirement wording, D39 to D41 and M15 onward are *(proposed)* until the user answers Open.
 
 ## Brief
 
 ### Goal
 
-The user wants to give Claude a short prompt, or none beyond "plan this", and get a project that is elegant, efficient, correct and well tested, designed beyond the brief and named in its domain's language, with the planning, management, deployment and upkeep done as well as the code.
-The plugins get there by settling in advance the decisions that recur across projects, from a function's name to where a pipeline's data lives, so Claude neither asks them nor re-decides them.
-No set of answers written in advance is complete, so the plugins also carry the means for Claude to find and fix their own gaps.
-Done looks like: two trial builds of different kinds, each run in autonomous mode from one prompt on a session whose default model is not the ladder's, each passing `review-project` with no defect left, and each plugin shown to work installed alone, the maintenance plugin on a plugin that is not this repo.
+Claude gets a short prompt and delivers a project that is elegant, efficient, correct and well tested, designed beyond the brief and named in its domain's language, with the planning, deployment and upkeep done as well as the code.
+The plugins settle in advance the decisions that recur across projects, easy to hard, so Claude neither asks nor re-decides them; since no such set is ever complete, they also let Claude find and fix their own gaps.
+Done looks like: two trial builds of different kinds, each run in autonomous mode from one prompt and leaving `review-project` no defect, and each plugin shown to work installed alone.
 
 ### Terms
 
@@ -34,30 +32,30 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 
 ### Requirements
 
-- **R1 End to end.** With every plugin installed, Claude takes a project from a short prompt to a designed, built, reviewed and deployed result that is elegant, efficient, correct and well tested, thought about beyond the brief and named in its domain's language. (Was R1, R6, R10, R11.)
-  - Cost: every other requirement here; and a scope held to Python data, CLI, API and dashboard projects until a project earns more (Not yet).
-- **R2 Autonomous.** A project runs with one batch of answers from the user, or with none: in autonomous mode Claude proceeds on its recommended answers, records each as an assumption for later review, and takes no outward action. (New; D35.)
-  - Cost: plans that stay unsigned until read, and anything outward (a repository, a deployment, a message) waiting on the user; dropping it leaves every project blocked on a conversation.
-- **R3 `manage-project` gives Claude the ability to run a project's lifecycle**: plan it in one `PLAN.md`, build it milestone by milestone behind a gate, review it and fix what the review finds, each stage on the ladder's model whatever the session's default, with the git and Markdown conventions any repository needs. (Was R9 and the trio.)
-  - Cost: a subagent hand-off per stage, and a ladder to maintain as models and prices change.
-- **R4 `write-code` gives Claude the house style for the code itself**, toolchain-free: functional by default, object-oriented where it fits, Python, SQL, tests, Polars. (Was part of R6.)
-  - Cost: house picks the user can't verify alone, re-checked against current releases in each sweep.
-- **R5 `structure-app` gives Claude a Python application's set-up and shape**: the `uv` toolchain and house-pick libraries, hexagonal layers, and entry points. (Was part of R6.)
-  - Cost: the one plugin tied to a toolchain; a project on another (Bazel) replaces `setup-python` with its own skill.
-- **R6 `run-project` gives Claude a project's life after the build**: where its data lives, a job nobody watches, the best free or near-free host per artefact, and messages back to the user. (Was R10, R11 and part of R6.)
-  - Cost: free tiers and vendor terms change yearly; the picks are personal, so this plugin is not for work.
-- **R7 `maintain-plugin` gives Claude the ability to maintain any plugin**, the user's at home or at work or anyone's whose source it can read: author a skill, review a plugin for drift, and capture skill gaps as they surface. It assumes no particular repository, tracker or toolchain. (Was part of R12.)
-  - Cost: a feedback destination per install, and a review that must end in a report where it cannot push.
-- **R8 Self-improving.** The plugins improve from real use without relying on anyone's recall: a gap is captured when it surfaces, worked through on a schedule and on demand, each fix verified by running the case, and the user reviews the result; a skill is never edited mid-build. (Was R3, R8.)
-  - Cost: a hook, a scheduled task, a trigger suite per plugin, and trial builds to generate the feedback.
-- **R9 Alone or together.** Each plugin installs and works on its own, at work included, and they work as a group; a skill that points at an absent plugin degrades to a decision Claude makes and records; a machine that cannot install plugins symlinks them instead. (Was R12.)
-  - Cost: a context file per plugin duplicating `CLAUDE.md`'s list, cross-plugin pointers that must read correctly alone, and releases a work install can pin.
-- **R10 Not boxed in.** A skill's default is a default: Claude researches the domain and current practice, proposes ideas beyond the brief and the skills, and puts its decisions, alternatives, costs and sources in front of the user to challenge. (Was R7.)
-  - Cost: longer plans and one more surface to read; dropping it leaves the user supplying the knowledge.
-- **R11 Skills worth loading.** Each skill is clear, concise, consistent with its neighbours, general rather than fitted to one project, and holds nothing Claude does unprompted. (Was R2 and part of R6.)
-  - Cost: sweeps, and the `write-skills` rules (state once, keep examples general, run every claim).
-- **R12 Public.** The repository is public: generic conventions only, no secrets, no project data, no machine-local state. (Was R4.)
-  - Cost: every example in a domain any reader knows, and feedback that describes a shape, never a case.
+- **R1 End to end.** With every plugin installed, Claude does consistent, high-quality development projects from a minimal prompt: designed, built, reviewed and deployed.
+  - Cost: every other requirement; scope held to Python data, CLI, API and dashboard projects until a project earns more.
+- **R2 Autonomous.** A project runs with one batch of answers from the user, or with none (autonomous mode, D35).
+  - Cost: plans stay unsigned until read, and every outward action waits on the user.
+- **R3 `manage-project`** lets Claude plan, build and review a project, each stage on the ladder's model whatever the session's default, with the git and Markdown conventions any repository needs.
+  - Cost: a subagent hand-off per stage.
+- **R4 `write-code`** gives Claude the house style for the code itself, toolchain-free: functional, object-oriented, Python, SQL, tests, Polars.
+  - Cost: house picks the user can't verify alone, re-checked each sweep.
+- **R5 `structure-app`** gives Claude a Python application's set-up and shape: the `uv` toolchain, house-pick libraries, layers, entry points.
+  - Cost: the one plugin tied to a toolchain.
+- **R6 `run-project`** gives Claude a project's life after the build: its data, a job nobody watches, a free or near-free host per artefact, messages to the user.
+  - Cost: free tiers change yearly; the picks are personal, so it is not for work.
+- **R7 `maintain-plugin`** lets Claude maintain any plugin whose source it can read, the user's at home or at work: author a skill, review for drift, capture gaps.
+It assumes no particular repository, tracker or toolchain.
+  - Cost: a feedback destination per install; a report where it cannot push.
+- **R8 Self-improving.** A skill gap is captured when it surfaces, worked through on a schedule and on demand, and each fix verified by running the case; the user reviews the result, and no skill is edited mid-build.
+  - Cost: a hook, a scheduled task, a trigger suite per plugin, trial builds.
+- **R9 Alone or together.** Each plugin installs and works on its own, at work included, and they work as a group; a machine that cannot install plugins symlinks them.
+  - Cost: a context file per plugin, pointers that must read correctly alone, releases a work install can pin.
+- **R10 Not boxed in.** A skill's default is a default: Claude researches, proposes ideas beyond the brief and the skills, and shows its decisions, alternatives, costs and sources for the user to challenge.
+  - Cost: longer plans.
+- **R11 Skills worth loading.** Each is clear, concise, consistent with its neighbours, general, and holds nothing Claude does unprompted.
+  - Cost: sweeps and the `write-skills` rules.
+- **R12 Public.** Generic conventions only: no secrets, no project data, no machine-local state.
 
 ### Not yet
 
@@ -165,7 +163,7 @@ Numbers are stable; the groups are for reading.
 
 **How a project runs**
 
-- **D13 A skill's default is a default** (2026-11-10) — a `PLAN.md` decision the user signed off overrides a skill; a reason Claude finds is recorded as a proposed decision and raised before it is built on; a rule stays imperative with its exception in the same sentence, never softened to "prefer", because softened rules were ignored outright.
+- **D13 A skill's default is a default** — a signed-off `PLAN.md` decision overrides a skill; a reason Claude finds is a proposed decision, raised before it is built on (in autonomous mode, recorded and built on); a rule stays imperative with its exception in the same sentence, because softened rules were ignored outright.
 - **D14 Decisions are surfaced, not buried** — plan-project's one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
 - **D35 Autonomous mode** (the user, 2026-11-11, issue 21) — with no user present, Claude proceeds on its recommended answers, records each as an assumption for the user's later review, keeps decisions marked proposed, and never takes an outward action such as creating a repository, publishing or spending money; `plan-project` defines it and `build-project` and `review-project` each state it. Skill feedback is still recorded as the feedback rule says *(that last clause proposed, from issue 29)*.
 - **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
@@ -184,21 +182,22 @@ Numbers are stable; the groups are for reading.
 
 **Models**
 
-- **D27 The model ladder** (2026-11-10) — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout; applied by the project skills' frontmatter `model` and `effort`, which set the turn's model, and by the Agent tool's per-subagent parameters.
-The ladder holds whatever the session's default model is (the user, 2026-11-11, issue 25): the frontmatter changed the model a session was told it was on and not the one serving it, in a headless plan and build and in an interactive sweep (Claude Code 2.1.322, read from each transcript's per-message model), so each stage always hands its work to a subagent with the Agent tool's model and effort set, and the frontmatter is kept for its effort alone.
+- **D27 The model ladder** — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals — over one model throughout. It holds whatever the session's default is (the user, issue 25): frontmatter changes the model a session is told it is on, not the one serving it (Claude Code 2.1.322, from per-message transcript models), so each stage hands its work to a subagent with the Agent tool's model and effort set.
 
-**House picks the skills carry**
+**House picks**
 
-- **D7 `be-functional` the default style, `be-oop` opt-in** over both opt-in.
-- **D15 `functools.partial`, closures and `match`** over `toolz` and `plum` as defaults — `toolz` ships no type hints, so pyright loses every curried function; both stay mentioned for the case that earns them.
-- **D16 One error model** — raise from the app's `error/` package; an adapter converts a library's failure or classifies an item's outcome at its seam, only a driver decides what the user sees, and nothing in the core catches; `X | None` only for a lookup miss the caller always branches on; no `Result` library.
-- **D17 One record type** — `@dataclass(frozen=True, slots=True, kw_only=True)` in the core; `pydantic` only across a trust boundary; `NamedTuple` only for tuple semantics; never `attrs`.
-- **D18 `uv_build`** over `hatchling` — zero config for a src layout; `hatchling` only when a build plugin is needed.
-- **D19 pyright `strict`** over `standard` on a greenfield project — the only mode that catches an `Unknown` in fresh code.
-- **D20 House picks adopted 2026-11-10** — datetime: aware `datetime` + `zoneinfo`, UTC in the core; money: `Decimal` or minor units; storage: hive-partitioned Parquet for pipeline output, DuckDB to query it, MotherDuck when more than one machine or a phone chat must reach it, SQLite for small single-writer state; config: `pydantic-settings` with `.env` locally, a user-editable CSV in the data directory for lists, package YAML for per-source constants; HTTP: sync `httpx`, `tenacity`, `pyrate-limiter`, key in a header; sync core with async only in a driver or adapter whose framework or fan-out needs it; logging: stdlib + `RichHandler` on stderr, JSON lines behind a collector; plotting: `plotly` via `shinywidgets`; frame contracts: `match_to_schema`; test doubles: `monkeypatch` and `time-machine`; releases: `uv version --bump` then tag.
-- **D21 Two new skills, `store-data` and `run-unattended`** — the gap probe left 72 decisions open and these two absorb most of them.
-- **D22 MotherDuck connects with `duckdb.connect("md:<db>")` and the token in `motherduck_token`**, lower case per its docs (checked 2026-11-10); A1 had it upper case.
-- **D29 Message channels for this user** — ntfy for a failure alert (one phone app, no account), the user's own email for a digest with a chart, Claude Code channels (iMessage on the Mac, Telegram elsewhere) for a two-way assistant; Slack only once a workspace exists; iMessage never from the cloud.
+The skill named holds the pick, its alternative and its reason; the plan keeps the number.
+
+- **D7 `be-functional` the default style, `be-oop` opt-in.**
+- **D15 `functools.partial`, closures and `match`** over `toolz` and `plum`, which stay mentioned — `be-functional`.
+- **D16 One error model**: raise from `error/`, convert at an adapter's seam, decide in a driver, catch nothing in the core — `write-python`.
+- **D17 One record type**, the frozen, slotted, keyword-only dataclass — `write-python`.
+- **D18 `uv_build`** over `hatchling` — `setup-python`.
+- **D19 pyright `strict`** — `setup-python`.
+- **D20 House picks for datetime, money, storage, config, HTTP, logging, plotting and test doubles** (2026-11-10) — each named, with its alternative, in the skill that owns it: `write-python`, `store-data`, `structure-python`, `setup-python`, `write-tests`.
+- **D21 `store-data` and `run-unattended` exist** because a gap probe left 72 decisions open and they absorb most.
+- **D22 MotherDuck's token variable is lower case**, `motherduck_token` — `store-data`.
+- **D29 Message channels**: ntfy for an alert, email for a digest, Claude Code channels for a chat; Slack once a workspace exists — `send-messages`.
 - **D36 A `write-sql` skill in `write-code`** (the user, 2026-11-11, issue 30) over a section of `store-data` — decisions only: SQL against Polars, where SQL lives, style, schema changes and testing a documented query, in a dialect-neutral body with a reference per dialect, DuckDB first.
 - **D37 `coverage run -m pytest`** over `pytest-cov` *(proposed, issue 31)* — the `-p` plugin `setup-python`'s own `addopts` loads imports the package before `--cov` measures, which read 33% for a true 83% on a two-module package (pytest-cov 7.1, coverage 7.17); cost: two commands where one flag did.
 - **D38 A run that finds the lock held writes no manifest row** *(proposed, issue 27)* over a `skipped` row — the run in progress records the night, and a `skipped` row would exit 1 where the lock rule exits 0; `skipped` stays for a source a run ended before reaching.
@@ -217,40 +216,38 @@ The ladder holds whatever the session's default model is (the user, 2026-11-11, 
 
 ### Verification
 
-Each line names the run that shows it and where that stands on 2026-11-11.
+Each line names the run that shows it, then its status on 2026-11-11.
 
-- **R1** — two trial builds of different kinds, each from one prompt, each leaving `review-project` no defect. **Partly met**: `market-data` was planned, built and reviewed (130 tests, 97% coverage; the review fixed four defects and left six decisions for the owner); nothing was deployed, and there is no second build.
-- **R2** — a trial build run headless with no user answers ends with an unsigned plan, every answer recorded as an assumption, and no outward action. **Partly met**: `market-data` ran that way under a coordinating session before the skills said how; after the fix a headless plan did it unaided; no whole build has yet.
-- **R3** — a plan, a build and a review each started on a default model that is not the stage's show the stage's work on the ladder's model in the transcript's per-message counts. **Met for plan and build** (30 of 30 stage messages on Opus from a Sonnet default; 100 of 100 on Sonnet from an Opus default); the review stage is unmeasured.
-- **R4** — a review of a trial build finds no convention the code breaks that `write-code` states, and files as feedback any it had to decide alone. **Met once** (`market-data`: the gaps became issues 28, 30 and 31, all closed).
-- **R5** — the same for scaffold, layers and entry points. **Met once** (issues 32 and 33, closed).
-- **R6** — the same for storage and unattended running; and one artefact deployed to a house-pick host and one message delivered by a house channel. **Partly met**: storage and scheduling exercised locally (issues 22, 23, 24, 27, closed); no deployment, no message.
-- **R7** — `review-plugin` run against a plugin outside this repository produces a report without a push; and `maintain-plugin` installed alone on a second machine records feedback to a file. **Not met**: neither has been run.
-- **R8** — the hook files on a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues with each fix run. **Met**: issue 20; pull request 19; issues 21 to 34 closed on 2026-11-11.
-- **R9** — `claude plugin validate` passes everywhere; every trigger case passes; each plugin installed alone completes a task in its area and names what it lacked; a GitHub install on a second machine works; every `skills/` link resolves. **Partly met**: validation, the suites and the links pass; one partial-install run found the missing-plugin gap, fixed since and not re-run; no second machine.
-- **R10** — a plan shows its decision list with sources and its ideas; a review can challenge a house pick. **Met once** (`market-data`'s plan: thirteen decisions with probes as sources, five skill overrides argued, four ideas).
-- **R11** — a sweep with a fresh cold read ends with no defect open. **Met 2026-11-11**, with leftovers filed as issues 35 to 37.
-- **R12** — `review-project`'s secret check, and no project data in any issue. **Met** at each sweep.
+- **R1** — two trial builds of different kinds, each from one prompt, each leaving `review-project` no defect. **Partly**: `market-data` planned, built and reviewed (130 tests; four defects fixed, six decisions left to the owner); nothing deployed; no second build.
+- **R2** — a trial build with no user answers ends with an unsigned plan, every answer an assumption, no outward action. **Partly**: a headless plan did it unaided; no whole build yet.
+- **R3** — a stage started on a default that is not its model shows its work on the ladder's model in the transcript's per-message counts. **Met for plan and build** (30 of 30 on Opus from Sonnet; 100 of 100 on Sonnet from Opus); review unmeasured.
+- **R4, R5** — a trial build's review finds no stated convention broken, and files as feedback what the build decided alone. **Met once** (issues 28, 30 to 33, closed).
+- **R6** — the same for storage and scheduling; one artefact deployed to a house-pick host; one message delivered. **Partly**: local only (issues 22 to 24 and 27, closed).
+- **R7** — `review-plugin` on a plugin outside this repository ends in a report with no push; `maintain-plugin` alone on a second machine records feedback to a file. **Not met**.
+- **R8** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run. **Met** (issue 20; pull request 19; issues 21 to 34).
+- **R9** — `claude plugin validate` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine. **Partly**: the first three pass; the rest not run.
+- **R10** — a plan shows its decisions with sources and its ideas; a review can challenge a house pick. **Met once** (`market-data`'s plan).
+- **R11** — a sweep with a fresh cold read leaves no defect open. **Met**, leftovers in issues 35 to 37.
+- **R12** — `review-project`'s secret check; no project data in any issue. **Met** each sweep.
 
 ### Milestones
 
-Done, in the order they happened (details in git history): M1 sweep the skills, M2 the project trio and feedback rule, M3 record the plan (2026-11-08); M5 unbox the process, M6 settle the code skills, M11 choose the model, M13 send messages (2026-11-10); M7 settle the structure skills, M8 store and run, M9 close the loop, M10 sweep, M12 deploy, M14 split into plugins (2026-11-11).
-M11 was ticked on the skill existing and failed in use; D39 is the correction.
+M1 to M14 are done (2026-11-08 to 11; git history has them).
+M11 was ticked on a skill existing and failed in use, hence D39.
 
-- [x] **M4 First trial build** — R1, R8; done when `market-data` is planned, built and reviewed with the trio and its feedback is worked through by a sweep (2026-11-11: sixteen issues filed, fourteen closed by the sweep, the rest filed as 35 to 37).
-- [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names, this plan is signed off, and the README, the weekly sweep and memory agree with it.
-- [ ] **M16 Tidy what the re-plan decided** — R11; done when issues 35 to 37 are settled, the frontmatter `model` lines are kept or dropped by decision, `evaluate/` is removed (D40), a licence is chosen and the first release is tagged (D41).
-- [ ] **M17 Prove each plugin alone** — R7, R9; done when the R7 and R9 checks pass: each plugin alone on a task, `review-plugin` on an outside plugin, and a GitHub install on a second machine with feedback to a file.
-- [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user has allowed it, and its feedback is swept.
-- [ ] **M19 Grow the scope as earned** — R1; a standing milestone: each Not yet item is built when a trial build or real project earns it.
+- [x] **M4 First trial build** — R1, R8; `market-data` planned, built, reviewed, and its feedback swept (2026-11-11).
+- [ ] **M15 Re-plan and rename** — R9; done when the plugins carry their verb-first names (done) and the user signs this plan off (Q1).
+- [ ] **M16 Tidy** — R11; done when issues 35 to 37 are settled, Q2 to Q4 are applied, `evaluate/` is removed (D40) and the first release is tagged (D41).
+- [ ] **M17 Prove each plugin alone** — R7, R9; done when their checks pass.
+- [ ] **M18 Second trial build, autonomous** — R1, R2, R3, R6; done when a project of a different kind (Q5) runs from one prompt with no user answers on a non-ladder default, deploys one artefact and sends one message where the user allows, and its feedback is swept.
+- [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
 
 ## Open
 
 ### Assumptions
 
 - **A1** The repository and marketplace keep their names (`claude`, `henrymckay`) — only plugins were asked to be renamed.
-- **A2** Requirement numbers changed in this re-plan and decision numbers did not — nothing outside this file cites a requirement number; issues and commits cite decisions.
-- **A3** The cloud sweep's `gh` is authenticated for REST and blocked for GraphQL, and vendor pages outside its proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep (found 2026-11-10).
+- **A2** The cloud sweep's `gh` is authenticated for REST and blocked for GraphQL, and vendor pages outside its proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep (found 2026-11-10).
 
 ### Questions
 
