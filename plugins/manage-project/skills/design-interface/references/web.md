@@ -89,11 +89,11 @@ Set the class before React loads, from an inline script in `index.html`'s `<head
 ```
 
 A small context provider holds the scheme, toggles the class, saves the choice in a `try` (storage can be blocked) and follows the system's change while the viewer has saved none.
-Charts read the tokens with `getComputedStyle(document.documentElement).getPropertyValue("--grid")` in a hook keyed on the scheme, so every chart re-themes when it flips and none holds a hex value of its own.
+Charts read the tokens through one `useTokens()` hook keyed on the scheme, which returns the house roles by name, each read with `getComputedStyle(document.documentElement).getPropertyValue(...)` from its variable in the table above (`text` from `--foreground`, `muted` from `--muted-foreground`, `raised` from `--popover`, `surface` from `--card`), so every chart re-themes when the scheme flips and none holds a hex value of its own.
 
 ## Components
 
-Add only the shadcn/ui components the screens use (`npx shadcn@latest add card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker), then build the shared pieces once: a tile (label, value, context line, a skeleton while loading), a titled chart card of fixed height, a table that scrolls inside its card, a status chip for the data's age, and an error note.
+Add shadcn/ui's components as the screens need them (`npx shadcn@latest add card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker), keep the `shadcn` command and any font it adds out of the runtime dependencies, then build the shared pieces once: a tile (label, value, context line, a skeleton while loading), a titled chart card of fixed height, a table that scrolls inside its card, a status chip for the data's age, and an error note.
 Icons are `lucide-react`, which shadcn/ui already uses; one icon set keeps one stroke weight.
 
 ## ECharts
@@ -108,7 +108,10 @@ import { CanvasRenderer } from "echarts/renderers";
 
 echarts.use([BarChart, LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
-type Tokens = Record<"axis" | "border" | "grid" | "muted" | "raised" | "text", string>;
+type Tokens = Record<
+  "axis" | "border" | "down" | "grid" | "muted" | "raised" | "surface" | "text" | "up",
+  string
+>;
 
 const font = "Inter Variable, system-ui, sans-serif";
 

@@ -41,18 +41,18 @@ Every surface a project ships aims at what a best-in-class version of that kind 
 **Ambition is finish, presentation and completeness of what was asked, never extra features or extra risk**: nothing here loosens `secure-project`, the rule against outward action in autonomous mode, or building only what the plan needs.
 The bar per kind of surface, each line a criterion the evaluator can check:
 
-- **Dashboard** — opens on the answer: the few numbers that matter as tiles, then the chart that explains them, then the detail table; every state below designed; light and dark; usable at phone width; each control answers within 200 ms on the real data (a server round trip within 500 ms).
+- **Dashboard** — opens on the answer: the few numbers that matter as tiles, then the chart that explains them, then the detail table; every state below designed; light and dark; usable at phone width; each control answers within 200 ms on the real data where the browser holds it, within a second where it waits on a server.
 - **Web page or static site** — the same tokens; one characteristic thing first, not a generic hero; body text under 80 characters a line; a title, a description and a favicon; loads fast from a cold cache.
-- **Command-line tool** — `--help` that is the documentation, with an example per command; an error that names what failed and how to fix it in one line, with the exit code; progress on standard error for anything over two seconds; `--format table` aligned, numbers right-aligned, colour only on a terminal and never when `NO_COLOR` is set (`write-entry-points` owns the data forms).
-- **API** — a docs page with a title, a description and every endpoint summarised with an example request and response, errors included; `/` pointing at the docs; one name and one unit per field across endpoints.
+- **Command-line tool** — `--help` that is the documentation (`write-entry-points`); an error that names what failed and how to fix it in one line, with the exit code; progress on standard error for anything over two seconds; `--format table` aligned, numbers right-aligned, colour only on a terminal and never when `NO_COLOR` is set (`write-entry-points` owns the data forms).
+- **API** — a docs page with a title, a description and every endpoint summarised with an example request and response, errors included; one name and one unit per field across endpoints.
 - **Message or digest** — the subject carries the verdict and the first line the answer; one chart, rendered with the tokens, where a trend matters; a link to the dashboard; counts only for private data (`send-messages`, `secure-project`).
 - **README** — one sentence saying what it is, a screenshot or a terminal capture near the top for anything a person looks at, then a quick start that runs as written.
 
 ## The house design system
 
-One look for every project, so a dashboard reads the same whichever technology serves it: neutral warm greys, one blue accent, dense and finance-grade, light and dark.
+One look for every project, so a dashboard reads the same whichever technology serves it: neutral warm greys, one blue accent, dense and data-first, light and dark.
 **Write the tokens into one file before any component**, under the role names below, and read every colour, size and radius from it; a hex value typed into a component is the first thing to drift when the scheme changes, and it is the white chart on the dark page.
-The values are the house picks, preferences rather than rules; a project with its own brand swaps the values and keeps the roles.
+A project with its own brand swaps the values under a plan decision and keeps the roles, so every rule below still applies.
 
 ### Colour roles
 
@@ -74,7 +74,9 @@ The values are the house picks, preferences rather than rules; a project with it
 | `up` | `#2a78d6` | `#3987e5` | a rise, a gain |
 | `down` | `#e34948` | `#e66767` | a fall, a loss |
 
-- **Status colours are fixed in both schemes** and never carry meaning alone — always with a label or an icon: `good` `#0ca30c`, `warning` `#fab219`, `serious` `#ec835a`, `critical` `#d03b3b`, `neutral` `#b4b3aa` light and `#5a5954` dark; as text, `good` `#006300` / `#3fcf3f`, `warning` `#7a5300` / `#fab219`, `critical` `#b02a2a` / `#f08a8a`.
+- **Status colours are fixed in both schemes**: `good` `#0ca30c`, `warning` `#fab219`, `serious` `#ec835a`, `critical` `#d03b3b`, and `neutral` `#b4b3aa` light, `#5a5954` dark.
+- **Status as text takes a darker step in light and a lighter one in dark**, for contrast: `good` `#006300` / `#3fcf3f`, `warning` `#7a5300` / `#fab219`, `critical` `#b02a2a` / `#f08a8a`.
+- **A status colour never carries meaning alone** — always with a label or an icon.
 - **Up and down are blue and red, not green and red**, which about one man in twelve cannot tell apart; green for up only where the user asks for it.
 - **The chart series are `dataviz`'s reference palette**, in its order, light then dark: blue `#2a78d6` / `#3987e5`, orange `#eb6834` / `#d95926`, aqua `#1baf7a` / `#199e70`, yellow `#eda100` / `#c98500`, magenta `#e87ba4` / `#d55181`, green `#008300`, violet `#6250d6` / `#9085e9`, red `#e34948` / `#e66767`.
   The order is what keeps neighbours apart for colour-blind readers; a scatter or small multiples take three series at most and fold the rest into "Other".
@@ -105,7 +107,7 @@ The values are the house picks, preferences rather than rules; a project with it
 ### Numbers and dates
 
 - **One formatting module**, `en-GB`, with thousands separators; never a number shown as its language's default string, which is where `0.30000000000000004` and an unrounded float come from.
-- **Compact in a tile** (`1.9M`) with the exact figure in its context line or tooltip; a fixed number of decimals per column, chosen by the quantity (a quote to about five significant figures, a percentage to two places with its sign).
+- **Compact in a tile** (`1.9M`) with the exact figure in its context line or tooltip; a fixed number of decimals per column, chosen by the quantity (a measurement to the precision it is recorded at, a percentage to two places with its sign).
 - **Dates as `12 Nov 2026`**, times on the 24-hour clock with the zone named once per screen, and an age as `7 h ago` with the absolute time in its tooltip; ISO 8601 only in URLs, APIs and files.
 - **A unit in the column header or axis title**, never repeated in every cell.
 
@@ -115,7 +117,7 @@ Design four states besides the happy one, since a real store is sometimes empty,
 
 - **Loading** — a skeleton in the content's own shape, and fixed heights so nothing jumps when data arrives.
 - **Empty** — what would fill it and what to do ("No runs yet — the first nightly writes here").
-- **Stale** — the data's age always visible, `warning` past the threshold the plan sets and `critical` when the last run failed, with text and an icon.
+- **Stale** — the data's age always visible, `warning` once it is stale (`run-unattended`'s definition: two missed runs unless the plan sets another) and `critical` when the last run failed, with text and an icon.
 - **Error** — what failed and what to do about it, in the interface's voice, with the rest of the page still working.
 
 ### Light and dark
@@ -134,7 +136,7 @@ Each is a framework's or a model's default rather than a choice, and each makes 
 
 ## Plan the design before the code
 
-Before any component, write the design into the plan's Interface, one entry per screen (`plan-project`): the question the screen answers, its tiles, each chart with its form (`dataviz`, Choosing a form), its tables and its four states, and an ASCII wireframe of the main screen at desktop and phone width.
+Before any component, write the design into the plan's Interface, one entry per screen (`plan-project`): the question the screen answers, its tiles, each chart with its form (`dataviz`'s reference on choosing a form), its tables and its four states, and an ASCII wireframe of the main screen at desktop and phone width.
 Read that plan against Defaults to avoid and change what is generic; then build the tokens, then the shared pieces (tile, card, chart wrapper, table, status chip, formatting), then the screens from them.
 
 ## Look at it running
@@ -142,7 +144,7 @@ Read that plan against Defaults to avoid and change what is generic; then build 
 **Judge a surface only from the running thing.** A dashboard is screenshotted at 1440 by 900 and 390 by 844, light and dark, each screen after its data has drawn; a command or an API is judged from a realistic session's transcript.
 Look at every screenshot yourself as you build, and fix what reads wrong before the gate; `build-project`'s gate then hands them to a fresh evaluator that scores the surface against these criteria, pass or fail each with its evidence:
 
-1. **Answer first** — the first screen shows the numbers the plan's screen list names, above the fold at desktop width.
+1. **Answer first** — the first screen shows the numbers the plan's screen list names within the top 900 px at desktop width.
 2. **House look** — colours, type, radii and spacing come from the tokens in both schemes; nothing in Defaults to avoid shows.
 3. **Charts** — each titled with what and unit, axes legible and unclipped, series from the palette, redrawn in dark.
 4. **Numbers** — tabular, aligned and formatted as above; no raw float, no ISO timestamp on screen.
@@ -151,7 +153,7 @@ Look at every screenshot yourself as you build, and fix what reads wrong before 
 7. **Speed** — each interaction within the bar's time on the real data, measured.
 8. **Copy** — sentence case, plain words, units named, no placeholder.
 9. **Access** — text contrast at least 4.5 to 1, a visible focus ring, status never by colour alone, each chart labelled for a screen reader.
-10. **Finish** — a title and a favicon, no console error, consistent spacing, nothing half-aligned.
+10. **Finish** — a title and a favicon, no page or console error, consistent spacing, nothing half-aligned.
 
 For a command, an API, a message or a README, the criteria are its lines in Set the bar.
 

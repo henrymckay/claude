@@ -5,7 +5,7 @@ The technology-neutral system is in `SKILL.md`; this is how it lands in a Python
 
 ## Tokens
 
-One module, `code/drive/tokens.py`, holds the roles of `SKILL.md`'s table as one record per scheme, transcribed from it; every theme below is built from this module, so a value changes in two places only, the table and here.
+One module, `code/drive/tokens.py`, holds the roles of `SKILL.md`'s table as one record per scheme, transcribed from it; every theme below is built from this module, so a changed value is edited in the table, here, and in the Mantine accent ramp when it is the accent.
 
 ```python
 """The house design tokens, one Scheme per colour scheme."""
@@ -207,10 +207,9 @@ def build() -> dict[str, object]:
     }
 ```
 
-- **`dash-mantine-components` 3 needs React 19, and Dash 4.5 serves React 18.3.1 unless told otherwise**: call `dash._dash_renderer._set_react_version("19.2.4")` before the `dash.Dash` object is built, or every Mantine component fails to render (Dash 4.5.0, `dash-mantine-components` 3.0.0).
-- **Wrap the layout in `dmc.MantineProvider(theme=theme.build(), defaultColorScheme="auto")`** and call `dmc.pre_render_color_scheme()` before building the app, which sets the scheme before the first paint.
+- **Wrap the layout in `dmc.MantineProvider(theme=theme.build(), defaultColorScheme="auto")`**; `write-entry-points` has the driver that sets the scheme before the first paint.
 - **The page and card colours are CSS variables Mantine reads**: put `tokens.css(tokens.LIGHT)` under `:root` and `tokens.css(tokens.DARK)` under `:root[data-mantine-color-scheme="dark"]`, with `--mantine-color-body: var(--house-background)` in both, into a `<style>` in `app.index_string`, so the CSS comes from the tokens rather than a second copy in `assets/`.
-- **`dmc.ColorSchemeToggle(id="scheme")` is the toggle**, and its `computedColorScheme` the input a callback re-themes figures from, with a `dash.Patch()` setting each figure's `layout.template` to `house_<scheme>`, so only the template crosses the wire.
+- **`dmc.ColorSchemeToggle(id="scheme")` is the toggle**, and its `computedColorScheme` the input a callback re-themes figures from, with a `dash.Patch()` setting each figure's `layout.template` to `house_<scheme>`, so only the template crosses the wire; a trace given an explicit colour keeps it, so give one only to a status colour, which is the same in both schemes.
 - **`dash-ag-grid` takes its theme from the same variables**: `dashGridOptions={"theme": {"function": "themeQuartz.withParams({backgroundColor: 'var(--house-surface)', foregroundColor: 'var(--house-text)', headerBackgroundColor: 'var(--house-sunken)', borderColor: 'var(--house-border)', accentColor: 'var(--house-accent)', fontFamily: 'inherit'})"}}`, so the grid follows the scheme with no callback.
 
 ## Shiny
@@ -221,6 +220,7 @@ Shiny themes through Bootstrap's Sass variables, compiled by `libsass` (the `shi
 """The Shiny theme built from the house tokens."""
 
 import shiny
+
 from mypackage.code.drive import tokens
 
 
