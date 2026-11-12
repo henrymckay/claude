@@ -5,28 +5,30 @@ description: >-
   How to build a planned project milestone by milestone with minimal input from
   the user — working through its PLAN.md in order, a branch per milestone unless
   the plan decides otherwise, on Sonnet whatever model the session started on by
-  handing each milestone to a subagent, each check written as a failing test
-  first, the real path wired early on a small slice and run at full size once,
-  the plan's terms kept in the code, only what the milestone needs built, every
-  call the plan didn't make settled from precedent or proposed, and a gate read
-  by what the project ships (the suite, a real run, simplify, a code review, the
-  security checks, a read against the plan) passed before each tick, with
-  PLAN.md and the README kept current and every check reported by its command;
-  stopping only for a change to the plan, a blocking question or a failing check
-  — or, in autonomous mode, proceeding on recommended answers recorded as
-  assumptions and taking no outward action. Use whenever building, implementing
-  or continuing a project that has a PLAN.md, or once a plan from plan-project
+  handing each milestone to a subagent, failing tests first, the real path
+  wired early on a small slice, the plan's terms kept in the code, only what
+  the milestone needs built, every call the plan didn't make settled from
+  precedent or proposed, and a gate read by what the project ships (the suite,
+  a real run, a fresh evaluator scoring the running surface for up to three
+  rounds, simplify, a code review, the security checks, a read against the
+  plan) passed before each tick, with PLAN.md and the README kept current and
+  the build ending with something the user can open; stopping only for a
+  change to the plan, a blocking question or a failing check — or, in
+  autonomous mode, proceeding on recommended answers recorded as assumptions
+  and taking no outward action. Use whenever building, implementing or
+  continuing a project that has a PLAN.md, or once a plan from plan-project
   is approved — even if the user just says "build it", "go", "start on M1",
   "carry on" or "build the next step". Layers on plan-project and every skill
   the code falls under, using simplify and code-review for the gate,
-  make-decisions for the calls, secure-project for the security checks and
-  use-git for branches; hands off to review-project after the last milestone.
+  design-interface for the evaluator's criteria, make-decisions for the
+  calls, secure-project for the security checks and use-git for branches;
+  hands off to review-project after the last milestone.
 ---
 
 # Build the project
 
 Building a planned project from its `PLAN.md`, one milestone at a time, with a gate before each is ticked.
-It layers on `plan-project`, which owns the plan and how it may change, and on every skill the code falls under, any of whose defaults a signed-off `PLAN.md` decision overrides; it uses the built-in `/simplify` and `/code-review` and `secure-project`'s checks in the gate, settles the calls the plan didn't make through `make-decisions`, commits through `use-git`, and hands off to `review-project` after the last milestone.
+It layers on `plan-project`, which owns the plan and how it may change, and on every skill the code falls under, any of whose defaults a signed-off `PLAN.md` decision overrides; it uses the built-in `/simplify` and `/code-review`, `design-interface`'s criteria and `secure-project`'s checks in the gate, settles the calls the plan didn't make through `make-decisions`, commits through `use-git`, and hands off to `review-project` after the last milestone.
 Three mistakes account for most weak builds: ticking a milestone because the tests pass without running the real thing, building ahead of the milestone's requirements, and names and abstractions drifting from the plan a little each milestone until only the final review sees it, spread across every file.
 
 - **Wrong** — the suite is green, so M2 is ticked; the import command has never been run on a real file.
@@ -77,12 +79,25 @@ Read each check by what the project ships, as `plan-project` reads the Design: f
 1. **The suite passes**, with the linter and type checker clean.
 2. **The milestone's done-when check passes on real input** — run it and read the counts (see `write-tests`).
    Where the real input is unreachable, run on a recorded sample, record that under Open, and say so in the report.
-   A check that takes minutes at full size passes on a sample here and runs whole after step 6, so a fix from the review does not repeat it.
-3. **`/simplify` on the milestone's diff**, then re-run the suite.
-4. **`/code-review` on the diff** at a low level; fix each confirmed bug with a regression test.
-5. **The security checks pass** — the dependency audit and the security review, wherever `secure-project`'s Review it calls for them.
-6. **The diff reads true to the plan** — names from Terms, nothing beyond the milestone's requirements, no second copy of an existing helper, every decision honoured.
-7. **Any performance requirement the milestone covers is met**, measured on input of the size Inputs gives.
+   A check that takes minutes at full size passes on a sample here and runs whole after step 7, so a fix from the review does not repeat it.
+3. **The evaluator passes the surface**, wherever the milestone changed something a person looks at or uses — a screen, a page, a command's output, an API's docs, a message, the README (below).
+4. **`/simplify` on the milestone's diff**, then re-run the suite.
+5. **`/code-review` on the diff** at a low level; fix each confirmed bug with a regression test.
+6. **The security checks pass** — the dependency audit and the security review, wherever `secure-project`'s Review it calls for them.
+7. **The diff reads true to the plan** — names from Terms, nothing beyond the milestone's requirements, no second copy of an existing helper, every decision honoured.
+8. **Any performance requirement the milestone covers is met**, measured on input of the size Inputs gives.
+
+### Evaluate the running surface
+
+Tests show the code does what it says; only looking shows whether the surface is any good, and a builder grading its own screens passes what it meant to build.
+
+- **Hand the running surface to a fresh evaluator**, a subagent on `sonnet` (`choose-model`) given the plan's Interface, the launch command and `design-interface`'s criteria and nothing of the builder's account; it starts the surface, screenshots each screen at desktop and phone width in light and dark, or runs a realistic session of the command or API, and returns pass or fail per criterion with its evidence.
+The session that handed the milestone over spawns it, so the evaluator is never the builder's own child.
+- **Send the failures back to the builder, then evaluate again**, at most three rounds; what still fails after the third goes into the milestone report as open, with the evaluator's evidence, rather than a fourth round.
+- **Report each round's cost** — the evaluator's and the fix's tokens priced at `choose-model`'s rates — so the user sees what the polish cost.
+- **Never let a criterion loosen another rule**: a fix that would need an outward action, a feature the plan lacks or a weaker security check is reported, not made.
+
+`references/evaluate.md` has the brief, the screenshot script, running a headless browser without touching the system, and judging a command or an API.
 
 ## Close it
 
@@ -95,3 +110,4 @@ Each gate check in the report names the command that ran it and what it printed 
 ## Finish the build
 
 After the last milestone, run `review-project` against the plan.
+**End with something the user can open**: the report's first lines give the command that starts the surface and the address it answers on, the folder of the last round's screenshots, and the deployed address once the user has allowed the deploy; a build that ends with a branch and a test count has left the user to find out what it made.
