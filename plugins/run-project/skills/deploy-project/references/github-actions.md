@@ -76,6 +76,7 @@ jobs:
       - run: uv run myapp-cli export metrics --format parquet --output web/public/data/metrics.parquet
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
+      - run: cp data/runs.parquet web/public/data/runs.parquet
       - run: uv run npm --prefix web ci
       - run: uv run npm --prefix web run build -- --base /${{ github.event.repository.name }}/ --outDir ../site --emptyOutDir
         env:
@@ -109,7 +110,7 @@ jobs:
 - `site` runs on `!cancelled()`, so a partial night still publishes what it stored.
 Its checkout names `ref: ${{ github.ref_name }}`, because the default is the commit the run started from, which lacks the data the nightly job just pushed.
 - `export metrics` reads the store, never a source, so the site job needs no token and the bundle holds only the exported file.
-- `app/` is the browser app's own directory, separate from the package: it runs on Pyodide, so it cannot import a package that depends on `polars`, and it reads `data/metrics.parquet` by a same-origin `pyodide.http.pyfetch`; after changing it, run the workflow by hand rather than waiting a night.
+- `web/` is the front end's own folder beside the package (`write-entry-points`, Dashboard); the site job ships the night's `metrics.parquet` and the manifest `runs.parquet` beside the page, so the dashboard shows its data's age from the same night.
 - `pages: write` and `id-token: write` are what `deploy-pages` needs; the `github-pages` environment is created by the first deploy and shows the site's URL on the run.
 - Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors, except `setup-uv`, which has published no major tag since v8, so `@v10` resolves to nothing and the job fails at setup — it takes a full version (checked 2026-11-10).
 

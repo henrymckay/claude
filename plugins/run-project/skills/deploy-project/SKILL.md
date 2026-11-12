@@ -17,8 +17,7 @@ description: >-
   tier or cloud host, writing a workflow that runs in the cloud, or filling a
   plan's Runs on section — even if the user just says "put this online", "host
   the dashboard", "run it in the cloud" or "is there a free tier for this".
-  Facts checked 2026-11-11 and 2026-11-12; the two workflow files are in
-  references/github-actions.md. Layers on run-unattended, store-data,
+  The two workflow files are in references/github-actions.md. Layers on run-unattended, store-data,
   write-entry-points, send-messages and setup-python; secure-project classes
   the data the hosts are picked from, and plan-project's Runs on section
   records the choice.
@@ -43,7 +42,7 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **API** — a Render free web service, once a second consumer earns one.
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
-**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8001` shares the dashboard's port with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
+**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8000` shares the dashboard's port (8001 for a Dash or Shiny app) with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
 Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — a static build behind Cloudflare Access, or MotherDuck behind a hosted app — sends every row to outside services, which `secure-project` allows only under a signed-off decision naming them.
 
 **A private repository holding public data changes two of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; GitHub Pages serves a private repository only on Pro, so the static dashboard goes to Cloudflare Pages by direct upload from the workflow (`wrangler pages deploy`, its token a repository secret), which takes no repository at all; MotherDuck and Render are unaffected.
