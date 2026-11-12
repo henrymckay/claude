@@ -88,9 +88,8 @@ def report(
     output.display(averages, form=form, path=path)
 ```
 
-The key never leaves this function: `structure-python`'s Configuration says why the port carries no secret and the adapter reads no environment, and `rates`, `daily` and `timeout` are the source's YAML constants, not settings; `budget` is the day's limit less the requests the manifest already records (`structure-python`, Write an adapter).
-`fetch` and `nightly` hand the operation the store's sinks — `parquet.Store`, then `motherduck.Store` when `motherduck_token` is set (`store-data`) — and display the manifest row they wrote (`SKILL.md`, Compose with other tools).
-
+The key never leaves this function (`structure-python`, Configuration); `rates`, `daily` and `timeout` are the source's YAML constants, and `budget` is the day's remaining requests (`structure-python`'s `references/http.md`).
+`fetch` and `nightly` hand the operation the store's sinks (`store-data`) and display the manifest row they wrote.
 
 `typer_/__init__.py` re-exports the app and imports the modules whose decorators register commands — a decorator runs only when its module is imported:
 
@@ -110,7 +109,7 @@ from mypackage.code.drive.typer_ import app as app
 
 - **A command's name is its function's name.** `typer` turns `list_stations` into `list-stations`; never pass `name=`, or a grep for the command a user typed finds nothing.
 Where the natural name is a builtin (`list`, `type`), pick a better command name rather than overriding.
-- **An `@app.callback()`** runs before every command — the home for app-wide options; keep it as thin as a command.
+- **An `@app.callback()`** is the home for app-wide options, as thin as a command.
 - **A command group** is its own `typer.Typer()`, mounted with `app.add_typer(users, name="users")`.
 Every `typer.Typer()`, sub-apps included, lives in `driver`, so each group's module stays a flat list of commands and `command/__init__.py` only mounts them.
 - **A group's arrival turns `command.py` into `command/`**, one module per group; `argument.py` and `option.py` follow only when they too would be worth opening a file at a time.
@@ -130,9 +129,8 @@ def stations() -> typer.models.ArgumentInfo:
 Restore the `--help` text with `show_default="daily"` on the factory.
 - **A date or clock default is `None`, resolved where used** — a signature expression is evaluated once at import and goes stale.
 Describe the behaviour in `show_default`, not a value nothing computes: an open upper date gets "as recent as there is", not "today", since passing today is a different request.
-- **Parameterise a factory over systematic options.** A surface with a threshold per metric takes the axis as an argument — `minimum(metric: domain.Metric)` builds the help and `rich_help_panel` — and the body hands the whole option set on with `bounds.frame(**locals())`, rather than repeating every name in a second list that drifts.
-`typer` reads real parameters, so the signature must still name each one.
-- **Keep help terse and let defaults be the examples.** A default shows format and value at once; a required argument is the one place a bare example value earns its line, and only where the name leaves the format open.
+- **Parameterise a factory over systematic options.** A surface with a threshold per metric takes the axis as an argument — `minimum(metric: domain.Metric)` builds the help and `rich_help_panel` — and the body hands the whole option set on with `bounds.frame(**locals())`, rather than repeating every name in a second list that drifts; `typer` reads real parameters, so the signature still names each one.
+- **Keep help terse and let defaults be the examples**; a required argument is the one place a bare example value earns its line, and only where the name leaves the format open.
 
 **Set the `typer` options that make `--help` the documentation:**
 
@@ -141,8 +139,6 @@ Describe the behaviour in `show_default`, not a value nothing computes: an open 
 - `rich_help_panel` once a command has more than a handful of options.
 - `metavar` where the derived one reads wrong (`STATION...`, not `[stations]...`).
 - `show_default` as a string wherever a default has behaviour to describe; `False` only where there is nothing to say.
-
-Read the rest of `typer.Typer`'s signature before adding to it — `pretty_exceptions_show_locals` already defaults to `False`.
 
 ### Output
 
@@ -177,12 +173,11 @@ def display(report: polars.DataFrame, *, form: Form, path: pathlib.Path | None) 
 - **Build a table a level at a time**: a function per cell, one per row, one assembling them; a branch in a loop naming a column is the renderer sniffing the frame again.
 - **Style a cell with a `rich.text.Text`**, never a row's `style=`, which paints the identity columns too.
 - **Read input the same way**: type the argument `pathlib.Path` and treat `-` as standard input, so `mypackage-cli report -` works mid-pipeline.
-- **Presentation config is a function**, `_colour(trend)` in `rich_`, not a module-level dict (see `write-python`).
 
 **Send logs and errors to standard error.** `rich.logging.RichHandler()` builds its own `Console()` on standard output, so give it `rich.console.Console(stderr=True)` (see Logging); print errors with `typer.echo(message, err=True)`.
 
-**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: it catches your base error, prints the message to standard error and raises `typer.Exit(code=1)` — or `typer.Exit(code=2)` for the `ConfigurationError` that `config.read_settings()` raises around `pydantic.ValidationError`, joining the `2` `typer` already returns for a bad invocation (`run-unattended`, Report the outcome).
-It is `write-python`'s `handle` with `report=output.report`, and the one broad catch at a boundary; a `try` per command is missed on exactly the command that then shows a traceback.
+**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: `write-python`'s `handle` with `report=output.report`, which prints the message to standard error and raises `typer.Exit(code=1)`, or `code=2` for the `ConfigurationError` from `config.read_settings()` (`run-unattended`, Report the outcome).
+A `try` per command is missed on exactly the command that then shows a traceback.
 
 ## API
 
@@ -205,7 +200,6 @@ pydantic_/
 
 **A schema is not a domain type, even when the fields match.** The DTO (Data Transfer Object) is the external contract, the domain type the internal truth; separate, they evolve independently and untrusted input is validated at the boundary.
 Map between them in `route.py`.
-A `start`/`end` pair is inclusive at both ends, as `SKILL.md`'s Compose with other tools fixes for the CLI.
 
 - **`pydantic` validates at the API boundary — request and response models — and in `pydantic-settings`.** An adapter returning a frame declares a `polars` schema instead (see `structure-python`), since a model per row re-validates what the frame's dtypes already fix; one returning records parses with `pydantic` (see `write-python`), and the core takes frozen dataclasses either way.
 - **Never duplicate an enum**: a schema field references the domain's `enum.Enum` directly.
@@ -241,7 +235,6 @@ def store() -> port.Store:
 
 `provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Store` in its signature, and names `parquet` only in its body.
 It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
-The API provides the store and no source adapter (`SKILL.md`, HTTP surface).
 
 A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan.
 
@@ -261,7 +254,7 @@ def records(
     return [schema.Record(**row) for row in stored.iter_rows(named=True)]
 ```
 
-An ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `driver.py` adds a launcher, and one `exception_handler` maps the app's errors to statuses, so no route catches anything:
+An ASGI (Asynchronous Server Gateway Interface) app isn't callable to start a server, so `driver.py` adds a launcher, and holds the one `exception_handler`:
 
 ```python
 _STATUS: typing.Final = {error.AbsentError: 404, error.BoundsError: 422}
@@ -425,17 +418,16 @@ def loopback_only(
 ```
 
 It reads the header list, not a mapping, so a repeated header is refused rather than resolved to whichever copy a mapping keeps; `names` takes the machine's Tailscale name when the server is shared over it (`deploy-project`).
-Run against Shiny 1.9 under uvicorn 0.54, it refused a foreign `Host` and a foreign-`Origin` WebSocket that the bare app answered.
+Under Shiny 1.9 and uvicorn 0.54 it refused a foreign `Host` and a foreign-`Origin` WebSocket that the bare app answered.
 
 ## Jobs
 
-**The scheduled path is a CLI command**: `nightly` in `command.py` runs the whole sequence, and `myapp-cli nightly` is what the scheduler invokes (see `run-unattended`), so the CLI stays the one composition root and the schedule lives in infrastructure.
-A `job/` driver exists only for an event trigger — a queue message, a webhook — whose framework needs its own app object, in its own trailing-underscore package (`setup-python` names the picks), with the work still an operation over the core.
+**The scheduled path is `nightly` in `command.py`** (`SKILL.md`, Expose the stages), so the schedule lives in infrastructure (`run-unattended`).
+A `job/` driver for an event trigger sits in its own trailing-underscore package (`setup-python` names the picks), with the work still an operation over the core.
 
 ## Configuration
 
-Load configuration once at the composition root and pass values into operations (see `structure-python`, which says which value lives in settings and which in a source's YAML).
-A `pydantic-settings` model in `drive/config.py` reads the environment and the project's `.env`, and fails fast on a bad value:
+A `pydantic-settings` model in `drive/config.py` reads the environment and the project's `.env`, and fails fast on a bad value (`structure-python`, Configuration, says which value lives here):
 
 ```python
 _ROOT = pathlib.Path(__file__).resolve().parents[4]
@@ -456,7 +448,7 @@ class Settings(pydantic_settings.BaseSettings):
 
 - **`env_file` is an absolute path**: four parents above `src/mypackage/code/drive/config.py` is the checkout, which an editable install (`uv sync`'s default for the project) still points at, and `MYAPP_ENV_FILE` overrides it for a wheel or a scheduler with its own secrets file.
 A bare `".env"` is resolved against the current directory, which under a scheduler is not the repo, so the key is silently absent and every night exits 2.
-- **`.env` is for the laptop and is ignored by git**; the environment wins over it, so a container sets variables and the file is never deployed.
+- **`.env` is for the laptop** (`secure-project`, Keep secrets out); the environment wins over it, so a container sets variables and the file is never deployed.
 Commit a `.env.example` naming every variable with a placeholder, so a fresh clone knows what to set without reading the model.
 - **A secret is a `pydantic.SecretStr` field** with no default, so a missing key fails at startup and a `repr` or a log line shows `**********`.
 - **One value is a function, not a model.** A function reading one variable and raising an error naming it when unset costs nothing; grow into the model at the second field, and call sites don't change.
@@ -507,8 +499,8 @@ def configure(
 
 **Rich when standard error is a terminal, the plain format when it is not**, so a person gets colour and a scheduler's or a runner's capture gets timestamped lines with no escape codes; this is the rendering library's colour rule from `SKILL.md`'s Compose with other tools, applied to the log.
 `basicConfig` applies `format` only to a handler without one, so the plain handlers keep their timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
-The default `WARNING` is for an interactive command; the scheduled `nightly` passes `logging.INFO`, so its log shows each adapter call at the level `structure-python`'s Logging gives it, and the two `httpx` loggers are pinned because they narrate every request at INFO.
-The file rotates at midnight and keeps thirty days, since a plain file handler grows until the disk is full; when a run takes `--log-file` is `run-unattended`'s, and JSON lines belong only behind a collector that indexes them.
+The default `WARNING` is for an interactive command; the scheduled level and when a run takes `--log-file` are `run-unattended`'s, and the `httpx` pins are `structure-python`'s Logging.
+The file rotates at midnight and keeps thirty days, since a plain file handler grows until the disk is full; JSON lines belong only behind a collector that indexes them.
 
 ## Run
 
