@@ -5,25 +5,24 @@ description: >-
   How to plan a project before building it — turning a loose conversation
   into one PLAN.md: gather what can be found, research the domain and
   current practice, citing sources, frame the project wider than the brief
-  and aim each surface at the best in class, draft every section, settle gaps from precedent and record assumptions in
-  place of questions, treat every house pick as a default to deviate from
+  and aim each surface at the best in class, draft every section, settle
+  gaps from precedent, treat every house pick as a default to deviate from
   openly, then put the questions, assumptions and decisions to the user in
   one batch with recommended answers, through plan mode — or, in autonomous
   mode, proceed on those answers with every decision left proposed and no
   outward action taken. One layout for any project, a program, a library or
-  a content repo: brief, design, delivery and open items, changed only with
-  the user's sign-off; a small change gets a short plan in the conversation
-  instead. It plans on Opus whatever the session's model, through a
-  subagent. Use whenever starting a new project or repo, or a build that
-  adds a new input, output or interface; when the user wants to think a
-  project through, write a spec or design, or decide what to build first;
-  and whenever a PLAN.md needs changing or rewriting — even if the user just
-  says "let's plan this", "new project" or "what should this look like".
-  Layers on write-markdown; settles open questions through make-decisions,
-  classes every input and output through secure-project, sets each
-  surface's bar through design-interface, points the design
-  at the skills that own each part, hands the build to build-project, and
-  the finished build to review-project.
+  a content repo, changed only with the user's sign-off; a small change gets a short plan in the conversation
+  instead. It plans on Opus whatever the session's model or the project's
+  size, through a subagent. Use whenever starting a new project or repo,
+  however small, or a build that adds a new input, output or interface; when
+  the user wants to think a project through, write a spec or design, or
+  decide what to build first; and whenever a PLAN.md needs changing — even
+  if the user just says "let's plan this", "new project" or "what should
+  this look like". Layers on write-markdown; settles open questions through
+  make-decisions, classes every input and output through secure-project,
+  sets each surface's bar through design-interface, points the design at
+  the skills that own each part, hands the build to build-project, and the
+  finished build to review-project.
 ---
 
 # Plan the project
@@ -186,7 +185,7 @@ A new project is never a small change, however tiny: it gets a `PLAN.md`, planne
      Let that shape the names and the seams between stages, and put the growth itself under Not yet; building for it now is the structure-ahead-of-need mistake.
    - **Compare rival designs.** Sketch two or three for each structural choice, judged against how comparable tools do it and where they fall short, and record the losers under Decisions.
    - **Aim at the best in class.** For each surface the project ships — a dashboard, a command, an API, a message, a page, the README — write in the Interface what a best-in-class version of it would be, from `design-interface`'s Set the bar and the strongest comparable tools found above, and scope the milestones to reach it; it is a default the user can lower in the batch.
-     The ambition is in finish, presentation and completeness of what was asked, never in features the brief lacks or in risk: it loosens neither `secure-project`, nor the rule against outward action, nor building only what a requirement needs.
+     The ambition is in finish and completeness, never in features or risk (`design-interface`, Set the bar).
    - **Keep what the brief didn't ask for.** A capability the research turned up, or a better shape for something the user fixed, goes under Ideas with its case, so the user sees it without it entering the design.
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
