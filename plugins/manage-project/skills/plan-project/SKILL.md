@@ -3,35 +3,31 @@ name: plan-project
 effort: high
 description: >-
   How to plan a project before building it — turning a loose conversation
-  into one PLAN.md with minimal input from the user: gather what can be
-  found, research the domain and current practice with sources recorded,
-  frame the project wider than the brief, draft every section, settle gaps
-  from precedent and record assumptions in place of questions, treat every
-  house pick as a default to deviate from openly, check the draft against
-  itself, then put the questions, assumptions and decisions in front of the
-  user in one batch with recommended answers, through plan mode — or, in
-  autonomous mode with no user present, proceed on those answers, recorded as
-  assumptions, with every decision left proposed and no outward action
-  taken. The plan has one layout for any kind of project, a program, a
-  library or a content repo: brief, design, delivery and open items, whose
-  requirements and decisions change only with the user's sign-off; a fix or
-  small change gets a short plan in the conversation instead. It plans on
-  Opus whatever model the session started on, by handing the draft to a
-  subagent. Use whenever starting a new project or repo, or a build that adds
-  a new input, output or interface; when the user wants to think a project
-  through, write a spec or design, or decide what to build first; and
-  whenever a PLAN.md needs changing or a whole plan is rewritten around a
-  restated aim — even if the user just says "let's plan this", "new project"
-  or "what should this look like". Layers on write-markdown; settles open
-  questions through make-decisions, classes every input and output through
-  secure-project, points the design at the skills that own each part, hands
-  the build to build-project, and the finished build to review-project.
+  into one PLAN.md: gather what can be found, research the domain and
+  current practice, citing sources, frame the project wider than the brief,
+  draft every section, settle gaps from precedent and record assumptions in
+  place of questions, treat every house pick as a default to deviate from
+  openly, then put the questions, assumptions and decisions to the user in
+  one batch with recommended answers, through plan mode — or, in autonomous
+  mode, proceed on those answers with every decision left proposed and no
+  outward action taken. One layout for any project, a program, a library or
+  a content repo: brief, design, delivery and open items, changed only with
+  the user's sign-off; a small change gets a short plan in the conversation
+  instead. It plans on Opus whatever the session's model, through a
+  subagent. Use whenever starting a new project or repo, or a build that
+  adds a new input, output or interface; when the user wants to think a
+  project through, write a spec or design, or decide what to build first;
+  and whenever a PLAN.md needs changing or rewriting — even if the user just
+  says "let's plan this", "new project" or "what should this look like".
+  Layers on write-markdown; settles open questions through make-decisions,
+  classes every input and output through secure-project, points the design
+  at the skills that own each part, hands the build to build-project, and
+  the finished build to review-project.
 ---
 
 # Plan the project
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
-It is written with the user before the build and kept current as the build proceeds.
 It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
@@ -42,6 +38,7 @@ Three mistakes account for most weak plans: interviewing the user section by sec
 Plan a new project, and any build that adds a new input, output or interface.
 A fix or small change needs only a short plan in the conversation; a full `PLAN.md` for it costs more than the change.
 To extend a project that already has a `PLAN.md`, run the steps below on the new part alone, adding its requirements, design and milestones to the existing plan.
+**Where a brainstorming or design skill has already run, or another plugin's method is driving the work, take its output as this plan's input rather than replacing it**: its framing and choices become the draft's starting point, cited as their source, and only the gaps go through the steps below.
 **To re-plan around a restated aim, rewrite the plan whole** through the same steps, since the git history keeps the old one:
 
 - **Renumber the requirements freely**, with no "was R4" trail in the file.
@@ -225,13 +222,15 @@ Skill feedback is not such an action: it is recorded as the session's feedback r
 - **Show, don't describe.** A real command line and a schema table fix an interface and an output; a paragraph about them leaves the details to be guessed.
 - **Use the Terms everywhere.** One name per concept, in the plan and in the code; a second name for the same thing reads as a second thing.
 - **Write what is decided as fact** — "Each day is written to its own file" — mark what Claude decided alone *(proposed)*, or *(by precedent)* where `make-decisions` settled it, and put what only the user can settle under Open; a "could" in the Design gets built as either.
-- **Record what was rejected, and the source.** A decision without its rejected alternatives gets reopened, or quietly reversed by a build that thinks it is improving things; one without its source can only be trusted, never checked.
+- **Write each decision as one entry: the decision, the alternative it beat, its cost, and its source where one matters.** A decision without its rejected alternative gets reopened, or quietly reversed by a build that thinks it is improving things; one without its source can only be trusted, never checked.
+Who said what and when belongs in the commit that recorded it, not in the entry.
 - **Point at a skill instead of restating it.** The plan says what this project does; the skills say how every project does it, and a copy in the plan drifts from the skill.
 - **Keep only what changes the build.** A line no milestone or check would read differently without is background, and belongs in the README.
 
 ## Keep it current
 
 - **Change a requirement or decision only with the user's sign-off.** When work would overturn a decision, add a requirement, build something from Not yet or override a skill, say so in a plan-mode plan, so the approval covers the change.
+- **Trim at sign-off.** Drop the *(proposed)* marks the sign-off covers, and the history that no longer changes what anyone does — dated quotes, "was:" trails, how a decision got there — since git keeps it; keep every ID and every decision's substance.
 - **Update it with the code.** Tick the milestone, move out of Not yet what the user signed off building, record the build's assumptions under Open, its calls under Decisions as proposed, and its ideas under Ideas, and commit `PLAN.md` with the change that made it true.
 A proposed decision that fills a gap the skills leave is built on and raised in the milestone report; one that overrides a skill waits for the sign-off above.
 A plan left behind becomes a second, wrong README.
