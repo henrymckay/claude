@@ -174,7 +174,7 @@ readings = (
 `hive_partitioning=True` adds `source` and `day` as columns, with `day` inferred as `Date` from `YYYY-MM-DD`; pass `hive_schema` when inference guesses wrong, such as a numeric-looking identifier that must stay a string.
 Once a column has been added to the records, pass `schema=` naming every column with `missing_columns="insert"`, so the days written before it read as null; without both the scan raises `SchemaError` at the first file that holds the new column.
 
-At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`.
+At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`; a query kept for others pins every key with `hive_types` (`write-sql`'s DuckDB reference).
 Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()`, which needs `pyarrow` installed, a dependency the Parquet path never needed.
 Where a query is kept and how a documented one is tested are `write-sql`'s.
 
