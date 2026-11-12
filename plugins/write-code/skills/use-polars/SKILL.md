@@ -22,29 +22,23 @@ description: >-
 # Use Polars
 
 `polars` is fast and correct when you work with its model: **expressions** evaluated inside **contexts**, over eager `DataFrame`s or lazy `LazyFrame`s.
-This targets `polars` 2.x, and `write-python` applies on top — including its import rule, so `import polars` and `polars.col(...)`, never `import polars as pl`, except in an external snippet being quoted or read, which keeps its `pl`; frame functions take their names from `be-functional`'s map/bind vocabulary.
+This targets `polars` 2.x, with `write-python` on top — its import rule included, so `polars.col(...)`, never `pl`, except in an external snippet being quoted — and frame functions named from `be-functional`'s map/bind vocabulary.
 Three mistakes account for nearly all that goes wrong: leaving the frame for Python lists and loops, looping over groups instead of stacking them into one frame, and letting `pandas` habits or types leak past the boundary.
 
 **In an existing project, ask first.** Where a codebase already has an established `polars` style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
 ## The mental model
 
-**Expressions** describe a computation on columns — `polars.col("a").add(polars.col("b"))` — and run in parallel inside the engine; you never loop over rows.
-**Contexts** run them, sorted by what they do to the frame's shape:
+**Expressions** describe a computation on columns — `polars.col("a").add(polars.col("b"))` — and **contexts** (`.select`, `.with_columns`, `.filter`, `.group_by(...).agg(...)`, `.over`) run them in parallel inside the engine; you never loop over rows.
 
-- **Keep the shape** — `.select` returns only what it computes, `.with_columns` adds or replaces columns, `.filter` drops rows.
-- **Change the grain** — `.group_by(...).agg(...)` collapses to one row per group.
-Group order is arbitrary unless `maintain_order=True`, which costs speed; sort the result instead where only the end needs determinism.
-An aggregation can take a condition: `polars.col("v").filter(polars.col("v").gt(0)).sum()`.
-- **Change the layout** — `.join` widens by key, `.pivot` spreads a key's values into columns, `.unpivot` turns columns into rows, `.explode` splits a list column.
-- **Aggregate without collapsing** — `.over(group)` computes within a partition and writes the answer onto every row.
-- **Factor out a step** — `.pipe(fn)` hands the frame to a function without breaking the chain.
+- **`group_by` order is arbitrary** unless `maintain_order=True`, which costs speed; sort the result instead where only the end needs determinism.
+- **An aggregation can take a condition**: `polars.col("v").filter(polars.col("v").gt(0)).sum()`.
 
 **Order a window with `order_by=`, not a `.sort` ahead of it.** `.shift`, every cumulative and `.first`/`.last` read row order, so an unsorted input gives a wrong answer and nothing raises; `.over(group, order_by="time")` fixes the order inside the window whatever the frame's order, where a `.sort` before it is undone by the next join and nothing says so.
 `join_asof` is the exception: it has no `order_by`, so both frames are sorted on `on` (see Stay in the frame).
 
 **A time window is `rolling_*_by`; a row window is `rolling_*`.** `rolling_mean_by("ts", window_size="3d")` covers three calendar days whether they hold three rows or none, where `rolling_mean(window_size=3)` averages the last three rows wherever they fall; `min_samples` (default `1`) decides whether a short window reports or returns null, and `closed` (default `"right"`) which end the window includes.
-Pin all three with a dependency test (see `write-tests`), since each default is a belief about the library that an upgrade changes without an error.
+Pin all three with a dependency test (see `write-tests`).
 A per-item window is `rolling_mean_by("day", window_size="7d", min_samples=7).over("item", order_by="day")`: each item runs over its own days whatever the frame's order, `min_samples` equal to the window leaves the first six days null rather than a mean of fewer, and a calendar window over a gap leaves the missing days unfilled — no row appears for them, and a day whose window spans the gap is null (Polars 2.1).
 
 **Address a class of columns with `polars.selectors`.** `polars.selectors.numeric().fill_null(value=0)` resolves against the real schema when the query runs, so it covers the column added next month; a hand-listed set is pinned to the day it was written.
@@ -60,7 +54,7 @@ revenue = (
 )
 ```
 
-**Write one fluent method chain.** Chain contexts end to end in parentheses rather than binding intermediate frames: it reads as one transformation, and on an eager frame each bound intermediate is materialised in full; on a lazy frame a binding costs nothing, so there the reason is only the reading.
+**Write one fluent method chain.** Chain contexts end to end in parentheses rather than binding intermediate frames: it reads as one transformation, and on an eager frame each bound intermediate is materialised in full.
 Compute several columns in one `with_columns`, which the engine parallelises.
 A chain opening with a function — `polars.concat(...)`, `polars.read_csv(...)` — is still a chain; that unannounced start is where most single-use intermediates come from.
 
@@ -68,9 +62,9 @@ A chain opening with a function — `polars.concat(...)`, `polars.read_csv(...)`
 An empty input rarely needs its own path — the chain returns an empty frame with the right schema, where an early return duplicates the schema somewhere it can drift.
 Where a column may be absent from a genuinely open schema, `polars.selectors.by_name("a", "b", require_all=False)` avoids the `if`; where the caller knows the columns, require them.
 
-**Expression methods over operators is a preference**, shared with `write-python`: `.mul`, `.add`, `.truediv`, `.gt`, `.eq` and the rest chain without wrapping parentheses and dodge the precedence trap in `polars.col("a").gt(0) & polars.col("b").gt(0)`; an operator stays where precedence is unambiguous inside a one-line expression, and `&`, `|`, `~` are always operators, since their method spellings read worse.
+**Expression methods over operators**, `write-python`'s preference: `.mul`, `.gt`, `.eq` and the rest also dodge the precedence trap in `polars.col("a") > 0 & polars.col("b") > 0`; an operator stays where precedence is unambiguous inside a one-line expression, and `&`, `|`, `~` are always operators, since their method spellings read worse.
 
-**Name a column with `.alias()`, not a keyword argument.** The keyword form (`with_columns(total=...)`) belongs to the context, so the name is lost when the expression moves into a variable, a helper or a second context; `.alias()` travels with it, and also spells names Python can't, like `total (£)`.
+**Name a column with `.alias()`, not a keyword argument.** The keyword form (`with_columns(total=...)`) belongs to the context, so the name is lost when the expression moves into a helper or a second context; `.alias()` travels with it, and spells names Python can't, like `total (£)`.
 
 ## Silent traps
 
@@ -98,7 +92,7 @@ Restore the shape without branching: `polars.concat([pivoted, empty], how="diago
 
 **A comparison with null is null, not false**, so `.filter` drops the row; `.eq_missing()` is the null-safe form, counting two nulls equal.
 
-**`.sum()` of an all-null column is `0`; `.mean()` is null.** Check which you hand a reader.
+**`.sum()` of an all-null column is `0`; `.mean()` is null.**
 
 **Declare a dtype wherever you didn't choose the contents.** An empty list or an all-`None` column infers `Null`, not an empty `String`, so `concat`, a join or any `.str` method against it raises.
 The type also varies by input: a field present for some records and absent for others infers `Int64` in one batch and `Null` in the next, and the two won't concatenate.
@@ -139,7 +133,7 @@ Never repair it by slicing lines first: a quoted field may hold a newline, so th
 
 **Dataframe-shaped work stays in `polars`.** Pulling columns into lists and looping, comprehending or reducing throws away the engine and the optimiser; comparing to an earlier row, a running count and grouping are all expressions.
 
-**Keep every group in one long-form frame.** Stack all groups and compute across them together; most work is plain column expressions with no `.over` at all.
+**Keep every group in one long-form frame**, computed across together; most work is plain column expressions with no `.over` at all.
 Reach for `.over(group)` only where an operation must respect group boundaries — a shift, a cumulative, a rank.
 Even sequential per-group logic stays in the frame: a run length is a change flag, a `cum_sum` numbering the runs, and a count within each run.
 
