@@ -2,21 +2,18 @@
 name: store-data
 description: >-
   Where a project's data lives and how it is written and read —
-  hive-partitioned Parquet for pipeline output, read by Polars in code and
-  queried across the tree by DuckDB; DuckLake or Delta Lake once a write
-  spans partitions, corrects rows or must read an earlier state, and what
-  each costs; MotherDuck when another machine or a phone chat must reach it,
-  with the DuckDB client it accepts; SQLite for small single-writer state,
-  Postgres only for a multi-writer service, and no ORM; the data directory
-  and its tree, named in the plan's terms; the store as a write port and a
-  read port over a Parquet adapter and a MotherDuck adapter; one file per
-  partition, its columns in alphabetical order and its timestamps UTC,
-  overwritten atomically so a re-run is idempotent, and an empty day stored
-  as an empty partition; the raw archive, the quarantine and the run
-  manifest; metrics recomputed whole, compacting only once measured, and
-  testing a store on a temporary directory. Use whenever deciding where a
-  project's output goes, writing a store adapter, choosing between Parquet,
-  a table format, DuckDB, SQLite or Postgres, laying out a data directory,
+  hive-partitioned Parquet for pipeline output, read by Polars and queried by
+  DuckDB; DuckLake or Delta Lake once a write spans partitions, corrects rows
+  or must read an earlier state; MotherDuck when another machine or a phone
+  chat must reach it, and the client and Python it pins; SQLite for small
+  single-writer state, Postgres only for a multi-writer service, and no ORM;
+  the data directory and its tree; the store as a write port and a read port;
+  one file per partition, columns sorted and timestamps UTC, overwritten
+  atomically, and an empty day stored as an empty partition; the raw archive,
+  the quarantine and the run manifest; metrics recomputed whole, compacting
+  only once measured, and testing a store. Use whenever deciding where a
+  project's output goes, writing a store adapter, choosing between Parquet, a
+  table format, DuckDB, SQLite or Postgres, laying out a data directory,
   writing or scanning Parquet, deciding what to keep when a row or an item
   fails, recording what a run did, or sharing data with another machine or a
   hosted dashboard — even if the user just says "save the results", "where
@@ -37,17 +34,16 @@ Three mistakes account for most lost data: appending on a re-run, so a retried n
 
 ## Pick the engine
 
-Each pick is the default for its need; a `PLAN.md` decision overrides it, and a measurement (a scan that takes seconds to plan, a query that no longer fits one machine) goes under Decisions as proposed and is raised with the user before the layout changes.
+Each pick is a default; a measurement that outgrows it (a scan that takes seconds to plan, a query that no longer fits one machine) is the case for a proposed decision.
 
 - **Hive-partitioned Parquet** for pipeline output — `records/source=<s>/day=<d>/part.parquet`, scanned as one table.
-A single DuckDB file would be simpler to hand around, but it is one writer's binary blob: a crash mid-write risks the whole table where Parquet risks one day, and nothing but DuckDB can read it.
+A single DuckDB file is simpler to hand around but is one writer's binary blob: a crash mid-write risks the whole table where Parquet risks one day, and nothing but DuckDB reads it.
 - **A table format — DuckLake or Delta Lake — once a write must change several partitions as one, correct rows in place, or read the store as it stood on an earlier date** (Pick a table format).
 - **Polars to read the tree in code**, and **DuckDB for a question across it** — `read_parquet` over the whole tree at a SQL prompt, or a view for a question asked often (Read).
-The read port is Polars because the core speaks frames; DuckDB earns its place where a person asks something no operation answers, joining and aggregating every partition without writing an operation for a one-off.
+The read port is Polars because the core speaks frames; DuckDB is for a person's one-off question that no operation answers.
 - **MotherDuck** when more than one machine, or a phone chat, must reach the data: the same SQL over `duckdb.connect("md:<db>")`, with the token in the environment as `motherduck_token` (lower case, per MotherDuck's docs).
 It is an outside service, so private or personal data goes there only under a plan decision naming it (`secure-project`).
-**Pin `duckdb` to the client versions MotherDuck accepts**, which its docs list: 1.4.1 to 1.5.6 on 2026-11-12, when a 2.0 client's `motherduck` extension refused to load ("not yet supported by MotherDuck").
-1.5.6 ships wheels up to Python 3.14 only, so until MotherDuck accepts 2.0 a project that reaches it sets `requires-python` below `setup-python`'s floor, recorded as a proposed decision naming that pin.
+**A project that needs MotherDuck pins `duckdb` to the client MotherDuck accepts and uses Python 3.14 until MotherDuck supports DuckDB 2.0**, which overrides `setup-python`'s 3.15 floor for that project: MotherDuck's docs list clients 1.4.1 to 1.5.6 on 2026-11-12, a 2.0 client's `motherduck` extension refused to load ("not yet supported by MotherDuck"), and 1.5.6 ships wheels up to Python 3.14 only.
 Syncing Parquet to a bucket is the alternative and costs a sync step and credentials on every reader.
 - **SQLite** for small single-writer app state — a watermark table, a key-value cache — through the stdlib `sqlite3`.
 A JSON file is the alternative and loses atomic updates the moment two fields change together.
@@ -57,8 +53,8 @@ A JSON file is the alternative and loses atomic updates the moment two fields ch
 
 ## Pick a table format
 
-**Hive-partitioned Parquet stays the default for one writer's output**: any reader reads it correctly with no catalog or log, Write a partition's atomic rename makes a re-run safe, and a new column costs `missing_columns="insert"` at the read.
-A table format earns its place when the plan needs what the tree cannot give by hand — several partitions or tables changed as one, rows corrected in place, the store as it stood on an earlier date, or more than one writer — and every format leaves files that read true only through it: a replaced day's old file stays on disk until cleaned up, and a plain Parquet scan of both trial tables returned the old rows beside the new.
+**Hive-partitioned Parquet stays the default for one writer's output**: any reader reads it with no catalog or log, Write a partition's atomic rename makes a re-run safe, and a new column costs `missing_columns="insert"` at the read.
+A table format earns its place when the plan needs what the tree cannot give by hand — several partitions or tables changed as one, rows corrected in place, the store as it stood on an earlier date, or more than one writer — and every format leaves files that read true only through it: a replaced day's old file stays on disk until cleaned up, so a plain Parquet scan returns the old rows beside the new.
 
 - **DuckLake pairs best with DuckDB and MotherDuck.** A catalog database — a DuckDB or SQLite file beside the data, Postgres for several writers, or MotherDuck — records the table, and the data is Parquet under a hive-style path (`ATTACH 'ducklake:catalog.ducklake' AS lake (DATA_PATH 'data/')`, then `ALTER TABLE ... SET PARTITIONED BY (day)`).
 A day is replaced by `DELETE` then `INSERT` in one transaction, which is one snapshot; a column is added without rewriting a file; `AT (VERSION => n)` reads an earlier snapshot.
@@ -85,8 +81,8 @@ class Settings(pydantic_settings.BaseSettings):
     data_dir: pathlib.Path = platformdirs.user_data_path("myapp")
 ```
 
-`MYAPP_DATA_DIR` overrides the platform default (`~/Library/Application Support/myapp` on macOS, `~/.local/share/myapp` on Linux), which is what a test, a second checkout and a scheduler each need; a test sets it with `monkeypatch.setenv("MYAPP_DATA_DIR", str(tmp_path))` before the settings are built.
-Settings mechanics are in `write-entry-points`' Python reference; `platformdirs` is the dependency that names the default.
+`MYAPP_DATA_DIR` overrides the platform default (`~/Library/Application Support/myapp` on macOS, `~/.local/share/myapp` on Linux), which a test, a second checkout and a scheduler each need; a test sets it with `monkeypatch.setenv("MYAPP_DATA_DIR", str(tmp_path))` before the settings are built, or the run writes into the real store.
+Settings mechanics are in `write-entry-points`' Python reference.
 
 ```text
 <data_dir>/
@@ -115,12 +111,12 @@ The API and the dashboard take only `port.Store`, so a stray write from either i
 **When `motherduck_token` is set, the root adds `adapt/motherduck.py`**, a second adapter satisfying both ports over `records`, `metrics` and `runs` tables, and hands the nightly both sinks, the tree first as the record, so a hosted dashboard and `status` read the manifest where they run.
 A second target inside `parquet.py` would be less code, but the hosted dashboard needs a MotherDuck reader anyway, and keeping the network out of `parquet.py` keeps its tests to a temporary directory.
 The load replaces the source's day in one transaction, the table's form of overwriting a partition, and a failed load raises after the tree is written, so the night exits 1 and a `fetch --day` re-run reloads it.
-**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`); a public repository's artifacts are readable by anyone signed in to GitHub, so there it holds public data only.
+**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`); on a public repository the artifact holds public data only (`secure-project`).
 
 ## Shape a stored table
 
 **Order a stored table's columns alphabetically**: `frame.select(sorted(frame.columns))` in the adapter just before it writes, and the same order in a database table's definition.
-A join or `with_columns` appends its column at the end, so without the sort one table's files carry whatever order each frame happened to be built in; with it, `polars.testing.assert_frame_equal`, which checks column order, compares a write with its read-back directly, and the plan's schema table, the file and `describe` list each column in one place.
+A join or `with_columns` appends its column at the end, so unsorted files carry whatever order each frame was built in; sorted, `polars.testing.assert_frame_equal`, which checks column order, compares a write with its read-back directly, and the plan's schema table, the file and `describe` agree.
 The partition keys are the exception: they live in the path, not the file (Write a partition), and a scan appends them after the file's columns.
 
 **Store every timestamp as a UTC datetime with its time zone** — `polars.Datetime("us", "UTC")`, `timestamp with time zone` to DuckDB — never a naive one, and a calendar day as a `Date`.
@@ -128,7 +124,7 @@ Polars raises `SchemaError` comparing a naive column with the core's aware value
 
 ## Write a partition
 
-**Overwrite the day's partition; never append to it.** The nightly command's unit of work is one source for one day, so re-running it must produce the same tree: with append, the retry after a half-failed night stores every row twice and no later query can tell.
+**Overwrite the day's partition; never append to it.** The nightly's unit of work is one source for one day, so a re-run must produce the same tree; with append, the retry after a half-failed night stores every row twice and no later query can tell.
 
 **One file per partition, named by you, written atomically.** Write to a temporary file in the partition's directory and `os.replace` it onto `part.parquet`; the rename is atomic on the same filesystem, so a reader sees the old file or the new one and never a torn one, and a crash leaves only a temp file to sweep.
 
@@ -157,9 +153,9 @@ A parser fix then re-parses history offline; without it the fix applies from ton
 - **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `reason` and `record` (the raw record as a string, or the item's name where nothing arrived), with `source` and `day` from the path.
 Dropping them silently makes a schema change at the source look like a quiet day; the quarantine makes it a count, and one schema lets the whole tree be read as one table.
 - **Write a run manifest**, `runs.parquet`: one row per source per run with `day`, `ended`, `failed_items`, `last_day`, `outcome`, `rejected`, `requests`, `rows`, `source` and `started`.
-`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`'s `references/http.md`); `outcome` is an `enum.StrEnum` of `stored`, `partial` and `failed`, set as `run-unattended`'s Report the outcome says; `started` and `ended` are UTC timestamps, so a day filled late shows as a row started after its `day`, which `status` reports; and the `compute` stage writes its own row with `source="metrics"`.
+`rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`'s `references/http.md`); `outcome` is an `enum.StrEnum` of `stored`, `partial` and `failed`, set as `run-unattended`'s Report the outcome says; `started` and `ended` are UTC timestamps, so a day filled late shows as a row started after its `day`; and the `compute` stage writes its own row with `source="metrics"`.
 A fetch that covers a range (`run-unattended`, Make a run rerunnable) writes one row with `day` the range's first day and `last_day` its last, equal to `day` on a one-day row, and files its raw pages and failed items under that first day.
-It is small, so append by reading, concatenating and overwriting the file atomically; `run-unattended`'s `status` command reads it, and nothing else records that a night happened.
+It is small, so append by reading, concatenating and overwriting the file atomically; it is the only record that a night happened, which `status` reads, since a log line is queried by nothing.
 - **Store metrics as a full recompute** overwriting `metrics.parquet` from the records, until a timed check shows the recompute exceeding the nightly window; an incremental update is a second code path that drifts from the full one, so it is earned by that measurement and nothing else.
 The file is long — `day`, `item`, `metric`, `value` — so a new metric is rows, not a column every reader must learn (`use-polars`).
 
@@ -179,17 +175,12 @@ readings = (
 Once a column has been added to the records, pass `schema=` naming every column with `missing_columns="insert"`, so the days written before it read as null; without both the scan raises `SchemaError` at the first file that holds the new column.
 
 At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/**/*.parquet', hive_partitioning = true)`.
-Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()` — which needs `pyarrow` installed, a dependency the Parquet path never needed.
-A Polars frame in scope is queryable by name (`duckdb.sql("select * from readings")`), so a question asked of one in SQL costs no export step.
-When a query belongs in SQL rather than Polars, where it is kept and how a documented one is tested are `write-sql`'s.
+Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()`, which needs `pyarrow` installed, a dependency the Parquet path never needed.
+Where a query is kept and how a documented one is tested are `write-sql`'s.
 
 **Compact only when the file count hurts** — thousands of files, a scan whose planning is visible — and then by closed year: rewrite each year's days into `history/source=<s>/year=<y>/part.parquet`, keeping `day` as a column, and read `records` and `history` as a `polars.concat` of two scans.
 Rewriting earlier is a second layout to maintain for a cost nobody has measured.
 
 ## Test the store
 
-- **Exercise the real adapter on `tmp_path`** with a round-trip property: whatever frame is written is read back equal, through `polars.testing.assert_frame_equal`, including the partition columns and after a second write of the same day.
-- **Give the core an in-memory fake** satisfying the same two ports — a dict keyed by source and day — so operations run with no filesystem.
-- **Point every test's `data_dir` at `tmp_path`** through the environment override (Lay out the data directory), never the platform default, or a test run writes into the real store.
-
-The shape of the tests is `write-tests`; the ports they share are Lay out the data directory's.
+`write-tests`' Dependency tests sets the shape — the real adapter round-tripped on `tmp_path`, the core on an in-memory fake of the same ports — and two things are this store's own: the round-trip reads back the partition columns and survives a second write of the same day, and the fake is a dict keyed by source and day.
