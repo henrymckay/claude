@@ -89,7 +89,6 @@ A lead-in line ending in ":" before a real list is fine.
 - **Link the first mention** of a tool, library, standard — and the repo's own files and skills, which are the links most often missing.
 Anchor the link on the one or two words naming its destination: "install from a [marketplace](…)", never "[click here](…)" or a bare URL.
 - **Use GitHub alert callouts** for asides: `[!NOTE]` info, `[!TIP]` advice, `[!IMPORTANT]` key point, `[!WARNING]` or `[!CAUTION]` for a hazard rather than a "don't" buried in prose.
-- **Use richer features where they help** — task lists, collapsible sections, a table of contents for a long doc.
 - **Keep it accessible.** Real headings rather than bold lines (screen readers navigate by them), alt text on images, and never colour or emoji alone carrying meaning.
 - **House style:**
   - Start sections and key bullets with an emoji anchor, sparingly.
@@ -111,4 +110,6 @@ Em-dashes, semicolons and parentheticals parse fine, so don't fragment dense rea
 State importance in words ("mandatory, not advisory").
 - **Cut meta-preamble from a `CLAUDE.md`.** The model knows the file holds the user's instructions, so a "this file contains…" opener is noise; phrase every line as a command.
 - **Cut default behaviour from a `CLAUDE.md`.** It is loaded every session, so it earns its place only with what deviates from the model's defaults or is specific to the user — "be concise" and "match the surrounding code" are wasted lines.
+- **Give an always-on file a word budget** — a `CLAUDE.md`, a plugin's context file, anything printed every session.
+It grows a sentence per fix and nobody restructures it, so each addition says in its commit what it removed, and a file near its budget is rewritten whole rather than patched.
 
