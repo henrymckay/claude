@@ -2,7 +2,7 @@
 
 A marketplace of Claude Code plugins that let Claude design, build and run a project end to end from a short prompt, and that improve themselves as they are used.
 
-Signed off by the user on 2026-11-12 (Q1), except the lines marked *(proposed)*.
+Signed off by the user on 2026-11-12, except the lines marked *(proposed)*.
 The security policy (R13, D47, `secure-project`) stays open to refinement as real projects reach it.
 
 ## Brief
@@ -111,7 +111,7 @@ claude plugin marketplace add henrymckay/claude#v0.1
 claude plugin install manage-project@henrymckay
 ```
 
-Symlinked instead, where plugins cannot be installed or the skills are authored:
+Symlinked instead, where plugins cannot be installed:
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
@@ -152,53 +152,53 @@ Numbers are stable; the groups are for reading.
 **The repository and its wiring**
 
 - **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — an install takes some and not others, and one repo keeps one tracker, one sweep and cross-plugin drift in view; cost: a plugin needing other visibility must move out (Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace.
-- **D31 Five plugins, each named verb-first for the ability it gives** (the user's) — `use-git` and `write-markdown` sit in `manage-project` because any repo needs them; `uv` lives only in `structure-app`; `run-project` holds one person's free-tier picks, so an install can leave it out, and `deploy-project` sits there because its body is host picks; `choose-model` sits in `manage-project`, where three of the four skills it governs live. The validator reserves the name `claude`.
-- **D1 Symlinks into `~/.claude` stay a supported wiring** for a machine that cannot install plugins; the authoring machine runs the installed plugins, so it runs what others install.
-- **D32 Always-on instructions per plugin are a context file printed by a `SessionStart` hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` carries the same lines for the symlink wiring, and `review-plugin` checks they agree.
-- **D34 A toolchain's commands live in the skill that owns it** — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under any toolchain.
-- **D2 Commit as `henrymckay <henrymckay@users.noreply.github.com>`; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits.
-- **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback.
-- **D11 The README is for humans and points at this plan** over copying it.
-- **D12 Memory holds only what this plan doesn't** — the plan is visible and versioned; memory is per-machine.
-- **D9 No performance budget** — nothing here runs.
+- **D31 Five plugins, each named verb-first for the ability it gives** (the user's) — `use-git` and `write-markdown` sit in `manage-project` because any repo needs them; `uv` lives only in `structure-app`; `run-project` holds one person's free-tier picks, so an install can leave it out, and `deploy-project` sits there because its body is host picks; `choose-model` sits in `manage-project`, where three of the four skills it governs live. The validator reserves the name `claude`; cost: moving a skill means updating its plugin's context file and the map in six copies.
+- **D1 Symlinks into `~/.claude` stay a supported wiring** for a machine that cannot install plugins, over installed plugins only; the authoring machine runs the installed plugins, so it runs what others install; cost: the symlink wiring merges the `Stop` hook by hand.
+- **D32 Always-on instructions per plugin are a context file printed by a `SessionStart` hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` carries the same lines for the symlink wiring, and `review-plugin` checks they agree; cost: the same lines in six files, checked each sweep.
+- **D34 A toolchain's commands live in the skill that owns it** over each skill naming `uv` commands — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under any toolchain; cost: without `structure-app`, a reader gets examples, not commands.
+- **D2 Commit as `henrymckay <henrymckay@users.noreply.github.com>`; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
+- **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback; cost: ideas are tracked apart from issues.
+- **D11 The README is for humans and points at this plan** over copying it; cost: a reader wanting the decisions follows a link.
+- **D12 Memory holds only what this plan doesn't** over memory as a record — the plan is visible and versioned; memory is per-machine; cost: memory is pruned by hand, since a sweep may not edit it.
+- **D9 No performance budget** over a budget — nothing here runs; cost: none until something here runs.
 - **D41 A release is a tag `v<major>.<minor>` on `main`, cut after a sweep is merged and its suites pass,** over installing from the tip — an install pins a tag, so a sweep cannot change behaviour on another machine mid-week; cost: one tag per sweep, cut by the user; overrides `use-git`, Release (a tag per milestone).
-- **D43 The MIT licence** over Apache 2.0 or none — without one nobody else may use the plugins, and MIT is the one an organisation approves most readily.
-- **D44 Nothing in the repo distinguishes one of the user's machines or settings from another** — the plugins are for anyone; a constraint is named for what it is (a tracker that must stay private, a toolchain other than `uv`, a marketplace that is not allowed).
+- **D43 The MIT licence** over Apache 2.0 or none — without one nobody else may use the plugins, and MIT is the one an organisation approves most readily; cost: anyone may reuse the plugins without giving back.
+- **D44 Nothing in the repo distinguishes one of the user's machines or settings from another** over naming machines — the plugins are for anyone; a constraint is named for what it is (a tracker that must stay private, a toolchain other than `uv`, a marketplace that is not allowed); cost: a constraint is described, not located.
 - **D54 Word budgets for the top-level files** *(proposed)* — `CLAUDE.md` 900 words, each context file 325 (`manage-project`'s 410), the README 800; `PLAN.md` has none, but its decisions keep the shape decision, alternative, cost, source — over no budget, under which `CLAUDE.md` grew ninefold one sentence at a time (issue 69); cost: an addition must say what it removed, and a file near its budget is rewritten whole rather than patched (`review-plugin`).
 
 **How a project runs**
 
-- **D13 A skill's default is a default** — a signed-off `PLAN.md` decision overrides a skill; a reason Claude finds is a proposed decision, raised before it is built on (in autonomous mode, recorded and built on); a rule stays imperative with its exception in the same sentence, because softened rules were ignored outright.
-- **D14 Decisions are surfaced, not buried** — `plan-project`'s one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made.
-- **D35 Autonomous mode** — with no user present, Claude proceeds on its recommended answers, records each as an assumption, keeps decisions proposed and takes no outward action; `plan-project` defines it, `build-project` and `review-project` state it; skill feedback is still recorded as the feedback rule says.
-- **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics.
-- **D6 `build-project`** over `develop-project` — matches "the build" across the skills.
-- **D26 A fourth sweep outcome, "needs the user"** — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer.
+- **D13 A skill's default is a default** over skills as fixed rules — a signed-off `PLAN.md` decision overrides a skill; a reason Claude finds is a proposed decision, raised before it is built on (in autonomous mode, recorded and built on); a rule stays imperative with its exception in the same sentence, because softened rules were ignored outright; cost: a deviation is written up before it is built.
+- **D14 Decisions are surfaced, not buried** over decisions left in prose — `plan-project`'s one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made; cost: longer reports.
+- **D35 Autonomous mode** over stopping at each question — with no user present, Claude proceeds on its recommended answers, records each as an assumption, keeps decisions proposed and takes no outward action; `plan-project` defines it, `build-project` and `review-project` state it; skill feedback is still recorded as the feedback rule says; cost: plans stay unsigned and outward steps wait (R2).
+- **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics; cost: a change to `review-project` reaches plugin reviews too.
+- **D6 `build-project`** over `develop-project` — matches "the build" across the skills; cost: none.
+- **D26 A fourth sweep outcome, "needs the user"** over the sweep deciding — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer; cost: such an issue stays open until the user answers.
 - **D46 Settle an open question from precedent** (`make-decisions`, in `manage-project`) over every gap becoming a question or a proposed decision, which left the first autonomous build with more calls than the user could read — cite the nearest answered decision, mark the call *(by precedent)*, report those as a count, and escalate only the irreversible, outward-facing, costly, security-touching or unprecedented.
 - **D47 `secure-project` in `manage-project`, private by default,** over a section of `deploy-project` or a sixth plugin — every project needs it whatever its hosts, and `run-project` is the plugin an install is likeliest to leave out; an input or output with no class is private, licensed data under personal-use terms is private, a looser class is the user's call, a loopback server checks `Host` and `Origin`, and nothing that moves money happens without a signed-off decision and a person confirming each action, never in autonomous mode; cost: the security step in every gate (R13); open to refinement.
 - **D52 Another method plugin driving takes the lead** over this family winning silently — where the user or the project names another plugin's method (one that plans, builds or reviews, such as `superpowers`), `plan-project`, `build-project` and `review-project` stand down unless named, the convention skills still apply, and `plan-project` takes a brainstorming or design skill's output as its input rather than replacing it; cost: a line in `manage-project`'s context file and `CLAUDE.md`, and one in `plan-project`. Source: issue 54's trials beside `superpowers` 7.0.2, where the prompt's wording, not a rule, decided which plugin led.
 
 **The feedback loop**
 
-- **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, not per-machine.
-- **D4 The filing rule is always on** (`CLAUDE.md`, or `maintain-plugin`'s hook) over a skill — a skill loads only for a matching task, and feedback arises mid-task in any work.
-- **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `maintain-plugin`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker.
-- **D25 A `Stop` hook prompts for unfiled skill gaps** — the only hook that can reach the model, since `SessionEnd` cannot.
-- **D24 Every sweep lands as one pull request**, scheduled or run in a session, over a session sweep committing to `main` — the pull request is where a sweep is reviewed.
+- **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, not per-machine; cost: a public tracker, hence D33's file option.
+- **D4 The filing rule is always on** (`CLAUDE.md`, or `maintain-plugin`'s hook) over a skill — a skill loads only for a matching task, and feedback arises mid-task in any work; cost: every session pays its words.
+- **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `maintain-plugin`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker; cost: a destination per install.
+- **D25 A `Stop` hook prompts for unfiled skill gaps** over the rule alone — the only hook that can reach the model, since `SessionEnd` cannot; cost: a Haiku check at the end of every turn.
+- **D24 Every sweep lands as one pull request**, scheduled or run in a session, over a session sweep committing to `main` — the pull request is where a sweep is reviewed; cost: a pull request even for a one-line sweep.
 - **D45 The coordinating session reviews and merges a sweep's pull request** over the user merging every sweep or the sweep merging its own — the sweep opens it and stops, and the coordinator checks the report against the branch and merges; cost: a rule change the user never reads unless the report flags it, which is why every rule cut, generalised or left is listed there.
-- **D28 The weekly sweep runs on Opus with no connectors** — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need.
-- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin.
-- **D39 A requirement is verified by behaviour** over by a skill existing — the ladder's milestone was once ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line names a run and what it must show.
-- **D40 No brief-and-answers evaluations** over the `evaluate/` folder — trial builds and the trigger suites do its job with real feedback; replaces D8.
+- **D28 The weekly sweep runs on Opus with no connectors** over Sonnet — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need; cost: Opus prices for a weekly run.
+- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin; cost: five suites to run.
+- **D39 A requirement is verified by behaviour** over by a skill existing — the ladder's milestone was once ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line names a run and what it must show; cost: a run per requirement before it is ticked.
+- **D40 No brief-and-answers evaluations** over the `evaluate/` folder — trial builds and the trigger suites do its job with real feedback; replaces D8; cost: no fixed benchmark between sweeps.
 
 **Models**
 
-- **D27 The model ladder** over one model throughout — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals. It holds whatever the session's default is: frontmatter changes the model a session is told it is on, not the one serving it (Claude Code 2.1.322, per-message transcript models), so each stage hands its work to a subagent with the model and effort set.
-- **D42 No skill names a model in its frontmatter** over keeping the lines as documentation — such a line only misleads (D27); the `effort` lines stay.
+- **D27 The model ladder** over one model throughout — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals. It holds whatever the session's default is: frontmatter changes the model a session is told it is on, not the one serving it (Claude Code 2.1.322, per-message transcript models), so each stage hands its work to a subagent with the model and effort set; cost: a subagent hand-off per stage.
+- **D42 No skill names a model in its frontmatter** over keeping the lines as documentation — such a line only misleads (D27); the `effort` lines stay; cost: none.
 
 **House picks**
 
-The skill named holds the pick, its alternative and its reason.
+The skill named holds the pick, its alternative, its reason and its cost.
 
 - **D7 `be-functional` the default style, `be-oop` opt-in.**
 - **D15 `functools.partial`, closures and `match`** over `toolz` and `plum`, which stay mentioned — `be-functional`.
@@ -262,9 +262,9 @@ Sweeps are not milestones.
 
 ### Questions
 
-- **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — not known yet; blocks R7's and R9's second-machine checks.
+- **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — recommended: none, since only the user can find out; not known yet; blocks R7's and R9's second-machine checks.
 - **Q9** Once MotherDuck accepts the current DuckDB client, should a project on MotherDuck replace its two stores (the Parquet tree and the MotherDuck tables beside it) with one DuckLake whose catalog MotherDuck holds and whose files sit in the project's own bucket? — recommended: yes, as a trial in the next project that needs MotherDuck, the tree staying the default elsewhere; costs a bucket and its credential on every writer, and the files read true only through the catalog (D51, D53).
-- **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — the user asked Claude to choose afresh; research is running; until it reports, Shiny stays the pick in `write-entry-points` and `deploy-project`; blocks M21's dashboard.
+- **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — the user asked Claude to choose afresh; recommended: wait for the research running now; until it reports, Shiny stays the pick in `write-entry-points` and `deploy-project`; blocks M21's dashboard.
 
 ### Ideas
 
