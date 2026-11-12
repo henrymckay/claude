@@ -2,23 +2,22 @@
 name: deploy-project
 description: >-
   Where each artefact of a project runs in the cloud and how it gets there at
-  zero or near-zero cost, picked from the data's class — the nightly pipeline
-  as a GitHub Actions schedule in the project's own repository, writing to
-  MotherDuck and committing the data tree back, with a status workflow for a
-  night that never ran and Modal when a job outgrows a runner; MotherDuck
-  Lite with one token per consumer; a Shiny dashboard on Posit Connect Cloud
-  Free, shinylive on GitHub Pages when it needs no secret, Streamlit
-  Community Cloud when it must be private; an API on Render only once a
-  second consumer earns one, Cloud Run when the wake matters; a static site
-  from the same workflow; private data kept on the owner's machine and its
-  dashboard reached over Tailscale; what changes for a private repository;
-  secrets in each platform's own store; the hosts ruled out; and re-reading
-  the vendor's plan page before relying on a limit. Use whenever deploying,
+  little or no cost, picked from the data's class — the nightly pipeline as a
+  GitHub Actions schedule writing to MotherDuck and committing the data tree
+  back, with a status workflow for a night that never ran and Modal when a job
+  outgrows a runner; MotherDuck Lite with one token per consumer; a Shiny
+  dashboard on Posit Connect Cloud Free, shinylive on GitHub Pages when it
+  needs no secret, Streamlit Community Cloud when it must be private; an API
+  on Render only once a second consumer earns one, Cloud Run when the wake
+  matters; a static site from the same workflow; private data kept on the
+  owner's machine and its dashboard reached over Tailscale; what changes for a
+  private repository; secrets in each platform's own store; the hosts ruled
+  out; and re-checking a tier before relying on it. Use whenever deploying,
   hosting or publishing a pipeline, dashboard, API or site, choosing a free
-  tier or cloud host, writing a workflow that runs in the cloud, or filling
-  a plan's Runs on section — even if the user just says "put this online",
-  "host the dashboard", "run it in the cloud" or "is there a free tier for
-  this". Facts checked 2026-11-11; the two workflow files are in
+  tier or cloud host, writing a workflow that runs in the cloud, or filling a
+  plan's Runs on section — even if the user just says "put this online", "host
+  the dashboard", "run it in the cloud" or "is there a free tier for this".
+  Facts checked 2026-11-11; the two workflow files are in
   references/github-actions.md. Layers on run-unattended, store-data,
   write-entry-points, send-messages and setup-python; secure-project classes
   the data the hosts are picked from, and plan-project's Runs on section
@@ -51,18 +50,16 @@ Nothing runs or answers while the machine sleeps, which the catch-up window and 
 
 **None of these needs a Docker image**; each installs from `uv.lock` or a `requirements.txt`, and a `Dockerfile` is earned by Cloud Run or another container platform, as `setup-python` says.
 
-A weather project, say, fetches yesterday's observations each night into MotherDuck, keeps a Parquet copy in its repository and shows a seven-day chart on a Shiny dashboard; nothing else reads the store, so it has no API.
-
 ## Run the pipeline
 
-**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked --no-dev` then `uv run --no-dev myapp-cli nightly --log-level info`, the second flag so the run does not install the dev group the sync left out; the file is in `references/github-actions.md`.
+**Schedule the nightly command as an Actions workflow in the project's repository**, `uv sync --locked --no-dev` then `uv run --no-dev myapp-cli nightly --log-level info` (`run-unattended`, Schedule it); the file is in `references/github-actions.md`.
 A public repository runs it free; a job must finish inside six hours, and the cron fires on the default branch only, at most every five minutes, and late under load, so pick a minute other than `:00` and let `run-unattended`'s day rule set the hour.
 
 - **Write to MotherDuck and commit the data tree back** — the night's `records/` and `rejected/` partitions, `metrics.parquet`, `runs.parquet` and `alerts.json` — with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
 The tree is the backup and the next night's input, and the push is repository activity, so GitHub does not disable the schedule, as it does a public repository's after sixty days without activity; a push made with `GITHUB_TOKEN` triggers no workflow, so it cannot loop.
 - **Commit one date-partitioned file per source a night, and rewrite whole only files that stay small.** GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and a rewritten file makes every clone carry every version; the manifest stays small, but once `metrics.parquet` passes a few MiB, stop committing it and let the site job run `compute` before it exports.
 - **The data commits land on `main`**, since the data tree is not code and nothing reviews a night's rows; record that as a `PLAN.md` decision, which `use-git`'s branch rule defers to.
-- **Once an alert is earned (`run-unattended`, Report the outcome), alert from the workflow when the driver could not**: an `if: failure()` step posts the run's link to the alert channel when the install or the commit fails, and a second, `status` workflow alerts when a night never ran (`send-messages`).
+- **Once an alert is earned, the workflow covers what the driver cannot**: an `if: failure()` step for a failed install or commit, and a `status` workflow for a night that never ran (`send-messages`, Decide what deserves a message).
 - **Set a spend limit on a private repository**, or the schedule stops silently the day the included minutes run out.
 - **Move the job to Modal when it needs more than six hours, more memory than a 2-core runner, or retries and logs outside GitHub**: `@app.function(schedule=modal.Cron("0 2 * * *", timezone=...))`, deployed by `modal deploy` from an Action holding its two tokens; Starter includes $30 of compute a month and five crons, and the cost is a second platform with its own secrets and logs.
 - **Vercel's Hobby cron is not a pipeline host**: once a day at most, up to 59 minutes late, 300 seconds a function, non-commercial only.
@@ -102,13 +99,12 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 
 ## Keep secrets per consumer
 
-- **One token per consumer** (`secure-project`): the pipeline's read/write token, the dashboard's and API's read-scaling token, which MotherDuck limits to reads.
 - **Repository secrets for Actions**, set with `gh secret set NAME` and read as `${{ secrets.NAME }}`; environment secrets need Pro or Team on a private repository.
 - **Each other host's own store for the rest** — Connect Cloud's secret variables, Streamlit's TOML, Render's environment variables, Cloud Run's Secret Manager — never a committed file or a static bundle (`secure-project`).
 
 ## Re-check the tiers
 
-Free tiers moved several times between 2024 and 2026; every figure above not marked otherwise was read from the vendor's page on 2026-11-11.
+Every figure above not marked otherwise was read from the vendor's page on 2026-11-11.
 **Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
 Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need PRO); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).

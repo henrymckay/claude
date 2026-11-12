@@ -2,7 +2,7 @@
 
 The principles are in `SKILL.md`; these are the two workflow files, both scheduled after 02:00 UTC at an off-peak minute and both installing the project with `uv`.
 They live in the repo under `.github/workflows/` and run on the default branch only; `workflow_dispatch` lets you run either by hand after a miss.
-Both commit the data tree to the repository and publish its logs and artifacts there, so they serve public data only; private data stays on the owner's machine (`SKILL.md`, Decide what runs where).
+Both commit the data tree and publish logs and artifacts to the repository, so they serve public data only (`SKILL.md`, Decide what runs where).
 What the nightly command does once it runs is `run-unattended`'s; the launchd and systemd units for a machine you own are in its `references/schedulers.md`.
 
 ## Nightly pipeline and site
@@ -94,16 +94,15 @@ jobs:
         uses: actions/deploy-pages@v5
 ```
 
-- `cron` is UTC unless a `timezone` key is set; the shortest interval is five minutes, and firings slip under load, so nothing downstream should assume the minute.
+- `cron` is UTC unless a `timezone` key is set.
 - `concurrency` without `cancel-in-progress` queues an overlapping run instead of killing the one in flight, the same policy as the lock; the status workflow shares the group, so the two never commit at once.
 - The runner has no data directory of its own, so `MYAPP_DATA_DIR` points `store-data`'s tree into the checkout, where last night's commits already hold the records `compute` reads, and with `motherduck_token` set the store also loads the night into MotherDuck.
-- `--log-level info` sends the run's INFO lines to standard error in the plain format, which the run's log keeps (`run-unattended`, Log).
 - The commit takes the night's `records/` and `rejected/` partitions, one new file each per source, plus `metrics.parquet`, `runs.parquet` and `alerts.json`, rewritten whole; keep them out of `.gitignore` or the commit is empty.
 `raw/` and `logs/` are never committed: the pages go up as the artifact `store-data` keeps, and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.
-- The `if: failure()` step and its `NTFY_TOPIC` secret are added once an alert is earned (`run-unattended`, Report the outcome); it alerts only when the run step itself did not fail, since the driver alerts on its own failures (`send-messages`); it covers an install that fails before the run and a commit that fails after it.
-- `permissions: contents: write` is what lets `GITHUB_TOKEN` push; the push triggers no workflow, so a `push` trigger on another workflow never sees it.
-- `site` needs `nightly`, so the page is never from a different night than the data, and runs on `!cancelled()`, so a partial night still publishes what it stored.
+- The `if: failure()` step and its `NTFY_TOPIC` secret are added once an alert is earned (`run-unattended`, Report the outcome); it skips a failed run step, which the driver alerts on itself (`send-messages`).
+- `permissions: contents: write` is what lets `GITHUB_TOKEN` push; the push triggers no workflow, not even another workflow's `push` trigger.
+- `site` runs on `!cancelled()`, so a partial night still publishes what it stored.
 Its checkout names `ref: ${{ github.ref_name }}`, because the default is the commit the run started from, which lacks the data the nightly job just pushed.
 - `export metrics` reads the store, never a source, so the site job needs no token and the bundle holds only the exported file.
 - `app/` is the browser app's own directory, separate from the package: it runs on Pyodide, so it cannot import a package that depends on `polars`, and it reads `data/metrics.parquet` by a same-origin `pyodide.http.pyfetch`; after changing it, run the workflow by hand rather than waiting a night.
@@ -146,4 +145,4 @@ jobs:
 ```
 
 - It reads `runs.parquet` from the checkout, so it needs no MotherDuck token, and commits `alerts.json` back so tomorrow's run alerts only on a change (`send-messages`).
-- A stale source exits 1 and marks the run failed as well, which GitHub's own failure email reports to whoever last edited the schedule.
+- A stale source exits 1, so the run fails and GitHub's own mail reports it (`run-unattended`, Report the outcome).

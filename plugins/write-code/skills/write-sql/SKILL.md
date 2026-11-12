@@ -2,27 +2,20 @@
 name: write-sql
 description: >-
   The decisions around SQL in a project, whatever the engine — when a query is
-  SQL and when it is Polars, never both for one result; where a query lives (a
-  .sql file the package loads, a fenced block in the README when it is another
-  project's read contract, a view for a question asked often); writing the
-  dialect of the engine that runs it, a development dependency until an
-  adapter queries with it, with pinned types, typed literals and named
-  columns; the house style, formatted and linted by sqlfluff from the first
-  .sql file; changing a stored schema without breaking its
-  readers, and numbered forward-only migrations with no framework for a
-  database; and running and linting every documented query in the suite
-  against a tree the real store wrote. Load it
-  before the first line of any SQL, even a query answered inline. Use whenever
-  writing, editing or reviewing SQL, a .sql file, a view or a migration,
-  setting up a SQL linter or formatter,
-  choosing between SQL and a DataFrame, documenting a query in a README, or
-  adding, renaming or retyping a stored column — even if the user just says
-  "write a query", "query the parquet", "add a column" or "add a migration".
-  Dialect-neutral decisions here; DuckDB 2.x specifics in
-  references/duckdb.md.
-  Layers on write-python, use-polars and write-tests; store-data picks the
-  engine and lays out what a query reads, structure-python places a
-  packaged .sql file, and setup-python wires the linter's hook.
+  SQL and when it is Polars; where a query lives (a packaged .sql file, a block
+  in the README, a view); writing the dialect of the engine that runs it, with
+  every type pinned; the house style, linted by sqlfluff; changing a stored
+  schema without breaking its readers, and migrations for a database; and
+  running every documented query in the suite. Load it before the first line of
+  any SQL, even a query answered inline. Use whenever writing, editing or
+  reviewing SQL, a .sql file, a view or a migration, setting up a SQL linter or
+  formatter, choosing between SQL and a DataFrame, documenting a query in a
+  README, or adding, renaming or retyping a stored column — even if the user
+  just says "write a query", "query the parquet", "add a column" or "add a
+  migration". Dialect-neutral decisions here; DuckDB 2.x specifics in
+  references/duckdb.md. Layers on write-python, use-polars and write-tests;
+  store-data picks the engine and lays out what a query reads, structure-python
+  places a packaged .sql file, and setup-python wires the linter's hook.
 ---
 
 # Write SQL
@@ -40,26 +33,25 @@ Three mistakes account for most SQL that goes wrong: one result computed in both
 
 ## Choose SQL or Polars
 
-- **A transform inside the package is Polars** (`use-polars`): a query held in a string is invisible to the type checker and the linter, so a renamed column is found when it runs, and it cannot be piped or tested a step at a time.
+- **A transform inside the package is Polars** (`use-polars`): a query held in a string is invisible to the type checker and the linter, and cannot be piped or tested a step at a time.
 - **SQL earns its place where the reader or the data makes it the shorter path**:
   - a question asked at a prompt across the whole store, which no operation answers and none should be written for;
   - a query another project, language or person runs with nothing of yours installed — the store's read contract;
-  - a query sent to a database that holds the data, which filters, joins and aggregates there and returns the answer, where reading its tables into frames moves every row to drop most of them.
+  - a query sent to a database that holds the data, which answers there, where reading its tables into frames moves every row to drop most of them.
 - **Never compute one result both ways.** A figure the package derives in Polars and a documented query derives again agree until one of them changes; store the figure and have the query read it.
-- **The engine is a development dependency until an adapter queries with it.** A prompt and the test below need it installed; the package imports it only once an adapter does.
+- **The engine is a development dependency until an adapter queries with it**, since only a prompt and the test below need it.
 
 ## Keep each query in one place
 
 - **A query the package runs is a `.sql` file in the package's data**, one statement a file, named for what it returns and loaded as `structure-python`'s Data says, except a statement that fits one line, which stays a string beside its call.
-A file is highlighted, diffed and read as SQL; a multi-line string is none of these.
+A file is highlighted, linted and diffed as SQL; a multi-line string is none of these.
 - **A documented query is a fenced `sql` block in the README**, complete as a reader would paste it — every option, the closing semicolon, and the path as the reader has it, from the repository root where the tree is committed there and from the data directory otherwise — with that directory and the engine's oldest working version named beside it.
 Past a handful, each moves to `queries/<name>.sql` at the repository root and the README links to it.
 - **A view's definition lives in one `views.sql`** beside the packaged queries, the one file holding several statements, each a `create or replace view`, re-run whole whenever it changes; which questions earn a view, and where the views are kept, are `store-data`'s Read.
 
 ## Write the engine's dialect
 
-- **Write for the engine that runs the query, and use its own forms where they do the work** — reading a file tree, an as-of join.
-A common subset written for an engine nobody runs costs the reader the clearer query and is tested against nothing.
+- **Write for the engine that runs the query, and use its own forms where they do the work** — reading a file tree, an as-of join — never a portable subset for an engine nobody runs, which is tested against nothing.
 - **In a stored or documented query, pin every type the engine would otherwise infer**: a column read from a path or an untyped file gets the type the store's schema gives it, declared in the query, and a timestamp keeps the time zone the schema gives it (`store-data`, Shape a stored table).
 An inferred identifier of digits comes back a number, and the query and the code then disagree about one column with no error from either.
 - **Give a date or timestamp a typed literal**, `date '2026-01-31'`.
@@ -69,8 +61,7 @@ A star's output changes when the table gains a column, and whatever read the res
 
 ## Style
 
-House preference: nothing observable turns on most of it, and one style keeps a diff to the change.
-The linter below enforces each line, so a breach fails a commit rather than waiting for a reader.
+House preference, enforced by the linter below so a breach fails a commit; one style keeps a diff to the change.
 
 - **Lower case** for keywords, functions and types; `snake_case` for names.
 - **One clause a line, one selected column a line**, indented four spaces, commas trailing.
@@ -99,7 +90,7 @@ inner join stations on daily.station = stations.station
 order by daily.station, daily.day;
 ```
 
-**Format and lint every `.sql` file with `sqlfluff` from the project's first one**, as a development dependency run by a pre-commit hook, configured so the style above is checked rather than remembered; under `setup-python`'s toolchain the hook is its to wire and the configuration sits in `pyproject.toml`, and elsewhere the same sections go in a `.sqlfluff` file:
+**Format and lint every `.sql` file with `sqlfluff` from the project's first one**, a development dependency run by a pre-commit hook (`setup-python` wires it), configured in `pyproject.toml`, or a `.sqlfluff` file outside that toolchain:
 
 ```toml
 [tool.sqlfluff.core]
@@ -131,9 +122,8 @@ extended_capitalisation_policy = "lower"
 
 - **`dialect` names the engine that runs the queries**; with the default `ansi` an engine's own forms fail to parse.
 - **The core rules leave case "consistent"**, so the policies pin lower case; `AL06` makes a table alias a word and `AM06` rejects `group by 1`, neither of them core (sqlfluff 4.5).
-- **`sqruff` is the alternative** when lint time is felt: on 200 files it took under a second where `sqlfluff` took thirteen (sqruff 0.44), at the cost of a pre-1.0 port that reads its own `.sqruff` file rather than `pyproject.toml`.
+- **`sqruff` is the alternative** when lint time is felt, over ten times faster on 200 files (sqruff 0.44), at the cost of a pre-1.0 port that reads its own `.sqruff` file rather than `pyproject.toml`.
 - **`sqlfmt` is not picked**: it packs a select's columns onto one line, which the style above rejects, and has no option to stop it (shandy-sqlfmt 0.32).
-- **A fenced block in a README is beyond a file hook**, so the test that runs each documented query lints it too (Test a documented query).
 
 ## Change a schema
 
@@ -146,9 +136,8 @@ An undo is the next migration: a down script is the one path nobody runs until t
 ## Test a documented query
 
 **Every documented query runs in the suite**: one test takes each `sql` block from the README, or each file under `queries/`, runs it against a tree the real store adapter wrote to a temporary directory, from the directory its documented path starts at, and asserts on the rows that come back.
-A schema change then fails that test in the commit that makes it; a query checked once by hand fails for its reader instead, some weeks later.
 
-- **Lint each documented query in the same module** with `sqlfluff`'s Python API against the project's configuration, since the hook reads only `.sql` files.
+- **Lint each documented query in the same module** with `sqlfluff`'s Python API against the project's configuration, since a README block is beyond the hook, which reads only `.sql` files.
 - **Write the fixture tree through the store adapter**, never by hand, so the fixture changes shape when the store does.
 - **Assert a query's answer where the contract promises one** — a join that must not multiply rows, a figure that must match the stored one — beside the shared check that each returns rows.
 - **Test a packaged query through the adapter that runs it**, against a real database in memory or on a temporary path.

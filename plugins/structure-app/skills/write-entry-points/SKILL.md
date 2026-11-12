@@ -5,27 +5,22 @@ description: >-
   command-line interface, an HTTP API, a GUI or dashboard, and the scheduled
   command a scheduler calls. Each is a thin shell over the pure core and the
   composition root that reads settings once and binds each secret into the
-  adapter it builds, designed as a public surface that composes with the
-  tools around it: CSV with a header by default and a format option for the
-  rest, the manifest row from a command that acts, run-unattended's exit
-  codes, date ranges inclusive at both ends, one handler mapping the app's
-  errors to statuses, a loopback server guarded by its Host and Origin, an
-  API and a dashboard that read the store and never the source, and a
-  dashboard that refreshes when the run manifest changes and shows the last
-  run's age. Load it before adding or changing a CLI, API, dashboard or
-  scheduled command, even before reading the package. Use whenever adding or
-  structuring an entry point, designing a command's options or an API's
-  surface, deciding what goes to standard output and what to standard error,
-  wiring dependency injection at the boundary, reading settings and finding
-  the .env under a scheduler, sizing a fetch that needs warm-up history,
-  testing a dashboard, or naming a launch command — even if the user just
-  says "add a CLI", "expose an API", "build a dashboard", "run this on a
-  schedule", or names typer, fastapi, uvicorn, pydantic-settings, shiny or
-  shinywidgets. Language-agnostic principles here; Python build-outs in
-  references/python.md. Layers on structure-python's drive layer and
-  be-functional; run-unattended owns what the scheduled command does
-  unwatched and its exit codes, store-data the data it writes, and
-  secure-project what a served surface must guard.
+  adapter it builds, designed as a public surface that composes with the tools
+  around it: output forms, input routes, exit codes, date ranges, error
+  statuses, a guarded loopback server, and an API and a dashboard that read the
+  store. Load it before adding or changing a CLI, API, dashboard or scheduled
+  command, even before reading the package. Use whenever adding or structuring
+  an entry point, designing a command's options or an API's surface, deciding
+  what goes to standard output and what to standard error, wiring dependency
+  injection at the boundary, reading settings and finding the .env under a
+  scheduler, sizing a fetch that needs warm-up history, testing a dashboard, or
+  naming a launch command — even if the user just says "add a CLI", "expose an
+  API", "build a dashboard", "run this on a schedule", or names typer, fastapi,
+  uvicorn, pydantic-settings, shiny or shinywidgets. Language-agnostic
+  principles here; Python build-outs in references/python.md. Layers on
+  structure-python's drive layer and be-functional; run-unattended owns what the
+  scheduled command does unwatched and its exit codes, store-data the data it
+  writes, and secure-project what a served surface must guard.
 ---
 
 # Write entry points
@@ -42,8 +37,7 @@ Three mistakes account for most of what goes wrong: logic that settles in the sh
 ## Driver shell
 
 Each entry point reads its trigger, calls an operation with the adapter it needs injected, and renders the result its own way.
-Keep it thin: logic in the shell can't be reused by a second entry point.
-Presentation belongs to the driver, never the core — a CLI's table, an API's JSON, a dashboard's widgets.
+Logic in the shell can't be reused by a second entry point; presentation — a CLI's table, an API's JSON, a dashboard's widgets — belongs to the driver, never the core.
 
 **Reshaping data is not presentation.** A pivot changes what a row *is*, a change of grain that belongs to a core transform (see `be-functional`) even if a table is why you wanted it.
 Ask what a second driver would do: an API serving the same report wants the same pivot and a different renderer, so the pivot is core.
@@ -54,19 +48,18 @@ Pass a **per-column description** beside the data instead — how to show each c
 
 ## Design the surface
 
-An entry point is a public API: people script against it, so a renamed flag breaks a caller and a missing capability forces a fork.
+An entry point is a public API: a renamed flag breaks a caller and a missing capability forces a fork.
 Design it against three demands at once:
 
 - **Comprehensive** — everything the core can do is reachable, each capability on its own, not as a side effect of asking for something else.
 - **Expressive** — the unusual request is still sayable.
 - **Brief** — defaults carry the common case, so the everyday invocation is nearly bare.
 
-They pull against each other; resolve it with options that **combine rather than multiply** — orthogonal options mixed freely beat a flag per combination, and one option taking a value beats three variations.
+Resolve the pull between them with options that **combine rather than multiply** — orthogonal options mixed freely beat a flag per combination, and one option taking a value beats three variations.
 
 - **An option that duplicates the shell earns its place only where the shell can't do the job.** `--output PATH` does what `> PATH` does for text, but a binary form can't be typed at a terminal, so `--format parquet` requires `--output` and the option is shape; for text, say in a sentence that it duplicates `>` before building it, and keep it only by convention (`curl` and `sort` take `-o`).
 
-**Where the user or the plan fixes the option set, keep the shape and drop the extras.** Several rules here recommend options — a log destination, a format switch.
-If leaving one out makes the tool behave *incorrectly* (logs in the data stream), it is shape and stays; if it only makes something harder to reach, the user may decline it.
+**Where the user or the plan fixes the option set, keep the shape and drop the extras.** If leaving out an option recommended here makes the tool behave *incorrectly* (logs in the data stream), it is shape and stays; if it only makes something harder to reach, the user may decline it.
 Say which you dropped, and check what that strands: with no way to raise the log level, `info` lines are dead code.
 
 ## Expose the stages
@@ -80,9 +73,7 @@ Two stages that differ only in what they read are one command with a positional 
 
 ## Compose with other tools
 
-A command-line tool is one process in a pipeline, so its input and output are interfaces.
-**Aim to be indistinguishable from the tools beside it**: someone who knows `grep`, `sort` and `jq` should use yours without reading anything.
-The shell's plumbing is the specification:
+**A command-line tool is one process in a pipeline**: someone who knows `grep`, `sort` and `jq` should use yours without reading anything, so the shell's plumbing is the specification:
 
 ```bash
 myapp report london --format json | jq 'select(.average > 10)'
@@ -100,53 +91,47 @@ The form you check by hand is then never the form a script receives, and the par
 
 Dropping *colour* off a terminal is not this — the structure is identical, and the rendering library does it for you.
 
-**Every command emits rows on standard output, sized to what it did.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`) — what, how many, how long, with what outcome, and nothing when it found the lock held and wrote none (`run-unattended`) — so a scheduler's log shows the run without a second command and nothing is summarised twice; `status` emits key/value rows.
-A command that prints prose on success has nothing a script can read.
+**Every command emits rows on standard output, sized to what it did, never prose.** A stage that produces data emits the data; a stage that acts (`fetch`, `compute`) emits the manifest row it wrote (`store-data`), or nothing when it found the lock held (`run-unattended`), so a scheduler's log shows the run without a second command; `status` emits key/value rows.
 
 **Exit with the codes `run-unattended`'s Report the outcome sets**, from every command, interactive or scheduled, so a script and a scheduler read one meaning.
 **Make log destination and level configurable**, defaulting to standard error at `warning` for a person; standard output is a log destination only for a service or job that emits no data on it, and the level and file a scheduled run takes are `run-unattended`'s.
 
 **Take input the way you give output**: from arguments or a named file, and from standard input otherwise.
 
-- **The routes converge on one value, normalised once.** Arguments, file and standard input resolve to one list at the edge, and one function trims, folds case and deduplicates it.
-Split across routes, each cleans what its own bytes obviously needed and what none made obvious is done by none.
+- **The routes converge on one value, normalised once.** Arguments, file and standard input resolve to one list at the edge, and one function trims, folds case and deduplicates it; split across routes, what no route's bytes made obvious is done by none.
 - **The explicit routes union; standard input fills in.** Arguments and a named file were both typed, so both count.
 Standard input is often attached incidentally, so read it only when no explicit source was given — as `cat a b < c` ignores `c` — and silently; an explicit `-` among the arguments mixes it in.
 - **An argument is optional only when another route supplies the same value.** Optional for any other reason makes leaving it off change *what* the command does, which is a mode and belongs in an option.
-The user-editable list is such a route: `fetch ITEM...` fetches the items named and bare `fetch` reads the active rows of `items.csv` (`structure-python`, Configuration), so a one-off re-fetch needs no edit to the file.
+The user-editable list is such a route: bare `fetch` reads the active rows of `items.csv` (`structure-python`, Configuration) and `fetch ITEM...` overrides it, so a one-off needs no edit to the file.
 - **A date range is inclusive at both ends**, `--from` and `--to` alike, since a person asking for Monday to Friday means Friday too; the API's `start` and `end` say the same, or one request gets two answers.
 
 ## HTTP surface
 
 An API is the CLI's surface over HTTP, so the same options become query parameters and the same rows a JSON array; design it against the same three demands.
 
-- **A path names a resource, a query parameter narrows it**: `/readings?station=LHR&start=2026-01-01`, not `/getReadings`.
 - **Bound a range by date, never by offset.** `start` and `end` (inclusive, as the CLI's `--from`/`--to` are) give the same answer on every call; `offset=200` shifts as rows arrive, so a client paging through a live source skips or repeats rows and nothing tells it.
 - **An API and a dashboard read the store, never the source.** Each request calls an operation over the store's read port (`store-data`); a request that reached the rate-limited source would spend the quota a browser reload at a time, and show a different answer from the nightly's.
-- **A dashboard re-reads the store when the run manifest changes**, not on a clock of its own, so it reads once a night; **and shows the last run's age, re-judged on a slow clock** — an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
+- **A dashboard re-reads the store when the run manifest changes**, not on a clock of its own; **and shows the last run's age, re-judged on a slow clock** — an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
 The Python reference has the local and the hosted mechanics.
 - **One handler maps the app's errors to statuses** — an absent thing `404`, bounds out of range `422`, the rest `500` — so no route catches anything.
 - **No version prefix until a second client exists.** `/v1/` promises a `/v2/` nobody has asked for; add it when a breaking change meets a client you can't update.
-- **Bind to the loopback interface and skip authentication while the API is read-only on one machine**, checking `Host` and `Origin` as `secure-project`'s Guard what is served says; the moment it binds beyond the machine or writes, authentication arrives, since an unauthenticated writer on a network is a public form.
-- **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request, synchronous as `write-python` says; the Python reference has the mechanics.
+- **Bind to the loopback interface and skip authentication while the API is read-only on one machine**; the `Host` and `Origin` check, and the authentication that arrives once it binds beyond the machine or writes, are `secure-project`'s Guard what is served.
+- **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request; the Python reference has the mechanics.
 
 ## Composition root
 
-The driver is the one place importing **both** an operation and a concrete adapter, injecting one into the other.
-Everywhere else the core depends only on its ports, so the import arrow points inward while the driver alone names the real adapter (see `structure-python`).
+The driver is the one place importing **both** an operation and a concrete adapter, injecting one into the other (`structure-python`, Code).
 
 **The root reads the settings once and binds each secret into the adapter it builds**, so no adapter reads the environment and no port carries a key (`structure-python`, Configuration).
 A scheduler starts the job outside the repo, so the settings find the `.env` by an absolute path, never one relative to the working directory; the Python reference has it.
 
-**One input can enter twice.** A bound the core filters on at the end often also sizes the fetch at the start — and a windowed computation (a running count, a moving average) needs history *before* the first row it reports.
-Fetch exactly the range asked for and the answer is fast and **wrong**; the fetch window is the requested range plus a warm-up margin.
+**One input can enter twice.** A bound the core filters on at the end often also sizes the fetch at the start, and a windowed computation (a running count, a moving average) needs history *before* the first row it reports: fetch exactly the range asked for and the answer is fast and **wrong**, so the fetch window is the requested range plus a warm-up margin.
 
 - **Derive the margin wherever the port is called** — usually the operation, since how far back the state reaches is a fact about the computation.
 A driver deriving it has been taught the domain, and every second entry point re-derives it.
 - **Size it from evidence**: measure how far back state reaches over real data and take a multiple of the worst case.
 Where no bound exists, fetch unbounded and say so — a margin too small fails silently.
-- **Check that the filter after a widened fetch removes anything.** A request aligned to whole periods may already return exactly what was asked for; a filter that drops nothing on any input is a second interpretation of the bounds to delete.
-Run it and count.
+- **Check that the filter after a widened fetch removes anything**, by running it and counting: a request aligned to whole periods may already return exactly what was asked for, and a filter that drops nothing on any input is a second interpretation of the bounds to delete.
 
 ## Role and framework split
 

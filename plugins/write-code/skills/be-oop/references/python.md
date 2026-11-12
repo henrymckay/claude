@@ -1,11 +1,10 @@
 # Be object-oriented in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python.
-Most "patterns" are lighter here than in Java or C++, so the collapsed forms below are the usual ones.
 
 ## Dataclasses
 
-A `dataclass` holds an object's state; a stateful one is the exception to `write-python`'s frozen default, and says so by leaving `frozen` off:
+A stateful object is a `dataclass` with `frozen` left off, the exception to `write-python`'s frozen default:
 
 ```python
 import dataclasses
@@ -24,11 +23,9 @@ class Account:
         self.balance += amount
 ```
 
-Money is `decimal.Decimal`, never `float` (see `write-python`); `slots=True` rejects a stray attribute and saves memory.
-
 ## `Protocol` vs ABC
 
-- **`typing.Protocol`** — the default for an interface; its method stubs carry docstrings, since they are the contract.
+- **`typing.Protocol`** — the default for an interface.
   ```python
   import typing
 
@@ -41,7 +38,6 @@ Money is `decimal.Decimal`, never `float` (see `write-python`); `slots=True` rej
           ...
   ```
 - **`abc.ABC` + `@abc.abstractmethod`** — *nominal* typing, enforced at instantiation; only when you own the hierarchy and want shared base code as well as the contract.
-- **`@typing.override` on every overriding method**, as `write-python` requires.
 
 ## Mixins
 
@@ -49,6 +45,10 @@ A mixin shares behaviour across classes with no common base.
 List it **left** of the base, so its methods win in the MRO (Method Resolution Order), keep it to methods over the host's own interface, and give it an empty `__slots__`, or a `slots=True` host silently gains a `__dict__` through it:
 
 ```python
+import dataclasses
+import typing
+
+
 class OrderedByKeyMixin:
     """Order instances by the key the host defines."""
 
@@ -74,10 +74,6 @@ class Version(OrderedByKeyMixin):
         """Return the major and minor numbers."""
         return (self.major, self.minor)
 ```
-
-## Enums
-
-`enum.StrEnum` for a closed set of names that crosses a boundary; a sum type of dataclasses once the variants carry data (see `be-functional/references/python.md`).
 
 ## Design patterns
 
@@ -109,7 +105,4 @@ def make_client(env: Environment) -> Client:
     return {Environment.PROD: ProdClient, Environment.DEV: DevClient}[env]()
 ```
 
-A **Singleton** is a module, or a value the composition root reads once and passes down (see `structure-python`); a cached reader is hidden state every test then shares.
-
-For **Observer**, keep a list of callbacks and call them; for **Visitor**, use `functools.singledispatch` or `match` (see `be-functional`).
-For **Adapter**, **Decorator**, **Composite** and **State**, a small class that wraps or holds state is the right tool — those don't collapse into a function.
+A `functools.cache` reader is no **Singleton**: it is hidden state every test then shares.

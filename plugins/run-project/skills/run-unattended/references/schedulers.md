@@ -1,7 +1,6 @@
 # Scheduler units
 
 The principles are in `SKILL.md`; these are the two unit files for a machine you own, each running a nightly command after 02:00 UTC through a tool installed with `uv`.
-Keep them in the repo under `deploy/` and give the README the install line shown with each.
 
 ## launchd (macOS)
 
@@ -51,10 +50,8 @@ Keep them in the repo under `deploy/` and give the README the install line shown
 </plist>
 ```
 
-- `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in any zone up to two hours ahead of it; a missed interval runs once on wake.
-- `StandardOutPath` and `StandardErrorPath` catch the summary row and anything that escapes before logging is configured; the job's own log is the `--log-file`, rotated by the handler, since launchd never rotates.
-- `WorkingDirectory` is the repo, so a relative path resolves there; the settings find the `.env` by its absolute path, and secrets come from it, not from `EnvironmentVariables`.
-- The two `/Users/me/...` paths are the ones the README tells a new machine to edit.
+- `StartCalendarInterval` is local time, so `Hour` is 3 to stay past midnight UTC in any zone up to two hours ahead of it.
+- `StandardOutPath` and `StandardErrorPath` are the capture (`SKILL.md`, Log); secrets come from the `.env`, never `EnvironmentVariables`.
 - For a service, replace `StartCalendarInterval` with `<key>KeepAlive</key><true/>`.
 
 ## systemd (Linux)
@@ -91,7 +88,7 @@ ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen --no-
 ```
 
 - `OnCalendar` takes a zone suffix, so the hour is stated in UTC directly; `Persistent=true` runs a missed firing at the next boot.
-- The journal captures standard output and standard error and rotates them, as the backstop for anything that escapes before logging is configured; the `--log-file` stays the job's own record, rotated by its handler.
+- The journal is the capture (`SKILL.md`, Log) and rotates itself.
 - `EnvironmentFile` holds the secrets, outside the repo, mode `600`.
 - For a service, drop `Type=oneshot`, add `Restart=on-failure` and `RestartSec=10`, and enable the `.service` rather than a timer.
 
@@ -101,4 +98,4 @@ Once an alert is earned (`SKILL.md`, Report the outcome), copy the nightly unit 
 
 ## GitHub Actions (cloud)
 
-The `schedule` workflow runs where `deploy-project` decides, so its file and notes live in that skill's `references/github-actions.md`; what Actions does with a missed run is in `SKILL.md`, Schedule it.
+The `schedule` workflow is in `deploy-project`'s `references/github-actions.md`.

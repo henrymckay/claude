@@ -46,8 +46,7 @@ Nothing else by default: no task runner (`just`, `make`) until a project has a c
 
 ## Configure the project
 
-`pyproject.toml` is the one file for metadata, dependencies, and tool config.
-A sensible starting point:
+`pyproject.toml` is the one file for metadata, dependencies and tool config:
 
 ```toml
 [project]
@@ -113,9 +112,7 @@ Scaffold a `.taplo.toml` holding `exclude = [".venv/**"]` beside it: `taplo` doe
 
 ## Pick a layout
 
-- **One-off script / tiny tool** → a single `.py` file.
-Don't ceremony it up.
-If it needs a dependency, use an inline script block (see [Standalone scripts](#standalone-scripts)).
+- **One-off script / tiny tool** → a single `.py` file, with an inline script block if it needs a dependency (see [Standalone scripts](#standalone-scripts)).
 - **Anything installable or that others import** → the **`src/` layout** below.
 
 The `src/` layout puts the package one directory down, so the repo root holds no importable package.
@@ -133,13 +130,10 @@ myproject/
 ```
 
 How `mypackage/` splits into `code/` and `data/` layers, and how `tests/` is laid out, is covered in `structure-python`.
-Keep a real `.gitignore` from the start (`uv init` writes one), so no generated file is ever staged.
 
 ## Dependencies and environment
 
-`uv` manages the Python version, the virtualenv, and dependencies — fast, and it replaces `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`.
-If it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`), which drops a prebuilt binary in `~/.local/bin`.
-The core workflow:
+`uv` manages the Python version, the virtualenv and dependencies, in place of `pip`, `pip-tools`, `pipenv`, `virtualenv` and `pyenv`; if it isn't installed, use the standalone installer (`curl -LsSf https://astral.sh/uv/install.sh | sh`).
 
 ```bash
 uv init --package
@@ -153,24 +147,22 @@ uv sync
 - **Commit `uv.lock`, for a library as much as an application.** It pins what the suite was green against; without it a contributor's `uv sync` resolves differently from yours and the first bug report is a version skew nobody can reproduce.
 The published library still carries only `pyproject.toml`'s ranges, so consumers are not pinned.
 - **Declare a lower bound and no upper cap** (`polars>=2.1`), since a cap blocks the upgrade that fixes the bug you hit; run `uv lock --upgrade` and the suite together on a schedule — by hand, or from a workflow that opens a pull request, which is not the CI declined above since it gates nothing — and the lock moves only when the tests still pass.
-- **Pin the Python version** with `uv python pin`, which writes `.python-version`, so everyone is on the same interpreter.
 
-**Target the latest stable Python release**, 3.15 at the time of writing, in `.python-version` and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
+**Target the latest stable Python release**, 3.15 at the time of writing, in `.python-version` (`uv python pin`) and `requires-python`; `write-python` writes to that floor, and `uv init` writes a release or two lower, so set both.
 Go one release back only when a dependency has no wheels for it and `uv sync` fails to resolve, and record that under the plan's Decisions so the next sweep tries again; never a pre-release.
 When `uv python list` offers only a pre-release of it, check `uv` before stepping back: a `uv` lists no Python released after itself, so `uvx uv@latest python list 3.15` shows whether the final exists and `uv self update` brings it.
 A library published for others is the exception: keep a lower `requires-python` floor so you don't lock out consumers on older interpreters, even while you develop against the latest.
 
 ## Libraries
 
-For these common tasks the house pick is the default, not a dependency of last resort — reach for it over the standard-library alternative (`typer` over `argparse`, `pytest` over `unittest`).
-Everywhere else the stdlib-first rule holds — don't add a dependency you don't actually need (see `write-python`).
+For these common tasks the house pick is the default, over the standard-library alternative (`typer` over `argparse`, `pytest` over `unittest`); everywhere else `write-python`'s Simplicity holds.
 No optional-extras split (`mypackage[dashboard]`): one install carries every driver, since a split means a second resolution to test and a user who installed the wrong one.
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) over stdlib `argparse`; `cyclopts` is the alternative when `typer`'s decorator model fights a surface built from plain functions, and `argparse` only for a zero-dependency one-or-two-flag script.
 - **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s `references/http.md` has the mechanics.
-A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered; the client is sync as `write-python`'s Sync and async says.
+A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered.
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
@@ -202,8 +194,7 @@ Declare deps inline (PEP 723) and run with `uv run script.py` — `uv` builds a 
 
 ## Pre-commit hooks
 
-Enforce formatting and linting on every commit with the `pre-commit` framework — deterministic, so it holds regardless of how the code got written.
-Add `.pre-commit-config.yaml`:
+Enforce formatting and linting on every commit with the `pre-commit` framework, in `.pre-commit-config.yaml`:
 
 ```yaml
 default_install_hook_types: [pre-commit, commit-msg]
@@ -255,7 +246,6 @@ repos:
 ```
 
 Then `pre-commit install` once per clone, and `pre-commit autoupdate` to bump the `rev`.
-If a hook changes files the commit stops so you can re-stage.
 
 ## Release
 

@@ -34,8 +34,7 @@ Three mistakes account for most messages nobody reads: a success message every n
 
 ## Decide what deserves a message
 
-**Send nothing for a routine success**; the manifest and `status` are the record (`run-unattended`, Report the outcome).
-A nightly "job ran" trains the reader to swipe it away, and the failure a month later is swiped with it: an alert earns its place by being rare.
+**Send nothing for a routine success**; the manifest and `status` are the record, and an alert earns its place by being rare.
 
 - **A failure alert** when the job exits 1 or 2, or `status` finds a source stale — the reader has something to do.
 - **A digest** on the cadence the reader would otherwise run `status` or open the dashboard.
@@ -49,7 +48,7 @@ A nightly "job ran" trains the reader to swipe it away, and the failure a month 
 - **A night that never ran** cannot alert, so the stale alert comes from `status --alert` on its own schedule (`run-unattended`, Report the outcome).
 - **A failure outside the driver** — an install that fails before it, a commit that fails after it — is caught on Actions by the workflow's `if: failure()` step (`deploy-project`'s `references/github-actions.md`), which posts the run's link to the same topic.
 
-No notification is built until the plan requires one or the first outage goes unnoticed (`run-unattended`); record it under Decisions when it is.
+Whether to build a notification at all is `run-unattended`'s call (Report the outcome).
 
 ## Pick the channel
 
@@ -57,7 +56,7 @@ Each pick is the default for its need; a `PLAN.md` decision overrides it, and a 
 Every channel below sends from GitHub Actions, a cloud host or a launchd job over outbound HTTPS or SMTP, except iMessage.
 
 - **Failure alert: ntfy.sh** with an unguessable topic and `Priority: urgent` — no account, no cost, one HTTP POST, and a phone app that shows it as a push.
-The topic name is the password, so generate it (`secrets.token_urlsafe(16)`); a guessable one lets anyone post to the reader's phone.
+The topic name is the password, so generate it (`secrets.token_urlsafe(16)`); anyone who guesses it can post to the reader's phone and read every message.
 Alternative: **Pushover** when an alert must repeat until acknowledged (priority 2), at $4.99 once per platform.
 - **Digest with a chart: email through the reader's own SMTP** — iCloud (`smtp.mail.me.com:587`, STARTTLS, an app-specific password) or Gmail (`smtp.gmail.com:465`, an app password behind 2-Step Verification, 500 a day) — with the PNG attached: already read daily, searchable, archived, nothing to install.
 Alternative: **Telegram `sendPhoto`** (caption 1024 characters, one message a second per chat) when the reader wants it in a chat and has installed Telegram; the reader must message the bot before `getUpdates` yields their chat id.
@@ -74,7 +73,7 @@ A workspace made for one job is a second inbox nobody opens.
 
 - **An alert is one line** plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
 - **A digest carries the counts `status` prints** — rows per source, rejected rows, the last day stored — with the chart attached, so the message and the command agree.
-- **The body carries no secret, no personal data, and of private data only counts** (`secure-project`): a push sits on a lock screen, a chat on someone else's server, and a mail gets forwarded.
+- **The body carries no secret, no personal data, and of private data only counts** (`secure-project`, Decide where each class may go).
 
 ## Send from the job
 
@@ -136,7 +135,7 @@ A failed send raises from the app's `error/` package like any adapter (`write-py
 
 ## Keep the secret out
 
-**The topic, bot token or app password is a secret**, kept as `secure-project`'s Keep secrets out says; the ntfy topic is one even though it reads like a name, since anyone who knows it reads every message sent to it, so keep the request URL out of the log too.
+**The topic, bot token or app password is a secret**, kept as `secure-project`'s Keep secrets out says; the ntfy topic sits in the request URL, so keep that out of the log too.
 
 ## Reach Claude
 

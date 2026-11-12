@@ -8,22 +8,20 @@ description: >-
   file, each settled as fixed, already covered, won't fix or needs the user
   and each case run before and after the fix, with a trial build's
   transcripts read for skills that never loaded; then every drift check,
-  whatever the brief names — word counts, each description against its body,
+  whatever the brief names — word counts of the skills and the top-level
+  files against the last sweep, each description against its body,
   overfitted examples and rules Claude follows unprompted, duplicates and
-  contradictions across skills and plugins, dead cross-references, trigger
-  overlap, every code block and library claim re-run, the instruction files,
-  README and PLAN.md read whole, the manifests, hooks, symlinks and trigger
-  suites, and memory — and promoting a decision that recurs into its skill;
-  landed as one pull request whose report lists each check as done or
-  skipped, each skill's fixes committed with word counts; on a plugin you
-  cannot push to, a report, an issue or a pull request from a fork. Use after
-  a run of skill edits, when skill feedback has piled up, or whenever the
-  user asks to review, audit, tidy or sweep skills, a plugin or a Claude
-  repo, theirs or one whose source they can read, even if they just say
-  "check the skills for drift", "tidy up my skills" or "work through the
-  skill feedback". Layers on review-project, which runs the cold read, the
-  fixes and the report, and on write-skills and write-markdown, the standard
-  it checks against.
+  contradictions, dead cross-references, trigger overlap, every code block
+  and library claim re-run, the instruction files, README and PLAN.md judged
+  whole and rewritten rather than patched, the manifests, hooks, symlinks
+  and trigger suites, and memory; landed as one pull request whose report
+  lists each check and the net words. Use after a run of skill edits, when
+  skill feedback has piled up, or whenever the user asks to review, audit,
+  tidy or sweep skills, a plugin or a Claude repo, theirs or one whose
+  source they can read, even if they just say "check the skills for drift",
+  "tidy up my skills" or "work through the skill feedback". Layers on
+  review-project, which runs the cold read, the fixes and the report, and on
+  write-skills and write-markdown, the standard it checks against.
 ---
 
 # Review the plugin
@@ -61,15 +59,15 @@ Who merges is the plan's decision; without one, the user does.
 
 ## Take an inventory
 
-Count the words in every `SKILL.md` and reference, skipping folders synced in by other tools.
-Compare each against its neighbours and against the counts the last review recorded in its commit messages; a file that grew while its neighbours held steady is where to look first.
+Count the words in every `SKILL.md` and reference, skipping folders synced in by other tools, and in the README, `CLAUDE.md`, `PLAN.md` and each context file.
+Compare each against its neighbours and against the counts the last sweep recorded in its commit messages and report.
+A skill that grew while its neighbours held steady is where to look first; a top-level file that grew is a finding in itself, since each fix adds a sentence and nobody restructures the whole.
 
 ## Check each skill
 
-- **Description against body, both ways.** List what the description promises and what the body covers; drop promises the body doesn't keep and add what it grew to cover.
-- **Overfitting.** Find names, data and edge cases from one project — its domain terms, a single incident turned into a rule — and restate them in a domain any reader knows, or cut them.
-- **The default test** (see `write-skills`): for each rule, ask whether Claude would do it unprompted, and cut it if so.
-Word counts miss this bloat; it reads as reasonable advice.
+- **Description against body, both ways**, and under about 250 words (`write-skills`, Write the description).
+- **Overfitting**: names, data and edge cases from one project, restated in a domain any reader knows or cut (`write-skills`, Keep examples general).
+- **The default test**: each rule Claude would follow unprompted is cut (`write-skills`, Cut what Claude does unprompted); word counts miss this bloat.
 
 ## Check across skills
 
@@ -84,9 +82,11 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 
 - **The always-on skill list matches the skills both ways**, and each entry agrees with that skill's description: the list is each plugin's `hooks/context.md`, printed at session start, and the owner's `CLAUDE.md` where the skills are symlinked instead of installed; where both exist they carry the same line for a skill.
 Where they also map each plugin of a marketplace to its skills, so a plugin installed alone can name what it lacks, the map is identical in every copy and matches the plugin folders.
-- **`CLAUDE.md` carries no defaults** (see `write-markdown`).
-- **Read the README and `CLAUDE.md` whole**, never only the lines a fix touched.
-The README lists every skill, each described as its skill describes itself, and its other sections — setup, configuration, feedback — are still true against the repo and against the plan: a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
+- **Judge the README, `CLAUDE.md`, `PLAN.md` and each context file whole against `write-markdown`**, for length and organisation as well as truth, never only the lines a fix touched.
+A file patched sweep after sweep reads as drip-fed even when every line is true; rewrite it whole from what the repo is today rather than adding to it.
+- **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there; an addition to it says in its commit what it removed, and a file over budget is a finding.
+`CLAUDE.md` and the context files carry no defaults (see `write-markdown`).
+- **The README is true**: it lists every skill as its skill describes itself, and its setup, configuration and feedback sections hold against the repo and the plan; a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
 
 ## Check the wiring
@@ -113,4 +113,5 @@ Read every free-tier limit and price a skill quotes against the vendor's plan pa
 - **Brief the cold read** with `write-skills` and `write-markdown` as the standard, asking for duplicates, contradictions, dead pointers and description gaps; it runs on `sonnet`, as does a gap probe, and only a trigger grader or a hook on `haiku` (see `choose-model`).
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
+- **State the net words across skills and references, and each top-level file's count before and after**; justify any growth, since a sweep that only adds leaves the next reader more to read.
 - **List every check in the report as done, with what it found, or skipped, with why** — one line each for the README, `CLAUDE.md` and each context file — so a check left out shows as a gap rather than passing unseen.
