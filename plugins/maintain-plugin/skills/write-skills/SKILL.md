@@ -95,7 +95,7 @@ A non-default stays mentioned without becoming the default, and the reader knows
 - **Keep examples general.** An example drawn from the project that prompted a rule teaches its domain along with the rule; use the smallest example that shows the rule, from a domain any reader knows.
 - **Generalise a rule added mid-project.** A rule written to fix one incident arrives in that project's terms; restate it so a reader from any domain would apply it, and grep the neighbouring skills first — if one already says it, extend that, or the two copies drift apart.
 - **Run what the skill claims.** Pass every code block through the language's formatter and linter (for Python, `uvx ruff@latest format --diff` and `uvx ruff@latest check`), and run every library claim in a throwaway script against the current release (for Python, a PEP 723 script under `uv run`), naming the version in the commit message.
-Careful reading passes examples that fail the linter and claims the library contradicts; running them takes about a minute each.
+Reading passes examples the linter fails and claims the library contradicts.
 - **Keep cross-references live.** When you move or reword a rule, grep this skill and its neighbours for the section name and the rule's wording, so no pointer leads to nothing.
 
 ## Split the principle from the language
