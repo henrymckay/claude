@@ -33,7 +33,7 @@ Three mistakes account for most wasted spend: running every stage on the largest
 |---|---|---|---|
 | Planning, reviewing, editing skills, ruling on a challenge | `opus` (`fable` for the hardest design) | high | One wrong call here is rebuilt across every milestone; the cost is paid once |
 | Build milestones | `sonnet` | medium | The plan has made the decisions; the gate catches what the model misses |
-| Cold reads, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
+| Cold reads, evaluators, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
 | Graders, hooks, trigger evals | `haiku` | low | A yes/no over a short text, run on every turn or every case |
 
 A model one rung up is earned by a stage that keeps failing its gate on the cheaper one, recorded under Decisions with the gate that failed; a rung down is never earned for planning or review.
