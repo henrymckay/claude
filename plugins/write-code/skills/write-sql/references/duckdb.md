@@ -22,7 +22,7 @@ from
 where day >= date '2026-01-01';
 ```
 
-- **`hive_types` names every partition key.** Inference reads `day=2026-01-31` as `DATE` and a key of digits, `region=42`, as `BIGINT`; pinned, a path that will not cast raises `Unable to cast` instead of changing the column's type.
+- **`hive_types` names every partition key.** Inference reads a key of digits, `region=42`, as `BIGINT`; pinned, a path that will not cast raises `Unable to cast` instead of changing the column's type.
 - **`union_by_name = true` on any tree whose files may differ.** Without it the first file's columns are the table's, and a column added later is absent from every row with no error.
 - **A typed literal fails as a binder error** when the column is text: `Cannot compare values of type VARCHAR and type DATE`.
 - **Cast an integer `sum`**: it is `HUGEINT`, which reaches Polars as `Decimal(38, 0)`; write `sum(quantity)::bigint`.
@@ -30,11 +30,11 @@ where day >= date '2026-01-01';
 ## Keep each query in one place
 
 **A view stores its path as written and resolves it from the working directory of whoever queries it**: a relative one works at the prompt that made it and raises `No files found` anywhere else.
-So `views.sql` names the tree by a placeholder, and the composition root, which knows the data directory, puts its absolute path there before running the file — the one value formatted into SQL, and it comes from settings, never from input.
+So `views.sql` names the tree by a placeholder, and the composition root puts the data directory's absolute path there before running the file — the one value formatted into SQL, from settings, never from input.
 
 ## Change a schema
 
-DuckDB has no `user_version` pragma, which is SQLite's: a DuckDB file keeps the number in a one-row `schema_version` table, updated inside the migration's own transaction, which rolls the schema change back with it when a statement fails.
+DuckDB has no `user_version` pragma (that is SQLite's): keep the number in a one-row `schema_version` table, updated inside the migration's own transaction so a failed statement rolls both back.
 
 ## Test a documented query
 
@@ -61,4 +61,4 @@ def test_when_documented_query_is_linted_then_it_keeps_the_style(query: str) -> 
 
 `stored_tree` is the fixture that writes a few partitions through the real store adapter under `tmp_path` and returns it; `duckdb` and `sqlfluff` sit in the development dependency group, and `parents[2]` is the repository root from `tests/suite/`.
 Without `config_path`, `sqlfluff.lint` checks against the `ansi` dialect and its default rules, so a query in the house style fails on rules the project never chose (sqlfluff 4.5).
-A query the README documents and this test has not run is the one a schema change breaks unseen, so a block in another fence language — `duckdb`, a bare fence — is a block the test misses: fence every query as `sql`.
+Fence every query as `sql`: a block in another fence language — `duckdb`, a bare fence — is one the test misses.
