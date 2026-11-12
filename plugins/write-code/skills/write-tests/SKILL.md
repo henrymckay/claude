@@ -110,7 +110,7 @@ Use the client's own in-process transport with a response recorded once from the
 **Record the response with a script kept beside the data**, run against the real source with its credential from the environment and redacting the credential before saving, so the fixture can be refreshed when the source changes shape rather than hand-edited into something the source never sent.
 
 **Test a store against the real file format on a temporary path**, with a round-trip property over generated records; the core gets an in-memory fake of the same port (see `structure-python`).
-A dashboard's test checks that its layout renders from a given frame; a browser test waits until a screen has a bug no render check would catch.
+A dashboard's test checks that each screen renders from a given store — in process where the framework has a test server, through the API's test client where a built front end has none — plus one browser smoke test per screen that it opens, shows its data and raises no error, tagged slow; anything further in a browser waits until a screen has a bug those miss.
 
 ## Coverage and speed
 
