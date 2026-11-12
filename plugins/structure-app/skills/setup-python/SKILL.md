@@ -5,8 +5,8 @@ description: >-
   pyproject.toml with the uv_build backend, dependency and environment
   management with uv, a committed lock file upgraded on a schedule, the floor
   of Python 3.15, the house-pick libraries for common tasks (typer, httpx with
-  tenacity and pyrate-limiter, polars, shiny with plotly, pydantic-settings,
-  rich logging), standalone scripts, pre-commit hooks run through uv, releases
+  tenacity and pyrate-limiter, polars, a web front end or dash for a
+  dashboard, pydantic-settings, rich logging), standalone scripts, pre-commit hooks run through uv, releases
   with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
   strict pytest flags and an untyped dependency kept out of strict's way, plus
   sqlfluff's hook once the project holds SQL. Use
@@ -42,6 +42,7 @@ Standardise on these five tools; set them up once and defer to them everywhere:
 - **`pytest`** — tests in `tests/`.
 
 `sqlfluff` joins them for SQL once a project holds a `.sql` file (Pre-commit hooks).
+A web front end brings its own under `web/`: `npm` from the development dependency `nodejs-wheel`, run as `uv run npm --prefix web …` so no system Node is needed, TypeScript's checker in its build, `oxlint` as its linter and `vitest` for its tests (`write-entry-points`).
 Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job deployed to a container platform such as Cloud Run (`deploy-project`), from the `ghcr.io/astral-sh/uv` image, since a machine you own and an Actions runner both install from `uv.lock`; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
 
 ## Configure the project
@@ -159,14 +160,14 @@ For these common tasks the house pick is the default, over the standard-library 
 No optional-extras split (`mypackage[dashboard]`): one install carries every driver, since a split means a second resolution to test and a user who installed the wrong one.
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) over stdlib `argparse`; `cyclopts` is the alternative when `typer`'s decorator model fights a surface built from plain functions, and `argparse` only for a zero-dependency one-or-two-flag script.
-- **Dashboard / web UI** → `shiny` (Shiny for Python) for its reactive model and clean UI/server split, over `streamlit`'s whole-script rerun.
+- **Dashboard / web UI** → a built web front end (Vite, React, TypeScript, Tailwind with shadcn/ui) served by the `fastapi` API, with Node as the development dependency `nodejs-wheel`; `dash` with `dash-mantine-components` and `dash-ag-grid` where the code must stay Python, and `shiny` for an existing Shiny app; never `streamlit`, which reruns the whole script on every interaction (`write-entry-points`, Dashboard, has the cases and the trial behind them).
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s `references/http.md` has the mechanics.
 A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered.
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
-- **Plotting** → `plotly`, rendered in `shiny` through `shinywidgets`; `matplotlib` only for a static image a report embeds.
+- **Plotting** → in a web front end, ECharts, and Lightweight Charts for candles; in Python, `plotly` (in `dash` natively, in `shiny` through `shinywidgets`), and `matplotlib` only for a static image a report or a message embeds.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script; see `run-unattended`); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Spreadsheets** → `polars.read_excel`, with `fastexcel` (the `calamine` backend) as the reader engine.
 `polars` names the function but ships no engine, so a project that declares none fails at the first call rather than at install.
