@@ -65,10 +65,9 @@ A skill that grew while its neighbours held steady is where to look first; a top
 
 ## Check each skill
 
-- **Description against body, both ways.** List what the description promises and what the body covers; drop promises the body doesn't keep and add what it grew to cover.
-- **Overfitting.** Find names, data and edge cases from one project — its domain terms, a single incident turned into a rule — and restate them in a domain any reader knows, or cut them.
-- **The default test** (see `write-skills`): for each rule, ask whether Claude would do it unprompted, and cut it if so.
-Word counts miss this bloat; it reads as reasonable advice.
+- **Description against body, both ways**, and under about 250 words (`write-skills`, Write the description).
+- **Overfitting**: names, data and edge cases from one project, restated in a domain any reader knows or cut (`write-skills`, Keep examples general).
+- **The default test**: each rule Claude would follow unprompted is cut (`write-skills`, Cut what Claude does unprompted); word counts miss this bloat.
 
 ## Check across skills
 
