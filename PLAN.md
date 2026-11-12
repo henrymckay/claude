@@ -31,6 +31,8 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 - **sweep** — one `review-plugin` run over the repo: the open skill feedback first, then every drift check, landed as one pull request.
 - **trigger suite** — a plugin's `evals/` cases, one casual prompt per skill, run with `claude plugin eval` to show each description still fires.
 - **data class** — public, licensed, private or personal, recorded for each input and output of a project (`secure-project`).
+- **house design system** — the one look every project's surfaces share, defined as tokens independent of technology (`design-interface`).
+- **evaluator** — a fresh-context subagent in `build-project`'s gate that runs the surface and scores it against written criteria.
 
 ### Requirements
 
@@ -124,7 +126,7 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/manage-
 | Plugin | Skills |
 |---|---|
 | `maintain-plugin` | `review-plugin`, `write-skills`, the feedback rule and `Stop` hook |
-| `manage-project` | `plan-project`, `build-project`, `review-project`, `choose-model`, `make-decisions`, `secure-project`, `use-git`, `write-markdown` |
+| `manage-project` | `plan-project`, `build-project`, `review-project`, `choose-model`, `design-interface`, `make-decisions`, `secure-project`, `use-git`, `write-markdown` |
 | `write-code` | `be-functional`, `be-oop`, `write-python`, `write-sql`, `write-tests`, `use-polars` |
 | `structure-app` | `setup-python`, `structure-python`, `write-entry-points` |
 | `run-project` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
@@ -164,7 +166,7 @@ Numbers are stable; the groups are for reading.
 - **D41 A release is a tag `v<major>.<minor>` on `main`, cut after a sweep is merged and its suites pass,** over installing from the tip — an install pins a tag, so a sweep cannot change behaviour on another machine mid-week; cost: one tag per sweep, cut by the user; overrides `use-git`, Release (a tag per milestone).
 - **D43 The MIT licence** over Apache 2.0 or none — without one nobody else may use the plugins, and MIT is the one an organisation approves most readily; cost: anyone may reuse the plugins without giving back.
 - **D44 Nothing in the repo distinguishes one of the user's machines or settings from another** over naming machines — the plugins are for anyone; a constraint is named for what it is (a tracker that must stay private, a toolchain other than `uv`, a marketplace that is not allowed); cost: a constraint is described, not located.
-- **D54 Word budgets for the top-level files** *(proposed)* — `CLAUDE.md` 900 words, each context file 325 (`manage-project`'s 410), the README 800; `PLAN.md` has none, but its decisions keep the shape decision, alternative, cost, source — over no budget, under which `CLAUDE.md` grew ninefold one sentence at a time (issue 69); cost: an addition must say what it removed, and a file near its budget is rewritten whole rather than patched (`review-plugin`).
+- **D54 Word budgets for the top-level files** *(proposed)* — `CLAUDE.md` 900 words, each context file 325 (`manage-project`'s 425, raised from 410 for its ninth skill's line), the README 800; `PLAN.md` has none, but its decisions keep the shape decision, alternative, cost, source — over no budget, under which `CLAUDE.md` grew ninefold one sentence at a time (issue 69); cost: an addition must say what it removed, and a file near its budget is rewritten whole rather than patched (`review-plugin`).
 
 **How a project runs**
 
@@ -206,7 +208,7 @@ The skill named holds the pick, its alternative, its reason and its cost.
 - **D17 One record type**, the frozen, slotted, keyword-only dataclass — `write-python`.
 - **D18 `uv_build`** over `hatchling` — `setup-python`.
 - **D19 pyright `strict`** — `setup-python`.
-- **D20 House picks for datetime, money, storage, config, HTTP, logging, plotting and test doubles**, each named with its alternative in the skill that owns it: `write-python`, `store-data`, `structure-python`, `setup-python`, `write-tests`. The dashboard pick (Shiny with Plotly, `write-entry-points` and `deploy-project`) is under review (Q11).
+- **D20 House picks for datetime, money, storage, config, HTTP, logging, plotting and test doubles**, each named with its alternative in the skill that owns it: `write-python`, `store-data`, `structure-python`, `setup-python`, `write-tests`. The dashboard pick moved to D56.
 - **D21 `store-data` and `run-unattended` exist** because a gap probe left 72 decisions open and they absorb most.
 - **D22 MotherDuck's token variable is lower case**, `motherduck_token` — `store-data`.
 - **D53 A project that needs MotherDuck pins the DuckDB client MotherDuck accepts and runs on Python 3.14** over the house floor of 3.15 — MotherDuck accepts DuckDB 1.4.1 to 1.5.6, a 2.0 client's extension refuses to load, and 1.5.6 has no 3.15 wheel; cost: one project off the floor until MotherDuck supports DuckDB 2.0; overrides `setup-python`'s floor for that project — `store-data`.
@@ -218,6 +220,15 @@ The skill named holds the pick, its alternative, its reason and its cost.
 - **D49 A bounded catch-up window**, three days by default and set per source, over no automatic catch-up — `run-unattended`; a wider gap is reported and left for an explicit backfill.
 - **D50 `sqlfluff` for SQL from a project's first `.sql` file** over `sqruff` (17 times faster on 200 files but pre-1.0) and `sqlfmt` (packs columns onto one line) — `write-sql` names it, `setup-python` wires the hook.
 - **D51 Hive-partitioned Parquet stays the default; DuckLake is the table format where every reader goes through DuckDB, Delta Lake where Polars or another engine must write** — one writer's nightly output needs nothing a table format adds, and every format leaves files that read wrong without it until cleanup (DuckDB 2.0.0, DuckLake 1.1, deltalake 1.6.6, Polars 2.1.0); no format is ruled out for lacking a Polars reader, since DuckDB hands a frame over with `.pl()`; DuckLake with a MotherDuck catalog waits on D53 (Q9) — `store-data`, Pick a table format.
+
+**Design and ambition** *(proposed, 2026-11-12, by the coordinating session on the owner's delegation; issues 70 and 72)*
+
+- **D55 One house design system, defined once and independent of technology, in a `design-interface` skill in `manage-project`** — colour roles for light and dark, the chart palette (`dataviz`'s reference palette), type, spacing, radii, elevation, layout, number and date formats, four states and the defaults to avoid, mapped onto Tailwind with shadcn/ui, ECharts, Lightweight Charts, Plotly, Dash Mantine and Shiny in two references; the look is the trial's FastAPI and React prototype (neutral, dense, light and dark) — over installing Anthropic's `frontend-design` alongside, whose method (a design plan before code, review against generated defaults, screenshot critique, copy rules) it adopts but whose aim, a distinct identity per brief, would give every project a different look; and over a sixth plugin or `structure-app`, since the tokens are not Python and `build-project`'s evaluator needs the criteria in the same plugin; cost: about 4,500 words of skill and references, and a line in `manage-project`'s context file. Source: six prototypes of one dashboard (2026-11-12), github.com/anthropics/skills `frontend-design`.
+- **D56 A dashboard is a built web front end behind one data module** (Vite, React, TypeScript, Tailwind with shadcn/ui; Lightweight Charts for candles, ECharts otherwise), served by the FastAPI API over Polars where Python is involved or as a static build reading small Parquet with `hyparquet` where not; **Dash with Mantine** where the code must stay Python; **Shiny** for an existing Shiny app or Python on each interaction — over Shiny as the default (D20), which looked primitive unstyled and was slowest restyled (2.2 s and 6.2 MB to ready, against 0.45 s and 340 KB); cost: Node as a development dependency (`nodejs-wheel`) and a second language in the repo — `write-entry-points`, `setup-python`, `deploy-project`. Answers Q11.
+- **D57 Every shipped surface aims at the best in class** — `plan-project` writes what a best-in-class version of each surface would be and scopes towards it, a default the user can lower; `design-interface` gives the bar per kind of surface — over building to the brief's letter; the ambition is in finish and completeness, never extra features or risk, and loosens no security, outward-action or build-only-what-is-needed rule; cost: longer plans and gates.
+- **D58 An evaluator pass in `build-project`'s gate** — a fresh Sonnet subagent runs the surface, screenshots it at two widths in both schemes or runs a realistic session, scores each criterion pass or fail with evidence; at most three rounds with each round's cost reported; a build ends with something the user can open — over the builder judging its own screens; cost: up to three evaluator and fix rounds per milestone that changes a surface.
+- **D59 The ladder holds when a prompt calls the work small** (`choose-model`, `plan-project`) — the size changes the stage's length, not its model; only a fix's short plan in the conversation stays in the session — over letting a time limit move a plan to Sonnet (issue 74); cost: an Opus hand-off for a tiny plan.
+- **D60 The install line looks up the newest release tag** with `git ls-remote` — over naming the tag, which went stale at every release; cost: a longer command that needs `git`.
 
 **Superseded**
 
@@ -238,7 +249,7 @@ Each line names the run that shows it, then its status.
 - **R8** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run. **Met** (issue 20; pull requests 19, 55, 63, 67).
 - **R9** — `claude plugin validate` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine. **Met on this machine**: each plugin alone, headless (`--setting-sources project,local`, one `--plugin-dir`), named each missing skill with its plugin and recorded its calls as proposed, five of five in each run of the current wording; with all five loaded, none reported a plugin missing, though most runs add a line saying none was. The second machine waits on Q7.
 - **R10** — a plan shows its decisions with sources and its ideas; a review can challenge a house pick. **Met once** (the first trial build's plan).
-- **R11** — a sweep with a fresh cold read leaves no defect open, and each always-on file and the README are within budget (D54). **Partly**: sweeps 1 to 3 (pull requests 55, 63, 67) settled issues 35 to 65.
+- **R11** — a sweep with a fresh cold read leaves no defect open, and each always-on file and the README are within budget (D54). **Partly**: sweeps 1 to 3 (pull requests 55, 63, 67) settled issues 35 to 65; sweep 5 settled 70, 72 and 74 with three trial builds of one dashboard behind the new evaluator.
 - **R12** — `review-project`'s secret check; no project data in any issue. **Met** each sweep.
 - **R13** — a trial build over private data, run autonomously, plans every input and output private, keeps them off public hosts and GitHub, holds a read-only credential and prepares no order. **Partly**: a headless plan did all four; no build yet (M22, M20).
 
@@ -248,7 +259,7 @@ M1 to M18 are done (2026-11-08 to 12; git history has them): M4 and M18 were the
 The first trial build's project folder is kept, unpushed, until every trial build is done.
 Sweeps are not milestones.
 
-- [ ] **M21 Third trial build, public and deployed** — R1, R2, R6; done when a project over public market data runs from one prompt with a scheduled pipeline, a store and a hosted dashboard, each deployed publicly; each outward step waits on the user's go-ahead; the dashboard technology follows Q11.
+- [ ] **M21 Third trial build, public and deployed** — R1, R2, R6; done when a project over public market data runs from one prompt with a scheduled pipeline, a store and a hosted dashboard, each deployed publicly; each outward step waits on the user's go-ahead; the dashboard is D56's default, a static build on GitHub Pages, gated by D58's evaluator.
 - [ ] **M22 Fourth trial build, private path** — R13, R6; done when a project over private data runs on the owner's machine and is reached over Tailscale, with nothing on a public host; after M21.
 - [ ] **M20 Fifth trial build, over a real account** — R13, R2; done when a project over the user's own account data runs from one prompt in autonomous mode, holds only a read-only credential, and its review finds nothing `secure-project` forbids; after M22.
 - [ ] **M19 Grow the scope as earned** — R1; standing: a Not yet item is built when a trial build or a project earns it.
@@ -264,7 +275,8 @@ Sweeps are not milestones.
 
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — recommended: none, since only the user can find out; not known yet; blocks R7's and R9's second-machine checks.
 - **Q9** Once MotherDuck accepts the current DuckDB client, should a project on MotherDuck replace its two stores (the Parquet tree and the MotherDuck tables beside it) with one DuckLake whose catalog MotherDuck holds and whose files sit in the project's own bucket? — recommended: yes, as a trial in the next project that needs MotherDuck, the tree staying the default elsewhere; costs a bucket and its credential on every writer, and the files read true only through the catalog (D51, D53).
-- **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — the user asked Claude to choose afresh; recommended: wait for the research running now; until it reports, Shiny stays the pick in `write-entry-points` and `deploy-project`; blocks M21's dashboard.
+- **Q12** Should a build milestone that carries a visible surface move to Opus? — recommended: no, keep D27's Sonnet and let D58's evaluator carry the polish, then compare again on a larger brief; in one comparison (2026-11-12) the same two-screen dashboard plan, built headless with the new skills, cost $5.45 in 46 minutes with a Sonnet builder and $10.75 in 47 with an Opus one, each passing all ten criteria in the third evaluator round; the Opus screens were somewhat more finished (a ranked table with inline bars, icons, page titles, status glyphs), and it skipped the code review and added an attribution footer (issue 77); a Dash build of the same plan cost $5.27 and passed nine of ten, failing only phone touch targets.
+- **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — recommended: D56, from six prototypes of one dashboard built and measured on 2026-11-12; the skills already follow it, so a no reverts `write-entry-points`, `setup-python` and `deploy-project`; blocks M21's dashboard.
 
 ### Ideas
 
