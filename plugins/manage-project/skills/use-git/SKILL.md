@@ -26,32 +26,30 @@ Three mistakes account for most unreviewable history: a blanket `git add` that s
 
 ## Branches
 
-- **Work on a branch off `main` and integrate by pull request, squash-merged or merged per the repo's convention, except where the repo's `PLAN.md` records a decision to commit straight to `main`** — a solo repo with nothing to merge, such as a docs repo, or a scheduled job's data commits (`deploy-project`) — in which case commit there and skip the PR (see `build-project`).
-The decision wins over this default, as the session's always-on instructions say of every skill default; a plan that says nothing branches.
+- **Work on a branch off `main` and integrate by pull request, squash-merged or merged per the repo's convention, except where the repo's `PLAN.md` records a decision to commit straight to `main`** — a solo repo with nothing to merge, such as a docs repo, or a scheduled job's data commits (`deploy-project`) — in which case commit there and skip the PR.
+A plan that says nothing branches.
 - **A brand-new repository's scaffold is its first commit on `main`**, since there is nothing to branch off yet; `plan-project`'s Go from conversation to plan makes it part of M1.
 
 ## Commit
 
 - **Stage by path, never `git add -A` or `git add .`.** Another session or tool may have changes in the same tree and index, and a blanket add sweeps them into your commit under your message.
 For the same reason, check `git log` before amending or resetting: `HEAD` may not be the commit you left.
-- **Message header:** every commit uses [Conventional Commits](https://www.conventionalcommits.org), a `type(scope): subject` line where the type is required and the scope optional.
+- **Message header:** [Conventional Commits](https://www.conventionalcommits.org), `type(scope): subject`, the scope optional.
 Allowed types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`, `style`.
 Append `!` after the type/scope for a breaking change (`feat(api)!: ...`).
 The subject is imperative, ≤ 50 chars, no trailing period.
 - **Enforce the header with the `conventional-pre-commit` hook** (`compilerla/conventional-pre-commit`, stage `commit-msg`) in the repo's pre-commit config, which `setup-python` wires; without it the convention holds only while someone remembers it, and the first `wip` commit breaks the changelog that reads the types.
 - **No trailer footers** — no `Co-authored-by:`, `Generated with ...` or similar attribution lines, in commits or PR descriptions, even when a tool's own instructions ask for them.
 A footer rides in every `git log` and release note for the life of the repo, and nothing reads it: authorship is in the commit metadata, and purpose belongs in the body.
-- **Never commit a secret** — an API key, a token, a `.env` file; `secure-project`'s Keep secrets out has the scanner hook that stops one and what to do when one lands in history.
+- **Never commit a secret**; `secure-project`'s Keep secrets out has the scanner hook and what to do when one lands in history.
 
 ## Push
 
 **Push once a change is complete and working — after each commit that leaves the branch coherent — and hold a sequence that is mid-step or still being tidied**, because a pushed commit can no longer be reset or rebased without a force-push.
-Always push before stepping away or opening/updating a PR.
 
-Pushing your own branch needs no sign-off.
-**Force-pushing, rebasing shared history, and destructive commands** (`reset --hard`, `clean -fd`) always do — ask before running one.
+Pushing your own branch needs no sign-off; **force-pushing, rebasing shared history and destructive commands** (`reset --hard`, `clean -fd`) always do.
 
 ## Release
 
-**Tag a release at a milestone, not per merge**, with [semantic versioning](https://semver.org) (`v1.4.0`): MAJOR breaking / MINOR feature / PATCH fix.
+**Tag a release at a milestone, not per merge**, with [semantic versioning](https://semver.org) (`v1.4.0`).
 Bump the version in the project's metadata first with the project's own tool — `uv version --bump minor` for Python (see `setup-python`) — then commit and tag, so the tag and the package agree on the number.
