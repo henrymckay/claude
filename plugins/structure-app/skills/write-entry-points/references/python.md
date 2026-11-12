@@ -321,7 +321,7 @@ src/mypackage/
 Each answer is a JSON array of rows, as the API's schemas define, with dates as ISO strings the formatting module turns into `12 Nov 2026`.
 - **Poll the manifest, not the data**: one hook asks `GET /api/runs/latest` every 60 seconds and bumps a counter only when its `ended` changes, and every data hook takes that counter as a dependency; the age chip re-renders on the same tick.
 
-**The static version swaps `lib/data.ts` for one that reads Parquet**, written by an `export` command into `web/public/data/`, small and pre-aggregated per screen, with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects`.
+**The static version is `lib/data.ts` reading Parquet instead**, chosen at build time by `VITE_DATA=files` through `import.meta.env`: files an `export` command writes into `web/public/data/`, small and pre-aggregated per screen, read with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects` from `` `${import.meta.env.BASE_URL}data/…` ``, so the page works under a project site's path.
 Keep each file to a few megabytes: Cloudflare caps a file at 25 MiB and ignores Range requests, so a reader that fetches by range downloads the whole file there (`deploy-project`).
 The manifest's last run ships as a small JSON file beside them, polled the same way.
 
