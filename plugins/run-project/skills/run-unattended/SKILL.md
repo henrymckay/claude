@@ -65,7 +65,7 @@ The second holder gets `BlockingIOError`; catch it in the driver, where the exit
 Each filled day's manifest row starts after its day, so `status` lists it as late and the outage stays on record; yesterday goes first, so a catch-up that meets the day's request budget (`structure-python`, Write an adapter) costs only late days, which the next night retries.
 - **Leave a gap wider than the window for an explicit backfill**: the nightly fetches only the window and logs the days it left, `status` reports them, and `fetch --from --to` fills them when someone asks, so a month offline never becomes a bulk fetch on someone else's rate limit that nobody chose.
 - **Make backfill the same code path as the nightly**, so a day fetched late lands in the same partition as a day fetched on time: called once per day where the source answers one day per request, and once per range where its endpoint serves an item's whole range in one.
-A per-day loop over a ranged endpoint multiplies the requests by the days asked for, against someone else's rate limit, so there the fetch port takes a first and a last day (`structure-python`, Code), the store splits the answer into day partitions, the manifest row carries both days (`store-data`), and the nightly, `--days-back` and a backfill are one call with different bounds.
+A per-day loop over a ranged endpoint multiplies the requests by the days asked for, so there the fetch port takes a first and a last day (`structure-python`, Code), the store splits the answer into day partitions, the manifest row carries both days (`store-data`), and the nightly, `--days-back` and a backfill are one call with different bounds.
 
 ## Report the outcome
 
@@ -77,20 +77,18 @@ An item that dies for good would otherwise turn every night red until someone ed
 Rows rejected by validation alone leave a source `stored`, since the quarantine already counts them.
 - **A partial fetch stores what arrived**, lists the failed sources and items on standard error and exits 1.
 Discarding the good sources because one failed turns one outage into a full missed night.
-- **The run manifest is the record**: one row per source per run, as `store-data` lays it out.
-A log line is not a record — nothing queries it.
 - **`status` reads the manifest and exits 1 when any source is stale or has a gap the catch-up left**, printing which and since when, and lists the days filled late; it is the health check, so anything that can run a command can watch the job.
 Define stale per source from how often it publishes, with a default of two missed nights.
 - **No notification until the plan requires one or the first outage goes unnoticed**, and say so in the README: until then the exit code, the manifest and a dashboard that shows its own staleness are the signals, and an alert costs a credential on the machine.
-On Actions the signal with no credential and no code is GitHub's own mail for a failed run, which `nightly` exits 1 into, as does `status` once it is scheduled: it goes to whoever last edited the workflow's cron, only if their notification settings send Actions mail, on every failed run rather than a change of state, and not at all once the schedule is disabled, so it counts as the signal, not as the alert, and the plan names it under Decisions when it is relied on.
-When one is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit a few hours after the nightly: a night that never ran sends nothing of its own, so only a separate run can notice it.
+On Actions, GitHub's own mail for a failed run, which `nightly` and a scheduled `status` exit 1 into, is a signal with no credential and no code, but not an alert: it goes to whoever last edited the workflow's cron, only if their settings send Actions mail, on every failed run rather than a change of state, and never once the schedule is disabled; the plan names it under Decisions when it is relied on.
+When an alert is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit a few hours after the nightly: a night that never ran sends nothing of its own, so only a separate run can notice it.
 
 ## Log
 
-- **Under a scheduler with a disk, the unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job keeps its own log, rotated as `write-entry-points`' Python reference, Logging sets it; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
+- **Under a scheduler with a disk, the unit passes `--log-file <data_dir>/logs/nightly.log --log-level info`**, so the job keeps its own log; the default level is for a person at a terminal, and under a scheduler the per-run INFO lines are the only record of what ran.
 - **On Actions, the step passes `--log-level info` alone**: the runner's disk is gone when the job ends, so the log goes to standard error, which the run's own log keeps.
-- **Either way the format is chosen by `write-entry-points`' Python reference, Logging** — Rich only when standard error is a terminal, plain timestamped lines otherwise, JSON lines only behind a collector — so neither a file nor a capture fills with colour codes.
-- **The unit captures standard output and standard error** to `<data_dir>/logs/<scheduler>.log` or the journal as well, for the summary row and for anything that escapes before logging is configured — a traceback at import, a missing environment variable; launchd never rotates that file, so the job's own log stays the one to read.
+- **The rotation and the format are `write-entry-points`' Python reference, Logging**, which keeps colour codes out of a file or a capture.
+- **The unit also captures standard output and standard error** to `<data_dir>/logs/<scheduler>.log` or the journal, for the summary row and anything that escapes before logging is configured — a traceback at import, a missing environment variable; launchd never rotates that file, so the job's own log stays the one to read.
 
 ## Schedule it
 
@@ -109,5 +107,5 @@ The catch-up window fills what each misses, and `status` shows it.
 
 ## Deploy
 
-Clone the repository and `uv sync --frozen --no-dev`; the scheduler's `uv run --no-dev` then finds the environment as synced and installs nothing, with no Docker image on a machine you own (`setup-python`).
+Clone the repository and `uv sync --frozen --no-dev`, with no Docker image on a machine you own (`setup-python`); the scheduler's `uv run --no-dev` then installs nothing.
 On Actions the equivalent is `deploy-project`'s workflow, whose `uv sync --locked` fails the run when the lockfile is behind `pyproject.toml` instead of resolving silently.
