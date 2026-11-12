@@ -139,10 +139,9 @@ The cost is a second toolchain, Node, which a Python project carries as a develo
 
 **Re-read the store when the run manifest changes**, not on a clock of its own: the dashboard asks for the manifest's last run on a short poll and fetches its data again only when that changes.
 **Show the last run's age, re-judged on a slow clock** — a minute to an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
-**Give the browser a readiness signal**: the page sets `data-ready` on the root element once its first screen has drawn its data, so a smoke test and the build's evaluator wait for data rather than a guessed delay.
+**Give the browser two signals**: each screen's navigation control carries `data-view="<screen>"`, and the root element's `data-ready` is `1` once the screen on show has drawn its data and drops to `0` while another loads, so a smoke test and the build's evaluator wait for data rather than a guessed delay, and never shoot a skeleton.
 
-**Test it at three levels**: the operations and the data the API returns through the framework's in-process client, the front end's own pure functions (formatting, shaping a series) with its test runner, and one browser smoke test per screen — it opens, reaches `data-ready`, logs no console error — tagged slow (`write-tests`).
-The Python reference has each build-out.
+**Test it as `write-tests` tests a dashboard**, each screen through the framework's in-process client and one browser smoke test per screen that waits for `data-ready`; the Python reference has each build-out.
 
 ## Composition root
 

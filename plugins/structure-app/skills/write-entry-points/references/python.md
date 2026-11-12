@@ -275,10 +275,10 @@ def explain(
 
 def run() -> None:
     """Launch the API, and the web front end it serves, on port 8000."""
-    uvicorn.run(app, port=8000)
+    uvicorn.run(starlette_.loopback_only(app, port=8000), port=8000)
 ```
 
-`uvicorn.run` binds `127.0.0.1` by default, so wrap `app` in the Loopback guard below; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
+`uvicorn.run` binds `127.0.0.1` by default, and `run()` wraps `app` in the Loopback guard below there and nowhere else, so a test client, `dependency_overrides` and the development server all see the bare app; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
 A test swaps the adapter with `app.dependency_overrides[provide.store] = lambda: fake_store` — no patching.
 
 ## Dashboard
@@ -311,7 +311,7 @@ src/mypackage/
   data/web/           the build, git-ignored, shipped in the wheel
 ```
 
-- **Node is a development dependency**: `uv add --dev nodejs-wheel` puts `node`, `npm` and `npx` in `.venv/bin`, so `uv run npm --prefix web ci` and `uv run npm --prefix web run build` work on a machine with no Node installed, at the version `uv.lock` pins (`nodejs-wheel` 24.22).
+- **Node comes from `setup-python`'s development dependency `nodejs-wheel`**, so `uv run npm --prefix web ci` and `uv run npm --prefix web run build` need no system Node.
 - **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init` — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
 - **Build into the package** with `build.outDir` set to `../src/mypackage/data/web` and `emptyOutDir: true`, so `uv_build` ships the built files in the wheel and the API finds them with `importlib.resources.files("mypackage.data") / "web"`.
 - **Mount the files after the routes**: `app.mount("/", fastapi.staticfiles.StaticFiles(directory=web, html=True), name="web")` as the last line of `driver.py`, since a mount at `/` registered first answers every `/api` request with a 404.
@@ -322,7 +322,7 @@ Each answer is a JSON array of rows, as the API's schemas define, with dates as 
 - **Poll the manifest, not the data**: one hook asks `GET /api/runs/latest` every 60 seconds and bumps a counter only when its `ended` changes, and every data hook takes that counter as a dependency; the age chip re-renders on the same tick.
 
 **The static version is `lib/data.ts` reading Parquet instead**, chosen at build time by `VITE_DATA=files` through `import.meta.env`: files an `export` command writes into `web/public/data/`, small and pre-aggregated per screen, read with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects` from `` `${import.meta.env.BASE_URL}data/…` ``, so the page works under a project site's path.
-Keep each file to a few megabytes: Cloudflare caps a file at 25 MiB and ignores Range requests, so a reader that fetches by range downloads the whole file there (`deploy-project`).
+Keep each file to a few megabytes, within every static host's limits (`deploy-project`, Serve the dashboard).
 The manifest's last run ships as a small JSON file beside them, polled the same way.
 
 **Test it** with `fastapi.testclient.TestClient(app)` and the store overridden (API above) for every route, `vitest` for `lib/format.ts` and any shaping in `lib/data.ts`, and a Playwright smoke test per screen, marked `slow`, against the built app on a free port:
@@ -386,6 +386,7 @@ app.layout = layout.root
 - **A callback calls `operate.*` over `provide.store()` and returns plain data**: a figure from `figure.py`, rows for the grid as `frame.to_dicts()`, text for a tile; a callback that edits one property of a large figure returns a `dash.Patch()`.
 - **Catch the app's own error in the callback and return an error note** to the outputs it fills, since an uncaught one leaves them as they were and tells the viewer nothing (`write-python`, the error model).
 - **Refresh by the manifest's stamp**: a `dcc.Interval` of 60 seconds drives a callback that reads the last run's `ended` into a `dcc.Store`, returning `dash.no_update` when it has not changed, and every data callback takes that store as an input, so data is re-read once a night rather than once a minute; the age chip reads the same tick.
+- **Signal readiness from the browser**: a clientside callback on the last figure of a screen sets `document.documentElement.dataset.ready = "1"` inside a `requestAnimationFrame`, since the figure draws after its callback returns; the navigation's `dmc.TabsTab` carries `**{"data-view": name}`, which `dcc.Link` refuses.
 - **Re-theme figures on `dmc.ColorSchemeToggle`'s `computedColorScheme`** with a `dash.Patch()` that sets `layout.template` (`design-interface`).
 - **Test a callback by calling it**: `@dash.callback` returns the function it decorates, so a test calls it with the inputs and a fake store and asserts on what it returns; the browser smoke test is the web front end's, pointed at `run()`'s port.
 
