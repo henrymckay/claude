@@ -41,7 +41,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 
 ## 🛠️ Install
 
-Install any subset from the marketplace, pinned to a release tag.
+Install any subset from the marketplace, pinned to the newest release tag.
 
 ```bash
 claude plugin marketplace add henrymckay/claude#v0.1
@@ -51,7 +51,7 @@ claude plugin install write-code@henrymckay
 
 Each plugin prints its skill list at session start, so no `CLAUDE.md` is needed.
 
-Where plugins cannot be installed, or where you edit the skills, symlink them instead.
+Where plugins cannot be installed, symlink them instead.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
@@ -60,7 +60,7 @@ ln -s "$PWD/claude/CLAUDE.md" ~/.claude/CLAUDE.md
 ```
 
 > [!WARNING]
-> Use one route per machine.
+> Never link `skills/` on a machine with the plugins installed.
 > Both together load every skill twice.
 
 With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/hooks/hooks.json) into `~/.claude/settings.json`.
