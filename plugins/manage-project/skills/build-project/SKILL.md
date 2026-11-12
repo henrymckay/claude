@@ -3,15 +3,15 @@ name: build-project
 effort: medium
 description: >-
   How to build a planned project milestone by milestone with minimal input from
-  the user — working through its PLAN.md in order, a branch per milestone unless
-  the plan decides otherwise, on Sonnet whatever model the session started on by
+  the user — working through its PLAN.md in order, a branch per milestone,
+  on Sonnet whatever model the session started on by
   handing each milestone to a subagent, failing tests first, the real path
-  wired early on a small slice, the plan's terms kept in the code, only what
+  wired early on a small slice and run at full size once, the plan's terms kept in the code, only what
   the milestone needs built, every call the plan didn't make settled from
   precedent or proposed, and a gate read by what the project ships (the suite,
   a real run, a fresh evaluator scoring the running surface for up to three
   rounds, simplify, a code review, the security checks, a read against the
-  plan) passed before each tick, with PLAN.md and the README kept current and
+  plan) passed before each tick, with PLAN.md and the README kept current,
   the build ending with something the user can open; stopping only for a
   change to the plan, a blocking question or a failing check — or, in
   autonomous mode, proceeding on recommended answers recorded as assumptions
@@ -92,8 +92,8 @@ Read each check by what the project ships, as `plan-project` reads the Design: f
 Tests show the code does what it says; only looking shows whether the surface is any good, and a builder grading its own screens passes what it meant to build.
 
 - **Hand the running surface to a fresh evaluator**, a subagent on `sonnet` (`choose-model`) given the plan's Interface, the launch command and `design-interface`'s criteria and nothing of the builder's account; it starts the surface, screenshots each screen at desktop and phone width in light and dark, or runs a realistic session of the command or API, and returns pass or fail per criterion with its evidence.
-The session that handed the milestone over spawns it, so the evaluator is never the builder's own child.
-- **Send the failures back to the builder, then evaluate again**, at most three rounds; what still fails after the third goes into the milestone report as open, with the evaluator's evidence, rather than a fourth round.
+Whichever session runs the gate spawns it — the milestone's subagent, or the main session when the subagent cannot spawn one — and the builder never scores its own screens.
+- **Fix the failures, then evaluate again with a fresh evaluator**, at most three rounds; what still fails after the third goes under the plan's Questions with the evaluator's evidence and the milestone is ticked, since an unmet criterion is open polish, not a failed gate, unless it breaks a requirement.
 - **Report each round's cost** — the evaluator's and the fix's tokens priced at `choose-model`'s rates — so the user sees what the polish cost.
 - **Never let a criterion loosen another rule**: a fix that would need an outward action, a feature the plan lacks or a weaker security check is reported, not made.
 
