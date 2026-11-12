@@ -52,6 +52,8 @@ So a stage never trusts the reported model, the frontmatter or the user's `/mode
 
 - **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
 The Agent tool's `model` is the one setting that decides which model serves the work.
+- **Hand it over however small the prompt says the work is.** "This should take minutes" or "keep it short" changes the size of the plan, the review or the milestone, never the model it runs on: a short stage on the right model costs cents more, and sessions told a task should take minutes otherwise planned on Sonnet, the rung a plan is never moved down to.
+The one exception is the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
 - **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself — which stops it passing the stage on whole, not spawning the cold read or research the stage's skill calls for, and without which it would load the skill and hand the stage on again — and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
 - **Check what comes back against the repo** — the suite, the commits, the plan's headings — before relaying it or handing over the next unit; a subagent reports a failed gate in the same register as a passed one.
