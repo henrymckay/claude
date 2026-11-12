@@ -167,8 +167,10 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 - **Wrong** — "What storage do you want? Which scheduler? How should errors be reported?", one message per section, each answered from nothing.
 - **Right** — a full draft with the house picks filled in, then one message: "A3 assumes Parquet; D2 picks launchd over cron because …; Q1 needs you — recommended: yes."
 
-**Plan on Opus at high effort, whatever the session started on and however small or urgent the prompt calls the project: hand steps 2 to 8 — the gathering, the research, the draft and its self-check — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
+**Plan on Opus at high effort, whatever the session started on: hand steps 2 to 8 — the gathering, the research, the draft and its self-check — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
 A session briefed as that subagent works directly; any other hands over (`choose-model`, Hold a stage on its model).
+**The hand-off is not a default to deviate from**: a prompt calling the project small, quick or urgent shortens the plan, never moves it off Opus, and no proposed decision skips it — only the user naming the model does (`choose-model`, Hold a stage on its model).
+A new project is never a small change, however tiny: it gets a `PLAN.md`, planned this way.
 
 1. **Start in plan mode**; its approval is the plan's sign-off.
    With nobody to approve it, see Plan with no user present.
