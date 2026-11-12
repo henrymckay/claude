@@ -9,7 +9,8 @@ description: >-
   dashboard, pydantic-settings, rich logging), standalone scripts, pre-commit hooks run through uv, releases
   with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
   strict pytest flags and an untyped dependency kept out of strict's way, plus
-  sqlfluff's hook once the project holds SQL. Use
+  sqlfluff's hook once the project holds SQL, and a web front end's Node
+  through nodejs-wheel. Use
   whenever scaffolding a new Python project, package, script, or tool; adding
   packaging to existing code; setting up dependencies, virtual environments,
   project config or hooks; cutting a release; or choosing a house-pick library
@@ -160,7 +161,7 @@ For these common tasks the house pick is the default, over the standard-library 
 No optional-extras split (`mypackage[dashboard]`): one install carries every driver, since a split means a second resolution to test and a user who installed the wrong one.
 
 - **CLI** → `typer` (type-hint-driven, generates `--help`, pairs with `rich`) over stdlib `argparse`; `cyclopts` is the alternative when `typer`'s decorator model fights a surface built from plain functions, and `argparse` only for a zero-dependency one-or-two-flag script.
-- **Dashboard / web UI** → a built web front end (Vite, React, TypeScript, Tailwind with shadcn/ui) served by the `fastapi` API, with Node as the development dependency `nodejs-wheel`; `dash` with `dash-mantine-components` and `dash-ag-grid` where the code must stay Python, and `shiny` for an existing Shiny app; never `streamlit`, which reruns the whole script on every interaction (`write-entry-points`, Dashboard, has the cases and the trial behind them).
+- **Dashboard / web UI** → a built web front end (Vite, React, TypeScript, Tailwind with shadcn/ui) served by the `fastapi` API, with Node as the development dependency `nodejs-wheel`; `dash` with `dash-mantine-components` and `dash-ag-grid` where the code must stay Python, and `shiny` for an existing Shiny app; `write-entry-points`' Dashboard has the cases, the trial behind them and what is ruled out.
 - **HTML tables** → `pandas.read_html`, converted at once with `polars.from_pandas`; it reads every table on a page in one call, and `extract_links="body"` keeps each cell's link as a `(text, href)` pair.
 - **HTTP** → sync `httpx.Client` over `requests`, with `tenacity` for retries and `pyrate-limiter` for a stated rate; `structure-python`'s `references/http.md` has the mechanics.
 A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wrong, and paces only the calls you remembered.
