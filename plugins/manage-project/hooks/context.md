@@ -8,7 +8,7 @@ Where the user or the project names another plugin's method as driving, such as 
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
 - **`design-interface`** before building or styling a screen, chart, page or any output a person reads.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
-- **`plan-project`** before building a new project or a new input, output or interface.
+- **`plan-project`** before building a new project, however small, or a new input, output or interface.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, or serves something.
 - **`use-git`** for any `git` operation (Conventional Commits; no `Co-authored-by` or "Generated with" footers).

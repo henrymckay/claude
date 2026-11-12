@@ -36,7 +36,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud.
 - **`design-interface`** before building or styling a screen, chart, page or any output a person reads.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
-- **`plan-project`** before building a new project or a new input, output or interface.
+- **`plan-project`** before building a new project, however small, or a new input, output or interface.
 - **`review-plugin`** when reviewing a Claude Code plugin or skills repo.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`run-unattended`** when a job runs on a schedule with nobody watching.
