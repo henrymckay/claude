@@ -107,7 +107,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 ### Interface
 
 ```bash
-claude plugin marketplace add henrymckay/claude#v0.2
+claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs --sort=-version:refname https://github.com/henrymckay/claude.git 'v*' | head -n 1 | cut -d/ -f3)"
 claude plugin install manage-project@henrymckay
 ```
 
