@@ -2,32 +2,34 @@
 name: write-entry-points
 description: >-
   How to build an application's entry points — the drivers that invoke it: a
-  command-line interface, an HTTP API, a GUI or dashboard, and the scheduled
-  command a scheduler calls. Each is a thin shell over the pure core and the
+  command-line interface, an HTTP API, a dashboard, and the scheduled command
+  a scheduler calls. Each is a thin shell over the pure core and the
   composition root that reads settings once and binds each secret into the
-  adapter it builds, designed as a public surface that composes with the tools
-  around it: output forms, input routes, exit codes, date ranges, error
-  statuses, a guarded loopback server, and an API and a dashboard that read the
-  store. Load it before adding or changing a CLI, API, dashboard or scheduled
-  command, even before reading the package. Use whenever adding or structuring
-  an entry point, designing a command's options or an API's surface, deciding
-  what goes to standard output and what to standard error, wiring dependency
-  injection at the boundary, reading settings and finding the .env under a
-  scheduler, sizing a fetch that needs warm-up history, testing a dashboard, or
-  naming a launch command — even if the user just says "add a CLI", "expose an
-  API", "build a dashboard", "run this on a schedule", or names typer, fastapi,
-  uvicorn, pydantic-settings, shiny or shinywidgets. Language-agnostic
-  principles here; Python build-outs in references/python.md. Layers on
-  structure-python's drive layer and be-functional; run-unattended owns what the
-  scheduled command does unwatched and its exit codes, store-data the data it
-  writes, and secure-project what a served surface must guard.
+  adapter it builds, designed as a public surface: output forms, input routes,
+  exit codes, date ranges, error statuses, a guarded loopback server, an API
+  and a dashboard that read the store, and the dashboard's technology — a web
+  front end behind one data module by default, Dash with Mantine when the code
+  must stay Python, Shiny for an existing Shiny app. Load it before adding or
+  changing a CLI, API, dashboard or scheduled command, even before reading
+  the package. Use whenever adding or structuring an entry point, designing a
+  command's options or an API's surface, choosing or structuring a dashboard,
+  deciding what goes to standard output and what to standard error, wiring
+  dependency injection at the boundary, reading settings under a scheduler,
+  sizing a fetch that needs warm-up history, or testing a dashboard — even if
+  the user just says "add a CLI", "expose an API", "build a dashboard", "run
+  this on a schedule", or names typer, fastapi, react, vite, dash or shiny.
+  Language-agnostic principles here; Python build-outs in
+  references/python.md. Layers on structure-python's drive layer and
+  be-functional; design-interface owns how a surface looks, run-unattended
+  the scheduled command unwatched, store-data the data it writes, and
+  secure-project what a served surface must guard.
 ---
 
 # Write entry points
 
 An **entry point** is a **driver**: a thin shell over the core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell); what a scheduled command does when nobody is watching is `run-unattended`'s, the data it writes is `store-data`'s, and what a served surface must guard is `secure-project`'s.
+It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell); how a surface looks is `design-interface`'s, what a scheduled command does when nobody is watching is `run-unattended`'s, the data it writes is `store-data`'s, and what a served surface must guard is `secure-project`'s.
 Three mistakes account for most of what goes wrong: logic that settles in the shell instead of the core, output shaped for a person while something is piping it, and a capability reachable only as a side effect of asking for something else.
 
 **Language-agnostic here.** The Python specifics live in `references/python.md`.
@@ -111,12 +113,36 @@ An API is the CLI's surface over HTTP, so the same options become query paramete
 
 - **Bound a range by date, never by offset.** `start` and `end` (inclusive, as the CLI's `--from`/`--to` are) give the same answer on every call; `offset=200` shifts as rows arrive, so a client paging through a live source skips or repeats rows and nothing tells it.
 - **An API and a dashboard read the store, never the source.** Each request calls an operation over the store's read port (`store-data`); a request that reached the rate-limited source would spend the quota a browser reload at a time, and show a different answer from the nightly's.
-- **A dashboard re-reads the store when the run manifest changes**, not on a clock of its own; **and shows the last run's age, re-judged on a slow clock** — an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
-The Python reference has the local and the hosted mechanics.
 - **One handler maps the app's errors to statuses** — an absent thing `404`, bounds out of range `422`, the rest `500` — so no route catches anything.
 - **No version prefix until a second client exists.** `/v1/` promises a `/v2/` nobody has asked for; add it when a breaking change meets a client you can't update.
 - **Bind to the loopback interface and skip authentication while the API is read-only on one machine**; the `Host` and `Origin` check, and the authentication that arrives once it binds beyond the machine or writes, are `secure-project`'s Guard what is served.
 - **Settings reach a handler through one cached provider**, read once per process, so a handler is a function of its request; the Python reference has the mechanics.
+
+## Dashboard
+
+A dashboard is a driver like the others: it reads the store through an operation and renders, and its look is `design-interface`'s.
+
+**Build it as a web front end behind one data module**, by default: Vite, React and TypeScript with Tailwind and shadcn/ui, Lightweight Charts for candles and ECharts for the rest.
+Every screen asks one module, `web/src/lib/data.ts`, for its data, and the module has two versions:
+
+- **Over the API**, where the project is Python: the API's routes serve JSON from the store, and the same process serves the built front end, so one command starts it and one port reaches it.
+- **Over files**, where nothing needs a server: the build ships small pre-aggregated Parquet files beside the page, read in the browser with `hyparquet`, and the site is static (`deploy-project`).
+
+The screens never know which version they run on, so moving a public dashboard to a static host, or a private one behind the API, changes one module.
+In a trial of one three-screen dashboard over two million rows on loopback (2026-11-12), this pick was ready in 0.45 s from 340 KB with each interaction in 50 to 180 ms; the static version in 0.74 s from 3.5 MB.
+The cost is a second toolchain, Node, which a Python project carries as a development dependency (the Python reference).
+
+- **Dash with Mantine** when the code must stay Python only — the owner will maintain it without TypeScript, or a host runs Python only; it reached the same look (`design-interface`) but took 1.6 s and 9.8 MB to be ready, with interactions of 180 ms to 1.1 s.
+- **Shiny** for an existing Shiny app, or where every interaction must run Python on the server; restyled it matched the look, at 2.2 s and 6.2 MB.
+- **Observable Framework** for a report that is mostly prose around charts, rebuilt by the pipeline; **DuckDB-WASM** only when the viewer must write SQL, since it ships tens of megabytes.
+- **Ruled out** by the same research: Streamlit, which reruns the whole script on every interaction, server BI tools and Evidence.
+
+**Re-read the store when the run manifest changes**, not on a clock of its own: the dashboard asks for the manifest's last run on a short poll and fetches its data again only when that changes.
+**Show the last run's age, re-judged on a slow clock** — a minute to an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
+**Give the browser a readiness signal**: the page sets `data-ready` on the root element once its first screen has drawn its data, so a smoke test and the build's evaluator wait for data rather than a guessed delay.
+
+**Test it at three levels**: the operations and the data the API returns through the framework's in-process client, the front end's own pure functions (formatting, shaping a series) with its test runner, and one browser smoke test per screen — it opens, reaches `data-ready`, logs no console error — tagged slow (`write-tests`).
+The Python reference has each build-out.
 
 ## Composition root
 
@@ -154,6 +180,6 @@ Give each entry point a **launch command namespaced to the project** (`myapp-cli
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer`, `fastapi` and `shiny` build-outs and testing the dashboard in process, the loopback guard, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, the log handler for a terminal, a capture and a file, and launch).
+- **Python** → `references/python.md` (the role and framework packages at three rungs, the composition root binding the key, the `typer` and `fastapi` build-outs, the dashboard as a web front end over the API or static files, with Dash and with Shiny, and testing each, the loopback guard, the scheduled command, configuration with `pydantic-settings` and where the `.env` is found, the log handler for a terminal, a capture and a file, and launch).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
