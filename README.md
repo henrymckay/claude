@@ -44,7 +44,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 Install any subset from the marketplace, pinned to the newest release tag.
 
 ```bash
-claude plugin marketplace add henrymckay/claude#v0.1
+claude plugin marketplace add henrymckay/claude#v0.2
 claude plugin install manage-project@henrymckay
 claude plugin install write-code@henrymckay
 ```
