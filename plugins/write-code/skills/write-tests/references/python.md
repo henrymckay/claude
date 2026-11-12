@@ -1,7 +1,6 @@
 # Write tests in Python
 
 The language-agnostic principles are in `SKILL.md`; this is how they land in Python with `pytest`.
-Installing `pytest` lives in `setup-python`; the `tests/` layout in `structure-python`.
 
 ## Pick a layout
 
@@ -14,8 +13,8 @@ The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers �
 
 ## Tests are code
 
-- Type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`), so a misnamed fixture fails type-checking before it fails at collection.
-- No docstrings on tests or fixtures: `setup-python` ignores the `D` rules under `tests/`, since the name is the claim.
+Type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`), so a misnamed fixture fails type-checking before it fails at collection.
+Test async code through the `anyio` pytest plugin, `setup-python`'s pick, not `pytest-asyncio`.
 
 ## Given, when, then
 
@@ -40,21 +39,14 @@ def test_when_keep_valid_then_non_positive_rows_dropped(
     then.every_row_positive(kept, column="quantity")
 ```
 
-Supply the *given* through fixtures:
+Fixtures:
 
-- Take each *given* as a `@pytest.fixture` argument; the fixture names and builds the scenario so the body doesn't set it up inline.
-- Put shared fixtures in `given.py`, registered as Pick a layout says.
-- Widen a fixture's `scope` to `"module"` or `"session"` for expensive read-only setup.
-- Build files under the `tmp_path` fixture, and point the app's data directory at it with `monkeypatch.setenv("MYAPP_DATA_DIR", str(tmp_path))` before the settings are built (`store-data`).
+- Shared fixtures live in `given.py`, registered as Pick a layout says.
+- Build files under `tmp_path`, with the app's data directory pointed at it as `store-data` says.
 - At a boundary you can't inject, patch with `monkeypatch`; for the clock, `time-machine` freezes `datetime.now` and friends in C, where `monkeypatch` can only replace the module attribute the code happened to import.
-
-A fixture sources each input, and — harder — each expected value:
-
-- A canonical dataset → a file under `tests/data/` a fixture loads (`polars.scan_csv(path, try_parse_dates=True)`); a recorded response sits under `tests/data/<source>/`, so each source's fixtures and its recording script are found together.
-- A tailored input → a fixture returning a builder function, or a fixture derived from another and narrowed.
-- Expected values → a fixture that derives them in plain Python (not by re-running the pipeline), passed into a `then` assertion; where that would just reimplement the code, assert invariants instead (`then.conserves`, `then.column_sorted`).
-
-The *when* helpers name compound actions where they earn it; the *then* helpers are the custom assertions below.
+- A canonical dataset is a file under `tests/data/` a fixture loads; a recorded response sits under `tests/data/<source>/` beside its recording script.
+- A tailored input is a fixture returning a builder function, or a fixture derived from another and narrowed.
+- Expected values come from a fixture that derives them in plain Python, passed into a `then` assertion.
 
 ## Many inputs
 
@@ -70,8 +62,6 @@ def test_when_total_mass_then_quantity_times_unit_mass(
 ) -> None:
     assert total_mass(quantity, unit_mass) == expected
 ```
-
-Give cases `ids` when the values don't read clearly in the output.
 
 For a property that should hold across an input space, let `hypothesis` generate and shrink the inputs:
 
@@ -123,7 +113,7 @@ def every_row_positive(frame: polars.DataFrame, *, column: str) -> None:
 A test body then reads `then.column_equals(priced, column="revenue", values=expected_revenue)`, and the keyword `values=` names the expected side so a swapped pair reports the failure the right way round.
 `pytest` rewrites asserts in test modules, `conftest.py` and plugins named by `-p` (so `pytest_.given`), but not in a sibling it merely imports; without the registration the `then` helpers fail with a bare `AssertionError`.
 
-Assert a frame transform on the **whole frame**, with expected values from a fixture — here `expected_mass` restates the spec's rule, quantity times unit mass, over the raw rows in plain Python, which is independent of the pipeline it checks:
+Assert a frame transform on the **whole frame**, with expected values from a fixture — here `expected_mass` restates the spec's rule, quantity times unit mass, in plain Python over the raw rows:
 
 ```python
 def test_when_add_mass_then_mass_is_quantity_times_unit_mass(
@@ -133,7 +123,7 @@ def test_when_add_mass_then_mass_is_quantity_times_unit_mass(
     then.column_equals(weighed, column="mass", values=expected_mass)
 ```
 
-For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)` — which needs its own `import polars.testing`, since importing `polars` alone does not bind the submodule (see `write-python`).
+For an exact whole-frame match including dtypes, use `polars.testing.assert_frame_equal(result, expected)`, with its own `import polars.testing` (`write-python`, Imports).
 
 ## Dependency tests
 
@@ -156,10 +146,9 @@ def test_when_raise_for_status_then_a_not_found_raises(
         missing_document.get("https://example.test/report.csv").raise_for_status()
 ```
 
-Keep the recorded response under `tests/data/<source>/` and load it through a fixture, the same as any other given.
 `respx` is the alternative where you want to assert on the request as well, but the transport is enough to pin behaviour and carries no extra dependency.
 
-**Record it with `tests/data/<source>/record.py`**, a PEP 723 script (see `setup-python`) that calls the real source with the key from the environment, strips the key from the saved request and response, and writes the file the fixture loads; re-run it when the source changes shape, so the fixture is always something the source actually sent.
+**Record the response with `tests/data/<source>/record.py`**, a PEP 723 script (see `setup-python`) that strips the key from the saved request and response and writes the file the fixture loads.
 
 **Pace and retry through the adapter's seams** (`structure-python`'s `references/http.md` has the adapter):
 
@@ -181,21 +170,20 @@ def build_get_document(
 ) -> collections.abc.Callable[[str], str]: ...
 ```
 
-The test builds the client on an `httpx.MockTransport` whose handler answers from a sequence (a `503` with `Retry-After`, then the recorded `200`) and passes `sleep=waits.append`, then asserts the document came back and `waits == [3.0]`; the retry's waits are the test's, so "backs off three times" runs in milliseconds.
+The test builds the client on an `httpx.MockTransport` whose handler answers from a sequence (a `503` with `Retry-After`, then the recorded `200`) and passes `sleep=waits.append`, then asserts the document came back and `waits == [3.0]`.
 `pyrate-limiter` 4.5.1 sleeps through its own `pyrate_limiter.limiter.sleep`, so a pacing test adds `monkeypatch.setattr(pyrate_limiter.limiter, "sleep", paced.append)` and asserts on `paced`; the limiter advances as if it had slept, so five calls at two a second finish at once with three waits recorded.
 A budget test passes `budget=2` and asserts the third call raises `QuotaError` with the transport's handler called twice.
 
-**Drive a `typer` command through `typer.testing.CliRunner`**, invoking the role package's `app` with the arguments a user would type and asserting on `result.exit_code` and `result.stdout`; the composition root then runs for real over fakes injected the same way as the API's `dependency_overrides` — the store at `tmp_path` through the environment, the source through a `MockTransport` — so a CLI test proves the wiring, not only the operation.
+**Drive a `typer` command through `typer.testing.CliRunner`**, invoking the role package's `app` with the arguments a user would type and asserting on `result.exit_code` and `result.stdout`; the composition root runs for real, with the store at `tmp_path` through the environment and the source on a `MockTransport`, so a CLI test proves the wiring, not only the operation.
 
 ## Coverage, speed and logs
 
-- Mark slow or external tests `@pytest.mark.slow`; the marker is registered in `setup-python`'s `pytest` block, whose `--strict-markers` turns a misspelt marker into an error instead of a silently unselected test.
-- Leave `pytest`'s log capture on: a failing test's report shows its logs, and `uv run pytest --log-cli-level INFO` streams them live for a debugging run.
-Don't wire a `RichHandler` into the suite to match the application's output; the fixture it needs is longer than any test and `tee-sys` then streams every test's output on every run.
+- Mark slow or external tests `@pytest.mark.slow`, registered in `setup-python`'s `pytest` block.
+- Leave `pytest`'s log capture to show a failing test's logs, with `--log-cli-level INFO` to stream them live; don't wire a `RichHandler` into the suite to match the application's output, since the fixture it needs is longer than any test and `tee-sys` then streams every test's output on every run.
 
 ## Run
 
-Run everything under `testpaths`, or a slice by directory, name (`-k`) or marker (`-m`), through the project's runner — `uv run` under `setup-python`; the arguments are `pytest`'s own whatever invokes it:
+Run through the project's runner, `uv run` under `setup-python`:
 
 ```bash
 uv run pytest
