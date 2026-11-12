@@ -7,7 +7,7 @@ What the nightly command does once it runs is `run-unattended`'s; the launchd an
 
 ## Nightly pipeline and site
 
-`.github/workflows/nightly.yml`: fetch yesterday, write it through the store to the data tree and MotherDuck, commit the tree's new files back, then build the shinylive site from the stored metrics and publish it to Pages.
+`.github/workflows/nightly.yml`: fetch yesterday, write it through the store to the data tree and MotherDuck, commit the tree's new files back, then build the web front end over files from the stored metrics and publish it to Pages.
 Enable Pages once in the repository's settings with GitHub Actions as the source, or the deploy job fails with no site to deploy to.
 
 ```yaml
@@ -71,12 +71,15 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
-      - run: uv sync --locked --no-dev
-      - run: uvx shinylive export app site
-      - run: mkdir -p site/data
-      - run: uv run --no-dev myapp-cli export metrics --format parquet --output site/data/metrics.parquet
+      - run: uv sync --locked
+      - run: mkdir -p web/public/data
+      - run: uv run myapp-cli export metrics --format parquet --output web/public/data/metrics.parquet
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
+      - run: uv run npm --prefix web ci
+      - run: uv run npm --prefix web run build -- --base /${{ github.event.repository.name }}/ --outDir ../site --emptyOutDir
+        env:
+          VITE_DATA: files
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
@@ -97,6 +100,7 @@ jobs:
 - `cron` is UTC unless a `timezone` key is set.
 - `concurrency` without `cancel-in-progress` queues an overlapping run instead of killing the one in flight, the same policy as the lock; the status workflow shares the group, so the two never commit at once.
 - The runner has no data directory of its own, so `MYAPP_DATA_DIR` points `store-data`'s tree into the checkout, where last night's commits already hold the records `compute` reads, and with `motherduck_token` set the store also loads the night into MotherDuck.
+- The site job syncs the development group too, since `nodejs-wheel` is where `npm` comes from (`setup-python`); `VITE_DATA=files` builds the data module that reads the Parquet beside the page, and `--base` names the repository because a project site is served under `/<repository>/`, where assets built for `/` all answer 404.
 - The commit takes the night's `records/` and `rejected/` partitions, one new file each per source, plus `metrics.parquet`, `runs.parquet` and `alerts.json`, rewritten whole; keep them out of `.gitignore` or the commit is empty.
 `raw/` and `logs/` are never committed: the pages go up as the artifact `store-data` keeps, and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.

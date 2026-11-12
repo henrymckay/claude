@@ -5,19 +5,19 @@ description: >-
   little or no cost, picked from the data's class — the nightly pipeline as a
   GitHub Actions schedule writing to MotherDuck and committing the data tree
   back, with a status workflow for a night that never ran and Modal when a job
-  outgrows a runner; MotherDuck Lite with one token per consumer; a Shiny
-  dashboard on Posit Connect Cloud Free, shinylive on GitHub Pages when it
-  needs no secret, Streamlit Community Cloud when it must be private; an API
-  on Render only once a second consumer earns one, Cloud Run when the wake
-  matters; a static site from the same workflow; private data kept on the
-  owner's machine and its dashboard reached over Tailscale; what changes for a
+  outgrows a runner; MotherDuck Lite with one token per consumer; a public
+  dashboard as a static build on GitHub Pages, or Cloudflare Pages from a
+  private repository, with the free host and its limits for each dashboard
+  technology (static, an API, Dash, Shiny); an API on Render only once a second consumer earns
+  one, Cloud Run when the wake matters; private data kept on the owner's
+  machine and its dashboard reached over Tailscale; what changes for a
   private repository; secrets in each platform's own store; the hosts ruled
   out; and re-checking a tier before relying on it. Use whenever deploying,
   hosting or publishing a pipeline, dashboard, API or site, choosing a free
   tier or cloud host, writing a workflow that runs in the cloud, or filling a
   plan's Runs on section — even if the user just says "put this online", "host
   the dashboard", "run it in the cloud" or "is there a free tier for this".
-  Facts checked 2026-11-11; the two workflow files are in
+  Facts checked 2026-11-11 and 2026-11-12; the two workflow files are in
   references/github-actions.md. Layers on run-unattended, store-data,
   write-entry-points, send-messages and setup-python; secure-project classes
   the data the hosts are picked from, and plan-project's Runs on section
@@ -39,14 +39,14 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 
 - **Pipeline** — a GitHub Actions `schedule` workflow in the project's own repository.
 - **Data** — MotherDuck Lite, `store-data`'s pick for data another machine must reach.
-- **Dashboard** — Shiny for Python on Posit Connect Cloud Free.
+- **Dashboard** — a static build on GitHub Pages, or the API serving it once it needs a server (Serve the dashboard).
 - **API** — a Render free web service, once a second consumer earns one.
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
 **Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8001` shares the dashboard's port with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
-Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — MotherDuck behind Streamlit's private app — sends every row to two outside services, which `secure-project` allows only under a signed-off decision naming them.
+Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — a static build behind Cloudflare Access, or MotherDuck behind a hosted app — sends every row to outside services, which `secure-project` allows only under a signed-off decision naming them.
 
-**A private repository holding public data changes three of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; Pages and Connect Cloud Free take public repositories only, so the dashboard moves to Streamlit Community Cloud's one private app, whose viewers sign in by invitation, or to Connect Cloud Basic at $19 a month, which publishes from a private repository but still to anyone with the link (private sharing is its Enhanced plan); MotherDuck and Render are unaffected.
+**A private repository holding public data changes two of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; GitHub Pages serves a private repository only on Pro, so the static dashboard goes to Cloudflare Pages by direct upload from the workflow (`wrangler pages deploy`, its token a repository secret), which takes no repository at all; MotherDuck and Render are unaffected.
 
 **None of these needs a Docker image**; each installs from `uv.lock` or a `requirements.txt`, and a `Dockerfile` is earned by Cloud Run or another container platform, as `setup-python` says.
 
@@ -74,14 +74,26 @@ The tree is the backup and the next night's input, and the push is repository ac
 
 ## Serve the dashboard
 
-**Publish the Shiny app to Posit Connect Cloud Free from a public GitHub repository**, with the read-scaling token as a secret variable set at publish and read with `os.getenv`.
-Its GitHub App republishes on every push from a committed `requirements.txt`, so export one with `uv export --format requirements-txt --no-emit-project --no-hashes > requirements.txt` whenever `uv.lock` changes, or the app runs last month's dependencies.
-Usage credits are enforced on the Free plan from the first period starting on or after 2026-11-01: past the allowance the app stops and nothing publishes until the next period, and the allowance itself is published only on connect.posit.cloud/plans, unread here, so read it before relying on it; Basic at $19 a month is said to add private repositories and scheduled publishing (unverified on 2026-11-11).
+**Publish a public dashboard as a static build on GitHub Pages**, from the nightly workflow's site job: the web front end over files (`write-entry-points`, Dashboard), its data the small Parquet files an `export` command writes beside the page.
+It is always on, wakes nothing and costs nothing, and the data and the page are always from the same night.
+**A dashboard that needs a server runs where its data's class allows**: public, as the API serving the built front end on Render (Serve an API); private, on the owner's machine over Tailscale (Decide what runs where).
 
-- **shinylive on GitHub Pages when the dashboard needs no secret and its data fits in the site.** `uvx shinylive export app site` builds a bundle the nightly workflow publishes (`references/github-actions.md`).
-It runs in the browser on Pyodide — pure-Python wheels only, so `pandas` with `pyarrow` or DuckDB-wasm and never `polars`, `pyodide.http.pyfetch` in place of `urllib`, about 13 MB on first load — and the whole bundle, data included, goes to the viewer, so it holds no token; the site job exports the stored metrics into `site/` for a same-origin fetch.
-- **Streamlit Community Cloud when the app is Streamlit or must be private at $0**: unlimited public apps and one private one, whose viewers are invited by email, `uv.lock` read directly, secrets as TOML through `st.secrets`, sleep after twelve idle hours, a cap of about 2.7 GB (documented in 2024 as liable to change).
-Plotly Cloud Free (ten Dash apps, three private viewers) shows no GitHub integration, so every change is published by hand.
+Dash and Shiny each have a vendor cloud with a free plan, and neither is a hosting advantage over a static build; the free host for each technology, read on 2026-11-12:
+
+| Technology | Free host | Awake | Monthly cap | Repository | Private viewers |
+|---|---|---|---|---|---|
+| Static web front end | GitHub Pages | always; no cold start | 1 GB a site, 100 GB of traffic (soft) | public on the Free plan | none: a Pages site is public |
+| Static web front end | Cloudflare Pages | always; no cold start | 20,000 files, 25 MiB a file, 500 builds | any, or a direct upload | Cloudflare Access, free to 50 users |
+| API with the front end | Render web service | sleeps after 15 idle minutes, about a minute to wake | 750 instance hours | GitHub; private repositories unverified | none built in: a token per consumer (`secure-project`) |
+| Dash | Plotly Cloud Free | resumes when opened (since 2025-12-19); wake time unpublished | 10 apps, a 10-credit trial, then $1 a credit | publish from Dash's dev tools or a folder | 3 listed, though the same page lists private apps as a Pro feature |
+| Shiny | Posit Connect Cloud Free | billed while served; idle behaviour unpublished | 20 credits, at 1.75 an hour for its 1 CPU and 4 GB: about 11 served hours | public only | none (link sharing is the $59 Enhanced plan) |
+
+- **Posit Connect Cloud enforces the Free plan's credits from the first usage period starting on or after 2026-11-01**, though its plans page still says limits are not enforced; past the allowance the app stops until the next period (docs.posit.co/connect-cloud, Usage).
+- **Cloudflare's static assets answer a Range request with the whole file**, `200` rather than `206`, so a browser reader that fetches Parquet by range downloads every byte there; keep each file to a few megabytes (developers.cloudflare.com, Workers static assets, billing and limitations; whether Pages behaves the same is unverified).
+- **Dash and Shiny also run on Render's free web service**, `app.server` under `gunicorn` or the Shiny app under `uvicorn`, with the same sleep and wake.
+- **Cloudflare Access protects a Pages preview with a toggle**; the production site needs an Access application on its hostname, best a custom domain (unverified beyond the docs' Known issues), and private data reaches it only under a signed-off decision naming Cloudflare (`secure-project`).
+- **shinylive on Pages** remains for an existing Shiny app with no secret: `uvx shinylive export app site`, Pyodide in the browser, pure-Python wheels only (`pandas` with `pyarrow`, never `polars`), about 13 MB on first load.
+- **Streamlit Community Cloud** sleeps after twelve hours without traffic and is ruled out as a technology (`write-entry-points`); its one private app is no longer the private route.
 
 ## Serve an API
 
@@ -100,11 +112,11 @@ Pages serves a public repository on the Free plan and a private one only on Pro,
 ## Keep secrets per consumer
 
 - **Repository secrets for Actions**, set with `gh secret set NAME` and read as `${{ secrets.NAME }}`; environment secrets need Pro or Team on a private repository.
-- **Each other host's own store for the rest** — Connect Cloud's secret variables, Streamlit's TOML, Render's environment variables, Cloud Run's Secret Manager — never a committed file or a static bundle (`secure-project`).
+- **Each other host's own store for the rest** — Render's environment variables, Cloud Run's Secret Manager, Connect Cloud's secret variables — never a committed file or a static bundle (`secure-project`).
 
 ## Re-check the tiers
 
-Every figure above not marked otherwise was read from the vendor's page on 2026-11-11.
+Every figure above not marked otherwise was read from the vendor's page on 2026-11-11, and the dashboard hosts on 2026-11-12.
 **Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
-Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need PRO); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).
+Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need a paid plan, re-read 2026-11-12); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).
