@@ -2,27 +2,13 @@
 name: build-project
 effort: medium
 description: >-
-  How to build a planned project milestone by milestone with minimal input from
-  the user — working through its PLAN.md in order, a branch per milestone,
-  on Sonnet whatever model the session started on by
-  handing each milestone to a subagent, failing tests first, the real path
-  wired early on a small slice and run at full size once, the plan's terms kept in the code, only what
-  the milestone needs built, every call the plan didn't make settled from
-  precedent or proposed, and a gate read by what the project ships (the suite,
-  a real run, a fresh evaluator scoring the running surface for up to three
-  rounds, simplify, a code review, the security checks, a read against the
-  plan) passed before each tick, with PLAN.md and the README kept current,
-  the build ending with something the user can open; stopping only for a
-  change to the plan, a blocking question or a failing check — or, in
-  autonomous mode, proceeding on recommended answers recorded as assumptions
-  and taking no outward action. Use whenever building, implementing or
-  continuing a project that has a PLAN.md, or once a plan from plan-project
-  is approved — even if the user just says "build it", "go", "start on M1",
-  "carry on" or "build the next step". Layers on plan-project and every skill
-  the code falls under, using simplify and code-review for the gate,
-  design-interface for the evaluator's criteria, make-decisions for the
-  calls, secure-project for the security checks and use-git for branches;
-  hands off to review-project after the last milestone.
+  How to build a planned project milestone by milestone — each milestone on
+  the ladder's model through a subagent, failing tests first, the real path
+  wired early, calls settled from precedent, and a gate (the suite, a real
+  run, an evaluator, a review, the security checks) before each tick; in
+  autonomous mode, no outward action. Use whenever building, implementing or
+  continuing a project that has a PLAN.md — even if the user just says "build
+  it", "go", "start on M1" or "carry on".
 ---
 
 # Build the project

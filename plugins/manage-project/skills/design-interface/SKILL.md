@@ -1,25 +1,13 @@
 ---
 name: design-interface
 description: >-
-  How every surface a project ships should look and read, and the bar it must
-  clear — one house design system defined once, independent of technology
-  (colour roles for light and dark, the chart palette, type, spacing, radii,
-  elevation, layout and density, number and date formats, the loading, empty,
-  stale and error states, and the defaults to avoid), a design plan before
-  code, what an impressive dashboard, web page, command-line tool, API,
-  message and README look like, and the criteria a running surface is scored
-  against from its screenshots. Load it before the first line of any screen,
-  chart, page or styled output, even a one-view prototype. Use whenever
-  designing or building a dashboard, web app, static site or chart, theming a
-  framework, choosing colours or fonts, laying out a screen, writing a
-  command's help and errors, an API's docs page, a digest or a README's top,
-  or judging whether a surface is good enough to ship — even if the user just
-  says "make it look good", "this looks primitive", "add dark mode" or "style
-  the dashboard". Technology-neutral here; the tokens mapped onto Tailwind
-  with shadcn/ui, ECharts and Lightweight Charts in references/web.md, and
-  onto Dash Mantine, Shiny and Plotly in references/python.md. Layers on the
-  dataviz skill for chart form; plan-project sets the ambition,
-  write-entry-points builds the surface, and build-project's gate scores it.
+  How every surface a project ships should look and read — one house design
+  system (colour, type, spacing, charts, states), a design plan before code,
+  and the bar a dashboard, page, CLI, API, message or README must clear. Load
+  it before the first line of any screen, chart, page or styled output, even a
+  prototype. Use whenever designing, styling or judging a surface — even if
+  the user just says "make it look good", "add dark mode" or "this looks
+  primitive".
 ---
 
 # Design the interface

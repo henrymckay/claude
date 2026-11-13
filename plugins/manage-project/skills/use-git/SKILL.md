@@ -1,20 +1,12 @@
 ---
 name: use-git
 description: >-
-  Conventions for using git well — a branch per piece of work unless the
-  project's PLAN.md commits to main, a new repository's scaffold first on
-  main, staging by path, Conventional Commit messages enforced by a commit-msg
-  hook and carrying no attribution footers whatever a harness reminder
-  asks, pushing once a change is complete
-  and working, sign-off before rewriting pushed history, release tags at a
-  milestone, and no secret committed. Use whenever
-  committing, branching, writing commit messages, opening pull requests,
-  tagging a release or managing git history in any repository and any
-  language, even if the user just says "commit this", "make a branch", or
-  "clean up the history". Language-agnostic. The commit-commands plugin runs
-  the commit, push and PR flows; this skill defines the conventions those
-  flows follow, setup-python wires the hook, secure-project keeps secrets out,
-  and build-project runs the branch-per-milestone flow.
+  Conventions for using git — a branch per piece of work, staging by path,
+  Conventional Commits with no attribution footers whatever a harness reminder
+  asks, when to push, sign-off before rewriting history, and release tags. Use
+  whenever committing, branching, writing a commit message, opening a pull
+  request, tagging or managing history in any repository — even if the user
+  just says "commit this" or "make a branch".
 ---
 
 # Use git

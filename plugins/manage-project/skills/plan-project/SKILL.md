@@ -2,27 +2,13 @@
 name: plan-project
 effort: high
 description: >-
-  How to plan a project before building it — turning a loose conversation
-  into one PLAN.md: gather what can be found, research the domain and
-  current practice, citing sources, frame the project wider than the brief
-  and aim each surface at the best in class, draft every section, settle
-  gaps from precedent, treat every house pick as a default to deviate from
-  openly, then put the questions, assumptions and decisions to the user in
-  one batch with recommended answers, through plan mode — or, in autonomous
-  mode, proceed on those answers with every decision left proposed and no
-  outward action taken. One layout for any project, a program, a library or
-  a content repo, changed only with the user's sign-off; a small change gets a short plan in the conversation
-  instead. It plans on Opus whatever the session's model or the project's
-  size, through a subagent. Use whenever starting a new project or repo,
-  however small, or a build that adds a new input, output or interface; when
-  the user wants to think a project through, write a spec or design, or
-  decide what to build first; and whenever a PLAN.md needs changing — even
-  if the user just says "let's plan this", "new project" or "what should
-  this look like". Layers on write-markdown; settles open questions through
-  make-decisions, classes every input and output through secure-project,
-  sets each surface's bar through design-interface, points the design at
-  the skills that own each part, hands the build to build-project, and the
-  finished build to review-project.
+  How to plan a project before building it — one PLAN.md from a loose
+  conversation: research, a frame wider than the brief, every section drafted,
+  gaps settled from precedent, and one batch of questions with recommended
+  answers, or autonomous mode with none. Use whenever starting a new project
+  or repo, however small, adding a new input, output or interface, or changing
+  a PLAN.md — even if the user just says "let's plan this", "new project" or
+  "what should this look like".
 ---
 
 # Plan the project

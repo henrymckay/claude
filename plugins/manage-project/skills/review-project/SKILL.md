@@ -2,25 +2,13 @@
 name: review-project
 effort: high
 description: >-
-  How to review a whole project and then fix what the review finds — checking it
-  against its PLAN.md where there is one, then correctness (the tests, the real
-  surface, performance, a bug hunt), the test suite, conformance to the skills,
-  modernity (current releases, no deprecated APIs, the latest language, each
-  house pick still standing), the README, CLAUDE.md and safety, with an
-  unanchored cold read; reporting defects, judgement calls and challenges to a
-  house pick or a plan decision separately, each with evidence re-run before it
-  is kept; then fixing the defects by impact, each in its own commit and a bug
-  with a regression test, re-running every check and bringing PLAN.md and the
-  README up to date, while the rest waits on the user's reply, or sits in the
-  report in autonomous mode. It reviews on Opus whatever model the session
-  started on, by handing the review to a subagent. Use whenever the user asks to
-  review, audit, critique or tidy a repo or project, check it against its plan
-  or the conventions, find what is out of date, or fix what a review found —
-  even if they just say "review this repo", "what's wrong with this project", or
-  "is this up to date". Works without a PLAN.md. Layers on plan-project and
-  every skill the project's code falls under, using the built-in code-review for
-  the bug hunt, secure-project for the safety checks and make-decisions for the
-  judgement calls; review-plugin extends it for a Claude Code plugin.
+  How to review a whole project and fix what it finds — against its PLAN.md,
+  then correctness, tests, the skills' conventions, current releases, docs and
+  safety, with a cold read, each finding's evidence re-run and each fix its
+  own commit. Use whenever the user asks to review, audit or tidy a repo,
+  check it against its plan or fix what a review found — even if they just say
+  "review this repo" or "is this up to date". Not for a plugin or skills repo,
+  which is review-plugin's.
 ---
 
 # Review the project
