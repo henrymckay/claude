@@ -12,7 +12,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 
 - **`manage-project`** — a project's life from a loose conversation to a reviewed build.
   - [`plan-project`](plugins/manage-project/skills/plan-project) drafts one `PLAN.md` and asks one batch of questions.
-  - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a quality gate that looks at the running product.
+  - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a gate that runs the product.
   - [`design-interface`](plugins/manage-project/skills/design-interface) gives every screen, page and output one house look and a bar to clear.
   - [`review-project`](plugins/manage-project/skills/review-project) reviews against the plan and the skills, then fixes what it finds.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and effort.
@@ -70,8 +70,16 @@ With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/
 
 - **Feedback** — `claude plugin configure maintain-plugin` sets `feedback` to `issues` (the default), `file` or `off`.
   Use `file` on a machine whose work must not reach a public tracker.
-- **`CLAUDE.md`** — with symlinks, it is the always-on file: the working rules, the skill list and the feedback repository.
-- **Companions** — `skill-creator`, `commit-commands`, `pyright-lsp`, `claude-security` and `security-guidance` from the [official marketplace](https://github.com/anthropics/claude-plugins-official) pair well with these.
+- **`CLAUDE.md`** — the always-on file with symlinks: working rules, skill list, feedback rule.
+
+## 🧩 Companions
+
+From Anthropic's [official marketplace](https://github.com/anthropics/claude-plugins-official); each skill that uses one says what to do without it.
+
+- **`skill-creator`** tests a skill with and without it and tunes its description, for `write-skills`.
+- **`plugin-dev`** checks hooks, manifests, agents and commands, for `review-plugin`.
+- **`commit-commands`** runs the commit and pull request flows `use-git` sets conventions for.
+- **`pyright-lsp`**, **`claude-security`** and **`security-guidance`** for type errors and security.
 
 ## 🔁 Feedback and sweeps
 
@@ -81,7 +89,7 @@ With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/
    It runs weekly, or when you say "review the skills".
 3. **Pull request** — each sweep lands as one pull request whose body is its report, listing every rule it cut or changed.
 
-Each plugin's `evals/` folder holds one casual prompt per skill, to show its description still triggers.
+Each plugin's `evals/` holds a casual prompt that should fire each skill, and a few that should not.
 Pass `--trust-plugin` only for a plugin whose source you have read.
 
 ```bash
@@ -92,13 +100,8 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-
-1. Start a headless session in a new project folder with one prompt and nobody answering: `claude -p --permission-mode auto`.
-2. Claude plans, builds and reviews the project in autonomous mode: it records its answers as assumptions and takes no outward action.
-3. Read the transcript under `~/.claude/projects/` for skills that never loaded and stages on the wrong model.
-4. The next sweep works through the feedback the build filed.
-
-[`PLAN.md`](PLAN.md)'s milestones list the builds done and to come.
+A headless session (`claude -p --permission-mode auto`) plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action; a sweep then works through its feedback and transcript.
+[`PLAN.md`](PLAN.md)'s milestones list the builds.
 
 ## 📄 Licence
 
