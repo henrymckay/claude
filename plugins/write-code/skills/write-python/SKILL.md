@@ -1,24 +1,12 @@
 ---
 name: write-python
 description: >-
-  In-code conventions for writing Python that a formatter can't decide —
-  typing (the frozen dataclass as the record, Literal, StrEnum, NewType,
-  Protocol, override, assert_never), aware UTC datetimes and Decimal money,
-  docstrings, comments, imports and the trailing underscore on a
-  library-coupled module, re-exports, naming, call-site argument style, member
-  ordering, simplicity, the one error model (raise from the app's error
-  package, convert or classify at an adapter's seam, decide what the user sees
-  in a driver, nothing caught in the core, X | None only for a lookup miss),
-  sync by default, and idioms, with what to avoid. A rule that bends carries
-  its exception. Load it before the first line of any
-  Python, even a one-off function answered inline. Use whenever writing,
-  editing, refactoring or reviewing Python code, even if the user doesn't
-  mention "conventions", "style", or "clean code". Targets the Python floor
-  setup-python sets, 3.15 today. Formatting and linting are delegated to ruff
-  and type-checking to pyright in strict mode; this skill covers only the
-  judgement calls they can't make. The baseline for all Python: be-functional,
-  be-oop and write-tests layer on it; for project structure see
-  structure-python, for packaging and tooling setup-python.
+  In-code conventions for Python that a formatter can't decide — typing and
+  the record type, datetimes and money, docstrings, imports, naming, the one
+  error model, and idioms. Load it before the first line of any Python, even a
+  one-off function answered inline. Use whenever writing, editing, refactoring
+  or reviewing Python — even if the user doesn't mention style or conventions.
+  Not for packaging or tooling, which is setup-python's.
 ---
 
 # Write Python

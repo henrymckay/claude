@@ -1,22 +1,12 @@
 ---
 name: use-polars
 description: >-
-  How to write correct, idiomatic Polars (the Python DataFrame library) — the
-  expression API, lazy vs eager execution, keeping every group in one
-  long-form frame instead of looping, ordering a window with order_by rather
-  than a prior sort, a reverse cumulative for every later row, calendar
-  windows against row windows and the defaults to pin, joining without
-  silently multiplying rows, join_asof within groups, the silent traps around
-  nulls, NaN and dtypes, naming frames and pipe steps, and the mental-model
-  shifts coming from pandas. Load it before the first line of any Polars code,
-  even a snippet answered inline. Use whenever working with
-  Polars DataFrames or LazyFrames, writing data transformations or analytics
-  in Polars, converting pandas code to Polars, joining or reshaping between
-  long and wide, writing a rolling or windowed computation, or reading a query
-  plan — even if the user only says "polars", "pl.", or names a .parquet/.csv
-  workflow they want done with it. Targets Polars 2.x. Layers on write-python
-  (its import and naming rules, and the method-over-operator preference) and
-  be-functional's map/bind vocabulary.
+  How to write correct, idiomatic Polars — the expression API, lazy against
+  eager, groups in one long frame, windows, joins that don't multiply rows,
+  the traps around nulls, NaN and dtypes, and the shift from pandas. Load it
+  before the first line of any Polars code, even a snippet answered inline.
+  Use whenever working with Polars DataFrames or LazyFrames — even if the user
+  only says "polars" or "pl.". Targets Polars 2.x.
 ---
 
 # Use Polars

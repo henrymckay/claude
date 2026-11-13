@@ -1,21 +1,13 @@
 ---
 name: write-sql
 description: >-
-  The decisions around SQL in a project, whatever the engine — when a query is
-  SQL and when it is Polars; where a query lives (a packaged .sql file, a block
-  in the README, a view); writing the dialect of the engine that runs it, with
-  every type pinned; the house style, linted by sqlfluff; changing a stored
-  schema without breaking its readers, and migrations for a database; and
-  running every documented query in the suite. Load it before the first line of
-  any SQL, even a query answered inline. Use whenever writing, editing or
-  reviewing SQL, a .sql file, a view or a migration, setting up a SQL linter or
-  formatter, choosing between SQL and a DataFrame, documenting a query in a
-  README, or adding, renaming or retyping a stored column — even if the user
-  just says "write a query", "query the parquet", "add a column" or "add a
-  migration". Dialect-neutral decisions here; DuckDB 2.x specifics in
-  references/duckdb.md. Layers on write-python, use-polars and write-tests;
-  store-data picks the engine and lays out what a query reads, structure-python
-  places a packaged .sql file, and setup-python wires the linter's hook.
+  The decisions around SQL in a project, whatever the engine — SQL or Polars,
+  where a query lives, the engine's dialect with types pinned, the house
+  style, changing a stored schema, and testing documented queries. Load it
+  before the first line of any SQL, even a query answered inline. Use whenever
+  writing or reviewing SQL, a view or a migration, or adding or retyping a
+  stored column — even if the user just says "write a query" or "query the
+  parquet".
 ---
 
 # Write SQL

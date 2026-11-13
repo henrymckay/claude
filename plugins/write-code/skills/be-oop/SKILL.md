@@ -1,17 +1,12 @@
 ---
 name: be-oop
 description: >-
-  Object-oriented design done well — when to reach for classes, immutable value
-  objects, structural interfaces, Liskov as the principle that bites, mixins,
-  and which classic design patterns collapse to a function or a module. Use when
-  designing or reviewing class hierarchies, working in an OOP codebase or
-  framework (subclassing, overriding hooks), modelling stateful long-lived
-  objects, or when the user mentions OOP, classes, inheritance, interfaces,
-  mixins, SOLID, or a design pattern by name — even if not explicitly. This is
-  an opt-in style skill: reach for OOP where it genuinely fits, not by default.
-  Language-agnostic principles here; Python idioms in references/python.md.
-  Layers on write-python (the in-code baseline); be-functional is the functional
-  counterpart.
+  Object-oriented design done well — when classes earn their place, value
+  objects, structural interfaces, Liskov, mixins, and which design patterns
+  collapse to a function. Use when designing or reviewing class hierarchies,
+  working in an OOP framework, modelling long-lived stateful objects, or when
+  the user names OOP, inheritance, SOLID or a pattern. Opt-in: reach for OOP
+  where it genuinely fits, not by default.
 ---
 
 # Be object-oriented

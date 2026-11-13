@@ -1,23 +1,12 @@
 ---
 name: write-tests
 description: >-
-  How to write and structure tests in any language — tests held to the code's
-  own standard, the given-when-then shape, naming a test by its behaviour,
-  testing behaviour over implementation, a bare assert for equality and a
-  custom assertion for a domain claim, where test data and expected values
-  come from and how a recorded response is refreshed, table-driven and
-  property-based testing with an imported oracle, testing the dependency
-  behaviour you rely on, the transport and sleep seams a paced client needs
-  and the one patch a pacing library's own sleep earns, checking that a
-  fixture can exhibit the failure and a generator reaches the state, a wait
-  helper that fails on its timeout, testing a store, a dashboard and a CLI
-  through its runner, and checking a build
-  against the real source by its counts; no coverage target, no mutation
-  testing, no snapshots until earned. Use whenever writing, editing or
-  reviewing tests, adding coverage, or setting up a suite, even if the user
-  just says "write a test", "add tests", "test this", or names a runner like
-  pytest. Language-agnostic principles here; Python and pytest idioms in
-  references/python.md. Layers on write-python, since tests are code.
+  How to write and structure tests in any language — given-when-then, naming
+  by behaviour, behaviour over implementation, where test data and expected
+  values come from, table-driven and property-based tests, and testing a
+  store, a dashboard and a CLI. Use whenever writing, editing or reviewing
+  tests or setting up a suite — even if the user just says "add tests", "test
+  this" or names a runner like pytest.
 ---
 
 # Write tests
