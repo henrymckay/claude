@@ -2,25 +2,12 @@
 name: setup-python
 description: >-
   How to scaffold and configure a Python project — the src/ layout,
-  pyproject.toml with the uv_build backend, dependency and environment
-  management with uv, a committed lock file upgraded on a schedule, the floor
-  of Python 3.15, the house-pick libraries for common tasks (typer, httpx with
-  tenacity and pyrate-limiter, polars, a web front end or dash for a
-  dashboard, pydantic-settings, rich logging), standalone scripts, pre-commit hooks run through uv, releases
-  with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
-  strict pytest flags and an untyped dependency kept out of strict's way, plus
-  sqlfluff's hook once the project holds SQL, and a web front end's Node
-  through nodejs-wheel. Use
-  whenever scaffolding a new Python project, package, script, or tool; adding
-  packaging to existing code; setting up dependencies, virtual environments,
-  project config or hooks; cutting a release; or choosing a house-pick library
-  for a task — even if the user just says "set this up", "add a dependency",
-  or "make this a package". Standardises on uv, ruff, taplo, pyright and
-  pytest, with no task runner, Docker only for a container platform, and no
-  CI until a project earns it; a PLAN.md decision overrides any pick. Plan a
-  new project first with plan-project. For how to organise the application's
-  code into layers, see structure-python; for in-code style, write-python; for
-  the tests themselves, write-tests.
+  pyproject.toml, uv for Python, environments and dependencies, the house-pick
+  libraries for common tasks, standalone scripts, pre-commit hooks, releases,
+  and the ruff, taplo, pyright and pytest toolchain. Use whenever scaffolding
+  a project, package or script, adding a dependency, configuring tools or
+  hooks, cutting a release or choosing a library — even if the user just says
+  "set this up" or "make this a package".
 ---
 
 # Set up a Python project
@@ -98,14 +85,17 @@ The non-obvious choices:
 `hatchling` does the same and adds a plugin system; reach for it only when a build plugin is needed (a version from git tags, generated files), since it is a second tool to pin.
 - `[tool.ruff]` names no `target-version`: `ruff` reads it from `requires-python`, so the floor lives in one place.
 - `[tool.ruff.lint] select` replaces `ruff`'s default set — `E`+`F` until 0.16, since then about 400 rules that add `PIE`, `PYI`, `PL`, `DTZ`, `ASYNC` and more — with this list: `I` (import sorting), `N` (naming), `D` (docstring presence), `UP` (modern syntax), `B` (likely bugs), `SIM` (simplify), `C4` (comprehensions), `RUF` (`ruff`'s own, including unused `noqa`), `PT` (`pytest` style) and `TC` (imports only a type checker needs).
+On the 3.15 floor `TC`'s fix makes an annotation-only import a `lazy import` rather than moving it under `if TYPE_CHECKING:`, and only with `--unsafe-fixes`; take it, since the module then loads only if something reads the annotation (ruff 0.17.5).
 - `"tests/**" = ["D"]` drops docstrings from tests and fixtures, since the test name is the claim (see `write-tests`).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reStructuredText field-list style stays free (see `write-python`).
 - `pyright` `strict` on a greenfield project: `standard` (the default) lets an unannotated parameter through as `Unknown`, so a wrong argument is found at runtime; `strict` reports it at the definition.
 An existing codebase adopts `strict` file by file with `# pyright: strict`.
 - `reportMissingTypeStubs = false` is the one strict check turned off project-wide: strict fails the import of any dependency that ships no types (`plotly`), and a typed one (`shiny`) is checked as before (pyright 1.1.414).
-`pyright` then infers the untyped library from its source, so its methods still report `reportUnknownMemberType`; confine its calls to the one module coupled to it and open that module with `# pyright: reportUnknownMemberType=false`, keeping every other file fully strict.
+`pyright` then infers the untyped library from its source, so its methods still report `reportUnknownMemberType`; confine its calls to the one module coupled to it, open that module with `# pyright: reportUnknownMemberType=false` and give its functions declared return types, keeping every other file fully strict, since a caller that touches the library's members itself gets the errors back.
+Add `numpy` as a development dependency in a project on `polars`: Polars' signatures name numpy types, and without it every method chain reports a partially unknown type (polars 2.1.0).
 That source accepts nearly any argument, so a wrong-typed call there is caught by the test that builds the figure (`write-tests`), not by the checker.
 - `--strict-markers` and `--strict-config` turn a misspelt marker or option into an error instead of a silently unselected test; `xfail_strict` fails a test that passes while marked `xfail`; `filterwarnings = ["error"]` turns a dependency's deprecation into a failing test the day it appears, with a `markers` entry per marker the suite uses.
+Two dependencies trip it at once (pytest 9.2.0): Starlette's `TestClient` wants the development dependency `httpx2`, and warns at collection when it finds only `httpx`; `dash` registers a pytest plugin that fails to load, so a project on `dash` adds `-p no:dash` to `addopts` unless it uses Dash's own test fixtures.
 - The `-p pytest_.given`, `pythonpath` and `testpaths` lines serve `structure-python`'s full `tests/` layout.
 A small tool that keeps `tests/` flat drops them and sets `testpaths = ["tests"]`.
 
@@ -248,6 +238,7 @@ repos:
 ```
 
 Then `pre-commit install` once per clone, and `pre-commit autoupdate` to bump the `rev`.
+`pre-commit` and `npm` cache under the home directory; a run that must stay inside the project sets `PRE_COMMIT_HOME` and `npm_config_cache` to a folder there.
 
 ## Release
 

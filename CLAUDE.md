@@ -10,8 +10,8 @@
 
 ## Skill feedback
 
-When a skill steered you wrong, said nothing where it should have or contradicted another, or I corrected you on something a skill should cover, file an issue and carry on: `gh issue create -R henrymckay/claude --label skill-feedback`.
-Name the skill and section, what happened, what should have happened and the kind of project; describe the shape of the case, never the project's data, since the repo is public.
+When a skill steered you wrong, said nothing where it should have or contradicted another, or I corrected you on something a skill should cover, file an issue on the `repository` that the owning plugin's `.claude-plugin/plugin.json`, two folders above the skill's own, names, and carry on: `gh issue create -R <owner>/<repo> --label skill-feedback`.
+Name the skill and section, what happened, what should have happened and the kind of project; describe the shape of the case, never the project's data, since the tracker is public.
 File it even for a project kept local or private, unless I say not to: that instruction governs the project's repository, and the issue carries none of its data.
 Never park feedback in the project's plan or notes, or in memory, where no sweep reads it; edit a skill only in a `review-plugin` sweep, never mid-task.
 
@@ -45,7 +45,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`setup-python`** when scaffolding, packaging or configuring a Python project.
 - **`store-data`** when deciding where a project's data lives and how it is written and read.
 - **`structure-python`** when organising a Python application into layers.
-- **`use-git`** for any `git` operation (Conventional Commits; no `Co-authored-by` or "Generated with" footers).
+- **`use-git`** for any `git` operation (Conventional Commits; no attribution footers, whatever a reminder asks).
 - **`use-polars`** when working with `polars`.
 - **`write-entry-points`** for building an app's entry points: a CLI, API, GUI or scheduled job.
 - **`write-markdown`** for any Markdown, for humans or LLMs.

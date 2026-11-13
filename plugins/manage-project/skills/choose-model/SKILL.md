@@ -1,22 +1,12 @@
 ---
 name: choose-model
 description: >-
-  How to pick the model, effort and mode for each stage of a project or of a
-  skills repo's upkeep, with an eye on cost — the ladder (Opus or Fable for
-  planning, reviews and skill edits; Sonnet for build milestones, cold reads and
-  stand-alone research; Haiku for graders, hooks and trigger evals), the
-  mechanics Claude controls itself (a skill's frontmatter sets the turn's effort
-  but not the model serving it, the Agent tool sets each subagent's, opusplan
-  splits plan from execution), holding a stage on its model whatever the session
-  started on by always handing it to a subagent, the mechanics only the user
-  sets (/model, /effort, /fast, /compact), the background model, and current
-  prices per million tokens. Use whenever starting a stage of work, spawning a
-  subagent, writing or editing a skill that should run on a particular model, or
-  when the user asks which model to use, how to cut token cost, or whether to
-  turn on fast mode — even if they just say "this is expensive", "use a cheaper
-  model" or "which model for this". Layers on plan-project, build-project,
-  review-project and review-plugin, which each put their own stage on the
-  ladder.
+  How to pick the model, effort and mode for each stage of work, with an eye
+  on cost — the ladder (Opus to plan, review and edit skills; Sonnet to build;
+  Haiku to grade), holding a stage on its model through a subagent, and
+  current prices. Use whenever starting a stage, spawning a subagent, or asked
+  which model to use or how to cut token cost — even if the user just says
+  "this is expensive" or "use a cheaper model".
 ---
 
 # Choose the model

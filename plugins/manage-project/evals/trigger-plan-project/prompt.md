@@ -1,5 +1,6 @@
 ---
 max_turns: 4
+timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Skill]
 tags: [trigger]
 ---

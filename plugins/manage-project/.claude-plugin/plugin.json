@@ -3,7 +3,7 @@
   "description": "Take a project from a loose conversation to a reviewed build: plan it in one PLAN.md, build it milestone by milestone, review it, each stage on the right model, settling questions from precedent and keeping private data and credentials safe, with the git and Markdown conventions any repo needs.",
   "version": "0.1.0",
   "author": {
-    "name": "henrymckay"
+    "name": "claude contributors"
   },
   "repository": "https://github.com/henrymckay/claude",
   "license": "MIT"

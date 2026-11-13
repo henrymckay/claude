@@ -2,26 +2,13 @@
 name: review-plugin
 effort: high
 description: >-
-  How to review a Claude Code plugin, a marketplace of several, or a repo
-  serving as one, for drift — the checks a skills repo needs on top of
-  review-project: its skill feedback first, from GitHub issues or a feedback
-  file, each settled as fixed, already covered, won't fix or needs the user
-  and each case run before and after the fix, with a trial build's
-  transcripts read for skills that never loaded; then every drift check,
-  whatever the brief names — word counts of the skills and the top-level
-  files against the last sweep, each description against its body,
-  overfitted examples and rules Claude follows unprompted, duplicates and
-  contradictions, dead cross-references, trigger overlap, every code block
-  and library claim re-run, the instruction files, README and PLAN.md judged
-  whole and rewritten rather than patched, the manifests, hooks, symlinks
-  and trigger suites, and memory; landed as one pull request whose report
-  lists each check and the net words. Use after a run of skill edits, when
-  skill feedback has piled up, or whenever the user asks to review, audit,
-  tidy or sweep skills, a plugin or a Claude repo, theirs or one whose
-  source they can read, even if they just say "check the skills for drift",
-  "tidy up my skills" or "work through the skill feedback". Layers on
-  review-project, which runs the cold read, the fixes and the report, and on
-  write-skills and write-markdown, the standard it checks against.
+  How to review a Claude Code plugin, a marketplace or a skills repo for drift
+  — skill feedback first, then every drift check: word and character counts,
+  descriptions against bodies, duplicates and contradictions, claims re-run,
+  the instruction files, manifests, hooks, trigger suites and memory, landed
+  as one pull request. Use whenever the user asks to review, audit, tidy or
+  sweep skills or a plugin — even if they just say "check the skills for
+  drift" or "work through the skill feedback".
 ---
 
 # Review the plugin
@@ -30,6 +17,7 @@ A review of a Claude Code plugin, a marketplace of several, or a repo serving as
 It takes whatever plugin source it is pointed at: the checkout it runs in, a path, or a repository to clone.
 Where the user can push, it fixes and commits; where they cannot, it stops at the report and offers it as an issue or a pull request from a fork, since another owner's conventions may be deliberate.
 It runs `review-project` with the skills as the code under review and adds the checks below, judging against `write-skills` and `write-markdown` rather than restating them.
+Anthropic's `plugin-dev` plugin, if installed, checks hooks, manifests, agents and commands more deeply than Check the wiring; without it, `claude plugin validate --strict` and running each hook are the floor.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
 **Run every check below in every sweep, whatever the brief names.** A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
 
@@ -60,12 +48,13 @@ Who merges is the plan's decision; without one, the user does.
 ## Take an inventory
 
 Count the words in every `SKILL.md` and reference, skipping folders synced in by other tools, and in the README, `CLAUDE.md`, `PLAN.md` and each context file.
+Measure each description in characters against `write-skills`' limit, and each plugin's always-on cost with `claude plugin details <plugin>@<marketplace>`; the total across the marketplace is what competes for the listing's budget, so a sweep that lets it grow says why.
 Compare each against its neighbours and against the counts the last sweep recorded in its commit messages and report.
 A skill that grew while its neighbours held steady is where to look first; a top-level file that grew is a finding in itself, since each fix adds a sentence and nobody restructures the whole.
 
 ## Check each skill
 
-- **Description against body, both ways**, and under about 250 words (`write-skills`, Write the description).
+- **Description against body, both ways**, and within its character limit (`write-skills`, Write the description).
 - **Overfitting**: names, data and edge cases from one project, restated in a domain any reader knows or cut (`write-skills`, Keep examples general).
 - **The default test**: each rule Claude would follow unprompted is cut (`write-skills`, Cut what Claude does unprompted); word counts miss this bloat.
 
@@ -91,12 +80,17 @@ A file patched sweep after sweep reads as drip-fed even when every line is true;
 
 ## Check the wiring
 
-- **Every manifest validates**: `claude plugin validate` on the marketplace and on each plugin, with every plugin folder listed in `marketplace.json` and every skill in exactly one plugin.
+- **Every manifest validates**: `claude plugin validate --strict` on the marketplace and on each plugin, which fails on warnings the runtime tolerates (a missing author, an unknown field), with every plugin folder listed in `marketplace.json` and every skill in exactly one plugin.
+- **The built-in audits, read as leads**: `/doctor prompt-audit <plugin folder>`, in a session, for outdated or conflicting instructions across skills and instruction files, and, on a machine that has used the plugins, `/skill-doctor` (`claude -p "/skill-doctor"` prints it), whose never-invoked skills are a description that does not fire or a skill nobody needs.
+Verify each finding against the files before acting, as for the cold read.
 - **Each hook runs**: execute the session-start script and read what it prints; a prompt hook is checked by the case that should trip it.
 - **Every symlink resolves**, into `~/.claude` and from a top-level `skills/` folder into the plugins, or is dangling on purpose.
 - **`.gitignore` covers what should never be committed**: editor folders, caches, OS files, folders synced in by other tools.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
 - **Each trigger suite passes**, run from every plugin folder the sweep touched: `claude plugin eval . --ablation none --no-publish --trust-plugin`.
+Each skill has a case that should fire it; a skill with a near neighbour that could claim its prompts also gets one that should not, a `tool_used` grader on `Skill` with `min: 0` and `max: 0`, added only where the two are likeliest to be confused, since every case is a paid session.
+A case whose skill makes Claude work at length raises `timeout_seconds` in its `prompt.md` above the 300-second default rather than failing on the cap.
+The no-plugin arm (`--ablation with-without`) shows nothing for a trigger case, which cannot fire a skill that is not installed; it earns its cost only for a case that grades behaviour.
 `--trust-plugin` stands in for the trust prompt no unattended run can answer, so pass it only for a plugin whose source the sweep has read; a case scoring 0 at no cost with an API or timeout note never reached the model, so rerun it rather than reword its description.
 - **The feedback wiring works**: the `skill-feedback` label exists on the plugin's repository and `gh issue list` runs authenticated (`gh api` where GraphQL is blocked).
 

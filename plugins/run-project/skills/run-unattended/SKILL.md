@@ -1,25 +1,13 @@
 ---
 name: run-unattended
 description: >-
-  The operational side of a job that runs on a schedule with nobody watching
-  — which day a nightly run fetches, the overlap lock, a bounded catch-up
-  window with a wider gap left for an explicit backfill by range through the
-  nightly's own path, exit codes for every command, a source's tolerance for
-  failed items, the status command as the health check, the scheduler's own
-  failed-run mail as the signal until an alert is earned, the job's rotated
-  log, picking the scheduler (launchd on macOS, a systemd timer on Linux,
-  GitHub Actions in the cloud) and what each does with a missed run, invoking
-  the environment through uv, secrets outside the unit file, keeping an API
-  or dashboard alive, and deploying with a clone and uv sync. Use whenever
-  scheduling a nightly or periodic job, writing a plist, timer or workflow,
-  deciding what a job does when a night is missed or a source or an item
-  fails, choosing an exit code, adding a status or health command, choosing
-  where a job's logs go, or keeping a service running — even if the user just
-  says "run this every night", "cron this", "make it restart" or "why did
-  last night not run". Layers on write-entry-points (the job driver) and
-  store-data (the manifest); send-messages builds the alert once one is
-  earned; the plist and timer files are in references/schedulers.md, the
-  Actions workflows in deploy-project's references/github-actions.md.
+  The operational side of a job that runs on a schedule with nobody watching —
+  which day it fetches, the overlap lock, catch-up and backfill, exit codes,
+  failed items, a status command, logs, and picking launchd, a systemd timer
+  or GitHub Actions. Use whenever scheduling a nightly or periodic job,
+  deciding what it does when a night is missed or a source fails, or keeping a
+  service running — even if the user just says "run this every night", "cron
+  this" or "why did last night not run".
 ---
 
 # Run unattended

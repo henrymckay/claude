@@ -7,20 +7,14 @@ Settings live in `drive/config.py`, logging in `drive/logging_.py` (Configuratio
 
 ## Role and framework split
 
-Under `code/drive/`, each driver is a hollow **role package** over one or more **framework packages**:
-
-- The **role package** (`cli`, `api`, `gui`) only re-exports the app object, giving a stable entry point (`mypackage.code.drive.cli:app`) that hides the library.
-- The **framework packages** (`typer_`, `rich_`, `fastapi_`, `pydantic_`, `shiny_`) hold the library-coupled code, named with `write-python`'s trailing underscore.
+The **role package** (`cli`, `api`, `gui`) only re-exports the app object (`mypackage.code.drive.cli:app`); the **framework packages** (`typer_`, `rich_`, `fastapi_`, `pydantic_`, `shiny_`) hold the library-coupled code, named with `write-python`'s trailing underscore.
 
 **Every framework package keeps its app object in `driver.py`**, with the `run()` launcher where one is needed.
-An app object must exist before anything decorates it, so in its own module the command and route modules stay flat alphabetical lists; `driver.py` imports no other `drive` module, so nothing cycles.
-`__init__.py` then stays a pure re-export, and you know where the app is in any framework package without reading it.
+An app object must exist before anything decorates it, so in its own module the command and route modules stay flat alphabetical lists; `driver.py` imports no other `drive` module, so nothing cycles, and `__init__.py` stays a pure re-export.
 
-**A framework package may hold a module that imports nothing from its framework**, where that framework is its only caller — `fastapi_/provide.py` naming the concrete adapter.
-Lift it to a shared `drive/` module when a second driver needs it.
+**A framework package may hold a module that imports nothing from its framework** where that framework is its only caller — `fastapi_/provide.py` naming the concrete adapter — lifted to a shared `drive/` module when a second driver needs it.
 
-**A package of interchangeable adapters names its own members.** Where the core picks among adapters at runtime, a function in `adapt/__init__.py` returns the mapping and every driver calls it; enumerating them in a driver means the next driver copies the list.
-The driver still chooses to use the set and injects it.
+**A package of interchangeable adapters names its own members**: where the core picks among adapters at runtime, a function in `adapt/__init__.py` returns the mapping and each driver calls it and injects the set, since a list enumerated in one driver is copied by the next.
 
 ## CLI
 
@@ -49,7 +43,7 @@ rich_/
   render.py       builds the rich table and nothing else
 ```
 
-`command.py` is the composition root (`SKILL.md`): it reads the settings once, opens the one client of the run with the key bound into it, builds the port's callable from the source module and the paced getter, and hands the result to `output`:
+`command.py` is the composition root (`SKILL.md`), binding the key into the run's one client:
 
 ```python
 import datetime
@@ -107,11 +101,9 @@ from mypackage.code.drive.typer_ import app as app
 
 ### Commands and groups
 
-- **A command's name is its function's name.** `typer` turns `list_stations` into `list-stations`; never pass `name=`, or a grep for the command a user typed finds nothing.
-Where the natural name is a builtin (`list`, `type`), pick a better command name rather than overriding.
-- **An `@app.callback()`** is the home for app-wide options, as thin as a command.
-- **A command group** is its own `typer.Typer()`, mounted with `app.add_typer(users, name="users")`.
-Every `typer.Typer()`, sub-apps included, lives in `driver`, so each group's module stays a flat list of commands and `command/__init__.py` only mounts them.
+- **A command's name is its function's name.** `typer` turns `list_stations` into `list-stations`; never pass `name=`, or a grep for the command a user typed finds nothing, and where the natural name is a builtin (`list`, `type`), pick another.
+- **An `@app.callback()`** holds the app-wide options, as thin as a command.
+- **A command group** is its own `typer.Typer()`, mounted with `app.add_typer(users, name="users")`; every `typer.Typer()`, sub-apps included, lives in `driver`, so `command/__init__.py` only mounts them.
 - **A group's arrival turns `command.py` into `command/`**, one module per group; `argument.py` and `option.py` follow only when they too would be worth opening a file at a time.
 
 ### Arguments and options
@@ -125,12 +117,10 @@ def stations() -> typer.models.ArgumentInfo:
 ```
 
 - **A factory naming its own flags frees the parameter name**: `typer.Option("--input", "-i")` lets the parameter be `input_` without the CLI seeing the underscore.
-- **A repeated option defaults to `list[T] | None = None`**, resolved in the body: `list[T] = [x]` fails `ruff`'s B006, a tuple fails `pyright` against `list`, and `typer` refuses `Sequence`.
-Restore the `--help` text with `show_default="daily"` on the factory.
-- **A date or clock default is `None`, resolved where used** — a signature expression is evaluated once at import and goes stale.
-Describe the behaviour in `show_default`, not a value nothing computes: an open upper date gets "as recent as there is", not "today", since passing today is a different request.
-- **Parameterise a factory over systematic options.** A surface with a threshold per metric takes the axis as an argument — `minimum(metric: domain.Metric)` builds the help and `rich_help_panel` — and the body hands the whole option set on with `bounds.frame(**locals())`, rather than repeating every name in a second list that drifts; `typer` reads real parameters, so the signature still names each one.
-- **Keep help terse and let defaults be the examples**; a required argument is the one place a bare example value earns its line, and only where the name leaves the format open.
+- **A repeated option defaults to `list[T] | None = None`**, resolved in the body, with `show_default="daily"` on the factory restoring the `--help` text: `list[T] = [x]` fails `ruff`'s B006, a tuple fails `pyright` against `list`, and `typer` refuses `Sequence`.
+- **A date or clock default is `None`, resolved where used**, since a signature expression is evaluated once at import and goes stale; `show_default` describes the behaviour — "as recent as there is", not "today", since passing today is a different request.
+- **Parameterise a factory over systematic options.** A threshold per metric takes the axis as an argument — `minimum(metric: domain.Metric)` builds the help and `rich_help_panel` — and the body hands the set on with `bounds.frame(**locals())`, not a second list of names that drifts; `typer` reads real parameters, so the signature still names each one.
+- **Keep help terse and let defaults be the examples**; a bare example value earns its line only on a required argument whose name leaves the format open.
 
 **Set the `typer` options that make `--help` the documentation:**
 
@@ -142,7 +132,7 @@ Describe the behaviour in `show_default`, not a value nothing computes: an open 
 
 ### Output
 
-**`output` picks the form `SKILL.md` fixes by option; `rich_` only builds the table.** The form is an `enum.StrEnum`, since it crosses the boundary (see `write-python`): `typer` lists its members under `--help` and exits 2 on any other value.
+**`output` picks the form; `rich_` only builds the table.** The form is an `enum.StrEnum`, since it crosses the boundary (`write-python`): `typer` lists its members under `--help` and exits 2 on any other value.
 
 ```python
 class Form(enum.StrEnum):
@@ -172,12 +162,10 @@ def display(report: polars.DataFrame, *, form: Form, path: pathlib.Path | None) 
 
 - **Build a table a level at a time**: a function per cell, one per row, one assembling them; a branch in a loop naming a column is the renderer sniffing the frame again.
 - **Style a cell with a `rich.text.Text`**, never a row's `style=`, which paints the identity columns too.
-- **Read input the same way**: type the argument `pathlib.Path` and treat `-` as standard input, so `mypackage-cli report -` works mid-pipeline.
+- **Read input the same way**: type the argument `pathlib.Path` and treat `-` as standard input.
+- **Print errors with `typer.echo(message, err=True)`**; logs reach standard error through Logging's handler.
 
-**Send logs and errors to standard error.** `rich.logging.RichHandler()` builds its own `Console()` on standard output, so give it `rich.console.Console(stderr=True)` (see Logging); print errors with `typer.echo(message, err=True)`.
-
-**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: `write-python`'s `handle` with `report=output.report`, which prints the message to standard error and raises `typer.Exit(code=1)`, or `code=2` for the `ConfigurationError` from `config.read_settings()` (`run-unattended`, Report the outcome).
-A `try` per command is missed on exactly the command that then shows a traceback.
+**Catch your own errors with a decorator on each command**, under `@app.command()` so `typer` still reads the signature: `write-python`'s `handle` with `report=output.report`, which prints the message to standard error and raises `typer.Exit(code=1)`, or `code=2` for the `ConfigurationError` from `config.read_settings()` (`run-unattended`, Report the outcome); a `try` per command is missed on exactly the command that then shows a traceback.
 
 ## API
 
@@ -198,10 +186,9 @@ pydantic_/
   schema.py     the request and response models
 ```
 
-**A schema is not a domain type, even when the fields match.** The DTO (Data Transfer Object) is the external contract, the domain type the internal truth; separate, they evolve independently and untrusted input is validated at the boundary.
-Map between them in `route.py`.
+**A schema is not a domain type, even when the fields match**: the DTO (Data Transfer Object) is the external contract and evolves apart from the domain type, and untrusted input is validated at the boundary; map between them in `route.py`.
 
-- **`pydantic` validates at the API boundary — request and response models — and in `pydantic-settings`.** An adapter returning a frame declares a `polars` schema instead (see `structure-python`), since a model per row re-validates what the frame's dtypes already fix; one returning records parses with `pydantic` (see `write-python`), and the core takes frozen dataclasses either way.
+- **`pydantic` models are the API's request and response bodies, and `pydantic-settings`'s.** An adapter returning a frame declares a `polars` schema instead (`structure-python`), since a model per row re-validates what the dtypes fix; one returning records parses with `pydantic` (`write-python`); the core takes frozen dataclasses either way.
 - **Never duplicate an enum**: a schema field references the domain's `enum.Enum` directly.
 - **A model wanted in both `adapt` and `drive` is a domain model** — the two edges can't import each other — so it moves to `transform`/`domain`.
 
@@ -233,8 +220,7 @@ def store() -> port.Store:
     return parquet.Store(settings().data_dir)
 ```
 
-`provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Store` in its signature, and names `parquet` only in its body.
-It earns its place only because `Depends` needs a callable to resolve; naming an adapter is otherwise the route's own job.
+`provide.py` is the injection seam: it imports no `fastapi`, depends on `port.Store` in its signature, and names `parquet` only in its body; it exists only because `Depends` needs a callable to resolve.
 
 A date-range bound is a required `fastapi.Query()` with no default, so a call without it is a `422` rather than an unbounded scan.
 
@@ -278,17 +264,16 @@ def run() -> None:
     uvicorn.run(starlette_.loopback_only(app, port=8000), port=8000)
 ```
 
-`uvicorn.run` binds `127.0.0.1` by default, and `run()` wraps `app` in the Loopback guard below there and nowhere else, so a test client, `dependency_overrides` and the development server all see the bare app; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
+`uvicorn.run` binds `127.0.0.1` by default, and only `run()` wraps `app` in the Loopback guard below, so a test client, `dependency_overrides` and the development server see the bare app; `host="0.0.0.0"` comes with authentication (`SKILL.md`, HTTP surface).
 A test swaps the adapter with `app.dependency_overrides[provide.store] = lambda: fake_store` — no patching.
 
 ## Dashboard
 
-Three build-outs, in `SKILL.md`'s order of preference: a web front end served by the API or as static files, Dash with Mantine, and Shiny.
-Each reads the store through `operate.*`, takes its look from `design-interface` (its `references/python.md` builds the Plotly, Mantine and Shiny themes from one tokens module), and sets `data-ready` once its first screen has data.
+Three build-outs, in `SKILL.md`'s order: a web front end, Dash with Mantine, and Shiny; each takes its look from `design-interface`'s references and sets `data-ready` once its first screen has data.
 
 ### Web front end
 
-The front end is its own folder beside `src/`, and the API serves both its JSON and its built files from one process:
+The front end is its own folder beside `src/`:
 
 ```text
 web/
@@ -311,21 +296,19 @@ src/mypackage/
   data/web/           the build, git-ignored, shipped in the wheel
 ```
 
-- **Node comes from `setup-python`'s development dependency `nodejs-wheel`**, so `uv run npm --prefix web ci` and `uv run npm --prefix web run build` need no system Node.
+- **Node is `setup-python`'s `nodejs-wheel`**: `uv run npm --prefix web ci`, then `uv run npm --prefix web run build`.
 - **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init` — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
 - **Build into the package** with `build.outDir` set to `../src/mypackage/data/web` and `emptyOutDir: true`, so `uv_build` ships the built files in the wheel and the API finds them with `importlib.resources.files("mypackage.data") / "web"`.
 - **Mount the files after the routes**: `app.mount("/", fastapi.staticfiles.StaticFiles(directory=web, html=True), name="web")` as the last line of `driver.py`, since a mount at `/` registered first answers every `/api` request with a 404.
 - **Keep the screens in the page's state, not in paths**, a tab or a `?view=` parameter, since the static mount answers a path it has no file for with a 404.
-- **In development run both servers**: the API under `uvicorn` on 8000, and `npm run dev` with `server.proxy` sending `/api` to it, so the page reloads on save.
-- **`lib/data.ts` is the only module that fetches**, one typed function per route returning parsed rows, so a screen never builds a URL.
-Each answer is a JSON array of rows, as the API's schemas define, with dates as ISO strings the formatting module turns into `12 Nov 2026`.
-- **Poll the manifest, not the data**: one hook asks `GET /api/runs/latest` every 60 seconds and bumps a counter only when its `ended` changes, and every data hook takes that counter as a dependency; the age chip re-renders on the same tick.
+- **In development run both servers**: `uvicorn mypackage.code.drive.api:app --reload` on 8000 and `uv run npm --prefix web run dev`, whose `server.proxy` sends `/api` to it, so the page reloads on save.
+- **`lib/data.ts` has one typed function per route returning parsed rows**, so a screen never builds a URL; dates arrive as ISO strings for `lib/format.ts`.
+- **One hook polls `GET /api/runs/latest` every 60 seconds** and bumps a counter only when its `ended` changes; every data hook depends on that counter, and the age chip re-renders on the same tick.
 
-**The static version is `lib/data.ts` reading Parquet instead**, chosen at build time by `VITE_DATA=files` through `import.meta.env`: files an `export` command writes into `web/public/data/`, small and pre-aggregated per screen, read with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects` from `` `${import.meta.env.BASE_URL}data/…` ``, so the page works under a project site's path.
-Keep each file to a few megabytes, within every static host's limits (`deploy-project`, Serve the dashboard).
-The manifest's last run ships as a small JSON file beside them, polled the same way.
+**The static version is `lib/data.ts` reading Parquet instead**, chosen at build time by `VITE_DATA=files` through `import.meta.env`: small per-screen files an `export` command writes into `web/public/data/`, read with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects` from `` `${import.meta.env.BASE_URL}data/…` ``, so the page works under a project site's path.
+Keep each file to a few megabytes (`deploy-project`, Serve the dashboard); the manifest's last run ships beside them as a small JSON file, polled the same way.
 
-**Test it** with `fastapi.testclient.TestClient(app)` and the store overridden (API above) for every route, `vitest` for `lib/format.ts` and any shaping in `lib/data.ts`, and a Playwright smoke test per screen, marked `slow`, against the built app on a free port:
+**Test it** with `fastapi.testclient.TestClient(app)` and the store overridden for every route, `vitest` for `lib/format.ts` and any shaping in `lib/data.ts`, and a Playwright smoke test per screen, marked `slow`, against the built app on a free port:
 
 ```python
 @pytest.mark.slow
@@ -342,7 +325,7 @@ def test_each_screen_draws_its_data(
     assert errors == []
 ```
 
-`served` is a fixture that starts `uvicorn` on the app in a thread over a temporary store and yields its URL; the browser is Playwright's headless shell, installed into the project as `build-project`'s evaluator says.
+`served` is a fixture that starts `uvicorn` on the app in a thread over a temporary store and yields its URL; the browser is installed as `build-project`'s `references/evaluate.md` says.
 
 ### Dash
 
@@ -363,7 +346,7 @@ plotly_/
   template.py   house_light and house_dark (design-interface)
 ```
 
-- **`driver.py` imports `callback`, sets the React version and builds the app**; `@dash.callback` registers each callback globally as its module is imported, as `typer_/__init__.py` imports its commands, and `dash-mantine-components` 3 needs React 19 where Dash 4.5 serves 18.3.1 by default, so without the call every Mantine component fails to render:
+- **`driver.py` imports `callback`, sets the React version and builds the app**: `@dash.callback` registers a callback only once its module is imported, and `dash-mantine-components` 3 needs React 19 where Dash 4.5 serves 18.3.1 by default, so without the call every Mantine component fails to render:
 
 ```python
 import dash
@@ -383,21 +366,17 @@ app.layout = layout.root
 
 - **`app.layout` is the function `layout.root`, not its result**, so each page load reads the store afresh; a layout built once at import shows the data the process started with.
 - **Every id is a constant in `layout.py`**, which `callback.py` imports, so a renamed component fails at import rather than as a callback that silently never fires.
-- **A callback calls `operate.*` over `provide.store()` and returns plain data**: a figure from `figure.py`, rows for the grid as `frame.to_dicts()`, text for a tile; a callback that edits one property of a large figure returns a `dash.Patch()`.
+- **A callback calls `operate.*` over `provide.store()` and returns plain data** — a figure from `figure.py`, `frame.to_dicts()` for the grid, text for a tile — or a `dash.Patch()` where it edits one property of a large figure.
 - **Catch the app's own error in the callback and return an error note** to the outputs it fills, since an uncaught one leaves them as they were and tells the viewer nothing (`write-python`, the error model).
-- **Refresh by the manifest's stamp**: a `dcc.Interval` of 60 seconds drives a callback that reads the last run's `ended` into a `dcc.Store`, returning `dash.no_update` when it has not changed, and every data callback takes that store as an input, so data is re-read once a night rather than once a minute; the age chip reads the same tick.
+- **Refresh by the manifest's stamp**: a 60-second `dcc.Interval` drives a callback that reads the last run's `ended` into a `dcc.Store`, returning `dash.no_update` when unchanged; every data callback and the age chip take that store as an input.
 - **Signal readiness from the browser**: a clientside callback on the last figure of a screen sets `document.documentElement.dataset.ready = "1"` inside a `requestAnimationFrame`, since the figure draws after its callback returns; the navigation's `dmc.TabsTab` carries `**{"data-view": name}`, which `dcc.Link` refuses.
-- **Re-theme figures on `dmc.ColorSchemeToggle`'s `computedColorScheme`** with a `dash.Patch()` that sets `layout.template` (`design-interface`).
 - **Test a callback by calling it**: `@dash.callback` returns the function it decorates, so a test calls it with the inputs and a fake store and asserts on what it returns; the browser smoke test is the web front end's, pointed at `run()`'s port.
 
 `driver.py`'s `run()` calls `app.run(port=8001, debug=False)`, which serves on loopback through Flask; Dash is a WSGI app, so the Loopback guard's ASGI wrapper does not fit it, and the same check is a `before_request` hook on `app.server` refusing a `Host` or `Origin` outside the loopback names with `flask.abort(403)`.
-A host runs `app.server` under `gunicorn` (`deploy-project`).
 
 ### Shiny
 
-`shiny`'s UI/server split matches shell over core.
-
-**Use Shiny Core, not Express, in a packaged app.** Core keeps layout and reactive callbacks apart and yields an explicit `shiny.App` for the launcher; Express suits only a throwaway single-view dashboard.
+**Use Shiny Core, not Express, in a packaged app**: Core keeps layout and callbacks apart and yields an explicit `shiny.App` for the launcher; Express suits only a throwaway single-view dashboard.
 
 ```text
 gui/
@@ -449,9 +428,9 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
         )
 ```
 
-- **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, Dashboard); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
-- **Refresh by watching the run manifest** (`store-data`), through `provide.watch_runs()`, which returns the decorator for wherever the store is, so `server` is the same on the laptop and the host.
-Over the data directory it is `shiny.reactive.poll` on the file's modification time and size, read as `None` while the file does not exist, since `shiny.reactive.file_reader` raises `FileNotFoundError` on a fresh store with no manifest yet and ends the session (`shiny` 1.9):
+- **`callback.server` is the composition root and calls `operate.*` over the store**; a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
+- **Refresh by watching the run manifest** through `provide.watch_runs()`, which returns the decorator for wherever the store is, so `server` is the same on the laptop and the host.
+Over the data directory it is `shiny.reactive.poll` on the file's modification time and size, `None` while the file does not exist, since `shiny.reactive.file_reader` raises `FileNotFoundError` on a fresh store with no manifest yet and ends the session (`shiny` 1.9):
 
 ```python
 type _Reader = collections.abc.Callable[[], polars.DataFrame]
@@ -474,12 +453,10 @@ def watch_runs() -> collections.abc.Callable[[_Reader], _Reader]:
 
 Against MotherDuck there is no file, so it is `shiny.reactive.poll(read_last_run, interval_secs=300)`, where `read_last_run` asks the `runs` table for its latest `ended`: the manifest changes once a night, and every check is a query against MotherDuck's monthly compute, where the one-second default would run 86,400 a day per session.
 Either way every output depending on `runs()` updates without a timer of its own, and `read_runs` answers an empty frame before the first run.
-- **Show the last run's age, re-judged on a slow clock**: the output that says how old the data is calls `shiny.reactive.invalidate_later(3600)` and compares the latest `ended` with now, since a night that never ran rewrites nothing and a tab left open would otherwise show yesterday's verdict for ever.
+- **Re-judge the data's age hourly**: the output showing it calls `shiny.reactive.invalidate_later(3600)` and compares the latest `ended` with now (`SKILL.md`, Dashboard).
 - **Read the store in a `shiny.reactive.calc` or the render function, never a `shiny.reactive.effect`.** An exception raised in an effect ends the session — every output unrendered, "Session fatal error" — while one raised in a calc shows as an error in the outputs that read it and nowhere else (`shiny` 1.9).
-- **Theme it from `design-interface`**: `shiny.ui.page_navbar(..., theme=theme.build())` with `shiny.ui.input_dark_mode(id="scheme")` in the navbar, and every figure's render function reading `input.scheme()` to pick `house_light` or `house_dark`.
 - **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
 `shinywidgets` brings the IPython and `ipywidgets` stack, 24 packages over `shiny` and `plotly` (`shinywidgets` 0.8.2); a figure rendered with `fig.to_html(include_plotlyjs=False, full_html=False)` through `shiny.render.ui`, with `plotly.js` served from the app's `static_assets`, avoids them and loses the widget's in-place updates.
-- **The callbacks nested in `server` carry no docstring**, as `write-python` says of a nested function; the blank line after `server`'s own docstring is that skill's exception for a short function's beats.
 
 `driver.py` builds `app = starlette_.loopback_only(shiny.App(layout.root(), callback.server), port=8001)` (Loopback guard) and a `run()` calling `shiny.run_app(app, port=8001)`: `shiny.run_app`, `shiny run` and `uvicorn.run` all default to 8000, so the two launchers collide unless the dashboard moves.
 
@@ -487,8 +464,7 @@ Either way every output depending on `runs()` updates without a timer of its own
 
 ## Loopback guard
 
-A server answering on loopback with no authentication checks `Host` and any `Origin`, as `secure-project`'s Guard what is served says.
-`drive/starlette_.py` wraps any app that runs on Starlette, the dashboard's and the API's alike, since `starlette.middleware.trustedhost.TrustedHostMiddleware` checks `Host` but lets a WebSocket from a foreign `Origin` through:
+`secure-project`'s Guard what is served sets the check; `drive/starlette_.py` makes it for any app on Starlette, the API's and Shiny's alike, since `starlette.middleware.trustedhost.TrustedHostMiddleware` checks `Host` but lets a WebSocket from a foreign `Origin` through:
 
 ```python
 _LOOPBACK = ("127.0.0.1", "localhost")
@@ -563,11 +539,10 @@ class Settings(pydantic_settings.BaseSettings):
 - **`env_file` is an absolute path**: four parents above `src/mypackage/code/drive/config.py` is the checkout, which an editable install (`uv sync`'s default for the project) still points at, and `MYAPP_ENV_FILE` overrides it for a wheel or a scheduler with its own secrets file.
 A bare `".env"` is resolved against the current directory, which under a scheduler is not the repo, so the key is silently absent and every night exits 2.
 - **`.env` is for the laptop** (`secure-project`, Keep secrets out); the environment wins over it, so a container sets variables and the file is never deployed.
-Commit a `.env.example` naming every variable with a placeholder, so a fresh clone knows what to set without reading the model.
+Commit a `.env.example` naming every variable with a placeholder.
 - **A secret is a `pydantic.SecretStr` field** with no default, so a missing key fails at startup and a `repr` or a log line shows `**********`.
-- **One value is a function, not a model.** A function reading one variable and raising an error naming it when unset costs nothing; grow into the model at the second field, and call sites don't change.
-It also keeps a required value honest, where a model invites a default.
-- **Validate at startup only what the running command needs.** A `typer` callback runs before every command, so validating there makes `--version` or a listing command fail for a credential it never uses; check in the commands that need it.
+- **One value is a function, not a model**: a function reading one variable and raising an error naming it when unset, grown into the model at the second field without changing a call site; a model invites a default on a required value.
+- **Validate only what the running command needs, in that command.** A `typer` callback runs before every command, so validating there makes `--version` or a listing command fail for a credential it never uses.
 
 ## Logging
 
@@ -611,13 +586,13 @@ def configure(
         logging.getLogger(dependency).setLevel(logging.WARNING)
 ```
 
-**Rich when standard error is a terminal, the plain format when it is not**, so a person gets colour and a scheduler's or a runner's capture gets timestamped lines with no escape codes; this is the rendering library's colour rule from `SKILL.md`'s Compose with other tools, applied to the log.
+**Rich when standard error is a terminal, the plain format when it is not**, so a person gets colour and a scheduler's capture gets timestamped lines with no escape codes; `RichHandler()` builds its own `Console()` on standard output unless given one on standard error.
 `basicConfig` applies `format` only to a handler without one, so the plain handlers keep their timestamps and `RichHandler` gets the bare message — leave `format` out and Rich prints the level twice.
-The default `WARNING` is for an interactive command; the scheduled level and when a run takes `--log-file` are `run-unattended`'s, and the `httpx` pins are `structure-python`'s Logging.
+The scheduled level and when a run takes `--log-file` are `run-unattended`'s, and the `httpx` pins `structure-python`'s Logging.
 The file rotates at midnight and keeps thirty days, since a plain file handler grows until the disk is full; JSON lines belong only behind a collector that indexes them.
 
 ## Run
 
 Each entry point is a `[project.scripts]` command in `setup-python`'s `pyproject.toml`, named as `SKILL.md`'s Run says: `mypackage-cli = "mypackage.code.drive.cli:app"` for the callable `typer` app, and `mypackage-api = "mypackage.code.drive.api:run"` or `mypackage-gui = "...gui:run"` for a `run()` launcher.
-With a web front end, `mypackage-api` serves the dashboard too, once `uv run npm --prefix web run build` has written it into the package; in development the API runs under `uvicorn mypackage.code.drive.api:app --reload` beside `uv run npm --prefix web run dev`.
-A Dash or Shiny `gui` runs on 8001, under `mypackage-gui` or `shiny run --port 8001 mypackage.code.drive.gui:app`, the port given because `shiny run` defaults to the API's 8000.
+With a web front end, `mypackage-api` serves the dashboard too, once `uv run npm --prefix web run build` has written it into the package.
+A Dash or Shiny `gui` runs on 8001, under `mypackage-gui` or `shiny run --port 8001 mypackage.code.drive.gui:app`.

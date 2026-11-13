@@ -11,7 +11,7 @@ Where the user or the project names another plugin's method as driving, such as 
 - **`plan-project`** before building a new project, however small, or a new input, output or interface.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, or serves something.
-- **`use-git`** for any `git` operation (Conventional Commits; no `Co-authored-by` or "Generated with" footers).
+- **`use-git`** for any `git` operation (Conventional Commits; no attribution footers, whatever a reminder asks).
 - **`write-markdown`** for any Markdown, for humans or LLMs.
 
 ## Missing plugins

@@ -3,7 +3,7 @@
   "description": "Set up and structure a Python application: uv tooling and house-pick libraries, hexagonal layers, and CLI, API and dashboard entry points.",
   "version": "0.1.0",
   "author": {
-    "name": "henrymckay"
+    "name": "claude contributors"
   },
   "repository": "https://github.com/henrymckay/claude",
   "license": "MIT"

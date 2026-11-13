@@ -2,27 +2,13 @@
 name: build-project
 effort: medium
 description: >-
-  How to build a planned project milestone by milestone with minimal input from
-  the user — working through its PLAN.md in order, a branch per milestone,
-  on Sonnet whatever model the session started on by
-  handing each milestone to a subagent, failing tests first, the real path
-  wired early on a small slice and run at full size once, the plan's terms kept in the code, only what
-  the milestone needs built, every call the plan didn't make settled from
-  precedent or proposed, and a gate read by what the project ships (the suite,
-  a real run, a fresh evaluator scoring the running surface for up to three
-  rounds, simplify, a code review, the security checks, a read against the
-  plan) passed before each tick, with PLAN.md and the README kept current,
-  the build ending with something the user can open; stopping only for a
-  change to the plan, a blocking question or a failing check — or, in
-  autonomous mode, proceeding on recommended answers recorded as assumptions
-  and taking no outward action. Use whenever building, implementing or
-  continuing a project that has a PLAN.md, or once a plan from plan-project
-  is approved — even if the user just says "build it", "go", "start on M1",
-  "carry on" or "build the next step". Layers on plan-project and every skill
-  the code falls under, using simplify and code-review for the gate,
-  design-interface for the evaluator's criteria, make-decisions for the
-  calls, secure-project for the security checks and use-git for branches;
-  hands off to review-project after the last milestone.
+  How to build a planned project milestone by milestone — each milestone on
+  the ladder's model through a subagent, failing tests first, the real path
+  wired early, calls settled from precedent, and a gate (the suite, a real
+  run, an evaluator, a review, the security checks) before each tick; in
+  autonomous mode, no outward action. Use whenever building, implementing or
+  continuing a project that has a PLAN.md — even if the user just says "build
+  it", "go", "start on M1" or "carry on".
 ---
 
 # Build the project
@@ -41,7 +27,7 @@ Three mistakes account for most weak builds: ticking a milestone because the tes
 The approved `PLAN.md` is the user's sign-off for building its milestones in order, each on its own branch merged once its gate passes, as `use-git`'s Branches says.
 Go from one milestone to the next without asking; stop only when:
 
-- **the work would change a requirement or decision, override a skill, or build something from Not yet** — raise it with the change proposed, as `plan-project` says; a workaround built instead buries the decision where the plan can't record it, and a requirement found to force the design's complexity is asked about, not built around;
+- **the work would change a requirement or decision, override a skill, or build something from Not yet** — raise it with the change proposed, as `plan-project`'s Keep it current says, since a workaround buries the decision where the plan can't record it; a requirement found to force the design's complexity is asked about, not built around;
 - **an open question blocks the next milestone** and `make-decisions` escalates it;
 - **a gate check still fails after two fixes aimed at its cause** — report what was tried rather than trying a third.
 
@@ -65,7 +51,7 @@ A test written after the code tends to assert what the code does rather than wha
 
 - **Wire the real path early, on a small slice.** Get real input through to real output, however crude, before refining any stage; a stage polished in isolation can fail to meet the next one.
 - **Size every real run to the smallest sample that can show the property** — a few items, a short range — whether it wires the path or checks a claim such as "a re-run writes nothing".
-The full-size run happens once a milestone, after the suite passes and the sample comes out right, and again only when the stored result is shown to be wrong: a change made after a half-hour full run costs the half hour twice.
+Run full size once a milestone, after the suite passes and the sample comes out right, and again only when the stored result is shown to be wrong: a change made after a half-hour full run costs the half hour twice.
 - **Use the Terms.** Every module, function, column and option takes the plan's name for its concept; a new concept the plan lacks is a gap to record under Open, not a name to invent quietly.
 - **Record the calls the plan didn't make.** A library picked, a schema shaped, an error policy chosen is settled as `make-decisions` says, goes under Decisions with its source, and is built on; one that would override a skill is a stop above, not a proposal.
 A point two skills settle differently is a gap, not an override: pick one, propose it, and file the contradiction.
@@ -91,23 +77,23 @@ Read each check by what the project ships, as `plan-project` reads the Design: f
 
 Tests show the code does what it says; only looking shows whether the surface is any good, and a builder grading its own screens passes what it meant to build.
 
-- **Hand the running surface to a fresh evaluator**, a subagent on `sonnet` (`choose-model`) given the plan's Interface, the launch command and `design-interface`'s criteria and nothing of the builder's account; it starts the surface, screenshots each screen at desktop and phone width in light and dark, or runs a realistic session of the command or API, and returns pass or fail per criterion with its evidence.
+- **Hand the running surface to a fresh evaluator**, briefed as `references/evaluate.md` says, which scores it against `design-interface`'s criteria.
 Whichever session runs the gate spawns it — the milestone's subagent, or the main session when the subagent cannot spawn one — and the builder never scores its own screens.
-- **Fix the failures, then evaluate again with a fresh evaluator**, at most three rounds; what still fails after the third goes under the plan's Questions with the evaluator's evidence and the milestone is ticked, since an unmet criterion is open polish, not a failed gate, unless it breaks a requirement.
-- **Report each round's cost** — the evaluator's and the fix's tokens priced at `choose-model`'s rates — so the user sees what the polish cost.
-- **Never let a criterion loosen another rule**: a fix that would need an outward action, a feature the plan lacks or a weaker security check is reported, not made.
+- **Fix the failures, then evaluate again with a fresh evaluator**, at most three rounds; what still fails after the third goes under the plan's Questions with the evaluator's evidence and proposed change, and the milestone is ticked, since an unmet criterion is open polish, not a failed gate, unless it breaks a requirement.
+- **Report each round's cost**, priced at `choose-model`'s rates, so the user sees what the polish cost.
+- **A fix that would loosen another rule is reported, not made** (`design-interface`, Set the bar).
 
 `references/evaluate.md` has the brief, the screenshot script, running a headless browser without touching the system, and judging a command or an API.
 
 ## Close it
 
 - **Bring `PLAN.md` up to date** as `plan-project` says, **and the README wherever the milestone changed what a user runs, sets or sees**, committing both on the milestone's branch with the change that made them true; a README left for the final review misleads everyone who reads it in between.
-- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule requires; one written into the project's plan is never seen by the sweep that would fix it.
+- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule says, never in the project's plan.
 - **Keep the state in the repo, not the conversation.** The ticked milestones, Open and the commits are what a fresh session resumes from after a compaction or a break.
 - **Report the milestone** — what now works, one line each for every decision proposed, idea noticed and assumption made, and the decisions settled by precedent as a count (`make-decisions`) — then start the next milestone.
-Each gate check in the report names the command that ran it and what it printed — the suite's pass count, the real run's rows; a check not run is reported as not run, never as "should pass", since the next milestone builds on whatever the report claims.
+Each gate check names the command that ran it and what it printed — the suite's pass count, the real run's rows; a check not run is reported as not run, never as "should pass", since the next milestone builds on what the report claims.
 
 ## Finish the build
 
 After the last milestone, run `review-project` against the plan.
-**End with something the user can open**: the report's first lines give the command that starts the surface and the address it answers on, the folder of the last round's screenshots, and the deployed address once the user has allowed the deploy; a build that ends with a branch and a test count has left the user to find out what it made.
+**End with something the user can open**: the report's first lines give the command that starts the surface and its address, the folder of the last round's screenshots, and the deployed address once the user has allowed the deploy, not just a branch and a test count.

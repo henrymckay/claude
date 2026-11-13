@@ -1,27 +1,13 @@
 ---
 name: secure-project
 description: >-
-  How a project keeps what is private private — classifying every input and
-  output in the plan as public, licensed (with its terms, read strictly),
-  private or personal, private until the plan says otherwise, and deciding
-  from the class which repositories, hosts, logs, messages and outside
-  services, an LLM API included, each may reach; credentials for an account
-  that holds money or can spend it — read-only by default, one per consumer,
-  kept out of the checkout, rotated, and an order or a transfer only under a
-  signed-off plan decision with a person confirming each one, never in
-  autonomous mode; secrets in general, the secret scanner and rotating first
-  when one leaks; access control on a served dashboard or API, the Host and
-  Origin check on a loopback server, and nothing private in a static site;
-  the dependency audit and the security review in the build gate and the
-  project review, with or without a remote. Use whenever a project reads data
-  that is not public, holds a credential, touches an account with money in
-  it, serves something over the network or decides where its data or logs go
-  — even if the user just says "connect it to my broker", "this data is
-  private", "who can see the dashboard" or "is this safe to push". Layers on
-  plan-project, which records each class and decision; deploy-project,
-  store-data and send-messages pick from the class, run-unattended and
-  use-git point here for secrets, and build-project and review-project run
-  its checks.
+  How a project keeps private data and credentials safe — a class for every
+  input and output (public, licensed, private, personal) deciding where each
+  may go, read-only credentials for an account with money in it, secrets kept
+  out of git, and a guarded served surface. Use whenever a project reads data
+  that is not public, holds a credential, serves something or decides where
+  its data goes — even if the user just says "connect it to my broker" or "is
+  this safe to push".
 ---
 
 # Secure the project

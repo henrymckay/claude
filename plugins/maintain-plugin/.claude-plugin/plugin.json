@@ -3,7 +3,7 @@
   "description": "Maintain Claude Code plugins: author skills, review any plugin for drift, and capture skill gaps as they surface with a hook.",
   "version": "0.1.0",
   "author": {
-    "name": "henrymckay"
+    "name": "claude contributors"
   },
   "repository": "https://github.com/henrymckay/claude",
   "userConfig": {

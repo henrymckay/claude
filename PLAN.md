@@ -29,7 +29,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 - **the ladder** — which model and effort runs each stage (D27).
 - **trial build** — a real project planned, built and reviewed with the plugins to test them, its skill feedback worked through by a sweep.
 - **sweep** — one `review-plugin` run over the repo: the open skill feedback first, then every drift check, landed as one pull request.
-- **trigger suite** — a plugin's `evals/` cases, one casual prompt per skill, run with `claude plugin eval` to show each description still fires.
+- **trigger suite** — a plugin's `evals/` cases, a casual prompt per skill that should fire it and a few a near neighbour's skill should not, run with `claude plugin eval` to show each description still fires.
 - **data class** — public, licensed, private or personal, recorded for each input and output of a project (`secure-project`).
 - **house design system** — the one look every project's surfaces share, defined as tokens independent of technology (`design-interface`).
 - **evaluator** — a fresh-context subagent in `build-project`'s gate that runs the surface and scores it against written criteria.
@@ -83,7 +83,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 ### Inputs
 
 - **The user's conversations and corrections** — the requirements and most rules; corrections about skills arrive as skill feedback.
-- **Skill feedback issues** — `gh issue list -R henrymckay/claude --label skill-feedback`.
+- **Skill feedback issues** — labelled `skill-feedback` on the repository each `plugin.json` names.
 - **Current tool docs and releases** — every skill claim is checked against the current release.
 - **Trial builds** — each files skill feedback for the next sweep.
 
@@ -140,7 +140,8 @@ Skills trigger from their descriptions or by name (`/plan-project`, or `/manage-
 
 ### Errors
 
-- **A description fails to trigger, or fires on the wrong task** — found by `review-plugin`'s trigger-overlap check or by skill feedback; fixed in the description.
+- **A description fails to trigger, or fires on the wrong task** — found by `review-plugin`'s trigger-overlap check, a should-not-trigger case or skill feedback; fixed in the description.
+- **A description outgrows the listing's budget** — found by `review-plugin`'s inventory in characters and `claude plugin details`; cut to `write-skills`' limit (D63).
 - **A rule is duplicated or contradicted** — found by `review-plugin`; kept where it belongs, pointed at from elsewhere.
 - **A library claim goes stale** — found by re-running every claim against the current release each sweep.
 - **A symlink dangles** — found by `review-plugin`'s wiring check.
@@ -158,7 +159,7 @@ Numbers are stable; the groups are for reading.
 - **D1 Symlinks into `~/.claude` stay a supported wiring** for a machine that cannot install plugins, over installed plugins only; the authoring machine runs the installed plugins, so it runs what others install; cost: the symlink wiring merges the `Stop` hook by hand.
 - **D32 Always-on instructions per plugin are a context file printed by a `SessionStart` hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` carries the same lines for the symlink wiring, and `review-plugin` checks they agree; cost: the same lines in six files, checked each sweep.
 - **D34 A toolchain's commands live in the skill that owns it** over each skill naming `uv` commands — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under any toolchain; cost: without `structure-app`, a reader gets examples, not commands.
-- **D2 Commit as `henrymckay <henrymckay@users.noreply.github.com>`; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
+- **D2 Commit as the owner's GitHub no-reply identity; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
 - **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback; cost: ideas are tracked apart from issues.
 - **D11 The README is for humans and points at this plan** over copying it; cost: a reader wanting the decisions follows a link.
 - **D12 Memory holds only what this plan doesn't** over memory as a record — the plan is visible and versioned; memory is per-machine; cost: memory is pruned by hand, since a sweep may not edit it.
@@ -230,6 +231,15 @@ The skill named holds the pick, its alternative, its reason and its cost.
 - **D59 The ladder holds when a prompt calls the work small** (`choose-model`, `plan-project`) — the size changes the stage's length, not its model; only a fix's short plan in the conversation stays in the session — over letting a time limit move a plan to Sonnet (issue 74); cost: an Opus hand-off for a tiny plan.
 - **D60 The install line looks up the newest release tag** with `git ls-remote` — over naming the tag, which went stale at every release; cost: a longer command that needs `git`.
 
+**Sweep 6** *(2026-11-13)*
+
+- **D61 The owning account is named only where an install needs it** (decided by the owner, 2026-11-13) — the install and clone lines, each `plugin.json`'s `repository` (the feedback rule finds the tracker there) and the licence holder keep it; `CLAUDE.md` finds the tracker through `repository` and the plan names no account — over removing every mention, which needs the repository moved to an organisation or a neutral account; cost: none. *(proposed)* `author.name` reads `claude contributors` rather than going, since `claude plugin validate --strict` fails a manifest with no author.
+- **D62 Keep the marketplace name until the repository moves** *(proposed)* — renaming it changes every `@<marketplace>` install line and breaks each existing install, so do it only in the release that moves the repository to a neutral account, if that happens, to a name such as `house-skills`; over renaming now; cost: the account stays in the install line.
+- **D63 A description stays under 500 characters, never past 1,000** *(proposed)* — Claude Code cuts each at 1,536 characters and, once all descriptions pass 1% of the context window, drops the least-used ones to their names; the five plugins spent about 9,800 tokens on 24 descriptions (`claude plugin details`), now about 10,800 characters in all; neighbours, references and house picks move to each skill's opening — over a limit in words, under which every description ran to about 1,500 characters (issue 80); cost: fewer trigger phrases per skill, checked by the suites (`write-skills`, `review-plugin`). Source: code.claude.com/docs/en/skills, settings-reference (`skillListingMaxDescChars`, `skillListingBudgetFraction`), 2026-11-13.
+- **D64 A should-not-trigger case only where a near neighbour could claim a skill's prompt** *(proposed)* — three to start (`review-plugin` against `review-project`, `be-oop` against plain functions, `deploy-project` against a job on the user's machine), and no no-plugin arm, which cannot fire an uninstalled skill — over one per skill, a paid session each (issue 81); cost: an untested boundary elsewhere until feedback shows a misfire.
+- **D65 Beside another authoring plugin, `write-skills` sets what a skill says and theirs set how it is made** *(proposed)* — the convention-skill side of D52, decided by rule; over a session test with each plugin installed, which this sweep did not run (issue 85); cost: their description and rule-style advice is ignored where it differs.
+- **D66 `use-git`'s no-footer rule calls itself the user's instruction** *(proposed)* — a harness reminder yields to the user's own instructions, and two of three plugin-only builds read a skill as not one (issue 77); the user installed the skill to set the convention, so it says so, and the context line and `CLAUDE.md` repeat it — over moving the rule into the context file alone; cost: none measured, since no build has run on the new wording.
+
 **Superseded**
 
 - **D8 Evaluation briefs archived outside this repo** — superseded by D40.
@@ -247,9 +257,9 @@ Each line names the run that shows it, then its status.
 - **R6** — the same for storage and scheduling; one artefact deployed to a house-pick host; one message delivered. **Partly**: local only (M21 deploys).
 - **R7** — `review-plugin` on a plugin outside this repository ends in a report with no push; `maintain-plugin` alone on a second machine records feedback to a file. **Met on this machine** (M17): alone and headless, it reviewed another owner's plugin from a read-only clone into a report, and with `feedback` set to `file` appended a dated entry; the second machine waits on Q7.
 - **R8** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run. **Met** (issue 20; pull requests 19, 55, 63, 67).
-- **R9** — `claude plugin validate` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine. **Met on this machine**: each plugin alone, headless (`--setting-sources project,local`, one `--plugin-dir`), named each missing skill with its plugin and recorded its calls as proposed, five of five in each run of the current wording; with all five loaded, none reported a plugin missing, though most runs add a line saying none was. The second machine waits on Q7.
+- **R9** — `claude plugin validate --strict` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine. **Met on this machine**: each plugin alone, headless (`--setting-sources project,local`, one `--plugin-dir`), named each missing skill with its plugin and recorded its calls as proposed, five of five in each run of the current wording; with all five loaded, none reported a plugin missing, though most runs add a line saying none was. The second machine waits on Q7; the plugin-alone runs are owed again, since sweeps 5 and 6 changed every context file and description.
 - **R10** — a plan shows its decisions with sources and its ideas; a review can challenge a house pick. **Met once** (the first trial build's plan).
-- **R11** — a sweep with a fresh cold read leaves no defect open, and each always-on file and the README are within budget (D54). **Partly**: sweeps 1 to 3 (pull requests 55, 63, 67) settled issues 35 to 65; sweep 5 settled 70, 72 and 74 with three trial builds of one dashboard behind the new evaluator.
+- **R11** — a sweep with a fresh cold read leaves no defect open, and each always-on file and the README are within budget (D54). **Partly**: sweeps 1 to 3 (pull requests 55, 63, 67) settled issues 35 to 65; sweep 5 settled 70, 72 and 74 with three trial builds of one dashboard behind the new evaluator; sweep 6 settled 76, 77 and 80 to 86 without a cold read.
 - **R12** — `review-project`'s secret check; no project data in any issue. **Met** each sweep.
 - **R13** — a trial build over private data, run autonomously, plans every input and output private, keeps them off public hosts and GitHub, holds a read-only credential and prepares no order. **Partly**: a headless plan did all four; no build yet (M22, M20).
 
@@ -268,19 +278,19 @@ Sweeps are not milestones.
 
 ### Assumptions
 
-- **A1** The repository and marketplace keep their names (`claude`, `henrymckay`) — only the plugins were renamed.
+- **A1** The repository and marketplace keep their names — only the plugins were renamed; a neutral marketplace name waits on D62.
 - **A2** The cloud sweep's `gh` is authenticated for REST and blocked for GraphQL, and vendor pages outside its proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep.
 
 ### Questions
 
 - **Q7** Does every machine these will be installed on allow a third-party marketplace, or do some need the symlink route? — recommended: none, since only the user can find out; not known yet; blocks R7's and R9's second-machine checks.
 - **Q9** Once MotherDuck accepts the current DuckDB client, should a project on MotherDuck replace its two stores (the Parquet tree and the MotherDuck tables beside it) with one DuckLake whose catalog MotherDuck holds and whose files sit in the project's own bucket? — recommended: yes, as a trial in the next project that needs MotherDuck, the tree staying the default elsewhere; costs a bucket and its credential on every writer, and the files read true only through the catalog (D51, D53).
-- **Q12** Should a build milestone that carries a visible surface move to Opus? — recommended: no, keep D27's Sonnet and let D58's evaluator carry the polish, then compare again on a larger brief; in one comparison (2026-11-12) the same two-screen dashboard plan, built headless with the new skills, cost $5.45 in 46 minutes with a Sonnet builder and $10.75 in 47 with an Opus one, each passing all ten criteria in the third evaluator round; the Opus screens were somewhat more finished (a ranked table with inline bars, icons, page titles, status glyphs), and it skipped the code review and added an attribution footer (issue 77); a Dash build of the same plan cost $5.27 and passed nine of ten, failing only phone touch targets.
+- **Q12** Should a build milestone that carries a visible surface move to Opus? — recommended: no, keep D27's Sonnet and let D58's evaluator carry the polish, then compare again on a larger brief; in one comparison (2026-11-12) the same two-screen dashboard plan, built headless with the new skills, cost $5.45 in 46 minutes with a Sonnet builder and $10.75 in 47 with an Opus one, each passing all ten criteria in the third evaluator round; the Opus screens were somewhat more finished (a ranked table with inline bars, icons, page titles, status glyphs), and it skipped the code review and added an attribution footer (issue 77); a Dash build of the same plan cost $5.27 and passed nine of ten, failing only phone touch targets. The rerun on a larger brief is still owed (sweep 6 ran none).
 - **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — recommended: D56, from six prototypes of one dashboard built and measured on 2026-11-12; the skills already follow it, so a no reverts `write-entry-points`, `setup-python` and `deploy-project`; blocks M21's dashboard.
 
 ### Ideas
 
-- **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would let a new install check itself on day one; costs a script to maintain; not built.
+- **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would let a new install check itself on day one; costs a script to maintain; not built, and partly met by the built-ins `review-plugin` now runs (`claude plugin validate --strict`, `/skill-doctor`, `/doctor prompt-audit`).
 - **I2** `build-project` writes a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by reading transcripts; costs a section in one skill; not built.
 - **I3** A budget line in `plan-project`'s Runs on for the build itself (expected stage cost at the ladder's prices) — the user asked about cost twice during the first trial; costs an estimate that will often be wrong; not built.
 - **I4** More rules enforced by hooks (issue 53) — today only the feedback `Stop` hook enforces; a hook earns its place when a trial build breaks a rule a hook could have caught; not built.

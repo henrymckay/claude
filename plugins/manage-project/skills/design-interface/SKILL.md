@@ -1,25 +1,13 @@
 ---
 name: design-interface
 description: >-
-  How every surface a project ships should look and read, and the bar it must
-  clear — one house design system defined once, independent of technology
-  (colour roles for light and dark, the chart palette, type, spacing, radii,
-  elevation, layout and density, number and date formats, the loading, empty,
-  stale and error states, and the defaults to avoid), a design plan before
-  code, what an impressive dashboard, web page, command-line tool, API,
-  message and README look like, and the criteria a running surface is scored
-  against from its screenshots. Load it before the first line of any screen,
-  chart, page or styled output, even a one-view prototype. Use whenever
-  designing or building a dashboard, web app, static site or chart, theming a
-  framework, choosing colours or fonts, laying out a screen, writing a
-  command's help and errors, an API's docs page, a digest or a README's top,
-  or judging whether a surface is good enough to ship — even if the user just
-  says "make it look good", "this looks primitive", "add dark mode" or "style
-  the dashboard". Technology-neutral here; the tokens mapped onto Tailwind
-  with shadcn/ui, ECharts and Lightweight Charts in references/web.md, and
-  onto Dash Mantine, Shiny and Plotly in references/python.md. Layers on the
-  dataviz skill for chart form; plan-project sets the ambition,
-  write-entry-points builds the surface, and build-project's gate scores it.
+  How every surface a project ships should look and read — one house design
+  system (colour, type, spacing, charts, states), a design plan before code,
+  and the bar a dashboard, page, CLI, API, message or README must clear. Load
+  it before the first line of any screen, chart, page or styled output, even a
+  prototype. Use whenever designing, styling or judging a surface — even if
+  the user just says "make it look good", "add dark mode" or "this looks
+  primitive".
 ---
 
 # Design the interface
@@ -37,11 +25,11 @@ Three mistakes account for most surfaces that look primitive: a framework's defa
 
 ## Set the bar
 
-Every surface a project ships aims at what a best-in-class version of that kind of artefact would be, and the plan says so (`plan-project`).
-**Ambition is finish, presentation and completeness of what was asked, never extra features or extra risk**: nothing here loosens `secure-project`, the rule against outward action in autonomous mode, or building only what the plan needs.
+Every surface a project ships aims at a best-in-class version of its kind, and the plan says so (`plan-project`).
+**Ambition is finish, presentation and completeness of what was asked, never extra features or extra risk**: nothing here loosens `secure-project`, the rule against outward action in autonomous mode, or building only what the plan needs, and a fix that would is reported, not made.
 The bar per kind of surface, each line a criterion the evaluator can check:
 
-- **Dashboard** — opens on the answer: the few numbers that matter as tiles, then the chart that explains them, then the detail table; every state below designed; light and dark; usable at phone width; each control answers within 200 ms on the real data where the browser holds it, within a second where it waits on a server.
+- **Dashboard** — the house system below in full, answer first, every state designed, light and dark, usable at phone width; each control answers within 200 ms on the real data where the browser holds it, within a second where it waits on a server.
 - **Web page or static site** — the same tokens; one characteristic thing first, not a generic hero; body text under 80 characters a line; a title, a description and a favicon; loads fast from a cold cache.
 - **Command-line tool** — `--help` that is the documentation (`write-entry-points`); an error that names what failed and how to fix it in one line, with the exit code; progress on standard error for anything over two seconds; `--format table` aligned, numbers right-aligned, colour only on a terminal and never when `NO_COLOR` is set (`write-entry-points` owns the data forms).
 - **API** — a docs page with a title, a description and every endpoint summarised with an example request and response, errors included; one name and one unit per field across endpoints.
@@ -50,8 +38,8 @@ The bar per kind of surface, each line a criterion the evaluator can check:
 
 ## The house design system
 
-One look for every project, so a dashboard reads the same whichever technology serves it: neutral warm greys, one blue accent, dense and data-first, light and dark.
-**Write the tokens into one file before any component**, under the role names below, and read every colour, size and radius from it; a hex value typed into a component is the first thing to drift when the scheme changes, and it is the white chart on the dark page.
+One look for every project, whichever technology serves it: neutral warm greys, one blue accent, dense and data-first, light and dark.
+**Write the tokens into one file before any component**, under the role names below, and read every colour, size and radius from it; a hex value typed into a component is what stays white when the page turns dark.
 A project with its own brand swaps the values under a plan decision and keeps the roles, so every rule below still applies.
 
 ### Colour roles
@@ -113,7 +101,7 @@ A project with its own brand swaps the values under a plan decision and keeps th
 
 ### States
 
-Design four states besides the happy one, since a real store is sometimes empty, late or broken:
+Design four states besides the happy one:
 
 - **Loading** — a skeleton in the content's own shape, and fixed heights so nothing jumps when data arrives.
 - **Empty** — what would fill it and what to do ("No runs yet — the first nightly writes here").
@@ -123,11 +111,11 @@ Design four states besides the happy one, since a real store is sometimes empty,
 ### Light and dark
 
 Follow the system's colour scheme by default, with a toggle that remembers the viewer's choice and applies before the first paint, so the page never flashes the other scheme.
-Every chart and table redraws from the scheme's tokens when it changes; a chart library themed once at start-up is the white chart on the dark page.
+Every chart and table redraws from the tokens when the scheme changes; a chart library themed once at start-up is the white chart on the dark page.
 
 ### Defaults to avoid
 
-Each is a framework's or a model's default rather than a choice, and each makes a surface look generated:
+Each is a framework's or a model's default, and makes a surface look generated:
 
 - **A framework's own theme left showing** — Bootstrap's blue, Mantine's violet, Plotly's grey plot area, a chart library's rainbow palette.
 - **Template chrome** — all-caps eyebrow labels, identical shadowed cards, gradient washes, an emoji in the interface, a `→` on every link.
@@ -136,13 +124,13 @@ Each is a framework's or a model's default rather than a choice, and each makes 
 
 ## Plan the design before the code
 
-Before any component, write the design into the plan's Interface, one entry per screen (`plan-project`): the question the screen answers, its tiles, each chart with its form (`dataviz`'s reference on choosing a form), its tables and its four states, and an ASCII wireframe of the main screen at desktop and phone width.
-Read that plan against Defaults to avoid and change what is generic; then build the tokens, then the shared pieces (tile, card, chart wrapper, table, status chip, formatting), then the screens from them.
+Before any component, write the design into the plan's Interface, one entry per screen (`plan-project`): the question it answers, its tiles, each chart with its form (`dataviz`'s reference on choosing a form), its tables and its four states, and an ASCII wireframe of the main screen at desktop and phone width.
+Read that against Defaults to avoid and change what is generic; then build the tokens, then the shared pieces (tile, card, chart wrapper, table, status chip, error note, formatting), then the screens from them.
 
 ## Look at it running
 
 **Judge a surface only from the running thing.** A dashboard is screenshotted at 1440 by 900 and 390 by 844, light and dark, each screen after its data has drawn; a command or an API is judged from a realistic session's transcript.
-Look at every screenshot yourself as you build, and fix what reads wrong before the gate; `build-project`'s gate then hands them to a fresh evaluator that scores the surface against these criteria, pass or fail each with its evidence:
+Look at every screenshot yourself as you build and fix what reads wrong; `build-project`'s gate then has a fresh evaluator score them, pass or fail with evidence:
 
 1. **Answer first** — the first screen shows the numbers the plan's screen list names within the top 900 px at desktop width.
 2. **House look** — colours, type, radii and spacing come from the tokens in both schemes; nothing in Defaults to avoid shows.

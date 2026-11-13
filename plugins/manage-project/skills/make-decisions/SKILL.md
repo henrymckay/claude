@@ -1,25 +1,12 @@
 ---
 name: make-decisions
 description: >-
-  How Claude settles a question no skill or plan decision answers outright — the
-  principles the house picks share (earn it before building it, reuse what is
-  already there, measure before optimising, fail loudly, keep one copy of each
-  fact, make a re-run safe, give each consumer the least reach, name things in
-  the domain's terms), finding the nearest answered precedent (a signed-off
-  decision in this plan, a skill's pick and its reason, a signed-off decision in
-  a neighbouring project's PLAN.md) and settling the new question by analogy
-  with the precedent cited in one line, escalating to the user only what is
-  irreversible, outward-facing, costly, touches security or has no precedent or
-  conflicting ones, and reporting the rest as a count, in a session or in
-  autonomous mode. Use whenever about to ask the user a question, record an
-  assumption or propose a decision while planning, building or reviewing, or
-  when the list of open questions grows past what the user can read — even if
-  the user just says "decide it yourself", "stop asking me", "too many
-  questions" or "what would we normally do". Layers on plan-project, where each
-  decision is recorded; plan-project, build-project and review-project use it at
-  their decision steps, secure-project says which security calls wait for the
-  user, and review-plugin promotes a decision that recurs into the skill that
-  should own it.
+  How Claude settles a question no skill or plan decision answers — the
+  principles the house picks share, the nearest answered precedent cited in
+  one line, and escalating only what is irreversible, outward-facing, costly,
+  security-touching or unprecedented. Use whenever about to ask the user a
+  question, record an assumption or propose a decision — even if the user just
+  says "decide it yourself", "stop asking me" or "what would we normally do".
 ---
 
 # Make decisions
