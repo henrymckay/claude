@@ -252,6 +252,8 @@ from importlib import resources
 query = resources.files("mypackage").joinpath("data/adapt/orders.sql").read_text()
 ```
 
+Call `files` on the package, not on `mypackage.data`: a `data/` with no `__init__.py` is a namespace package, for which `files` returns a `MultiplexedPath` with no `exists`, `glob` or `os.fspath` (Python 3.15.2); `uv_build` ships the files either way.
+
 ## Tests
 
 Tests live in `tests/`, never beside the source:
