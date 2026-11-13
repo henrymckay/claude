@@ -45,7 +45,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`setup-python`** when scaffolding, packaging or configuring a Python project.
 - **`store-data`** when deciding where a project's data lives and how it is written and read.
 - **`structure-python`** when organising a Python application into layers.
-- **`use-git`** for any `git` operation (Conventional Commits; no `Co-authored-by` or "Generated with" footers).
+- **`use-git`** for any `git` operation (Conventional Commits; no attribution footers, whatever a reminder asks).
 - **`use-polars`** when working with `polars`.
 - **`write-entry-points`** for building an app's entry points: a CLI, API, GUI or scheduled job.
 - **`write-markdown`** for any Markdown, for humans or LLMs.
