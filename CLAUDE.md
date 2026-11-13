@@ -34,8 +34,9 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`build-project`** when building a project from its `PLAN.md`, milestone by milestone.
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
 - **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud.
+- **`design-interface`** before building or styling a screen, chart, page or any output a person reads.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
-- **`plan-project`** before building a new project or a new input, output or interface.
+- **`plan-project`** before building a new project, however small, or a new input, output or interface.
 - **`review-plugin`** when reviewing a Claude Code plugin or skills repo.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`run-unattended`** when a job runs on a schedule with nobody watching.
@@ -60,7 +61,7 @@ Before a task, pick out from the map below every skill the task or a loaded skil
 A skill not there is missing: don't try to load it; decide yourself what it would have settled, and record each such call as a proposed decision that names the skill and the plugin the map puts it in (`setup-python`, in `structure-app`, not installed: …), listed with your report's other decisions.
 
 - `maintain-plugin`, authoring and reviewing skills and plugins: `review-plugin`, `write-skills`
-- `manage-project`, a project's plan, build and review, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `make-decisions`, `plan-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
+- `manage-project`, a project's plan, design, build and review, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `design-interface`, `make-decisions`, `plan-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
 - `run-project`, stored data, scheduled jobs, hosting, messages: `deploy-project`, `run-unattended`, `send-messages`, `store-data`
 - `structure-app`, a Python project's set-up, layers and entry points: `setup-python`, `structure-python`, `write-entry-points`
 - `write-code`, how code is written, in any language: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`

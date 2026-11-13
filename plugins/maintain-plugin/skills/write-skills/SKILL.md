@@ -34,6 +34,7 @@ Name a skill **verb-first** in a few kebab-case words, so the name says when Cla
 
 - **`be-`** — a style to adopt (`be-functional`).
 - **`build-`** — carry a plan out (`build-project`).
+- **`design-`** — settle how something looks and reads before it is built (`design-interface`).
 - **`plan-`** — settle a design before building (`plan-project`).
 - **`review-`** — check against a standard and fix (`review-project`, `review-plugin`).
 - **`setup-` / `structure-`** — arrange a project (`setup-python`, `structure-python`).

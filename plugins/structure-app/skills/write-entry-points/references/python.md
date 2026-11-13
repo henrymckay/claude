@@ -274,16 +274,128 @@ def explain(
 
 
 def run() -> None:
-    """Launch the API server on port 8000; the dashboard takes 8001."""
-    uvicorn.run(app, port=8000)
+    """Launch the API, and the web front end it serves, on port 8000."""
+    uvicorn.run(starlette_.loopback_only(app, port=8000), port=8000)
 ```
 
-`uvicorn.run` binds `127.0.0.1` by default, so wrap `app` in the Loopback guard below; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
+`uvicorn.run` binds `127.0.0.1` by default, and `run()` wraps `app` in the Loopback guard below there and nowhere else, so a test client, `dependency_overrides` and the development server all see the bare app; pass `host="0.0.0.0"` only when another machine must reach it, and add authentication in the same change (`SKILL.md`, HTTP surface).
 A test swaps the adapter with `app.dependency_overrides[provide.store] = lambda: fake_store` — no patching.
 
-## GUI
+## Dashboard
 
-`shiny`, `setup-python`'s pick for a GUI, whose UI/server split matches shell over core.
+Three build-outs, in `SKILL.md`'s order of preference: a web front end served by the API or as static files, Dash with Mantine, and Shiny.
+Each reads the store through `operate.*`, takes its look from `design-interface` (its `references/python.md` builds the Plotly, Mantine and Shiny themes from one tokens module), and sets `data-ready` once its first screen has data.
+
+### Web front end
+
+The front end is its own folder beside `src/`, and the API serves both its JSON and its built files from one process:
+
+```text
+web/
+  index.html          the scheme script and the root element
+  package.json        with package-lock.json, committed
+  vite.config.ts      builds into src/mypackage/data/web; proxies /api in dev
+  src/
+    main.tsx
+    App.tsx           the header, the navigation and the screens
+    index.css         the tokens (design-interface)
+    lib/data.ts       the data module: every request a screen makes
+    lib/format.ts     every number and date formatter
+    components/ui/    shadcn/ui's components, added one by one
+    components/       tile, chart card, table, status chip, error note
+    views/            one file per screen in the plan
+src/mypackage/
+  code/drive/fastapi_/
+    route.py          the /api routes the data module calls
+    driver.py         mounts the built files at / after the routes
+  data/web/           the build, git-ignored, shipped in the wheel
+```
+
+- **Node comes from `setup-python`'s development dependency `nodejs-wheel`**, so `uv run npm --prefix web ci` and `uv run npm --prefix web run build` need no system Node.
+- **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init` — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
+- **Build into the package** with `build.outDir` set to `../src/mypackage/data/web` and `emptyOutDir: true`, so `uv_build` ships the built files in the wheel and the API finds them with `importlib.resources.files("mypackage.data") / "web"`.
+- **Mount the files after the routes**: `app.mount("/", fastapi.staticfiles.StaticFiles(directory=web, html=True), name="web")` as the last line of `driver.py`, since a mount at `/` registered first answers every `/api` request with a 404.
+- **Keep the screens in the page's state, not in paths**, a tab or a `?view=` parameter, since the static mount answers a path it has no file for with a 404.
+- **In development run both servers**: the API under `uvicorn` on 8000, and `npm run dev` with `server.proxy` sending `/api` to it, so the page reloads on save.
+- **`lib/data.ts` is the only module that fetches**, one typed function per route returning parsed rows, so a screen never builds a URL.
+Each answer is a JSON array of rows, as the API's schemas define, with dates as ISO strings the formatting module turns into `12 Nov 2026`.
+- **Poll the manifest, not the data**: one hook asks `GET /api/runs/latest` every 60 seconds and bumps a counter only when its `ended` changes, and every data hook takes that counter as a dependency; the age chip re-renders on the same tick.
+
+**The static version is `lib/data.ts` reading Parquet instead**, chosen at build time by `VITE_DATA=files` through `import.meta.env`: files an `export` command writes into `web/public/data/`, small and pre-aggregated per screen, read with `hyparquet`'s `asyncBufferFromUrl` and `parquetReadObjects` from `` `${import.meta.env.BASE_URL}data/…` ``, so the page works under a project site's path.
+Keep each file to a few megabytes, within every static host's limits (`deploy-project`, Serve the dashboard).
+The manifest's last run ships as a small JSON file beside them, polled the same way.
+
+**Test it** with `fastapi.testclient.TestClient(app)` and the store overridden (API above) for every route, `vitest` for `lib/format.ts` and any shaping in `lib/data.ts`, and a Playwright smoke test per screen, marked `slow`, against the built app on a free port:
+
+```python
+@pytest.mark.slow
+def test_each_screen_draws_its_data(
+    served: str, page: playwright.sync_api.Page
+) -> None:
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(served)
+    page.wait_for_selector("html[data-ready='1']")
+    for view in ("store", "runs"):
+        page.click(f"[data-view='{view}']")
+        page.wait_for_load_state("networkidle")
+    assert errors == []
+```
+
+`served` is a fixture that starts `uvicorn` on the app in a thread over a temporary store and yields its URL; the browser is Playwright's headless shell, installed into the project as `build-project`'s evaluator says.
+
+### Dash
+
+`dash` with `dash-mantine-components` for the controls and layout, `dash-ag-grid` for tables and `plotly` for charts:
+
+```text
+gui/
+  __init__.py   role, hollow: re-exports app and run
+dash_/
+  __init__.py   re-exports app and run from driver
+  callback.py   the @dash.callback functions — the composition root
+  driver.py     app = dash.Dash(...); app.layout = layout.root; run()
+  figure.py     functions turning a frame into a colourless plotly figure
+  layout.py     functions returning components; root() is the top
+  provide.py    the settings, the store's read port and the manifest stamp
+  theme.py      the Mantine theme (design-interface)
+plotly_/
+  template.py   house_light and house_dark (design-interface)
+```
+
+- **`driver.py` imports `callback`, sets the React version and builds the app**; `@dash.callback` registers each callback globally as its module is imported, as `typer_/__init__.py` imports its commands, and `dash-mantine-components` 3 needs React 19 where Dash 4.5 serves 18.3.1 by default, so without the call every Mantine component fails to render:
+
+```python
+import dash
+import dash_mantine_components
+
+from mypackage.code.drive.dash_ import callback as callback
+from mypackage.code.drive.dash_ import layout
+from mypackage.code.drive.plotly_ import template
+
+dash._dash_renderer._set_react_version("19.2.4")  # pyright: ignore[reportPrivateUsage]
+dash_mantine_components.pre_render_color_scheme()
+template.register()
+
+app = dash.Dash(__name__, title="My app", update_title=None)
+app.layout = layout.root
+```
+
+- **`app.layout` is the function `layout.root`, not its result**, so each page load reads the store afresh; a layout built once at import shows the data the process started with.
+- **Every id is a constant in `layout.py`**, which `callback.py` imports, so a renamed component fails at import rather than as a callback that silently never fires.
+- **A callback calls `operate.*` over `provide.store()` and returns plain data**: a figure from `figure.py`, rows for the grid as `frame.to_dicts()`, text for a tile; a callback that edits one property of a large figure returns a `dash.Patch()`.
+- **Catch the app's own error in the callback and return an error note** to the outputs it fills, since an uncaught one leaves them as they were and tells the viewer nothing (`write-python`, the error model).
+- **Refresh by the manifest's stamp**: a `dcc.Interval` of 60 seconds drives a callback that reads the last run's `ended` into a `dcc.Store`, returning `dash.no_update` when it has not changed, and every data callback takes that store as an input, so data is re-read once a night rather than once a minute; the age chip reads the same tick.
+- **Signal readiness from the browser**: a clientside callback on the last figure of a screen sets `document.documentElement.dataset.ready = "1"` inside a `requestAnimationFrame`, since the figure draws after its callback returns; the navigation's `dmc.TabsTab` carries `**{"data-view": name}`, which `dcc.Link` refuses.
+- **Re-theme figures on `dmc.ColorSchemeToggle`'s `computedColorScheme`** with a `dash.Patch()` that sets `layout.template` (`design-interface`).
+- **Test a callback by calling it**: `@dash.callback` returns the function it decorates, so a test calls it with the inputs and a fake store and asserts on what it returns; the browser smoke test is the web front end's, pointed at `run()`'s port.
+
+`driver.py`'s `run()` calls `app.run(port=8001, debug=False)`, which serves on loopback through Flask; Dash is a WSGI app, so the Loopback guard's ASGI wrapper does not fit it, and the same check is a `before_request` hook on `app.server` refusing a `Host` or `Origin` outside the loopback names with `flask.abort(403)`.
+A host runs `app.server` under `gunicorn` (`deploy-project`).
+
+### Shiny
+
+`shiny`'s UI/server split matches shell over core.
 
 **Use Shiny Core, not Express, in a packaged app.** Core keeps layout and reactive callbacks apart and yields an explicit `shiny.App` for the launcher; Express suits only a throwaway single-view dashboard.
 
@@ -296,6 +408,7 @@ shiny_/
   driver.py     app = shiny.App(layout.root(), callback.server); run()
   layout.py     functions returning shiny.ui objects; root() is the top
   provide.py    the settings, the store's read port and the manifest watch
+  theme.py      the Bootstrap theme (design-interface)
 ```
 
 Layouts are functions, so a reused panel is a function `root()` calls rather than copied markup:
@@ -336,7 +449,7 @@ def server(input: shiny.Inputs, output: shiny.Outputs, session: shiny.Session) -
         )
 ```
 
-- **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, HTTP surface); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
+- **The dashboard calls `operate.*` over the store**, as the API does (`SKILL.md`, Dashboard); `callback.server` is its composition root, and a dashboard that shells out to the CLI or calls the API has added a hop that fails on its own.
 - **Refresh by watching the run manifest** (`store-data`), through `provide.watch_runs()`, which returns the decorator for wherever the store is, so `server` is the same on the laptop and the host.
 Over the data directory it is `shiny.reactive.poll` on the file's modification time and size, read as `None` while the file does not exist, since `shiny.reactive.file_reader` raises `FileNotFoundError` on a fresh store with no manifest yet and ends the session (`shiny` 1.9):
 
@@ -363,6 +476,7 @@ Against MotherDuck there is no file, so it is `shiny.reactive.poll(read_last_run
 Either way every output depending on `runs()` updates without a timer of its own, and `read_runs` answers an empty frame before the first run.
 - **Show the last run's age, re-judged on a slow clock**: the output that says how old the data is calls `shiny.reactive.invalidate_later(3600)` and compares the latest `ended` with now, since a night that never ran rewrites nothing and a tab left open would otherwise show yesterday's verdict for ever.
 - **Read the store in a `shiny.reactive.calc` or the render function, never a `shiny.reactive.effect`.** An exception raised in an effect ends the session — every output unrendered, "Session fatal error" — while one raised in a calc shows as an error in the outputs that read it and nowhere else (`shiny` 1.9).
+- **Theme it from `design-interface`**: `shiny.ui.page_navbar(..., theme=theme.build())` with `shiny.ui.input_dark_mode(id="scheme")` in the navbar, and every figure's render function reading `input.scheme()` to pick `house_light` or `house_dark`.
 - **Charts are `plotly` through `shinywidgets`**: `shinywidgets.output_widget("chart")` in the layout, `@shinywidgets.render_plotly` in the server, the figure built with `plotly.graph_objects` from the frame's columns; `plotly.express` needs the `express` extra and a `pandas` frame, so the frame would leave `polars` for a chart.
 `shinywidgets` brings the IPython and `ipywidgets` stack, 24 packages over `shiny` and `plotly` (`shinywidgets` 0.8.2); a figure rendered with `fig.to_html(include_plotlyjs=False, full_html=False)` through `shiny.render.ui`, with `plotly.js` served from the app's `static_assets`, avoids them and loses the widget's in-place updates.
 - **The callbacks nested in `server` carry no docstring**, as `write-python` says of a nested function; the blank line after `server`'s own docstring is that skill's exception for a short function's beats.
@@ -505,4 +619,5 @@ The file rotates at midnight and keeps thirty days, since a plain file handler g
 ## Run
 
 Each entry point is a `[project.scripts]` command in `setup-python`'s `pyproject.toml`, named as `SKILL.md`'s Run says: `mypackage-cli = "mypackage.code.drive.cli:app"` for the callable `typer` app, and `mypackage-api = "mypackage.code.drive.api:run"` or `mypackage-gui = "...gui:run"` for a `run()` launcher.
-The API and GUI also run under their dev servers: `uvicorn mypackage.code.drive.api:app`, `shiny run --port 8001 mypackage.code.drive.gui:app`, the port given because `shiny run` defaults to the API's 8000.
+With a web front end, `mypackage-api` serves the dashboard too, once `uv run npm --prefix web run build` has written it into the package; in development the API runs under `uvicorn mypackage.code.drive.api:app --reload` beside `uv run npm --prefix web run dev`.
+A Dash or Shiny `gui` runs on 8001, under `mypackage-gui` or `shiny run --port 8001 mypackage.code.drive.gui:app`, the port given because `shiny run` defaults to the API's 8000.

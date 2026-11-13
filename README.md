@@ -12,7 +12,8 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 
 - **`manage-project`** — a project's life from a loose conversation to a reviewed build.
   - [`plan-project`](plugins/manage-project/skills/plan-project) drafts one `PLAN.md` and asks one batch of questions.
-  - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a quality gate.
+  - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a quality gate that looks at the running product.
+  - [`design-interface`](plugins/manage-project/skills/design-interface) gives every screen, page and output one house look and a bar to clear.
   - [`review-project`](plugins/manage-project/skills/review-project) reviews against the plan and the skills, then fixes what it finds.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and effort.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
@@ -41,10 +42,10 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 
 ## 🛠️ Install
 
-Install any subset from the marketplace, pinned to the newest release tag.
+Install any subset, pinned to the newest release tag, which the first line looks up.
 
 ```bash
-claude plugin marketplace add henrymckay/claude#v0.2
+claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs --sort=-version:refname https://github.com/henrymckay/claude.git 'v*' | head -n 1 | cut -d/ -f3)"
 claude plugin install manage-project@henrymckay
 claude plugin install write-code@henrymckay
 ```
@@ -77,7 +78,7 @@ With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/
 1. **Feedback** — when a skill steers Claude wrong, Claude files an [issue](https://github.com/henrymckay/claude/issues?q=label%3Askill-feedback) labelled `skill-feedback` on the plugin's repository.
    A `Stop` hook sends Claude back if it forgot.
 2. **Sweep** — [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) works through the open issues, then runs every drift check.
-   It runs weekly as a scheduled task, or on demand when you say "review the skills".
+   It runs weekly, or when you say "review the skills".
 3. **Pull request** — each sweep lands as one pull request whose body is its report, listing every rule it cut or changed.
 
 Each plugin's `evals/` folder holds one casual prompt per skill, to show its description still triggers.
@@ -97,8 +98,7 @@ The trigger suites show a skill loads; a trial build shows it steers well.
 3. Read the transcript under `~/.claude/projects/` for skills that never loaded and stages on the wrong model.
 4. The next sweep works through the feedback the build filed.
 
-Two builds are done: a data pipeline and a dashboard over its store.
-Next comes a public project deployed end to end, then one kept private on your own machine, then one over a real account with a read-only credential.
+[`PLAN.md`](PLAN.md)'s milestones list the builds done and to come.
 
 ## 📄 Licence
 

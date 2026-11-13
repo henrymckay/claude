@@ -4,31 +4,31 @@ effort: high
 description: >-
   How to plan a project before building it — turning a loose conversation
   into one PLAN.md: gather what can be found, research the domain and
-  current practice, citing sources, frame the project wider than the brief,
-  draft every section, settle gaps from precedent and record assumptions in
-  place of questions, treat every house pick as a default to deviate from
+  current practice, citing sources, frame the project wider than the brief
+  and aim each surface at the best in class, draft every section, settle
+  gaps from precedent, treat every house pick as a default to deviate from
   openly, then put the questions, assumptions and decisions to the user in
   one batch with recommended answers, through plan mode — or, in autonomous
   mode, proceed on those answers with every decision left proposed and no
   outward action taken. One layout for any project, a program, a library or
-  a content repo: brief, design, delivery and open items, changed only with
-  the user's sign-off; a small change gets a short plan in the conversation
-  instead. It plans on Opus whatever the session's model, through a
-  subagent. Use whenever starting a new project or repo, or a build that
-  adds a new input, output or interface; when the user wants to think a
-  project through, write a spec or design, or decide what to build first;
-  and whenever a PLAN.md needs changing or rewriting — even if the user just
-  says "let's plan this", "new project" or "what should this look like".
-  Layers on write-markdown; settles open questions through make-decisions,
-  classes every input and output through secure-project, points the design
-  at the skills that own each part, hands the build to build-project, and
-  the finished build to review-project.
+  a content repo, changed only with the user's sign-off; a small change gets a short plan in the conversation
+  instead. It plans on Opus whatever the session's model or the project's
+  size, through a subagent. Use whenever starting a new project or repo,
+  however small, or a build that adds a new input, output or interface; when
+  the user wants to think a project through, write a spec or design, or
+  decide what to build first; and whenever a PLAN.md needs changing — even
+  if the user just says "let's plan this", "new project" or "what should
+  this look like". Layers on write-markdown; settles open questions through
+  make-decisions, classes every input and output through secure-project,
+  sets each surface's bar through design-interface, points the design at
+  the skills that own each part, hands the build to build-project, and the
+  finished build to review-project.
 ---
 
 # Plan the project
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
-It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
+It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -107,7 +107,7 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 |---|---|---|
 | <GET> | <path, with its query bounds> | <shape; link the Outputs table> |
 
-- **<screen>** — <what it shows, from which output, and how it refreshes>.
+- **<screen>** — <the question it answers, what it shows from which output, how it refreshes, and its design (`design-interface`, Plan the design before the code)>.
 
 ### Runs on
 
@@ -168,6 +168,8 @@ Questions asked before a draft exists are guesses at what matters; a draft shows
 
 **Plan on Opus at high effort, whatever the session started on: hand steps 2 to 8 — the gathering, the research, the draft and its self-check — to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as the planning subagent that does the work itself, with the user's words verbatim, the repo and this skill by name, and have it return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
 A session briefed as that subagent works directly; any other hands over (`choose-model`, Hold a stage on its model).
+**The hand-off is not a default to deviate from**: a prompt calling the project small, quick or urgent shortens the plan, never moves it off Opus, and no proposed decision skips it — only the user naming the model does (`choose-model`, Hold a stage on its model).
+A new project is never a small change, however tiny: it gets a `PLAN.md`, planned this way.
 
 1. **Start in plan mode**; its approval is the plan's sign-off.
    With nobody to approve it, see Plan with no user present.
@@ -182,11 +184,13 @@ A session briefed as that subagent works directly; any other hands over (`choose
    - **Place the project.** Who reads its outputs, which projects feed it or read from it, and what it plausibly grows into.
      Let that shape the names and the seams between stages, and put the growth itself under Not yet; building for it now is the structure-ahead-of-need mistake.
    - **Compare rival designs.** Sketch two or three for each structural choice, judged against how comparable tools do it and where they fall short, and record the losers under Decisions.
+   - **Aim at the best in class.** For each surface the project ships — a dashboard, a command, an API, a message, a page, the README — write in the Interface what a best-in-class version of it would be, from `design-interface`'s Set the bar and the strongest comparable tools found above, and scope the milestones to reach it; it is a default the user can lower in the batch.
+     The ambition is in finish and completeness, never in features or risk (`design-interface`, Set the bar).
    - **Keep what the brief didn't ask for.** A capability the research turned up, or a better shape for something the user fixed, goes under Ideas with its case, so the user sees it without it entering the design.
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
-5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, any message to the user from `send-messages`, and each input's and output's class, with where it may go, from `secure-project`.
+5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points` and its look and bar from `design-interface`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, any message to the user from `send-messages`, and each input's and output's class, with where it may go, from `secure-project`.
    For a Python project M1 is the scaffold from `setup-python`, logging, and the first real path from input to output, however thin; each Verification line is a check `write-tests` would accept.
    For a job that runs unattended, M2 makes it run and fail visibly with nobody watching — the schedule, the lock, the exit codes and `status` — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
    A notification is part of M2 only when a requirement asks for one; `run-unattended`'s Report the outcome says what signals a failure until then.

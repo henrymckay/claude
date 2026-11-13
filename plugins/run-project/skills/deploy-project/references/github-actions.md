@@ -7,7 +7,7 @@ What the nightly command does once it runs is `run-unattended`'s; the launchd an
 
 ## Nightly pipeline and site
 
-`.github/workflows/nightly.yml`: fetch yesterday, write it through the store to the data tree and MotherDuck, commit the tree's new files back, then build the shinylive site from the stored metrics and publish it to Pages.
+`.github/workflows/nightly.yml`: fetch yesterday, write it through the store to the data tree and MotherDuck, commit the tree's new files back, then build the web front end over files from the stored metrics and publish it to Pages.
 Enable Pages once in the repository's settings with GitHub Actions as the source, or the deploy job fails with no site to deploy to.
 
 ```yaml
@@ -71,12 +71,16 @@ jobs:
       - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
-      - run: uv sync --locked --no-dev
-      - run: uvx shinylive export app site
-      - run: mkdir -p site/data
-      - run: uv run --no-dev myapp-cli export metrics --format parquet --output site/data/metrics.parquet
+      - run: uv sync --locked
+      - run: mkdir -p web/public/data
+      - run: uv run myapp-cli export metrics --format parquet --output web/public/data/metrics.parquet
         env:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
+      - run: cp data/runs.parquet web/public/data/runs.parquet
+      - run: uv run npm --prefix web ci
+      - run: uv run npm --prefix web run build -- --base /${{ github.event.repository.name }}/ --outDir ../site --emptyOutDir
+        env:
+          VITE_DATA: files
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site
@@ -97,6 +101,7 @@ jobs:
 - `cron` is UTC unless a `timezone` key is set.
 - `concurrency` without `cancel-in-progress` queues an overlapping run instead of killing the one in flight, the same policy as the lock; the status workflow shares the group, so the two never commit at once.
 - The runner has no data directory of its own, so `MYAPP_DATA_DIR` points `store-data`'s tree into the checkout, where last night's commits already hold the records `compute` reads, and with `motherduck_token` set the store also loads the night into MotherDuck.
+- The site job syncs the development group too, since `nodejs-wheel` is where `npm` comes from (`setup-python`); `VITE_DATA=files` builds the data module that reads the Parquet beside the page, and `--base` names the repository because a project site is served under `/<repository>/`, where assets built for `/` all answer 404.
 - The commit takes the night's `records/` and `rejected/` partitions, one new file each per source, plus `metrics.parquet`, `runs.parquet` and `alerts.json`, rewritten whole; keep them out of `.gitignore` or the commit is empty.
 `raw/` and `logs/` are never committed: the pages go up as the artifact `store-data` keeps, and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.
@@ -105,7 +110,7 @@ jobs:
 - `site` runs on `!cancelled()`, so a partial night still publishes what it stored.
 Its checkout names `ref: ${{ github.ref_name }}`, because the default is the commit the run started from, which lacks the data the nightly job just pushed.
 - `export metrics` reads the store, never a source, so the site job needs no token and the bundle holds only the exported file.
-- `app/` is the browser app's own directory, separate from the package: it runs on Pyodide, so it cannot import a package that depends on `polars`, and it reads `data/metrics.parquet` by a same-origin `pyodide.http.pyfetch`; after changing it, run the workflow by hand rather than waiting a night.
+- `web/` is the front end's own folder beside the package (`write-entry-points`, Dashboard); the site job ships the night's `metrics.parquet` and the manifest `runs.parquet` beside the page, so the dashboard shows its data's age from the same night.
 - `pages: write` and `id-token: write` are what `deploy-pages` needs; the `github-pages` environment is created by the first deploy and shows the site's URL on the run.
 - Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors, except `setup-uv`, which has published no major tag since v8, so `@v10` resolves to nothing and the job fails at setup — it takes a full version (checked 2026-11-10).
 

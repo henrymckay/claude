@@ -33,7 +33,7 @@ Three mistakes account for most wasted spend: running every stage on the largest
 |---|---|---|---|
 | Planning, reviewing, editing skills, ruling on a challenge | `opus` (`fable` for the hardest design) | high | One wrong call here is rebuilt across every milestone; the cost is paid once |
 | Build milestones | `sonnet` | medium | The plan has made the decisions; the gate catches what the model misses |
-| Cold reads, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
+| Cold reads, evaluators, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
 | Graders, hooks, trigger evals | `haiku` | low | A yes/no over a short text, run on every turn or every case |
 
 A model one rung up is earned by a stage that keeps failing its gate on the cheaper one, recorded under Decisions with the gate that failed; a rung down is never earned for planning or review.
@@ -52,6 +52,8 @@ So a stage never trusts the reported model, the frontmatter or the user's `/mode
 
 - **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
 The Agent tool's `model` is the one setting that decides which model serves the work.
+- **Hand it over however small the prompt says the work is.** "This should take minutes" or "keep it short" changes the size of the plan, the review or the milestone, never the model it runs on: a short stage on the right model costs cents more, and sessions told a task should take minutes otherwise planned on Sonnet, the rung a plan is never moved down to.
+The one exception is the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
 - **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself — which stops it passing the stage on whole, not spawning the cold read or research the stage's skill calls for, and without which it would load the skill and hand the stage on again — and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
 - **Check what comes back against the repo** — the suite, the commits, the plan's headings — before relaying it or handing over the next unit; a subagent reports a failed gate in the same register as a passed one.
