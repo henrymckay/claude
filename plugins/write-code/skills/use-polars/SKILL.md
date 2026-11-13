@@ -91,6 +91,7 @@ Restore the shape without branching: `polars.concat([pivoted, empty], how="diago
 **`NaN` compares false against everything, null included.** A ratio against a group aggregate — `polars.col("x").truediv(polars.col("x").max().over("g"))` — yields `NaN` where the maximum is zero, and every later filter on that column silently drops the row; decide the zero case with `when` where you divide.
 
 **A comparison with null is null, not false**, so `.filter` drops the row; `.eq_missing()` is the null-safe form, counting two nulls equal.
+Test for null with `.is_null()`, never `.eq(None)`: Polars warns on a comparison with `None`, which fails a suite run with warnings as errors (Polars 2.1.0).
 
 **`.sum()` of an all-null column is `0`; `.mean()` is null.**
 
