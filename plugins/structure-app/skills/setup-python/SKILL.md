@@ -2,25 +2,12 @@
 name: setup-python
 description: >-
   How to scaffold and configure a Python project — the src/ layout,
-  pyproject.toml with the uv_build backend, dependency and environment
-  management with uv, a committed lock file upgraded on a schedule, the floor
-  of Python 3.15, the house-pick libraries for common tasks (typer, httpx with
-  tenacity and pyrate-limiter, polars, a web front end or dash for a
-  dashboard, pydantic-settings, rich logging), standalone scripts, pre-commit hooks run through uv, releases
-  with uv version, and the ruff/taplo/pyright-strict/pytest toolchain with the
-  strict pytest flags and an untyped dependency kept out of strict's way, plus
-  sqlfluff's hook once the project holds SQL, and a web front end's Node
-  through nodejs-wheel. Use
-  whenever scaffolding a new Python project, package, script, or tool; adding
-  packaging to existing code; setting up dependencies, virtual environments,
-  project config or hooks; cutting a release; or choosing a house-pick library
-  for a task — even if the user just says "set this up", "add a dependency",
-  or "make this a package". Standardises on uv, ruff, taplo, pyright and
-  pytest, with no task runner, Docker only for a container platform, and no
-  CI until a project earns it; a PLAN.md decision overrides any pick. Plan a
-  new project first with plan-project. For how to organise the application's
-  code into layers, see structure-python; for in-code style, write-python; for
-  the tests themselves, write-tests.
+  pyproject.toml, uv for Python, environments and dependencies, the house-pick
+  libraries for common tasks, standalone scripts, pre-commit hooks, releases,
+  and the ruff, taplo, pyright and pytest toolchain. Use whenever scaffolding
+  a project, package or script, adding a dependency, configuring tools or
+  hooks, cutting a release or choosing a library — even if the user just says
+  "set this up" or "make this a package".
 ---
 
 # Set up a Python project

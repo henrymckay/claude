@@ -1,28 +1,12 @@
 ---
 name: write-entry-points
 description: >-
-  How to build an application's entry points — the drivers that invoke it: a
-  command-line interface, an HTTP API, a dashboard, and the scheduled command
-  a scheduler calls. Each is a thin shell over the pure core and the
-  composition root that reads settings once and binds each secret into the
-  adapter it builds, designed as a public surface: output forms, input routes,
-  exit codes, date ranges, error statuses, a guarded loopback server, an API
-  and a dashboard that read the store, and the dashboard's technology — a web
-  front end behind one data module by default, Dash with Mantine when the code
-  must stay Python, Shiny for an existing Shiny app. Load it before adding or
-  changing a CLI, API, dashboard or scheduled command, even before reading
-  the package. Use whenever adding or structuring an entry point, designing a
-  command's options or an API's surface, choosing or structuring a dashboard,
-  deciding what goes to standard output and what to standard error, wiring
-  dependency injection at the boundary, reading settings under a scheduler,
-  sizing a fetch that needs warm-up history, or testing a dashboard — even if
-  the user just says "add a CLI", "expose an API", "build a dashboard", "run
-  this on a schedule", or names typer, fastapi, react, vite, dash or shiny.
-  Language-agnostic principles here; Python build-outs in
-  references/python.md. Layers on structure-python's drive layer and
-  be-functional; design-interface owns how a surface looks, run-unattended
-  the scheduled command unwatched, store-data the data it writes, and
-  secure-project what a served surface must guard.
+  How to build an application's entry points — a CLI, an HTTP API, a dashboard
+  or web front end, and the command a scheduler calls — as thin drivers over
+  the core: output forms, exit codes, settings read once, a guarded loopback
+  server. Load it before adding or changing a CLI, API, dashboard or scheduled
+  command. Use whenever building or structuring one — even if the user just
+  says "add a CLI", "expose an API" or "build a dashboard".
 ---
 
 # Write entry points

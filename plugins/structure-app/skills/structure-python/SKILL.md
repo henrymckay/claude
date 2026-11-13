@@ -1,25 +1,13 @@
 ---
 name: structure-python
 description: >-
-  How to structure a non-trivial Python application — the hexagonal
-  (ports-and-adapters) layers of a pure core (domain types, logic and use cases
-  behind ports) and an outer edge (driven adapters for IO, entry-point drivers
-  at a composition root); declaring a port and splitting one; writing an adapter
-  that maps into the port's shared schema, returns what it got for the store to
-  write, fails an item rather than the source and absorbs a source's changes,
-  calling an outside service through one paced, retried httpx client; the error
-  package; the three homes of a configuration value; the log level per event;
-  and where runtime data assets and the test suite sit. Use when organising an
-  app into layers, deciding where configuration, a module, entry point, IO
-  adapter, data asset, constant, secret or test belongs, designing a port or an
-  adapter's output, deciding what happens when one item of a fetch fails,
-  choosing whether a data file should be CSV, YAML or TOML, applying dependency
-  injection, or laying out the code/data/tests directories — even if the user
-  just says "structure this app", "where does this go", or "clean/hexagonal
-  architecture". Layers on write-python and be-functional; for building the
-  entry points themselves, see write-entry-points; for where the data lives,
-  store-data; for scaffolding, packaging and tooling, setup-python. The HTTP
-  client mechanics are in references/http.md.
+  How to structure a non-trivial Python application — a pure core behind
+  ports, an outer edge of adapters and drivers, the error package, where
+  configuration, data assets and tests live, and outside services called
+  through one paced, retried client. Use when organising an app into layers,
+  deciding where a module, adapter, constant or secret belongs, or designing a
+  port — even if the user just says "structure this app" or "where does this
+  go".
 ---
 
 # Structure a Python application
