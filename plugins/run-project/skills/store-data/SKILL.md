@@ -2,26 +2,12 @@
 name: store-data
 description: >-
   Where a project's data lives and how it is written and read —
-  hive-partitioned Parquet for pipeline output, read by Polars and queried by
-  DuckDB; DuckLake or Delta Lake once a write spans partitions, corrects rows
-  or must read an earlier state; MotherDuck when another machine or a phone
-  chat must reach it, and the client and Python it pins; SQLite for small
-  single-writer state, Postgres only for a multi-writer service, and no ORM;
-  the data directory and its tree; the store as a write port and a read port;
-  one file per partition, columns sorted and timestamps UTC, overwritten
-  atomically, and an empty day stored as an empty partition; the raw archive,
-  the quarantine and the run manifest; metrics recomputed whole, compacting
-  only once measured, and testing a store. Use whenever deciding where a
-  project's output goes, writing a store adapter, choosing between Parquet, a
-  table format, DuckDB, SQLite or Postgres, laying out a data directory,
-  writing or scanning Parquet, deciding what to keep when a row or an item
-  fails, recording what a run did, or sharing data with another machine or a
-  hosted dashboard — even if the user just says "save the results", "where
-  should this live" or "add a database". Targets Polars 2.x and DuckDB 2.x.
-  Layers on structure-python (the store is an adapter) and use-polars;
-  run-unattended reads the manifest and holds the lock, write-sql covers the
-  SQL written against the store, and secure-project decides which data may
-  leave the machine.
+  hive-partitioned Parquet queried by DuckDB, a table format once writes span
+  partitions, MotherDuck to share, SQLite for small state, atomic writes, the
+  raw archive, the quarantine and the run manifest. Use whenever deciding
+  where output goes, writing a store adapter or picking a database — even if
+  the user just says "save the results", "where should this live" or "add a
+  database". Targets Polars 2.x and DuckDB 2.x.
 ---
 
 # Store data

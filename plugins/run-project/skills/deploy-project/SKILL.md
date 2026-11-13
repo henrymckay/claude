@@ -1,26 +1,13 @@
 ---
 name: deploy-project
 description: >-
-  Where each artefact of a project runs in the cloud and how it gets there at
-  little or no cost, picked from the data's class — the nightly pipeline as a
-  GitHub Actions schedule writing to MotherDuck and committing the data tree
-  back, with a status workflow for a night that never ran and Modal when a job
-  outgrows a runner; MotherDuck Lite with one token per consumer; a public
-  dashboard as a static build on GitHub Pages, or Cloudflare Pages from a
-  private repository, with the free host and its limits for each dashboard
-  technology (static, an API, Dash, Shiny); an API on Render only once a second consumer earns
-  one, Cloud Run when the wake matters; private data kept on the owner's
-  machine and its dashboard reached over Tailscale; what changes for a
-  private repository; secrets in each platform's own store; the hosts ruled
-  out; and re-checking a tier before relying on it. Use whenever deploying,
-  hosting or publishing a pipeline, dashboard, API or site, choosing a free
-  tier or cloud host, writing a workflow that runs in the cloud, or filling a
-  plan's Runs on section — even if the user just says "put this online", "host
-  the dashboard", "run it in the cloud" or "is there a free tier for this".
-  The two workflow files are in references/github-actions.md. Layers on run-unattended, store-data,
-  write-entry-points, send-messages and setup-python; secure-project classes
-  the data the hosts are picked from, and plan-project's Runs on section
-  records the choice.
+  Where each artefact of a project runs in the cloud at little or no cost,
+  picked from the data's class — a scheduled pipeline on GitHub Actions, a
+  dashboard as a static site or on a free host, an API once earned, private
+  data kept on the owner's machine. Use whenever deploying, hosting or
+  publishing a pipeline, dashboard, API or site, or choosing a free tier —
+  even if the user just says "put this online" or "host the dashboard". Not
+  for a job on the user's own machine, which is run-unattended's.
 ---
 
 # Deploy a project

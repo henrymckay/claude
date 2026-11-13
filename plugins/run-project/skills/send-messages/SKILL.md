@@ -2,26 +2,11 @@
 name: send-messages
 description: >-
   How a deployed job or assistant reaches a person — what deserves a message
-  (a failure alert, a digest, a conversation, never a routine success),
-  alerting on a change of state recorded beside the manifest so a permanent
-  failure alerts once, a sender for each failure (the driver for a failed run,
-  a scheduled status for a night that never ran, the workflow's failure step
-  for a crash before the driver), picking the channel (ntfy.sh for the alert,
-  email with the chart attached for the digest, Claude Code channels for the
-  conversation; Pushover, Telegram, Slack, Discord and iMessage as the
-  alternatives with the case that earns each), leading with what the reader
-  would act on, sending from the job driver with the stdlib, keeping the
-  topic, token or app password a secret and private data out of the body,
-  and reaching a Claude Code session
-  through a channel or a scheduled task's trigger. Use whenever adding a
-  notification, alert, digest or chat to a job, choosing between push, chat
-  and email, wiring ntfy, Pushover, Telegram, Slack, Discord, iMessage or
-  SMTP, or deciding how an unattended job tells someone it failed or stopped
-  running — even if the user just says "text me when it breaks", "email me a
-  summary" or "let me chat with it from my phone". Layers on run-unattended
-  (when a message is earned), store-data (the digest's counts) and
-  secure-project (what a message may carry); Claude
-  Code's own hooks and PushNotification tool are not covered.
+  (a failure alert, a digest, a chat, never a routine success), alerting once
+  per change of state, and the channel: ntfy for an alert, email for a digest,
+  Claude Code channels for a chat. Use whenever adding a notification, alert,
+  digest or chat to a job — even if the user just says "text me when it
+  breaks", "email me a summary" or "let me chat with it from my phone".
 ---
 
 # Send messages
