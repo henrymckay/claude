@@ -13,7 +13,7 @@ description: >-
 # Deploy a project
 
 Where each artefact of a project runs once it leaves the laptop, and how it gets there, on hosts that cost nothing or nearly nothing.
-It builds on `run-unattended` (what the job does unwatched), `store-data` (the store), `write-entry-points` (the drivers deployed), `send-messages` (the alert) and `setup-python` (`uv`; no Docker or CI until earned — this skill earns the nightly workflow, not a CI one, so the suite still runs where the code is written); `secure-project` classes the data each host is picked from, and `plan-project`'s Runs on section records each choice with the date its tier was checked.
+It builds on `run-unattended` (what the job does unwatched), `store-data` (the store), `write-entry-points` (the drivers deployed), `send-messages` (the alert) and `setup-python` (`uv`; no Docker or CI until earned — this skill earns the nightly workflow, not a CI one); `secure-project` classes the data each host is picked from, and `plan-project`'s Runs on records each choice with the date its tier was checked.
 Three mistakes account for most deployments that die quietly: a free tier that changed or vanished after the plan was written, so the job stops the day the credit runs out; a secret bundled into a static app, which the browser hands to anyone who opens the network tab; and a public default applied to private data, which then lands in a public repository's history or on a host anyone can open.
 
 **In an existing project, ask first.** Where a repo already deploys somewhere, check with the user whether to keep it or apply these picks, and prefer these unless they choose to keep theirs.
@@ -29,7 +29,8 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **API** — a Render free web service, once a second consumer earns one.
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
-**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard served from the same machine and reached from the owner's phone over Tailscale (`tailscale serve 8000` shares the dashboard's port (8001 for a Dash or Shiny app) with their own devices only, and its guard then accepts the machine's Tailscale name as well as loopback (`secure-project`, Guard what is served); the Personal plan is free for up to six users).
+**Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard reached from the owner's phone over Tailscale.
+`tailscale serve 8000` (8001 for a Dash or Shiny app) shares the port with their own devices only, and the guard then accepts the machine's Tailscale name too (`secure-project`, Guard what is served); the Personal plan is free for up to six users.
 Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — a static build behind Cloudflare Access, or MotherDuck behind a hosted app — sends every row to outside services, which `secure-project` allows only under a signed-off decision naming them.
 
 **A private repository holding public data changes two of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; GitHub Pages serves a private repository only on Pro, so the static dashboard goes to Cloudflare Pages by direct upload from the workflow (`wrangler pages deploy`, its token a repository secret), which takes no repository at all; MotherDuck and Render are unaffected.
@@ -43,7 +44,7 @@ A public repository runs it free; a job must finish inside six hours, and the cr
 
 - **Write to MotherDuck and commit the data tree back** — the night's `records/` and `rejected/` partitions, `metrics.parquet`, `runs.parquet` and `alerts.json` — with `stefanzweifel/git-auto-commit-action` under `permissions: contents: write`.
 The tree is the backup and the next night's input, and the push is repository activity, so GitHub does not disable the schedule, as it does a public repository's after sixty days without activity; a push made with `GITHUB_TOKEN` triggers no workflow, so it cannot loop.
-- **Commit one date-partitioned file per source a night, and rewrite whole only files that stay small.** GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and a rewritten file makes every clone carry every version; the manifest stays small, but once `metrics.parquet` passes a few MiB, stop committing it and let the site job run `compute` before it exports.
+- **Commit one date-partitioned file per source a night, and rewrite whole only files that stay small**: GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and every clone carries every version of a rewritten file; once `metrics.parquet` passes a few MiB, stop committing it and let the site job run `compute` before it exports.
 - **The data commits land on `main`**, since the data tree is not code and nothing reviews a night's rows; record that as a `PLAN.md` decision, which `use-git`'s branch rule defers to.
 - **Once an alert is earned, the workflow covers what the driver cannot**: an `if: failure()` step for a failed install or commit, and a `status` workflow for a night that never ran (`send-messages`, Decide what deserves a message).
 - **Set a spend limit on a private repository**, or the schedule stops silently the day the included minutes run out.
@@ -52,7 +53,7 @@ The tree is the backup and the next night's input, and the push is repository ac
 
 ## Hold the data
 
-**Stay on MotherDuck Lite** for data its class lets leave the machine, $0 for 10 GB and 10 CU-hours a month on Pulse instances, with its two service accounts: a read/write token for the pipeline and a read-scaling token for the dashboard and the API, so a leaked dashboard token reads but never writes.
+**Stay on MotherDuck Lite** for data its class lets leave the machine, $0 for 10 GB and 10 CU-hours a month on Pulse instances, with two service accounts: a read/write token for the pipeline and a read-scaling token for the dashboard and the API, which reads but never writes if it leaks.
 `store-data` has the connection and the `motherduck_token` variable; past the quota it bills pay-as-you-go ($0.60 a CU-hour, $0.04 a GB-month).
 
 - **Move cold data to Cloudflare R2 when the store outgrows 10 GB**: 10 GB free with free egress, read into DuckDB or Polars over `httpfs` with an S3 key pair; the cost is a second credential on every reader.
@@ -60,11 +61,10 @@ The tree is the backup and the next night's input, and the push is repository ac
 
 ## Serve the dashboard
 
-**Publish a public dashboard as a static build on GitHub Pages**, from the nightly workflow's site job: the web front end over files (`write-entry-points`, Dashboard), its data the small Parquet files an `export` command writes beside the page.
-It is always on, wakes nothing and costs nothing, and the data and the page are always from the same night.
+**Publish a public dashboard as a static build on GitHub Pages**, from the nightly workflow's site job (Publish a static site): the web front end over files (`write-entry-points`, Dashboard), always on, waking nothing and costing nothing.
 **A dashboard that needs a server runs where its data's class allows**: public, as the API serving the built front end on Render (Serve an API); private, on the owner's machine over Tailscale (Decide what runs where).
 
-Dash and Shiny each have a vendor cloud with a free plan, and neither is a hosting advantage over a static build; the free host for each technology, read on 2026-11-12:
+Dash's and Shiny's vendor clouds are no hosting advantage over a static build; the free host for each technology, read on 2026-11-12:
 
 | Technology | Free host | Awake | Monthly cap | Repository | Private viewers |
 |---|---|---|---|---|---|
@@ -85,15 +85,13 @@ Dash and Shiny each have a vendor cloud with a free plan, and neither is a hosti
 
 **Add no API while the dashboard reads the store directly** (`write-entry-points`); a second consumer — another app, a phone chat, a partner — earns one.
 
-- **Render's free web service** once it is earned: auto-deploy on push from `render.yaml`, the read-scaling token as an environment variable, start command `uv run uvicorn mypackage.code.drive.api:app --host 0.0.0.0 --port $PORT`.
-It gives 750 instance hours a month and 5 GB of outbound bandwidth; it spins down after fifteen idle minutes and takes about a minute to wake, which the first request pays.
+- **Render's free web service** once it is earned: auto-deploy on push from `render.yaml`, the read-scaling token as an environment variable, start command `uv run uvicorn mypackage.code.drive.api:app --host 0.0.0.0 --port $PORT`; its limits are in the table above, plus 5 GB of outbound bandwidth a month.
 - **Google Cloud Run when a one-minute wake is unacceptable**: 2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds free a month and cold starts of seconds, deployed with `google-github-actions/auth@v3` and `deploy-cloudrun@v3` from `source: ./` with secrets from Secret Manager through the action's `secrets:` input, and private by default behind IAM, the access control an API over private data needs; the cost is a billing account and the project's one container image.
 - **Koyeb** (one free 512 MB service, waking in seconds, against a $29 card hold) and **Vercel's** FastAPI preset (Hobby, non-commercial only) are the remaining free hosts.
 
 ## Publish a static site
 
 **Publish a static site from the same nightly workflow**, a second job that `needs:` the nightly, sending a `site/` directory through `actions/upload-pages-artifact` and `actions/deploy-pages`, so the data and the page showing it are never from different nights.
-Pages serves a public repository on the Free plan and a private one only on Pro, up to 1 GB a site and a soft 100 GB a month.
 
 ## Keep secrets per consumer
 
