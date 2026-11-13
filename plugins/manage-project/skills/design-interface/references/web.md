@@ -4,7 +4,7 @@ The technology-neutral system is in `SKILL.md`; this is how it lands in a built 
 
 ## Tokens
 
-The tokens live in `web/src/index.css` as CSS variables, light under `:root` and dark under `.dark`, using shadcn/ui's names where it has one for the role and the house role name where it has none; Tailwind reads them through `@theme inline`, so `bg-card`, `text-muted-foreground` and `text-up` all follow the scheme.
+The tokens live in `web/src/index.css` as CSS variables, light under `:root` and dark under `.dark`, under shadcn/ui's name for a role where it has one; Tailwind reads them through `@theme inline`, so `bg-card` and `text-up` follow the scheme.
 
 | House role | Variable |
 |---|---|
@@ -89,16 +89,16 @@ Set the class before React loads, from an inline script in `index.html`'s `<head
 ```
 
 A small context provider holds the scheme, toggles the class, saves the choice in a `try` (storage can be blocked) and follows the system's change while the viewer has saved none.
-Charts read the tokens through one `useTokens()` hook keyed on the scheme, which returns the house roles by name, each read with `getComputedStyle(document.documentElement).getPropertyValue(...)` from its variable in the table above (`text` from `--foreground`, `muted` from `--muted-foreground`, `raised` from `--popover`, `surface` from `--card`), so every chart re-themes when the scheme flips and none holds a hex value of its own.
+Charts read the tokens through one `useTokens()` hook keyed on the scheme, returning the house roles by name, each read with `getComputedStyle(document.documentElement).getPropertyValue(...)` from its variable in the table above, so every chart re-themes when the scheme flips.
 
 ## Components
 
-Add shadcn/ui's components as the screens need them (`npx shadcn@latest add card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker), keep the `shadcn` command and any font it adds out of the runtime dependencies, then build the shared pieces once: a tile (label, value, context line, a skeleton while loading), a titled chart card of fixed height, a table that scrolls inside its card, a status chip for the data's age, and an error note.
-Icons are `lucide-react`, which shadcn/ui already uses; one icon set keeps one stroke weight.
+Add shadcn/ui's components as the screens need them (`npx shadcn@latest add card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker), keeping the `shadcn` command and any font it adds out of the runtime dependencies, then build `SKILL.md`'s shared pieces from them.
+Icons are `lucide-react`, which shadcn/ui already uses, so one stroke weight.
 
 ## ECharts
 
-Register only the charts and components used, from `echarts/core`, so the bundle carries a few hundred kilobytes rather than the whole library:
+Register only the charts and components used, from `echarts/core`, so the bundle carries a few hundred kilobytes, not the whole library:
 
 ```ts
 import { BarChart, LineChart } from "echarts/charts";
@@ -140,7 +140,7 @@ export const yAxis = (t: Tokens) => ({
 
 - **Pass `{ notMerge: true }` to `setOption` when the scheme changes**, or ECharts merges the new colours into the old option and some keep the old scheme.
 - **Resize from a `ResizeObserver` on the chart's container**, since a window resize misses a card that changed width when the layout reflowed.
-- **Colour each series from `--chart-<n>`, or `--up` and `--down`**, never ECharts' default palette.
+- **Colour each series from `--chart-<n>`, or `--up` and `--down`.**
 
 ## Lightweight Charts
 
@@ -172,7 +172,7 @@ const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" 
 
 ## Formatting
 
-One `format.ts` holds every formatter, built once from `Intl`, so a number reads the same in a tile, a table and a tooltip:
+`lib/format.ts` builds every formatter once from `Intl`:
 
 ```ts
 const integer = new Intl.NumberFormat("en-GB");

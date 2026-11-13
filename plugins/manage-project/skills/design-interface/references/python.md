@@ -1,11 +1,10 @@
 # Design the interface in Python
 
-The technology-neutral system is in `SKILL.md`; this is how it lands in a Python dashboard — Dash with Mantine, Shiny, and the Plotly figures both draw — and in a digest's chart image.
-`write-entry-points` owns each app's structure; this file owns only its look.
+The technology-neutral system is in `SKILL.md`; this is how it lands in a Python dashboard — Dash with Mantine, Shiny, and the Plotly figures both draw — and in a digest's chart image; `write-entry-points` owns each app's structure.
 
 ## Tokens
 
-One module, `code/drive/tokens.py`, holds the roles of `SKILL.md`'s table as one record per scheme, transcribed from it; every theme below is built from this module, so a changed value is edited in the table, here, and in the Mantine accent ramp when it is the accent.
+One module, `code/drive/tokens.py`, transcribes `SKILL.md`'s table as one record per scheme, and every theme below is built from it; a changed value is edited in the table, here, and in the Mantine accent ramp when it is the accent.
 
 ```python
 """The house design tokens, one Scheme per colour scheme."""
@@ -101,7 +100,7 @@ def css(scheme: Scheme) -> str:
     )
 ```
 
-Bundle the font with the app — `Inter` as a `.woff2` under the app's static assets with an `@font-face` rule — rather than linking a font service, so the first paint and an offline viewer both get it.
+Bundle `Inter` as a `.woff2` under the app's static assets with an `@font-face` rule.
 
 ## Plotly
 
@@ -209,7 +208,7 @@ def build() -> dict[str, object]:
 
 - **Wrap the layout in `dmc.MantineProvider(theme=theme.build(), defaultColorScheme="auto")`**; `write-entry-points` has the driver that sets the scheme before the first paint.
 - **The page and card colours are CSS variables Mantine reads**: put `tokens.css(tokens.LIGHT)` under `:root` and `tokens.css(tokens.DARK)` under `:root[data-mantine-color-scheme="dark"]`, with `--mantine-color-body: var(--house-background)` in both, into a `<style>` in `app.index_string`, so the CSS comes from the tokens rather than a second copy in `assets/`.
-- **`dmc.ColorSchemeToggle(id="scheme")` is the toggle**, and its `computedColorScheme` the input a callback re-themes figures from, with a `dash.Patch()` setting each figure's `layout.template` to `house_<scheme>`, so only the template crosses the wire; a trace given an explicit colour keeps it, so give one only to a status colour, which is the same in both schemes.
+- **`dmc.ColorSchemeToggle(id="scheme")` is the toggle**, and its `computedColorScheme` the input a callback re-themes figures from, with a `dash.Patch()` setting each figure's `layout.template` to `house_<scheme>`, so only the template crosses the wire; a trace given an explicit colour keeps it in both schemes, so give one only to a status colour.
 - **`dash-ag-grid` takes its theme from the same variables**: `dashGridOptions={"theme": {"function": "themeQuartz.withParams({backgroundColor: 'var(--house-surface)', foregroundColor: 'var(--house-text)', headerBackgroundColor: 'var(--house-sunken)', borderColor: 'var(--house-border)', accentColor: 'var(--house-accent)', fontFamily: 'inherit'})"}}`, so the grid follows the scheme with no callback.
 
 ## Shiny
@@ -240,7 +239,7 @@ def build() -> shiny.ui.Theme:
     )
 ```
 
-- **`shiny.ui.input_dark_mode(id="scheme")` is the toggle**; a render function that reads `input.scheme()` redraws its figure with `house_<scheme>`, and Bootstrap's own components follow without code.
+- **Pass it as `shiny.ui.page_navbar(..., theme=theme.build())`, with `shiny.ui.input_dark_mode(id="scheme")` in the navbar as the toggle**; a render function that reads `input.scheme()` redraws its figure with `house_<scheme>`, and Bootstrap's own components follow without code.
 - **Cards and value boxes take `surface`** through `--bs-card-bg` under `[data-bs-theme="dark"]`, added with `.add_rules()`, since Bootstrap's dark card otherwise matches the page.
 
 ## A digest's chart
