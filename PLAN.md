@@ -83,7 +83,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 ### Inputs
 
 - **The user's conversations and corrections** — the requirements and most rules; corrections about skills arrive as skill feedback.
-- **Skill feedback issues** — `gh issue list -R henrymckay/claude --label skill-feedback`.
+- **Skill feedback issues** — labelled `skill-feedback` on the repository each `plugin.json` names.
 - **Current tool docs and releases** — every skill claim is checked against the current release.
 - **Trial builds** — each files skill feedback for the next sweep.
 
@@ -158,7 +158,7 @@ Numbers are stable; the groups are for reading.
 - **D1 Symlinks into `~/.claude` stay a supported wiring** for a machine that cannot install plugins, over installed plugins only; the authoring machine runs the installed plugins, so it runs what others install; cost: the symlink wiring merges the `Stop` hook by hand.
 - **D32 Always-on instructions per plugin are a context file printed by a `SessionStart` hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` carries the same lines for the symlink wiring, and `review-plugin` checks they agree; cost: the same lines in six files, checked each sweep.
 - **D34 A toolchain's commands live in the skill that owns it** over each skill naming `uv` commands — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under any toolchain; cost: without `structure-app`, a reader gets examples, not commands.
-- **D2 Commit as `henrymckay <henrymckay@users.noreply.github.com>`; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
+- **D2 Commit as the owner's GitHub no-reply identity; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
 - **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback; cost: ideas are tracked apart from issues.
 - **D11 The README is for humans and points at this plan** over copying it; cost: a reader wanting the decisions follows a link.
 - **D12 Memory holds only what this plan doesn't** over memory as a record — the plan is visible and versioned; memory is per-machine; cost: memory is pruned by hand, since a sweep may not edit it.
@@ -230,6 +230,11 @@ The skill named holds the pick, its alternative, its reason and its cost.
 - **D59 The ladder holds when a prompt calls the work small** (`choose-model`, `plan-project`) — the size changes the stage's length, not its model; only a fix's short plan in the conversation stays in the session — over letting a time limit move a plan to Sonnet (issue 74); cost: an Opus hand-off for a tiny plan.
 - **D60 The install line looks up the newest release tag** with `git ls-remote` — over naming the tag, which went stale at every release; cost: a longer command that needs `git`.
 
+**Sweep 6** *(2026-11-13)*
+
+- **D61 The owning account is named only where an install needs it** (decided by the owner, 2026-11-13) — the install and clone lines, each `plugin.json`'s `repository` (the feedback rule finds the tracker there) and the licence holder keep it; `CLAUDE.md` finds the tracker through `repository` and the plan names no account — over removing every mention, which needs the repository moved to an organisation or a neutral account; cost: none. *(proposed)* `author.name` reads `claude contributors` rather than going, since `claude plugin validate --strict` fails a manifest with no author.
+- **D62 Keep the marketplace name until the repository moves** *(proposed)* — renaming it changes every `@<marketplace>` install line and breaks each existing install, so do it only in the release that moves the repository to a neutral account, if that happens, to a name such as `house-skills`; over renaming now; cost: the account stays in the install line.
+
 **Superseded**
 
 - **D8 Evaluation briefs archived outside this repo** — superseded by D40.
@@ -268,7 +273,7 @@ Sweeps are not milestones.
 
 ### Assumptions
 
-- **A1** The repository and marketplace keep their names (`claude`, `henrymckay`) — only the plugins were renamed.
+- **A1** The repository and marketplace keep their names — only the plugins were renamed; a neutral marketplace name waits on D62.
 - **A2** The cloud sweep's `gh` is authenticated for REST and blocked for GraphQL, and vendor pages outside its proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep.
 
 ### Questions

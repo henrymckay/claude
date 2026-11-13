@@ -75,7 +75,7 @@ With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/
 
 ## 🔁 Feedback and sweeps
 
-1. **Feedback** — when a skill steers Claude wrong, Claude files an [issue](https://github.com/henrymckay/claude/issues?q=label%3Askill-feedback) labelled `skill-feedback` on the plugin's repository.
+1. **Feedback** — when a skill steers Claude wrong, Claude files an issue labelled `skill-feedback` on the plugin's repository.
    A `Stop` hook sends Claude back if it forgot.
 2. **Sweep** — [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) works through the open issues, then runs every drift check.
    It runs weekly, or when you say "review the skills".
