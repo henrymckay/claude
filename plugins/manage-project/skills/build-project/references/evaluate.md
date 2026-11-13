@@ -5,7 +5,7 @@ The criteria themselves are `design-interface`'s, Look at it running for a scree
 
 ## Brief the evaluator
 
-Spawn it fresh, on `sonnet` at medium effort (`choose-model`), and give it only what a stranger opening the product would have plus the standard, never the builder's account of what it built, since an evaluator told what to expect tends to find it:
+Spawn it fresh, on `sonnet` at medium effort (`choose-model`), with only what a stranger opening the product would have plus the standard, never the builder's account, since an evaluator told what to expect tends to find it:
 
 - **What it is**, in one line from the plan's Goal, and the screen list or interface from the plan's Interface.
 - **How to start it** — the launch command and its port, or the command to run — where the screenshots go (`evaluation/round-<n>/` in the project, git-ignored), and the script below, saved as `evaluation/shoot.py`.
@@ -15,7 +15,7 @@ Spawn it fresh, on `sonnet` at medium effort (`choose-model`), and give it only 
 
 ## Screenshot a screen
 
-A PEP 723 script, run with `uv run --script shoot.py <url> <out>` under `setup-python`'s toolchain, takes every screen at desktop and phone width in both schemes once the page signals `data-ready` (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
+A PEP 723 script, run with `uv run --script shoot.py <url> <out>`, takes every screen at desktop and phone width in both schemes, driven by the page's `data-view` and `data-ready` signals (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
 
 ```python
 # /// script
@@ -89,9 +89,8 @@ if __name__ == "__main__":
     shoot(sys.argv[1], pathlib.Path(sys.argv[2]))
 ```
 
-- **The page's own signals drive it** (`write-entry-points`, Dashboard): each screen's navigation control carries `data-view`, and the root's `data-ready` drops to `0` while a screen loads and returns to `1` once it has drawn, so a shot never catches a skeleton.
 - **The scheme comes from the browser's `color_scheme`**, which the page follows by default (`design-interface`, Light and dark), so the script never clicks the toggle.
-- **The phone check compares the document's `scrollWidth` with the window's width**, so a page wider than 390 px reports itself rather than hiding in a full-page screenshot.
+- **The sideways-scroll check compares `scrollWidth` with the window's width**, since a full-page screenshot hides a page wider than 390 px.
 
 ## Measure what a screenshot cannot
 
@@ -110,9 +109,8 @@ if __name__ == "__main__":
 
 A command-line tool is judged from a session the evaluator runs in a scratch folder against a small real store: `--help` at the root and for each command, the everyday invocation in each output form, two wrong invocations (a bad option, a missing input), and the exit code of each.
 An API is judged from its docs page, screenshotted as above, and from a request to each route with good and bad parameters.
-The transcript of the session is the evidence, saved beside the screenshots.
+The session's transcript is the evidence, saved beside the screenshots.
 
 ## Report the rounds
 
-Each round's report gives the criteria passed and failed, what the builder changed, and the round's cost: the evaluator's and the fixing builder's tokens from the Agent tool's usage line, priced at `choose-model`'s rates.
-After the third round, the criteria still failing go under the plan's Questions with the evaluator's evidence and its proposed change, and the milestone is ticked: an unmet criterion is open polish, not a failed gate, unless it breaks a requirement, which is a failing check like any other.
+Each round's report gives the criteria passed and failed, what the builder changed, and the round's cost, from the Agent tool's usage line for the evaluator and the fixing builder; `SKILL.md` says what happens after the third.
