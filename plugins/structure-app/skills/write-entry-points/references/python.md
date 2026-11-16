@@ -48,8 +48,8 @@ rich_/
 ```python
 import datetime
 import functools
-import pathlib
 import typing
+lazy import pathlib
 
 from mypackage.code import operate
 from mypackage.code.adapt import httpx_, noaa, parquet
