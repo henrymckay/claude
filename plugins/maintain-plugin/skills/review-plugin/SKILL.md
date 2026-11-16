@@ -73,7 +73,7 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 Where they also map each plugin of a marketplace to its skills, so a plugin installed alone can name what it lacks, the map is identical in every copy and matches the plugin folders.
 - **Judge the README, `CLAUDE.md`, `PLAN.md` and each context file whole against `write-markdown`**, for length and organisation as well as truth, never only the lines a fix touched.
 A file patched sweep after sweep reads as drip-fed even when every line is true; rewrite it whole from what the repo is today rather than adding to it.
-- **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there; an addition to it says in its commit what it removed, and a file over budget is a finding.
+- **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there, kept as `write-markdown` says; a file over budget is a finding.
 `CLAUDE.md` and the context files carry no defaults (see `write-markdown`).
 - **The README is true**: it lists every skill as its skill describes itself, and its setup, configuration and feedback sections hold against the repo and the plan; a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
