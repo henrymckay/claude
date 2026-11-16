@@ -80,8 +80,8 @@ class Version(OrderedByKeyMixin):
 Concrete versions of the collapsed forms in `SKILL.md`:
 
 ```python
-import collections.abc
 import enum
+lazy import collections.abc
 
 
 # Strategy / Command → a function parameter
