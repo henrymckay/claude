@@ -73,7 +73,7 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 Where they also map each plugin of a marketplace to its skills, so a plugin installed alone can name what it lacks, the map is identical in every copy and matches the plugin folders.
 - **Judge the README, `CLAUDE.md`, `PLAN.md` and each context file whole against `write-markdown`**, for length and organisation as well as truth, never only the lines a fix touched.
 A file patched sweep after sweep reads as drip-fed even when every line is true; rewrite it whole from what the repo is today rather than adding to it.
-- **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there; an addition to it says in its commit what it removed, and a file over budget is a finding.
+- **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there, kept as `write-markdown` says; a file over budget is a finding.
 `CLAUDE.md` and the context files carry no defaults (see `write-markdown`).
 - **The README is true**: it lists every skill as its skill describes itself, and its setup, configuration and feedback sections hold against the repo and the plan; a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
@@ -89,7 +89,7 @@ Verify each finding against the files before acting, as for the cold read.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
 - **Each trigger suite passes**, run from every plugin folder the sweep touched: `claude plugin eval . --ablation none --no-publish --trust-plugin`.
 Each skill has a case that should fire it; a skill with a near neighbour that could claim its prompts also gets one that should not, a `tool_used` grader on `Skill` with `min: 0` and `max: 0`, added only where the two are likeliest to be confused, since every case is a paid session.
-A case whose skill makes Claude work at length raises `timeout_seconds` in its `prompt.md` above the 300-second default rather than failing on the cap.
+A case whose skill hands its work to a subagent lists `Agent` under `disallowed_tools` in its `prompt.md`, since `allowed_tools` does not withhold it and the subagent runs the whole stage after the `Skill` call has already passed, at many times the cost and up to the cap; one whose skill works at length inline raises `timeout_seconds` above the 300-second default instead.
 The no-plugin arm (`--ablation with-without`) shows nothing for a trigger case, which cannot fire a skill that is not installed; it earns its cost only for a case that grades behaviour.
 `--trust-plugin` stands in for the trust prompt no unattended run can answer, so pass it only for a plugin whose source the sweep has read; a case scoring 0 at no cost with an API or timeout note never reached the model, so rerun it rather than reword its description.
 - **The feedback wiring works**: the `skill-feedback` label exists on the plugin's repository and `gh issue list` runs authenticated (`gh api` where GraphQL is blocked).

@@ -105,7 +105,7 @@ Design four states besides the happy one:
 
 - **Loading** — a skeleton in the content's own shape, and fixed heights so nothing jumps when data arrives.
 - **Empty** — what would fill it and what to do ("No runs yet — the first nightly writes here").
-- **Stale** — the data's age always visible, `warning` once it is stale (`run-unattended`'s definition: two missed runs unless the plan sets another) and `critical` when the last run failed, with text and an icon.
+- **Stale** — the data's age always visible, `warning` once it is stale (`run-unattended`'s definition, per source: two missed nights unless the plan sets another) and `critical` when the last run failed, with text and an icon.
 - **Error** — what failed and what to do about it, in the interface's voice, with the rest of the page still working.
 
 ### Light and dark

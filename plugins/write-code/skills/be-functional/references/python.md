@@ -84,8 +84,8 @@ def take_one(items: list[Item]) -> Item:
 In a layered application the core takes the effect with no default (`SKILL.md`, Functional core, imperative shell):
 
 ```python
-import collections.abc
-import datetime
+lazy import collections.abc
+lazy import datetime
 
 
 def build_config(env: collections.abc.Mapping[str, str]) -> Config:

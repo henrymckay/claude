@@ -79,7 +79,7 @@ From Anthropic's [official marketplace](https://github.com/anthropics/claude-plu
 - **`skill-creator`** tests a skill with and without it and tunes its description, for `write-skills`.
 - **`plugin-dev`** checks hooks, manifests, agents and commands, for `review-plugin`.
 - **`commit-commands`** runs the commit and pull request flows `use-git` sets conventions for.
-- **`pyright-lsp`**, **`claude-security`** and **`security-guidance`** for type errors and security.
+- **`pyright-lsp`** and **`claude-security`** for type errors and security.
 
 ## 🔁 Feedback and sweeps
 
@@ -89,7 +89,7 @@ From Anthropic's [official marketplace](https://github.com/anthropics/claude-plu
    It runs weekly, or when you say "review the skills".
 3. **Pull request** — each sweep lands as one pull request whose body is its report, listing every rule it cut or changed.
 
-Each plugin's `evals/` holds a casual prompt that should fire each skill, and a few that should not.
+Each plugin's `evals/` holds a casual prompt that should fire each skill, and, where a neighbour could claim one, a prompt that should not.
 Pass `--trust-plugin` only for a plugin whose source you have read.
 
 ```bash

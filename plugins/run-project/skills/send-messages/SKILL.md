@@ -86,8 +86,8 @@ def send_alert(text: str, *, title: str, topic: str) -> None:
 
 ```python
 import email.message
-import pathlib
 import smtplib
+lazy import pathlib
 
 
 def send_digest(

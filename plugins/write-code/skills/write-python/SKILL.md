@@ -49,7 +49,7 @@ Never `pytz`, `arrow` or `pendulum`; the stdlib covers it, and inside a frame th
 
 ## Docstrings
 
-**Every module, class, and public or module-level private function gets a docstring**, in reStructuredText field-list style, a `Protocol` method included, since the stub is the whole contract; a closure nested inside a function gets none, since its name and position already say what it does, and nor does a test (see `write-tests`):
+**Every module, class, and public or module-level private function gets a docstring**, in reStructuredText field-list style, a `Protocol` method included, since the stub is the whole contract; a closure nested inside a function gets none, since its name and position already say what it does, and nor does a test or fixture (see `write-tests`):
 
 ```python
 def fetch_forecast(city: str, *, days: int = 3) -> polars.DataFrame:
