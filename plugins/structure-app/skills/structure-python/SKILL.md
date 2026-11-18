@@ -126,7 +126,7 @@ class Fetched:
 `records` is matched to `port.RECORDS`, `rejected` holds `store-data`'s quarantine row (the raw record as text and its `reason`), `raw` is the bytes of each page as sent, and `failed` names the items that answered nothing usable.
 
 **Fail an item, not the source.** An item that 404s, exhausts its retries or won't parse goes into `rejected` with its reason and its name into `failed`, and the items that arrived go into `records`, so one dead item costs a count in the manifest, not the run; a source whose every item failed **raises**, since storing an empty partition would make an outage read as a quiet day, and its error carries the requests made and the items that failed, so the driver still writes the source's `failed` manifest row with its counts (`store-data`).
-An empty answer is different from no answer: an item the source answers with nothing normalises into the declared empty shape, and a day on which every item did so is a stored empty partition (`store-data`), because that is what the source said.
+An empty answer is different from no answer: an item the source answers with nothing normalises into the declared empty shape, and a day on which every item did so is a stored empty partition (`store-data`, which excepts a business calendar's off days), because that is what the source said.
 
 **Split getting from making sense of.** Give retrieval and parsing a function each and let the port's function compose them: `_parse(get(_url(item, day)))` per item, with `get` the paced getter the composition root built (below).
 The parse is where the source's quirks accumulate, and kept separate it takes a saved response in a test with no stubbed fetch.

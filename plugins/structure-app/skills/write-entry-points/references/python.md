@@ -284,6 +284,7 @@ web/
     main.tsx
     App.tsx           the header, the navigation and the screens
     index.css         the tokens (design-interface)
+    lib/charts.ts     the chart frame, and one option builder per chart (design-interface)
     lib/data.ts       the data module: every request a screen makes
     lib/format.ts     every number and date formatter
     components/ui/    shadcn/ui's components, added one by one

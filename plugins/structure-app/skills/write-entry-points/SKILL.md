@@ -105,10 +105,11 @@ An API is the CLI's surface over HTTP: the same options become query parameters 
 A dashboard is a driver like the others; its look is `design-interface`'s.
 
 **Build it as a web front end behind one data module**, by default: Vite, React and TypeScript with Tailwind and shadcn/ui, and ECharts for every chart, candles included.
-Every screen asks one module, `web/src/lib/data.ts`, for its data, in one of two versions, so moving a dashboard between a static host and the API changes one module:
+Every screen asks one module, `web/src/lib/data.ts`, for its data, in one of three versions, so moving a dashboard between a static host and the API changes one module:
 
 - **Over the API**, where the project is Python: the same process serves the API's JSON and the built front end, on one port.
 - **Over files**, where nothing needs a server: small pre-aggregated Parquet files beside the page, read in the browser with `hyparquet`, on a static host (`deploy-project`).
+- **Over a hosted API**, where a requirement needs a live read the static host cannot hold a token for: the static page calls a small read-only API on another origin, outside the package's layers (`deploy-project`, Serve an API).
 
 In a trial of one three-screen dashboard over two million rows on loopback (2026-11-12), this pick was ready in 0.45 s from 340 KB with each interaction in 50 to 180 ms; the static version in 0.74 s from 3.5 MB.
 The cost is a second toolchain, Node, carried as a development dependency (the Python reference).
