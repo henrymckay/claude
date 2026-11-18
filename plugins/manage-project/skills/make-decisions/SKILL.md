@@ -63,7 +63,7 @@ Where the precedent is another project's decision rather than a skill's, also fi
 - **Outward-facing** — an outward action as `plan-project`'s Plan with no user present lists them, or anything another person sees or receives.
 - **Costly** — money, a paid tier, or work that would take longer to undo than the milestone took to build.
 - **Security** — a data class looser than private, a credential for an account with money in it beyond read-only, private data sent to an outside service (`secure-project`).
-- **A change to the Brief or an override of a skill** — the user's alone, as `plan-project`'s Keep it current says.
+- **A change to the Brief or an override of a skill** — the user's alone, as `plan-project`'s Keep it current says; a requirement a house pick would weaken is one, and is built as stated (`plan-project`, step 4).
 - **No precedent, or precedents that disagree**, on a choice that shapes the design.
 
 Each escalation goes into the batch as a question with a recommended answer; in autonomous mode it becomes an assumption on that answer, as `plan-project` says, and leads the final reply, except a security escalation, which takes the more private answer and waits (`secure-project`).
