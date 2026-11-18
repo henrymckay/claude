@@ -1,5 +1,15 @@
 {
   "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${CLAUDE_PLUGIN_ROOT}/hooks/compact.md\""
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [

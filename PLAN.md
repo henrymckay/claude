@@ -99,7 +99,7 @@ Done looks like: two trial builds of different kinds, each run in autonomous mod
 ### Outputs
 
 - **`plugins/<plugin>/skills/<name>/SKILL.md`** and its `references/` — laid out by `write-skills`; read by Claude.
-- **`plugins/<plugin>/`** — `.claude-plugin/plugin.json`, `hooks/` (the context file and its script; `maintain-plugin` adds the feedback rule and the `Stop` hook) and `evals/` (one trigger case per skill).
+- **`plugins/<plugin>/`** — `.claude-plugin/plugin.json`, `hooks/` (the context file and its script; `maintain-plugin` adds the feedback rule and the `Stop` hook, `manage-project` the `PreCompact` instructions) and `evals/` (one trigger case per skill).
 - **`.claude-plugin/marketplace.json`** — the five plugins by relative path.
 - **`skills/<name>`** — a relative symlink to each skill, for the symlink wiring.
 - **`CLAUDE.md`** — the owner's working rules, skill list and feedback rule; read by Claude every session.
@@ -239,6 +239,10 @@ The skill named holds the pick, its alternative, its reason and its cost.
 - **D64 A should-not-trigger case only where a near neighbour could claim a skill's prompt** *(proposed)* — three to start (`review-plugin` against `review-project`, `be-oop` against plain functions, `deploy-project` against a job on the user's machine), and no no-plugin arm, which cannot fire an uninstalled skill — over one per skill, a paid session each (issue 81); cost: an untested boundary elsewhere until feedback shows a misfire.
 - **D65 Beside another authoring plugin, `write-skills` sets what a skill says and theirs set how it is made** *(proposed)* — the convention-skill side of D52, decided by rule; over a session test with each plugin installed, which this sweep did not run (issue 85); cost: their description and rule-style advice is ignored where it differs.
 - **D66 `use-git`'s no-footer rule calls itself the user's instruction** *(proposed)* — a harness reminder yields to the user's own instructions, and two of three plugin-only builds read a skill as not one (issue 77); the user installed the skill to set the convention, so it says so, and the context line and `CLAUDE.md` repeat it — over moving the rule into the context file alone; cost: none measured, since no build has run on the new wording.
+
+**Sweep 7** *(proposed, 2026-11-18, by the sweep; none signed off)*
+
+- **D67 A `PreCompact` hook in `manage-project` tells the compaction what to keep** *(proposed)* — its command prints `hooks/compact.md`, which Claude Code adds to the summary's instructions: the user's standing instructions, each decision or finding not yet in `PLAN.md`, a commit or memory, marked unrecorded, the branch, running tasks and the next step; `choose-model` adds the rule that a long stage writes its state at each milestone's or task's end — over the rule alone, which left the user asking for a save before every compaction, and over a hook that blocks compaction, which fails a compaction forced by a full context; cost: about 60 words per compaction, none with the symlink wiring, which has no plugin hooks, and the summary's use of them is unobserved. Source: issue 109; code.claude.com/docs/en/hooks (PreCompact output), 2026-11-18.
 
 **Superseded**
 
