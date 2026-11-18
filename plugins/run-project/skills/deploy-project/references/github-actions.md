@@ -18,6 +18,7 @@ on:
   workflow_dispatch:
 concurrency:
   group: data
+permissions: {}
 jobs:
   nightly:
     runs-on: ubuntu-latest
@@ -25,8 +26,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
@@ -39,12 +40,12 @@ jobs:
           MYAPP_NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           motherduck_token: ${{ secrets.MOTHERDUCK_WRITE_TOKEN }}
       - if: ${{ !cancelled() }}
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
         with:
           commit_message: "chore(data): store ${{ steps.day.outputs.day }}"
           file_pattern: data/records data/rejected data/metrics.parquet data/runs.parquet data/alerts.json
       - if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: raw-${{ steps.day.outputs.day }}
           path: data/raw
@@ -65,10 +66,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.ref_name }}
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked
@@ -78,10 +80,10 @@ jobs:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
       - run: cp data/runs.parquet web/public/data/runs.parquet
       - run: uv run npm --prefix web ci
-      - run: uv run npm --prefix web run build -- --base /${{ github.event.repository.name }}/ --outDir ../site --emptyOutDir
+      - run: uv run npm --prefix web run build -- --base "/${GITHUB_REPOSITORY#*/}/" --outDir ../site --emptyOutDir
         env:
           VITE_DATA: files
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
   deploy:
@@ -95,7 +97,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 ```
 
 - `cron` is UTC unless a `timezone` key is set.
@@ -106,13 +108,31 @@ jobs:
 `raw/` and `logs/` are never committed: the pages go up as the artifact `store-data` keeps, and the log is the run's own.
 - `if: ${{ !cancelled() }}` on the commit and the upload keeps a partial night, which exits 1, from losing what it stored.
 - The `if: failure()` step and its `NTFY_TOPIC` secret are added once an alert is earned (`run-unattended`, Report the outcome); it skips a failed run step, which the driver alerts on itself (`send-messages`).
-- `permissions: contents: write` is what lets `GITHUB_TOKEN` push; the push triggers no workflow, not even another workflow's `push` trigger.
+- `permissions: {}` at the top withholds every scope, and each job asks for only its own: `contents: write` is what lets the nightly's `GITHUB_TOKEN` push, `contents: read` serves a job that commits nothing; the push triggers no workflow, not even another workflow's `push` trigger.
 - `site` runs on `!cancelled()`, so a partial night still publishes what it stored.
 Its checkout names `ref: ${{ github.ref_name }}`, because the default is the commit the run started from, which lacks the data the nightly job just pushed.
-- `export metrics` reads the store, never a source, so the site job needs no token and the bundle holds only the exported file.
+- `export metrics` reads the committed tree, never a source, so the site job needs no token and the bundle holds only the exported file.
+- **Where MotherDuck is the store of record and no tree is committed**, the export needs the token, so it moves to the nightly job's last steps and reaches the site job as an artifact; the token then never shares a job with the install scripts `npm ci` runs:
+
+```yaml
+# last steps of the nightly job, in place of the commit
+- run: uv run --no-dev myapp-cli export metrics --format parquet --output site-data/metrics.parquet
+  env:
+    motherduck_token: ${{ secrets.MOTHERDUCK_WRITE_TOKEN }}
+- uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+  with:
+    name: site-data
+    path: site-data
+# in the site job, in place of the export and the copy
+- uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+  with:
+    name: site-data
+    path: web/public/data
+```
 - `web/` is the front end's own folder beside the package (`write-entry-points`, Dashboard); the site job ships the night's `metrics.parquet` and the manifest `runs.parquet` beside the page, so the dashboard shows its data's age from the same night.
 - `pages: write` and `id-token: write` are what `deploy-pages` needs; the `github-pages` environment is created by the first deploy and shows the site's URL on the run.
-- Pin the action versions as the uv docs show (`@<sha> # vN`) once the workflow is stable; the tags above are the current majors, except `setup-uv`, which has published no major tag since v8, so `@v10` resolves to nothing and the job fails at setup — it takes a full version (checked 2026-11-10).
+- Each action is pinned to the commit of its current release, the tag as a comment, since a tag can be moved to other code and the nightly job holds a write token and a secret; re-resolve each from the action's latest release when updating (resolved 2026-11-18).
+The site job's checkout keeps no credential (`persist-credentials: false`), since it pushes nothing and runs `npm ci`; the nightly and status checkouts keep theirs for the commit action, and the build reads the repository's name from the shell rather than expanding it into the script. `setup-uv` has published no major tag since v8, so `@v10` resolves to nothing: pin a full version.
 
 ## Status
 
@@ -126,15 +146,16 @@ on:
   workflow_dispatch:
 concurrency:
   group: data
-permissions:
-  contents: write
+permissions: {}
 jobs:
   status:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked --no-dev
@@ -143,7 +164,7 @@ jobs:
           MYAPP_DATA_DIR: ${{ github.workspace }}/data
           MYAPP_NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       - if: ${{ !cancelled() }}
-        uses: stefanzweifel/git-auto-commit-action@v7
+        uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
         with:
           commit_message: "chore(data): record alert state"
           file_pattern: data/alerts.json

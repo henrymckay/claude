@@ -31,11 +31,13 @@ def yesterday(now: datetime.datetime) -> datetime.date:
 ```
 
 Size the hour from when the source publishes, not from midnight: a feed that posts yesterday's figures at 06:00 is empty at 02:00, and an empty answer stores as a quiet day (see `structure-python`, Write an adapter).
+**A source that publishes late in its own time zone or on a business calendar** names its last complete day from its own calendar and release time, and its `--days-back` window is sized to its publication lag plus its revision period.
 
 ## Make a run rerunnable
 
 - **Lock the data directory with `fcntl.flock` on `<data_dir>/.lock`**, taken non-blocking at the top of every command that writes — `nightly`, `fetch`, `compute`, a backfill — and held to the end, from one `held()` in `adapt/lock.py` (see `structure-python`).
 The kernel releases it when the process dies, where a PID file outlives a crash and blocks every later run until someone deletes it; `fcntl` is Unix-only, which the house targets are.
+On an ephemeral runner writing to a hosted store there is no lasting directory to lock, so the scheduler's own guard is the lock, such as an Actions `concurrency` group (`deploy-project`'s workflow reference).
 - **When the lock is held, log one line, write no manifest row, print nothing on standard output and exit 0.** The run in progress is the one that counts and writes the night's row; a row from the run that lost would be a second record of one night, and a non-zero exit would make the scheduler record a failure and a restart policy fire a third copy.
 
 ```python
@@ -52,6 +54,7 @@ The second holder gets `BlockingIOError`; catch it in the driver, where the exit
 - **Catch up within a bounded window, and no further.** After yesterday, the nightly fetches each day of the source's `catch_up_days` before it (default 3, beside `tolerance` in its YAML; `structure-python`, Configuration) that has no `stored` row in the manifest, through the same call as `--days-back`, so a night the machine slept or the scheduler skipped fills itself the next night.
 Each filled day's manifest row starts after its day, so `status` lists it as late and the outage stays on record; yesterday goes first, so a catch-up that meets the day's request budget (`structure-python`, Write an adapter) costs only late days, which the next night retries.
 - **Leave a gap wider than the window for an explicit backfill**: the nightly fetches only the window and logs the days it left, `status` reports them, and `fetch --from --to` fills them when someone asks, so a month offline never becomes a bulk fetch on someone else's rate limit that nobody chose.
+- **Fetch a source whole each night where it re-serves its full history in one request** at the cost of one day's, replacing each item's history: it absorbs revisions the source makes to the past, and the catch-up window and backfill apply only to sources fetched by day.
 - **Make backfill the same code path as the nightly**, so a day fetched late lands in the same partition as a day fetched on time: called once per day where the source answers one day per request, and once per range where its endpoint serves an item's whole range in one.
 A per-day loop over a ranged endpoint multiplies the requests by the days asked for, so there the fetch port takes a first and a last day (`structure-python`, Code), the store splits the answer into day partitions, the manifest row carries both days (`store-data`), and the nightly, `--days-back` and a backfill are one call with different bounds.
 

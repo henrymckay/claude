@@ -23,6 +23,7 @@ Three mistakes account for most weak plans: interviewing the user section by sec
 
 Plan a new project, and any build that adds a new input, output or interface.
 A fix or small change needs only a short plan in the conversation; a full `PLAN.md` for it costs more than the change.
+A trial build, run to test these skills, is the exception: a fresh session given only the user's brief plans it (`review-plugin`, Run a trial build).
 To extend a project that already has a `PLAN.md`, run the steps below on the new part alone, adding its requirements, design and milestones to the existing plan.
 **Where a brainstorming or design skill has already run, or another plugin's method is driving the work, take its output as this plan's input rather than replacing it**: its framing and choices become the draft's starting point, cited as their source, and only the gaps go through the steps below.
 **To re-plan around a restated aim, rewrite the plan whole** through the same steps, since the git history keeps the old one:
@@ -173,6 +174,8 @@ A new project is never a small change, however tiny: it gets a `PLAN.md`, planne
 4. **Extract the requirements.** Pull every statement of intent out of the conversation, merge duplicates, and number what remains in the user's words.
    Where two statements conflict, the later one wins, recorded as a question if the conflict matters.
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
+   **Hold each requirement as stated unless you can propose something better, never something worse**: an alternative that gives up any part of what was asked — a live read turned into a nightly copy, a named store into a local one — is worse, however much simpler, even where a house pick favours it.
+   A conflict with a house pick is raised, never settled inside a proposed decision: a better alternative waits for the user, and with nobody present the requirement is built as stated and the alternative goes under Ideas with its case.
 5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points` and its look and bar from `design-interface`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, any message to the user from `send-messages`, and each input's and output's class, with where it may go, from `secure-project`.
    For a Python project M1 is the scaffold from `setup-python`, logging, and the first real path from input to output, however thin; each Verification line is a check `write-tests` would accept.
    For a job that runs unattended, M2 makes it run and fail visibly with nobody watching — the schedule, the lock, the exit codes and `status` — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
@@ -199,16 +202,14 @@ Every step above holds except the ones that wait for the user:
 - **Leave every decision *(proposed)* or *(by precedent)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
 - **Take no outward action** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
 Skill feedback is not such an action: it is recorded as the session's feedback rule says.
-- **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change.
+- **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change, led by any requirement a house pick conflicted with.
 
 ## Write it for Claude
 
 - **Cite by ID.** A milestone, check or plan-mode step that names R4 shows what it serves, and a requirement nothing cites is visibly unbuilt.
-- **Show, don't describe.** A real command line and a schema table fix an interface and an output; a paragraph about them leaves the details to be guessed.
 - **Use the Terms everywhere.** One name per concept, in the plan and in the code; a second name for the same thing reads as a second thing.
 - **Write what is decided as fact** — "Each day is written to its own file" — mark what Claude decided alone *(proposed)*, or *(by precedent)* where `make-decisions` settled it, and put what only the user can settle under Open; a "could" in the Design gets built as either.
 - **Write each decision as one entry, in the skeleton's form, its rejected alternative included**: without it the decision gets reopened, or quietly reversed by a build that thinks it is improving things; without its source it can only be trusted, never checked.
-Who said what and when belongs in the commit that recorded it.
 - **Point at a skill instead of restating it.** The plan says what this project does; the skills say how every project does it, and a copy in the plan drifts from the skill.
 - **Keep only what changes the build.** A line no milestone or check would read differently without is background, and belongs in the README.
 

@@ -36,9 +36,15 @@ Verify each against the files, then settle it one of four ways:
 - **Needs the user** — it would change a `PLAN.md` decision or settle policy; leave it open with a recommended answer, and never decide it in an unattended run.
 
 Where an issue describes a case, verify the fix by running that case — a throwaway prompt or script — not by reading the new wording, and run it on the old wording first where that is cheap: a case that fails before and passes after shows the fix did the work, and one that already passed shows the rule was covered and went unapplied.
-**Read a trial build's transcripts** where they are on the machine, for a skill that should have loaded and never did, and a stage served by the wrong model; cite each finding's file and line, and file it as feedback, since a session that skipped a skill never reports the gap itself.
 Several reports against one skill mean its structure is wrong; rework the skill rather than patching each report.
 **Promote a decision that recurs.** Where feedback, or a plan the sweep can read, shows one decision made again by precedent from another project, or proposed alike in two, make it the owning skill's default with its reason (`make-decisions`), so the next project finds it in the skill instead of re-deciding it.
+
+## Run a trial build
+
+A trial build tests the plugins on a real project, so its planning is under test as much as its code.
+
+- **The session under test plans and builds it; the coordinating session does neither**, even when "new project" fires `plan-project`: it writes a brief in the user's words that names no technology the skills should choose, starts a fresh session with only the plugins, and relays the user's own answers, never its own.
+- **Sweep what it leaves**: its skill feedback, and its transcripts where they are on the machine, read for a skill that should have loaded and never did and a stage served by the wrong model; cite each finding's file and line and file it as feedback, since a session that skipped a skill never reports the gap itself.
 
 ## Land it as one pull request
 

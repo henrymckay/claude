@@ -26,14 +26,14 @@ Each pick is a default a `PLAN.md` decision overrides, and each is for public da
 - **Pipeline** — a GitHub Actions `schedule` workflow in the project's own repository.
 - **Data** — MotherDuck Lite, `store-data`'s pick for data another machine must reach.
 - **Dashboard** — a static build on GitHub Pages, or the API serving it once it needs a server (Serve the dashboard).
-- **API** — a Render free web service, once a second consumer earns one.
+- **API** — an edge function on Cloudflare Workers, once a second consumer or a requirement earns one (Serve an API).
 - **Static site** — GitHub Pages, published by the same nightly workflow.
 
 **Private or personal data stays on the owner's machine** unless a plan decision names a host for it, and so does licensed data whose terms allow personal use only (`secure-project`, Decide where each class may go): the pipeline under `run-unattended`'s scheduler, its credential in the keychain at a fixed address a venue's IP allow-list can name, the store in the data directory, and the dashboard reached from the owner's phone over Tailscale.
 `tailscale serve 8000` (8001 for a Dash or Shiny app) shares the port with their own devices only, and the guard then accepts the machine's Tailscale name too (`secure-project`, Guard what is served); the Personal plan is free for up to six users.
 Nothing runs or answers while the machine sleeps, which the catch-up window and the dashboard's staleness cover; hosting it instead — a static build behind Cloudflare Access, or MotherDuck behind a hosted app — sends every row to outside services, which `secure-project` allows only under a signed-off decision naming them.
 
-**A private repository holding public data changes two of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; GitHub Pages serves a private repository only on Pro, so the static dashboard goes to Cloudflare Pages by direct upload from the workflow (`wrangler pages deploy`, its token a repository secret), which takes no repository at all; MotherDuck and Render are unaffected.
+**A private repository holding public data changes two of these.** Actions includes $12 of compute a month on the Free plan (about 2,000 Linux 2-core minutes), enough for a nightly job; GitHub Pages serves a private repository only on Pro, so the static dashboard goes to Cloudflare Pages by direct upload from the workflow (`wrangler pages deploy`, its token a repository secret), which takes no repository at all; MotherDuck and the API hosts are unaffected.
 
 **None of these needs a Docker image**; each installs from `uv.lock` or a `requirements.txt`, and a `Dockerfile` is earned by Cloud Run or another container platform, as `setup-python` says.
 
@@ -53,8 +53,9 @@ The tree is the backup and the next night's input, and the push is repository ac
 
 ## Hold the data
 
-**Stay on MotherDuck Lite** for data its class lets leave the machine, $0 for 10 GB and 10 CU-hours a month on Pulse instances, with two service accounts: a read/write token for the pipeline and a read-scaling token for the dashboard and the API, which reads but never writes if it leaks.
-`store-data` has the connection and the `motherduck_token` variable; past the quota it bills pay-as-you-go ($0.60 a CU-hour, $0.04 a GB-month).
+**Stay on MotherDuck Lite** for data its class lets leave the machine, $0 for 10 GB and 10 CU-hours a month on Pulse instances, with its two service accounts: one with a read/write token for the pipeline, and one for the API, given a restricted share of the database, which attaches read-only, so a leaked token reads but never writes.
+Read-scaling tokens are a Business-plan feature, and Lite refuses to create one (motherduck.com/docs/about-motherduck/billing/pricing, 2026-11-18; the refusal and the share attached by a service account were seen in a trial build, not in the docs); a reader that needs no live read takes exported files and no token.
+`store-data` has the connection and the `motherduck_token` variable; past the quota it bills pay-as-you-go ($0.60 a CU-hour, $0.04 a GB-month, in the US regions).
 
 - **Move cold data to Cloudflare R2 when the store outgrows 10 GB**: 10 GB free with free egress, read into DuckDB or Polars over `httpfs` with an S3 key pair; the cost is a second credential on every reader.
 - **Neon or Supabase only for a multi-writer service**, `store-data`'s Postgres case: Neon's free tier scales to zero after five idle minutes, Supabase's pauses after an idle week, so the first reader pays a wake.
@@ -62,7 +63,8 @@ The tree is the backup and the next night's input, and the push is repository ac
 ## Serve the dashboard
 
 **Publish a public dashboard as a static build on GitHub Pages**, from the nightly workflow's site job (Publish a static site): the web front end over files (`write-entry-points`, Dashboard), always on, waking nothing and costing nothing.
-**A dashboard that needs a server runs where its data's class allows**: public, as the API serving the built front end on Render (Serve an API); private, on the owner's machine over Tailscale (Decide what runs where).
+**A static build shows what was exported when it was built, so it does not meet a requirement that the dashboard read a hosted store live**; that requirement earns an API the page calls (Serve an API), and is never traded for the static pick without the user (`plan-project`, step 4).
+**A dashboard that needs a server runs where its data's class allows**: public, behind the API; private, on the owner's machine over Tailscale (Decide what runs where).
 
 Dash's and Shiny's vendor clouds are no hosting advantage over a static build; the free host for each technology, read on 2026-11-12:
 
@@ -79,28 +81,34 @@ Dash's and Shiny's vendor clouds are no hosting advantage over a static build; t
 - **Dash and Shiny also run on Render's free web service**, `app.server` under `gunicorn` or the Shiny app under `uvicorn`, with the same sleep and wake.
 - **Cloudflare Access protects a Pages preview with a toggle**; the production site needs an Access application on its hostname, best a custom domain (unverified beyond the docs' Known issues), and private data reaches it only under a signed-off decision naming Cloudflare (`secure-project`).
 - **shinylive on Pages** remains for an existing Shiny app with no secret: `uvx shinylive export app site`, Pyodide in the browser, pure-Python wheels only (`pandas` with `pyarrow`, never `polars`), about 13 MB on first load.
-- **Streamlit Community Cloud** sleeps after twelve hours without traffic and is ruled out as a technology (`write-entry-points`); its one private app is no longer the private route.
 
 ## Serve an API
 
-**Add no API while the dashboard reads the store directly** (`write-entry-points`); a second consumer — another app, a phone chat, a partner — earns one.
+**Add an API only once a second consumer — another app, a phone chat, a partner — or a requirement a static build cannot meet earns one**, such as a live read of a hosted store; until then the dashboard reads files (`write-entry-points`).
 
-- **Render's free web service** once it is earned: auto-deploy on push from `render.yaml`, the read-scaling token as an environment variable, start command `uv run uvicorn mypackage.code.drive.api:app --host 0.0.0.0 --port $PORT`; its limits are in the table above, plus 5 GB of outbound bandwidth a month.
-- **Google Cloud Run when a one-minute wake is unacceptable**: 2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds free a month and cold starts of seconds, deployed with `google-github-actions/auth@v3` and `deploy-cloudrun@v3` from `source: ./` with secrets from Secret Manager through the action's `secrets:` input, and private by default behind IAM, the access control an API over private data needs; the cost is a billing account and the project's one container image.
-- **Koyeb** (one free 512 MB service, waking in seconds, against a $29 card hold) and **Vercel's** FastAPI preset (Hobby, non-commercial only) are the remaining free hosts.
+**Prefer a host on an account the user already holds**, found in their instruction file or memory, else asked once; a new account is a cost the plan states, since the accounts a first project opens are the ones later projects reuse.
+**A host that needs a payment card is not ruled out**: report the card as a fact, with whether usage can charge it unasked and whether a hard cap exists, and let the user decide.
+
+- **Cloudflare Workers Free for a small read-only API over a hosted store**: 100,000 requests a day, past which requests fail rather than bill, 10 ms of CPU a request and no virtual machine to cold-start; written in TypeScript, reaching MotherDuck through its Postgres endpoint (`pg.<region>-aws.motherduck.com`, the `pg` driver under `nodejs_compat`); the same account's KV (1 GB, 100,000 reads and 1,000 writes a day) and D1 (5 GB, 5 million rows read a day) also fail rather than bill, while R2 bills past 10 GB-months. The cost is a second language beside the Python core, which does not run there.
+- **Render's free web service for an API that runs the Python core**: auto-deploy on push from `render.yaml`, the token as an environment variable, start command `uv run uvicorn mypackage.code.drive.api:app --host 0.0.0.0 --port $PORT`; its minute-long wake (the table above) is wrong behind a page with a speed budget, and it has 5 GB of outbound bandwidth a month.
+- **Google Cloud Run when the Python core must answer in seconds**: 2 million requests, 180,000 vCPU-seconds and 360,000 GB-seconds free a month, deployed with `google-github-actions/auth@v3` and `deploy-cloudrun@v3` from `source: ./` with secrets from Secret Manager, private by default behind IAM, the access control an API over private data needs; it needs a billing account, and a budget only alerts unless set as a spend cap, which is unverified for Cloud Run.
+- **Vercel Hobby** runs Python functions, generally available since 2026-10-15, 300 seconds each, for personal or non-commercial use only; **Koyeb's** one free 512 MB service requires a card.
+
+**Keep a public API's traffic from becoming database spend**: a closed set of fixed queries with no caller SQL, each answer cached until the next run writes, and the host's daily request cap as the bound (`secure-project`, Guard what is served).
 
 ## Publish a static site
 
 **Publish a static site from the same nightly workflow**, a second job that `needs:` the nightly, sending a `site/` directory through `actions/upload-pages-artifact` and `actions/deploy-pages`, so the data and the page showing it are never from different nights.
+The `github-pages` environment the first deploy creates has refused a deploy from any branch but the default in a trial build (GitHub's docs only recommend that rule), so a check on the live site runs after the merge (`build-project`, Gate it).
 
 ## Keep secrets per consumer
 
 - **Repository secrets for Actions**, set with `gh secret set NAME` and read as `${{ secrets.NAME }}`; environment secrets need Pro or Team on a private repository.
-- **Each other host's own store for the rest** — Render's environment variables, Cloud Run's Secret Manager, Connect Cloud's secret variables — never a committed file or a static bundle (`secure-project`).
+- **Each other host's own store for the rest** — Workers' secrets, Render's environment variables, Cloud Run's Secret Manager, Connect Cloud's secret variables — never a committed file or a static bundle (`secure-project`).
 
 ## Re-check the tiers
 
-Every figure above not marked otherwise was read from the vendor's page on 2026-11-11, and the dashboard hosts on 2026-11-12.
+Every figure above not marked otherwise was read from the vendor's page on 2026-11-11, the dashboard hosts on 2026-11-12, and MotherDuck and the API hosts on 2026-11-18.
 **Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
-Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need a paid plan, re-read 2026-11-12); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).
+Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial, re-read 2026-11-18) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need a paid plan, re-read 2026-11-18); Deno Deploy (sunset in April 2027, read 2026-11-18); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions, re-read 2026-11-18); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).

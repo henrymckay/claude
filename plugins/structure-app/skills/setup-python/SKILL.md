@@ -86,6 +86,7 @@ The non-obvious choices:
 - `[tool.ruff]` names no `target-version`: `ruff` reads it from `requires-python`, so the floor lives in one place.
 - `[tool.ruff.lint] select` replaces `ruff`'s default set — `E`+`F` until 0.16, since then about 400 rules that add `PIE`, `PYI`, `PL`, `DTZ`, `ASYNC` and more — with this list: `I` (import sorting), `N` (naming), `D` (docstring presence), `UP` (modern syntax), `B` (likely bugs), `SIM` (simplify), `C4` (comprehensions), `RUF` (`ruff`'s own, including unused `noqa`), `PT` (`pytest` style) and `TC` (imports only a type checker needs).
 On the 3.15 floor `TC`'s fix makes an annotation-only import a `lazy import` rather than moving it under `if TYPE_CHECKING:`, and only with `--unsafe-fixes`; take it, since the module then loads only if something reads the annotation (ruff 0.17.5).
+A project held below 3.15 (`store-data`'s MotherDuck pin) drops `TC` from `select`: there the fix moves each annotation-only import, the standard library's included, under `if TYPE_CHECKING:`, a second import block that a library reading annotations at run time, such as `pydantic` or `typer`, cannot see.
 - `"tests/**" = ["D"]` drops docstrings from tests and fixtures, since the test name is the claim (see `write-tests`).
 - `pydocstyle` convention `pep257` checks that docstrings *exist* without imposing Google/NumPy section formatting, so the reStructuredText field-list style stays free (see `write-python`).
 - `pyright` `strict` on a greenfield project: `standard` (the default) lets an unannotated parameter through as `Unknown`, so a wrong argument is found at runtime; `strict` reports it at the definition.
@@ -158,7 +159,7 @@ A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wron
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
-- **Plotting** → in a web front end, ECharts, and Lightweight Charts for candles; in Python, `plotly` (in `dash` natively, in `shiny` through `shinywidgets`), and `matplotlib` only for a static image a report or a message embeds.
+- **Plotting** → in a web front end, ECharts, candles included; in Python, `plotly` (in `dash` natively, in `shiny` through `shinywidgets`), and `matplotlib` only for a static image a report or a message embeds.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script; see `run-unattended`); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Spreadsheets** → `polars.read_excel`, with `fastexcel` (the `calamine` backend) as the reader engine.
 `polars` names the function but ships no engine, so a project that declares none fails at the first call rather than at install.

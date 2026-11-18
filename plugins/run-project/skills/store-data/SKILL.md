@@ -97,7 +97,9 @@ The API and the dashboard take only `port.Store`, so a stray write from either i
 **When `motherduck_token` is set, the root adds `adapt/motherduck.py`**, a second adapter satisfying both ports over `records`, `metrics` and `runs` tables, and hands the nightly both sinks, the tree first as the record, so a hosted dashboard and `status` read the manifest where they run.
 A second target inside `parquet.py` would be less code, but the hosted dashboard needs a MotherDuck reader anyway, and keeping the network out of `parquet.py` keeps its tests to a temporary directory.
 The load replaces the source's day in one transaction, the table's form of overwriting a partition, and a failed load raises after the tree is written, so the night exits 1 and a `fetch --day` re-run reloads it.
-**`raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`); on a public repository the artifact holds public data only (`secure-project`).
+**Where the user names a hosted store as the store of record**, the MotherDuck adapter alone satisfies both ports, holding the records, the quarantine and the manifest as tables, and the tree goes unless a reader needs files; a source that re-serves its whole history in one cheap request needs no raw archive either, since a parser fix re-fetches it.
+The manifest and the quarantine hold in every case.
+**Otherwise `raw/` stays in the tree and is never loaded**; on a cloud runner it is uploaded as a workflow artifact kept seven days, long enough to re-parse a week after a parser fix, and is otherwise lost, since committing every page would grow the repository each night (`deploy-project`); on a public repository the artifact holds public data only (`secure-project`).
 
 ## Shape a stored table
 
@@ -127,10 +129,11 @@ def write_partition(frame: polars.DataFrame, partition: pathlib.Path) -> None:
 
 `write_parquet(path, partition_by=[...])` and `sink_parquet(polars.PartitionBy(...))` build the same `key=value` tree in one call and earn their place for a one-off bulk load; both name the files themselves (`00000000.parquet`), so a re-run that produces fewer chunks leaves the old ones in place, and neither renames atomically.
 
-**Keep the partition keys out of the file.** `source` and `day` are read from the path on scan; when the file also holds a `day` column the scan keeps the file's copy and drops the path's, so `day` comes back as a string and a filter on a date matches nothing.
+**Keep the partition keys out of the file.** `source` and `day` are read from the path on scan (under month partitions, `month` is, and `day` stays a column); when the file also holds a `day` column the scan keeps the file's copy and drops the path's, so `day` comes back as a string and a filter on a date matches nothing.
 A frame that arrives carrying them (the quarantine's does) has them dropped on write.
 
-**An empty day is a stored partition.** A source whose every item answered with nothing (`structure-python`, Write an adapter) gets an empty `part.parquet` in the records schema and a manifest row with `rows=0`, so a dashboard shows a quiet day and `status` can judge the zero against what the source normally sends; only a source that didn't answer leaves no partition.
+**An empty day is a stored partition** for a source that publishes every calendar day. A source whose every item answered with nothing (`structure-python`, Write an adapter) gets an empty `part.parquet` in the records schema and a manifest row with `rows=0`, so a dashboard shows a quiet day and `status` can judge the zero against what the source normally sends; only a source that didn't answer leaves no partition.
+A source on a business calendar has no observation on a weekend or a holiday by definition, so those days store nothing, and emptiness is judged over the fetch window instead: a window with no row at all fails the source.
 
 ## Keep what the source sent
 
@@ -138,6 +141,7 @@ A frame that arrives carrying them (the quarantine's does) has them dropped on w
 A parser fix then re-parses history offline; without it the fix applies from tonight and every earlier day keeps the bug.
 - **Quarantine rejected rows** under `rejected/` in the same partition layout, one row per rejected record **and** per failed item, in one schema: `reason` and `record` (the raw record as a string, or the item's name where nothing arrived), with `source` and `day` from the path.
 Dropping them silently makes a schema change at the source look like a quiet day; the quarantine makes it a count, and one schema lets the whole tree be read as one table.
+Where the load replaces each item's whole history rather than a day, a failed item keeps the rows its last good run stored, and its quarantine row says why they are stale.
 - **Write a run manifest**, `runs.parquet`: one row per source per run with `day`, `ended`, `failed_items`, `last_day`, `outcome`, `rejected`, `requests`, `rows`, `source` and `started`.
 `rejected` counts every row under `rejected/` for the partition and `failed_items` the items among them that answered nothing, so `status` can tell a source that changed shape from one that lost an item; `requests` counts the pages archived, the answers a service counts against its daily cap, which the next process that day subtracts from it (`structure-python`'s `references/http.md`); `outcome` is an `enum.StrEnum` of `stored`, `partial` and `failed`, set as `run-unattended`'s Report the outcome says; `started` and `ended` are UTC timestamps, so a day filled late shows as a row started after its `day`; and the `compute` stage writes its own row with `source="metrics"`.
 A fetch that covers a range (`run-unattended`, Make a run rerunnable) writes one row with `day` the range's first day and `last_day` its last, equal to `day` on a one-day row, and files its raw pages and failed items under that first day.
@@ -164,7 +168,8 @@ At a DuckDB prompt the same tree is a table: `read_parquet('<data_dir>/records/*
 Wrap the questions asked often in views in a local `.duckdb` file beside the data, and hand results back as frames with `.pl()`, which needs `pyarrow` installed, a dependency the Parquet path never needed.
 Where a query is kept and how a documented one is tested are `write-sql`'s.
 
-**Compact only when the file count hurts** — thousands of files, a scan whose planning is visible — and then by closed year: rewrite each year's days into `history/source=<s>/year=<y>/part.parquet`, keeping `day` as a column, and read `records` and `history` as a `polars.concat` of two scans.
+**Partition by month from the start where the backfill spans years or the tree is committed to git**, since a decade of days is thousands of files per source on the first night: `records/source=<s>/month=<YYYY-MM>/part.parquet` with `day` kept as a column, a night's write rewriting its month.
+**Otherwise compact only when the file count hurts** — thousands of files, a scan whose planning is visible — and then by closed year: rewrite each year's days into `history/source=<s>/year=<y>/part.parquet`, keeping `day` as a column, and read `records` and `history` as a `polars.concat` of two scans.
 Rewriting earlier is a second layout to maintain for a cost nobody has measured.
 
 ## Test the store
