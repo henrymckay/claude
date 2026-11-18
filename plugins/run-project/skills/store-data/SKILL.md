@@ -129,7 +129,7 @@ def write_partition(frame: polars.DataFrame, partition: pathlib.Path) -> None:
 
 `write_parquet(path, partition_by=[...])` and `sink_parquet(polars.PartitionBy(...))` build the same `key=value` tree in one call and earn their place for a one-off bulk load; both name the files themselves (`00000000.parquet`), so a re-run that produces fewer chunks leaves the old ones in place, and neither renames atomically.
 
-**Keep the partition keys out of the file.** `source` and `day` are read from the path on scan; when the file also holds a `day` column the scan keeps the file's copy and drops the path's, so `day` comes back as a string and a filter on a date matches nothing.
+**Keep the partition keys out of the file.** `source` and `day` are read from the path on scan (under month partitions, `month` is, and `day` stays a column); when the file also holds a `day` column the scan keeps the file's copy and drops the path's, so `day` comes back as a string and a filter on a date matches nothing.
 A frame that arrives carrying them (the quarantine's does) has them dropped on write.
 
 **An empty day is a stored partition** for a source that publishes every calendar day. A source whose every item answered with nothing (`structure-python`, Write an adapter) gets an empty `part.parquet` in the records schema and a manifest row with `rows=0`, so a dashboard shows a quiet day and `status` can judge the zero against what the source normally sends; only a source that didn't answer leaves no partition.
