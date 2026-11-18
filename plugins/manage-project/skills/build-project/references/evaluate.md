@@ -17,7 +17,7 @@ Spawn it fresh, on `sonnet` at medium effort (`choose-model`), with only what a 
 
 ## Screenshot a screen
 
-A PEP 723 script, run with `uv run --script shoot.py <url> <out>` under whatever Python the project pins, takes every screen at desktop and phone width in both schemes, driven by the page's `data-view` and `data-ready` signals (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
+A PEP 723 script, run with `uv run --script shoot.py <url> <out>` on any Python from 3.12, so a project held below the house floor runs it too, takes every screen at desktop and phone width in both schemes, driven by the page's `data-view` and `data-ready` signals (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
 
 ```python
 # /// script

@@ -41,11 +41,11 @@ Without a `PLAN.md`, plan first (`plan-project`).
 A session briefed as that subagent works directly.
 
 **Name in each brief the skills the milestone's files call for, to be invoked before the first file**, read from the plan sections it builds and from each file's language and surface — the language's skill and `be-functional` for any code, `write-tests` for its tests, `secure-project`, `write-entry-points` and `deploy-project` for a served API, `design-interface` for a screen, `write-markdown` for the README.
-Briefed with the milestone alone, later subagents in a trial build loaded only this skill, even for code in a new language on a security-touching surface; the transcript shows which skills each invoked, so a list is checkable.
+Briefed without a list, later subagents in a trial build loaded only this skill, even for a token-holding API in a new language; a list is checkable against the transcript.
 
 ## Start a milestone
 
-- **Read the milestone's requirements and the sections they point at**, then invoke each skill the code will fall under.
+- **Read the milestone's requirements and the sections they point at**, then invoke each skill its brief names and any other the code falls under.
 - **Write its checks as failing tests first** — each Verification line the milestone covers, through `write-tests`.
 A test written after the code tends to assert what the code does rather than what the plan asked for.
 - **Build only what its requirements need.** Structure for a later milestone or anything in Not yet waits; a seam later work will need is noted under Ideas, not built.
@@ -69,7 +69,7 @@ Read each check by what the project ships, as `plan-project` reads the Design: f
 2. **The milestone's done-when check passes on real input** — run it and read the counts (see `write-tests`).
    Where the real input is unreachable — a service down, a credential the user supplied refused — run on a recorded sample or a local stand-in, record that under Open, say so in the report, and leave unticked a milestone whose done-when needs the real thing; a blocker outside the code is not a failing gate, so the build goes on.
    A check that takes minutes at full size passes on a sample here and runs whole after step 7, so a fix from the review does not repeat it.
-   A check that runs only on the deployed surface, such as a site that deploys from the default branch alone, runs after the merge, with every other check passed on the branch first.
+   A check that runs only on the deployed surface, such as a site that deploys from the default branch alone, runs after the merge, with every other check passed on the branch first, and the milestone is ticked on `main` once it passes.
 3. **The evaluator passes the surface**, wherever the milestone changed something a person looks at or uses — a screen, a page, a command's output, an API's docs, a message, the README (below).
 4. **`/simplify` on the milestone's diff**, then re-run the suite.
 5. **`/code-review` on the diff** at a low level; fix each confirmed bug with a regression test.
@@ -102,4 +102,4 @@ Each gate check names the command that ran it and what it printed — the suite'
 
 After the last milestone, run `review-project` against the plan.
 **End with something the user can open**: the report's first lines give the command that starts the surface and its address, the folder of the last round's screenshots, and the deployed address once the user has allowed the deploy, not just a branch and a test count.
-**Report what the build cost**, per stage and per model, as `choose-model`'s Spend tokens well within a stage says, so each build is evidence for or against the ladder.
+**Report what the build cost**, per stage and per model, as `choose-model`'s Report what a stage cost says, so each build is evidence for or against the ladder.
