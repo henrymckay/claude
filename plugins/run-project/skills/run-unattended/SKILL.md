@@ -31,13 +31,13 @@ def yesterday(now: datetime.datetime) -> datetime.date:
 ```
 
 Size the hour from when the source publishes, not from midnight: a feed that posts yesterday's figures at 06:00 is empty at 02:00, and an empty answer stores as a quiet day (see `structure-python`, Write an adapter).
-**A source that publishes late in its own time zone, on a business calendar or with revisions** names its last complete day from its own calendar and release time, and each night re-fetches and overwrites a trailing window sized to its lag plus its revision period, which also fills a missed night.
+**A source that publishes late in its own time zone or on a business calendar** names its last complete day from its own calendar and release time, and its `--days-back` window is sized to its publication lag plus its revision period.
 
 ## Make a run rerunnable
 
 - **Lock the data directory with `fcntl.flock` on `<data_dir>/.lock`**, taken non-blocking at the top of every command that writes — `nightly`, `fetch`, `compute`, a backfill — and held to the end, from one `held()` in `adapt/lock.py` (see `structure-python`).
 The kernel releases it when the process dies, where a PID file outlives a crash and blocks every later run until someone deletes it; `fcntl` is Unix-only, which the house targets are.
-On an ephemeral runner writing to a hosted store there is no lasting directory to lock, so the scheduler's own guard is the lock, such as an Actions `concurrency` group (`deploy-project`).
+On an ephemeral runner writing to a hosted store there is no lasting directory to lock, so the scheduler's own guard is the lock, such as an Actions `concurrency` group (`deploy-project`'s workflow reference).
 - **When the lock is held, log one line, write no manifest row, print nothing on standard output and exit 0.** The run in progress is the one that counts and writes the night's row; a row from the run that lost would be a second record of one night, and a non-zero exit would make the scheduler record a failure and a restart policy fire a third copy.
 
 ```python
