@@ -60,5 +60,5 @@ def test_when_documented_query_is_linted_then_it_keeps_the_style(query: str) -> 
 ```
 
 `stored_tree` is the fixture that writes a few partitions through the real store adapter under `tmp_path` and returns it; `duckdb` and `sqlfluff` sit in the development dependency group, and `parents[2]` is the repository root from `tests/suite/`.
-Without `config_path`, `sqlfluff.lint` checks against the `ansi` dialect and its default rules, so a query in the house style fails on rules the project never chose (sqlfluff 4.5).
+Without `config_path`, `sqlfluff.lint` ignores `pyproject.toml`, even given `dialect="duckdb"`, and checks against that dialect's default rules, so the test and the hook disagree: a query the hook fails passes, and one in the house style fails on rules the project never chose (sqlfluff 4.5.0; `config=FluffConfig.from_path(root)` loads the same settings).
 Fence every query as `sql`: a block in another fence language — `duckdb`, a bare fence — is one the test misses.
