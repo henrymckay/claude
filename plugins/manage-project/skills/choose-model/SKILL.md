@@ -3,10 +3,11 @@ name: choose-model
 description: >-
   How to pick the model, effort and mode for each stage of work, with an eye
   on cost — the ladder (Opus to plan, review and edit skills; Sonnet to build;
-  Haiku to grade), holding a stage on its model through a subagent, and
-  current prices. Use whenever starting a stage, spawning a subagent, or asked
-  which model to use or how to cut token cost — even if the user just says
-  "this is expensive" or "use a cheaper model".
+  Haiku to grade), holding a stage on its model through a subagent, spending
+  tokens well within one, reporting what it cost, and current prices. Use
+  whenever starting a stage, spawning a subagent, or asked which model
+  to use, what a build cost or how to cut token cost — even if the user just
+  says "this is expensive" or "use a cheaper model".
 ---
 
 # Choose the model
@@ -42,12 +43,24 @@ So a stage never trusts the reported model, the frontmatter or the user's `/mode
 
 - **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
 The Agent tool's `model` is the one setting that decides which model serves the work.
-- **Hand it over however small the prompt says the work is.** "This should take minutes" or "keep it short" changes the size of the plan, the review or the milestone, never the model it runs on: a short stage on the right model costs cents more, and sessions told a task should take minutes otherwise planned on Sonnet, the rung a plan is never moved down to.
+- **Hand it over however small the prompt says the work is.** "This should take minutes" changes the size of the stage, never its model: a short stage on the right model costs cents more, and sessions told a task was quick otherwise planned on Sonnet.
 The one exception is the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
 - **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself — which stops it passing the stage on whole, not spawning the cold read or research the stage's skill calls for, and without which it would load the skill and hand the stage on again — and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
 - **Check what comes back against the repo** — the suite, the commits, the plan's headings — before relaying it or handing over the next unit; a subagent reports a failed gate in the same register as a passed one.
-- **Read the model from the transcript when it matters**: each assistant message there records the model that served it, the only evidence that a stage ran where the ladder puts it.
+
+## Spend tokens well within a stage
+
+Every request re-sends the whole conversation, so whatever a stage leaves in its context is paid for again on every later turn, at the cache-read price while the cache is warm and full price once it expires.
+
+- **Delegate what would flood the context, and nothing smaller**: a fresh subagent starts with only its brief and returns a summary, so it pays for itself on reading and research whose output would otherwise stay in the session; a lookup of a few calls is cheaper inline.
+- **Brief a fresh subagent rather than fork a long session**: a fork inherits the whole conversation and carries it on each of its turns.
+- **Cap output at its source** — a count, a tail, a filter, a file read in part — rather than printing a whole log or page to skim.
+- **Mind the cache's lifetime**: a write costs 1.25 times the input price for five minutes or twice for an hour, and Claude Code caches a subscription's main conversation for an hour and subagents for five minutes (code.claude.com/docs/en/prompt-caching, 2026-11-18); the first request after a longer gap pays full price for the whole context, so a large session left idle pays for it again.
+- **End a long stage before its context is mostly stale tool output, its state already written down**: `PLAN.md` and the commits for a build, memory for facts that outlast the project, never both, brought up to date at the end of each milestone or task, so a compaction loses nothing the record lacks; this plugin's `PreCompact` hook asks the summary to keep, marked, whatever is still unrecorded.
+
+**Report what each stage cost, in the terms the user pays in**: on a subscription, its share of the plan's allowance (`/usage`), list-price dollars only a proxy; on the API, dollars.
+Read it from the session transcript, where each assistant message records the `model` that served it — the only evidence a stage ran where the ladder puts it — and its `usage` (input, output, cache-read and cache-write tokens), each subagent in its own file under the session's `subagents/` folder; the format is internal and changes between releases, so check a field before summing it.
 
 ## Leave to the user
 
@@ -57,14 +70,14 @@ The one exception is the short plan in the conversation for a fix or a small cha
 
 ## Know the prices
 
-Per million tokens, input and output, on the API in November 2026; cache reads cost a twentieth of input:
+Per million tokens on the API, read from platform.claude.com/docs/en/about-claude/pricing on 2026-11-18:
 
-| Model | Input | Output |
-|---|---|---|
-| Fable 5.2 (`fable`) | $8 | $40 |
-| Opus 5.5 (`opus`) | $4 | $20 |
-| Sonnet 5.5 (`sonnet`) | $2 | $10 |
-| Haiku 5.5 (`haiku`), prompts under 100k | $0.10 | $0.50 |
+| Model | Input | Output | Cache read |
+|---|---|---|---|
+| Fable 5.2 (`fable`) | $8 | $40 | $0.20 |
+| Opus 5.5 (`opus`) | $4 | $20 | $0.20 |
+| Sonnet 5.5 (`sonnet`) | $2 | $10 | $0.10 |
+| Haiku 5.5 (`haiku`), prompts to 100k | $0.10 | $0.50 | $0.01 |
 
 The `fable` alias resolves to the current Fable, so a session pinned to an older full model ID pays more for less; a subscription shares its allowance across models, so the ladder stretches it rather than the bill.
 Check the prices against the current pricing page before quoting them; a release moves them.
