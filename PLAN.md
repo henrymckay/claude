@@ -297,6 +297,6 @@ Sweeps are not milestones.
 ### Ideas
 
 - **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would let a new install check itself on day one; costs a script to maintain; not built, and partly met by the built-ins `review-plugin` now runs (`claude plugin validate --strict`, `/skill-doctor`, `/doctor prompt-audit`).
-- **I2** `build-project` writes a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by reading transcripts; costs a section in one skill; not built.
+- **I2** `build-project` writes a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by reading transcripts; costs a section in one skill; partly built in sweep 7, whose `build-project` reports cost per stage and model from the transcript (`choose-model`), the log file itself not built.
 - **I3** A budget line in `plan-project`'s Runs on for the build itself (expected stage cost at the ladder's prices) — the user asked about cost twice during the first trial; costs an estimate that will often be wrong; not built.
 - **I4** More rules enforced by hooks (issue 53) — today only the feedback `Stop` hook enforces; a hook earns its place when a trial build breaks a rule a hook could have caught; not built.

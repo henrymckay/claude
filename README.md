@@ -15,7 +15,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a gate that runs the product.
   - [`design-interface`](plugins/manage-project/skills/design-interface) gives every screen, page and output one house look and a bar to clear.
   - [`review-project`](plugins/manage-project/skills/review-project) reviews against the plan and the skills, then fixes what it finds.
-  - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and effort.
+  - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and reports its cost.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
   - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).
@@ -42,7 +42,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 
 ## 🛠️ Install
 
-Install any subset, pinned to the newest release tag, which the first line looks up.
+Install any subset, pinned to the newest release tag.
 
 ```bash
 claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs --sort=-version:refname https://github.com/henrymckay/claude.git 'v*' | head -n 1 | cut -d/ -f3)"
@@ -100,7 +100,7 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-A headless session (`claude -p --permission-mode auto`) plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action; a sweep then works through its feedback and transcript.
+A fresh headless session (`claude -p --permission-mode auto`) plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action; a sweep then works through its feedback and transcript.
 [`PLAN.md`](PLAN.md)'s milestones list the builds.
 
 ## 📄 Licence
