@@ -59,7 +59,9 @@ Every request re-sends the whole conversation, so whatever a stage leaves in its
 - **Mind the cache's lifetime**: a write costs 1.25 times the input price for five minutes or twice for an hour, and Claude Code caches a subscription's main conversation for an hour and subagents for five minutes (code.claude.com/docs/en/prompt-caching, 2026-11-18); the first request after a longer gap pays full price for the whole context, so a large session left idle pays for it again.
 - **End a long stage before its context is mostly stale tool output, its state already written down**: `PLAN.md` and the commits for a build, memory for facts that outlast the project, never both, brought up to date at the end of each milestone or task, so a compaction loses nothing the record lacks; this plugin's `PreCompact` hook asks the summary to keep, marked, whatever is still unrecorded.
 
-**Report what each stage cost, in the terms the user pays in**: on a subscription, its share of the plan's allowance (`/usage`), list-price dollars only a proxy; on the API, dollars.
+## Report what a stage cost
+
+**Report it in the terms the user pays in**: on a subscription, its share of the plan's allowance (`/usage`), list-price dollars only a proxy; on the API, dollars.
 Read it from the session transcript, where each assistant message records the `model` that served it — the only evidence a stage ran where the ladder puts it — and its `usage` (input, output, cache-read and cache-write tokens), each subagent in its own file under the session's `subagents/` folder; the format is internal and changes between releases, so check a field before summing it.
 
 ## Leave to the user
