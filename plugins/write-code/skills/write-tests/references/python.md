@@ -13,7 +13,8 @@ The zero-config alternative is a `conftest.py`, which `pytest` auto-discovers â€
 
 ## Tests are code
 
-Type every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`), so a misnamed fixture fails type-checking before it fails at collection.
+Type every fixture's return and every fixture parameter (`tmp_path: pathlib.Path`, `capsys: pytest.CaptureFixture[str]`) as you write them, so a misnamed fixture fails type-checking before it fails at collection; tests are checked as strictly as the source, and under strict one untyped fixture is an error at every test that takes it.
+A suite inherited untyped is checked `standard` until it is typed, with `typeCheckingMode = "standard"` and `strict = ["src"]` under `[tool.pyright]` (pyright 1.1.414).
 Test async code through the `anyio` pytest plugin, `setup-python`'s pick, not `pytest-asyncio`.
 
 ## Given, when, then
