@@ -297,7 +297,7 @@ src/mypackage/
 ```
 
 - **Node is `setup-python`'s `nodejs-wheel`**: `uv run npm --prefix web ci`, then `uv run npm --prefix web run build`.
-- **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init` — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
+- **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init --base radix --preset nova --no-monorepo`, whose flags answer every prompt an unattended run cannot (shadcn 4.23.0), the house tokens then replacing the preset's colours — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
 - **Build into the package** with `build.outDir` set to `../src/mypackage/data/web` and `emptyOutDir: true`, so `uv_build` ships the built files in the wheel and the API finds them with `importlib.resources.files("mypackage.data") / "web"`.
 - **Mount the files after the routes**: `app.mount("/", fastapi.staticfiles.StaticFiles(directory=web, html=True), name="web")` as the last line of `driver.py`, since a mount at `/` registered first answers every `/api` request with a 404.
 - **Keep the screens in the page's state, not in paths**, a tab or a `?view=` parameter, since the static mount answers a path it has no file for with a 404.

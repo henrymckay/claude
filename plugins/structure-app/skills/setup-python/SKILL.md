@@ -159,7 +159,7 @@ A hand-rolled `time.sleep` loop gets jitter, give-up and the final re-raise wron
 - **Logging** → stdlib `logging` with `rich.logging.RichHandler` on standard error for a person; never `loguru`, which replaces the logger every dependency already writes to.
 `write-entry-points` has the configuration.
 - **Numerics** → `numpy` and `scipy` for numerical work, `sympy` for symbolic maths.
-- **Plotting** → in a web front end, ECharts, and Lightweight Charts for candles; in Python, `plotly` (in `dash` natively, in `shiny` through `shinywidgets`), and `matplotlib` only for a static image a report or a message embeds.
+- **Plotting** → in a web front end, ECharts, candles included; in Python, `plotly` (in `dash` natively, in `shiny` through `shinywidgets`), and `matplotlib` only for a static image a report or a message embeds.
 - **Scheduled / background jobs** → no library by default (an external cron, systemd timer, or cloud scheduler runs a console script; see `run-unattended`); `apscheduler` for in-process scheduling, `dramatiq` for a task queue (over `celery`), `prefect` or `dagster` for orchestration.
 - **Spreadsheets** → `polars.read_excel`, with `fastexcel` (the `calamine` backend) as the reader engine.
 `polars` names the function but ships no engine, so a project that declares none fails at the first call rather than at install.

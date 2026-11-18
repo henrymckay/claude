@@ -1,6 +1,6 @@
 # Design the interface on the web
 
-The technology-neutral system is in `SKILL.md`; this is how it lands in a built web front end: Vite, React and TypeScript, Tailwind with shadcn/ui, ECharts for charts and Lightweight Charts for candles (`write-entry-points` owns the `web/` folder and its data module).
+The technology-neutral system is in `SKILL.md`; this is how it lands in a built web front end: Vite, React and TypeScript, Tailwind with shadcn/ui, ECharts for every chart, candles included (`write-entry-points` owns the `web/` folder and its data module).
 
 ## Tokens
 
@@ -93,12 +93,12 @@ Charts read the tokens through one `useTokens()` hook keyed on the scheme, retur
 
 ## Components
 
-Add shadcn/ui's components as the screens need them (`npx shadcn@latest add card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker), keeping the `shadcn` command and any font it adds out of the runtime dependencies, then build `SKILL.md`'s shared pieces from them.
+Add shadcn/ui's components as the screens need them (`npx shadcn@latest add --yes card tabs table toggle-group skeleton tooltip badge`, with `popover` and `command` for a searchable picker; `--yes` skips the confirmation an unattended run cannot answer), keeping the `shadcn` command and any font it adds out of the runtime dependencies, then build `SKILL.md`'s shared pieces from them.
 Icons are `lucide-react`, which shadcn/ui already uses, so one stroke weight.
 
 ## ECharts
 
-Register only the charts and components used, from `echarts/core`, so the bundle carries a few hundred kilobytes, not the whole library:
+Register only the charts and components used, from `echarts/core`, in `lib/charts.ts`, so the bundle carries a few hundred kilobytes, not the whole library:
 
 ```ts
 import { BarChart, LineChart } from "echarts/charts";
@@ -108,7 +108,7 @@ import { CanvasRenderer } from "echarts/renderers";
 
 echarts.use([BarChart, LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
-type Tokens = Record<
+export type Tokens = Record<
   "axis" | "border" | "down" | "grid" | "muted" | "raised" | "surface" | "text" | "up",
   string
 >;
@@ -141,34 +141,70 @@ export const yAxis = (t: Tokens) => ({
 - **Pass `{ notMerge: true }` to `setOption` when the scheme changes**, or ECharts merges the new colours into the old option and some keep the old scheme.
 - **Resize from a `ResizeObserver` on the chart's container**, since a window resize misses a card that changed width when the layout reflowed.
 - **Colour each series from `--chart-<n>`, or `--up` and `--down`.**
+- **A treemap or a calendar heatmap is ECharts too** — `TreemapChart`, or `HeatmapChart` on a `CalendarComponent` with a `VisualMapComponent` as its legend (ECharts 6.1.0) — never shapes drawn in the DOM, which lose the tooltip, the theme and the legend.
 
-## Lightweight Charts
+## Candles
 
-Candles take Lightweight Charts, with volume in a second pane on the same time axis:
+Candles are ECharts' `candlestick` series, with volume as bars in a second grid on the same days, in `lib/candles.ts` beside `lib/charts.ts`, so a price chart adds no library, no second theme and no logo:
 
 ```ts
-import { CandlestickSeries, HistogramSeries, createChart } from "lightweight-charts";
+import type { EChartsOption } from "echarts";
+import { CandlestickChart } from "echarts/charts";
+import { DataZoomComponent } from "echarts/components";
+import * as echarts from "echarts/core";
 
-const chart = createChart(container, {
-  autoSize: true,
-  grid: { horzLines: { color: t.grid }, vertLines: { color: t.grid } },
-  layout: { background: { color: t.surface }, fontFamily: font, textColor: t.muted },
-  rightPriceScale: { borderColor: t.grid },
-  timeScale: { borderColor: t.grid },
-});
-const candles = chart.addSeries(CandlestickSeries, {
-  borderVisible: false,
-  downColor: t.down,
-  upColor: t.up,
-  wickDownColor: t.down,
-  wickUpColor: t.up,
-});
-const volume = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" } }, 1);
+import { frame, type Tokens, xAxis, yAxis } from "./charts";
+
+echarts.use([CandlestickChart, DataZoomComponent]);
+
+export type Bar = {
+  close: number;
+  day: string;
+  high: number;
+  low: number;
+  open: number;
+  volume: number;
+};
+
+export const candles = (t: Tokens, bars: Bar[]): EChartsOption => {
+  const days = bars.map((b) => b.day);
+  return {
+    ...frame(t),
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
+    dataZoom: [{ type: "inside", xAxisIndex: [0, 1] }],
+    grid: [{ bottom: "30%" }, { bottom: 24, height: "18%" }],
+    series: [
+      {
+        data: bars.map((b) => [b.open, b.close, b.low, b.high]),
+        itemStyle: { borderColor: t.up, borderColor0: t.down, color: t.up, color0: t.down },
+        type: "candlestick",
+      },
+      {
+        data: bars.map((b) => b.volume),
+        itemStyle: { color: t.muted },
+        type: "bar",
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+      },
+    ],
+    xAxis: [
+      { ...xAxis(t), data: days, type: "category" },
+      { ...xAxis(t), axisLabel: { show: false }, data: days, gridIndex: 1, type: "category" },
+    ],
+    yAxis: [
+      { ...yAxis(t), scale: true },
+      { ...yAxis(t), gridIndex: 1, splitNumber: 2 },
+    ],
+  };
+};
 ```
 
-- **Create the chart once and re-theme it** with `chart.applyOptions` and each series' `applyOptions` when the scheme changes; recreating it loses the viewer's zoom.
-- **Times are UTC seconds**, and a daily bar's time is its date at midnight UTC, or the axis labels drift by the viewer's offset.
-- **Leave its attribution logo on**: the library's licence asks for the attribution it shows.
+- **A bar is `[open, close, low, high]`**, in that order, not the OHLC order the data arrives in.
+- **The axis is a category of the bars' ISO dates**, so no viewer's offset moves a bar and a day with no trading leaves no gap.
+- **Compute a moving average or any indicator in the data module** and draw it as a `line` series, since the series has none built in.
+- **Reach for a finance library only once a requirement names indicators, drawing tools or a live feed**: KLineChart (Apache-2.0, 10.1.1) ships both, at the cost of a second canvas engine outside the tokens.
+Lightweight Charts (Apache-2.0, 5.3.0) suits a series too long for ECharts to pan smoothly, but its licence requires a credit and link to TradingView on the page, and its default corner logo reads as a promise of the vendor's full product, so put the credit in the footer and set `layout.attributionLogo` to `false`.
+TradingView's Advanced Charts may not sit in a public repository (versions and terms read 2026-11-18 from each project's repository and docs).
 
 ## Formatting
 

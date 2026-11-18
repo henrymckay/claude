@@ -149,7 +149,7 @@ For a command, an API, a message or a README, the criteria are its lines in Set 
 
 Read the file for the technology you're building in:
 
-- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts and Lightweight Charts themed from the tokens, the formatting module).
+- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts themed from the tokens, candles included, the formatting module).
 - **Python** → `references/python.md` (one tokens module, the Plotly templates, Dash with Mantine and AG Grid, Shiny's theme and dark mode, a digest's chart image).
 
 Add a new `references/<technology>.md` when you build in another rather than adding its specifics to this file.

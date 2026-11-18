@@ -104,7 +104,7 @@ An API is the CLI's surface over HTTP: the same options become query parameters 
 
 A dashboard is a driver like the others; its look is `design-interface`'s.
 
-**Build it as a web front end behind one data module**, by default: Vite, React and TypeScript with Tailwind and shadcn/ui, Lightweight Charts for candles and ECharts for the rest.
+**Build it as a web front end behind one data module**, by default: Vite, React and TypeScript with Tailwind and shadcn/ui, and ECharts for every chart, candles included.
 Every screen asks one module, `web/src/lib/data.ts`, for its data, in one of two versions, so moving a dashboard between a static host and the API changes one module:
 
 - **Over the API**, where the project is Python: the same process serves the API's JSON and the built front end, on one port.
