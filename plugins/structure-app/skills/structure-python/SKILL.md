@@ -125,7 +125,7 @@ class Fetched:
 
 `records` is matched to `port.RECORDS`, `rejected` holds `store-data`'s quarantine row (the raw record as text and its `reason`), `raw` is the bytes of each page as sent, and `failed` names the items that answered nothing usable.
 
-**Fail an item, not the source.** An item that 404s, exhausts its retries or won't parse goes into `rejected` with its reason and its name into `failed`, and the items that arrived go into `records`, so one dead item costs a count in the manifest, not the run; a source whose every item failed **raises**, since storing an empty partition would make an outage read as a quiet day.
+**Fail an item, not the source.** An item that 404s, exhausts its retries or won't parse goes into `rejected` with its reason and its name into `failed`, and the items that arrived go into `records`, so one dead item costs a count in the manifest, not the run; a source whose every item failed **raises**, since storing an empty partition would make an outage read as a quiet day, and its error carries the requests made and the items that failed, so the driver still writes the source's `failed` manifest row with its counts (`store-data`).
 An empty answer is different from no answer: an item the source answers with nothing normalises into the declared empty shape, and a day on which every item did so is a stored empty partition (`store-data`), because that is what the source said.
 
 **Split getting from making sense of.** Give retrieval and parsing a function each and let the port's function compose them: `_parse(get(_url(item, day)))` per item, with `get` the paced getter the composition root built (below).
@@ -159,6 +159,7 @@ The core still mustn't know it exists, and it isn't a source, so it stays out of
 
 **Call services you don't own through one `httpx.Client` the composition root opens per run, with a timeout, your own user agent and the key in a header, paced by `pyrate-limiter` at every window the service states within the day's request budget, retried by `tenacity` on a transport fault, a `429` or a `5xx` only, and paged to exhaustion.**
 The builders, the budget shared across a day's processes, and the terms a publisher never states are in `references/http.md`.
+**A source reached through a library that owns its HTTP session** — a vendor SDK, a client that impersonates a browser — is the exception: pace and retry around the library's call with the same limiter and retry policy, and keep the library behind the port like any client.
 
 ## Configuration
 
