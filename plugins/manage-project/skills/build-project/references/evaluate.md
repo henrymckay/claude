@@ -13,13 +13,15 @@ Spawn it fresh, on `sonnet` at medium effort (`choose-model`), with only what a 
 - **What to return**: one line per criterion, `pass` or `fail`, with its evidence — the screenshot file, the command and what it printed, the measured time — and for each fail the smallest change that would pass it; nothing else.
 - **What it may not do**: edit the project, take any outward action, or stop the server it did not start.
 
+**Wait for its report before going on.** Ask for the foreground (the Agent tool's `run_in_background: false`, where the tool offers it), since a background subagent's result arrives only as a later notification, which a milestone subagent cannot wait on; where it starts in the background anyway, wait with the `Monitor` tool on its completion rather than a sleep loop, and never close the milestone without its report.
+
 ## Screenshot a screen
 
-A PEP 723 script, run with `uv run --script shoot.py <url> <out>`, takes every screen at desktop and phone width in both schemes, driven by the page's `data-view` and `data-ready` signals (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
+A PEP 723 script, run with `uv run --script shoot.py <url> <out>` under whatever Python the project pins, takes every screen at desktop and phone width in both schemes, driven by the page's `data-view` and `data-ready` signals (`write-entry-points`, Dashboard), and reports any page error and any sideways scroll:
 
 ```python
 # /// script
-# requires-python = ">=3.15"
+# requires-python = ">=3.12"
 # dependencies = ["playwright>=1.65"]
 # ///
 """Screenshot each screen at two widths in both schemes."""
