@@ -14,7 +14,7 @@ description: >-
 # Plan the project
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
-It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, and the finished build to `review-project`.
+It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, the finished build to `review-project`, and the project's end to `retire-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -42,6 +42,8 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 # <project>
 
 <One sentence: what it does and for whom.>
+
+Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv).
 
 ## Brief
 
@@ -98,7 +100,8 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 ### Runs on
 
-- **<artefact>** — <host and tier, its limit that matters, how it is deployed from the repo, where its secret lives and when it next rotates; the date the tier was checked>.
+- **<artefact>** — <host and tier, its limit that matters, how it is deployed from the repo; the date the tier was checked>.
+- **Teardown** — <what is kept when the project is retired: the plan, the records, which data is archived and where; anything left standing> (`retire-project`).
 
 ### Errors
 
@@ -112,9 +115,10 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 ### Verification
 
-- **R1** — <a test, or a real run with an expected count>.
+- **R1** — <the test that proves it, by name, or a real run with an expected count>.
 - **R2** — <a timed run on full-size input, within its budget>.
 - **R3** — <for an endpoint, a request and its expected body; for a screen, the output it renders and a check that it renders it>.
+- **Acceptance** — <what no single line shows: the project installed from a fresh clone as the README says, the suite at `write-tests`' coverage levels, and the real path run end to end on the finished project>.
 
 ### Milestones
 
@@ -142,7 +146,9 @@ The groups mark who owns what: the user owns the **Brief**, Claude answers it wi
 - **A library** — Interface is its public API, and Data flow traces its main call paths.
 - **A content or configuration repo** (docs, skills, dotfiles) — Inputs are what it is written from, Data flow is how a change travels from source to where it takes effect, Outputs are the files it ships and their format, and Interface is how a person or tool invokes them.
 
-The schema table is for a tabular output only, its rows in the order the columns are stored (`store-data`, Shape a stored table); the endpoint table for an HTTP API; the screen list for a dashboard or GUI; Runs on names a host for every artefact that runs when the user is not at the shell — a launchd or systemd unit on the user's own machine included — from `deploy-project`'s and `run-unattended`'s picks.
+The schema table is for a tabular output only, its rows in the order the columns are stored (`store-data`, Shape a stored table); the endpoint table for an HTTP API; the screen list for a dashboard or GUI; Runs on names a host for every artefact that runs when the user is not at the shell — a launchd or systemd unit on the user's own machine included — from `deploy-project`'s and `run-unattended`'s picks; what the build then creates on each host, and every credential, tool and connector it uses, goes in the project's `DEPENDENCIES.md` (`build-project`, Keep the records), not the plan.
+The Records line names the three files the build keeps (`build-project`, Keep the records), so the plan, what it depends on, what it cost and what it proved are found from one another; the plan never copies what they hold.
+The Acceptance line is what `build-project`'s Finish the build runs last, beside every other line.
 Where work arrives continuously, as issues or feedback, the milestones cover only the planned work, and Verification names where the rest is tracked.
 
 ## Go from conversation to plan
