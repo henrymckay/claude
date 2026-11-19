@@ -4,7 +4,7 @@ description: >-
   How to pick the model, effort and mode for each stage of work, with an eye
   on cost — the ladder (Opus to plan, review and edit skills; Sonnet to build;
   Haiku to grade), holding a stage on its model through a subagent, spending
-  tokens well within one, reporting what it cost, and current prices. Use
+  tokens well within one, a ledger of what each cost, and current prices. Use
   whenever starting a stage, spawning a subagent, or asked which model
   to use, what a build cost or how to cut token cost — even if the user just
   says "this is expensive" or "use a cheaper model".
@@ -41,8 +41,11 @@ A model one rung up is earned by a stage that keeps failing its gate on the chea
 A session cannot tell which model is serving it: a skill whose frontmatter names a model changes the model the session is *told* it is on, while in measured runs, headless and interactive, every message was still served by the session's default.
 So a stage never trusts the reported model, the frontmatter or the user's `/model`; it places itself.
 
-- **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
+- **Hand the stage to a foreground subagent every time**, with the Agent tool's `model` and `effort` set from the ladder and `run_in_background: false` where the tool offers it, since Claude Code starts a subagent in the background by default: a build one milestone at a time, a review whole, a plan's gathering, research and draft.
 The Agent tool's `model` is the one setting that decides which model serves the work.
+- **Never end a turn while a stage's subagent is running, above all in a headless run**: where it started in the background anyway, wait for its result before the turn ends, as print mode does when asked (code.claude.com/docs/en/sub-agents).
+After the last turn `claude -p` waits for background work only until it has sat idle for `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, ten minutes by default, then stops waiting and drops the partial result, so a milestone left running is cut off mid-work and repeated (code.claude.com/docs/en/headless and env-vars, 2026-11-19).
+Whoever starts a long headless run may set that variable to `0`, which waits indefinitely, or `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`, which keeps every subagent in the foreground but removes background commands too; either is a backstop to the rule, not a substitute.
 - **Hand it over however small the prompt says the work is.** "This should take minutes" changes the size of the stage, never its model: a short stage on the right model costs cents more, and sessions told a task was quick otherwise planned on Sonnet.
 The one exception is the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
@@ -52,6 +55,7 @@ The one exception is the short plan in the conversation for a fix or a small cha
 ## Spend tokens well within a stage
 
 Every request re-sends the whole conversation, so whatever a stage leaves in its context is paid for again on every later turn, at the cache-read price while the cache is warm and full price once it expires.
+In one four-milestone build (2026-11-18, Sonnet milestones) cache reads and writes were three quarters or more of each milestone's dollars and output a quarter or less, so a stage's bill follows how much context it carries, more than how much it writes.
 
 - **Delegate what would flood the context, and nothing smaller**: a fresh subagent starts with only its brief and returns a summary, so it pays for itself on reading and research whose output would otherwise stay in the session; a lookup of a few calls is cheaper inline.
 - **Brief a fresh subagent rather than fork a long session**: a fork inherits the whole conversation and carries it on each of its turns.
@@ -59,10 +63,17 @@ Every request re-sends the whole conversation, so whatever a stage leaves in its
 - **Mind the cache's lifetime**: a write costs 1.25 times the input price for five minutes or twice for an hour, and Claude Code caches a subscription's main conversation for an hour and subagents for five minutes (code.claude.com/docs/en/prompt-caching, 2026-11-18); the first request after a longer gap pays full price for the whole context, so a large session left idle pays for it again.
 - **End a long stage before its context is mostly stale tool output, its state already written down**: `PLAN.md` and the commits for a build, memory for facts that outlast the project, never both, brought up to date at the end of each milestone or task, so a compaction loses nothing the record lacks; this plugin's `PreCompact` hook asks the summary to keep, marked, whatever is still unrecorded.
 
-## Report what a stage cost
+## Record what a stage cost
+
+**Record each stage's cost as the stage closes, in the project's `costs.csv`**, one row per stage and model, so one build can be set against another and the ladder judged on evidence: the plan, each milestone, each review, and the coordinating session's own row at the end.
+**Total it with this skill's `scripts/costs.py`, never by hand**, run in the project's directory, whose newest session it reads, with the path from the skill's base directory: `uv run --script <base>/scripts/costs.py --agent <id> --stage M2 --no-header >> costs.csv` after the stage's subagent returns, its id from the Agent tool's result, nested subagents counted in; `--agent session` totals the coordinating session's own messages, no `--agent` totals every stage at once, and leaving out `--no-header` prints the header line a new ledger starts with.
+It reads the session transcript, where each assistant message records the `model` that served it — the only evidence a stage ran where the ladder puts it — its `effort` and its `usage`, and each subagent's file under the session's `subagents/` folder, counting nested subagents such as evaluators in the stage that spawned them and a restarted one wherever its file lies, so an interrupted build still totals.
+A response is written as one record per content block, each repeating its usage, so a hand sum over records counts it several times; the script counts each response once, as `scripts/test_costs.py` pins on a made-up session.
+The columns, alphabetical as `store-data` keeps a stored table: `agents`, `cache_read`, `cache_write`, `dollars` (list price, from Know the prices), `effort`, `input`, `model`, `output`, `session`, `stage`, `started`, `wall_minutes`.
+The format is internal and changes between releases, so where a total looks wrong, check the fields the script reads before trusting it; on four real sessions its dollars came within 6% of Claude Code's own running total, which also counts the background model's calls (2.1.325).
+The script is plain Python, so any Python from 3.12 runs it where `uv` is absent.
 
 **Report it in the terms the user pays in**: on a subscription, its share of the plan's allowance (`/usage`), list-price dollars only a proxy; on the API, dollars.
-Read it from the session transcript, where each assistant message records the `model` that served it — the only evidence a stage ran where the ladder puts it — and its `usage` (input, output, cache-read and cache-write tokens), each subagent in its own file under the session's `subagents/` folder; the format is internal and changes between releases, so check a field before summing it.
 
 ## Leave to the user
 
@@ -82,4 +93,4 @@ Per million tokens on the API, read from platform.claude.com/docs/en/about-claud
 | Haiku 5.5 (`haiku`), prompts to 100k | $0.10 | $0.50 | $0.01 |
 
 The `fable` alias resolves to the current Fable, so a session pinned to an older full model ID pays more for less; a subscription shares its allowance across models, so the ladder stretches it rather than the bill.
-Check the prices against the current pricing page before quoting them; a release moves them.
+Check the prices against the current pricing page before quoting them; a release moves them, and `scripts/costs.py` holds the same table, changed with this one.

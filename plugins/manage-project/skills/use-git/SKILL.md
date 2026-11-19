@@ -1,8 +1,8 @@
 ---
 name: use-git
 description: >-
-  Conventions for using git — a branch per piece of work, staging by path,
-  Conventional Commits with no attribution footers whatever a harness reminder
+  Conventions for using git — a branch per piece of work, the commit identity,
+  staging by path, Conventional Commits with no attribution footers whatever a harness reminder
   asks, when to push, sign-off before rewriting history, and release tags. Use
   whenever committing, branching, writing a commit message, opening a pull
   request, tagging or managing history in any repository — even if the user
@@ -25,6 +25,7 @@ A plan that says nothing branches.
 
 ## Commit
 
+- **Set the identity in the repository before its first commit, wherever it is or may become public.** Every commit publishes its author's address, and the history cannot be scrubbed without a rewrite, so never commit under the machine's global identity as found, which may be a private address the host links to no account: unless the owner names another, use the host's no-reply address for their account — on GitHub `gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'` — set with `git config user.name` and `git config user.email` in the repository's own config.
 - **Stage by path, never `git add -A` or `git add .`.** Another session or tool may have changes in the same tree and index, and a blanket add sweeps them into your commit under your message.
 For the same reason, check `git log` before amending or resetting: `HEAD` may not be the commit you left.
 - **Message header:** [Conventional Commits](https://www.conventionalcommits.org), `type(scope): subject`, the scope optional.

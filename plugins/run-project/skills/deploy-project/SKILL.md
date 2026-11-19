@@ -47,9 +47,10 @@ The tree is the backup and the next night's input, and the push is repository ac
 - **Commit one date-partitioned file per source a night, and rewrite whole only files that stay small**: GitHub warns at 50 MiB a file and blocks at 100 MiB, a repository should stay well under 1 GB, and every clone carries every version of a rewritten file; once `metrics.parquet` passes a few MiB, stop committing it and let the site job run `compute` before it exports.
 - **The data commits land on `main`**, since the data tree is not code and nothing reviews a night's rows; record that as a `PLAN.md` decision, which `use-git`'s branch rule defers to.
 - **Once an alert is earned, the workflow covers what the driver cannot**: an `if: failure()` step for a failed install or commit, and a `status` workflow for a night that never ran (`send-messages`, Decide what deserves a message).
+- **Call the pipeline deployed only once the schedule itself has fired**: a run dispatched by hand shows the job works, not that the cron starts it, so after the first scheduled time `gh run list --workflow nightly.yml --event schedule --limit 1` must list a run, and until it does the report lists that check as owed.
 - **Set a spend limit on a private repository**, or the schedule stops silently the day the included minutes run out.
 - **Move the job to Modal when it needs more than six hours, more memory than a 2-core runner, or retries and logs outside GitHub**: `@app.function(schedule=modal.Cron("0 2 * * *", timezone=...))`, deployed by `modal deploy` from an Action holding its two tokens; Starter includes $30 of compute a month and five crons, and the cost is a second platform with its own secrets and logs.
-- **Vercel's Hobby cron is not a pipeline host**: once a day at most, up to 59 minutes late, 300 seconds a function, non-commercial only.
+- **Vercel's Hobby cron is not a pipeline host**: once a day at most, up to 59 minutes late, 300 seconds a function, non-commercial only, and its Cron Jobs are being moved to a new Schedules feature (re-read 2026-11-19).
 
 ## Hold the data
 
@@ -105,10 +106,11 @@ The `github-pages` environment the first deploy creates has refused a deploy fro
 
 - **Repository secrets for Actions**, set with `gh secret set NAME` and read as `${{ secrets.NAME }}`; environment secrets need Pro or Team on a private repository.
 - **Each other host's own store for the rest** — Workers' secrets, Render's environment variables, Cloud Run's Secret Manager, Connect Cloud's secret variables — never a committed file or a static bundle (`secure-project`).
+- **List each host account, what was created on it and each secret by name in the project's `DEPENDENCIES.md`** as it is created, so the owner can see every account the project holds open and retire it from one list.
 
 ## Re-check the tiers
 
-Every figure above not marked otherwise was read from the vendor's page on 2026-11-11, the dashboard hosts on 2026-11-12, and MotherDuck and the API hosts on 2026-11-18.
+Every figure above not marked otherwise was read from the vendor's page on 2026-11-11, the dashboard hosts on 2026-11-12, and MotherDuck and the API hosts on 2026-11-18, and all were re-read on 2026-11-19, unchanged wherever the page still states them; Connect Cloud's Free credit amount and Plotly Cloud's resume date are no longer on a current page.
 **Before relying on a limit, read the vendor's plan page and record the date beside the pick in Runs on**; each `review-plugin` sweep of this plugin re-checks the picks in this skill.
 
 Ruled out on that date, so a search does not re-propose them: Ploomber Cloud (shut 2025-10-31) and Deta Space (sunset 2024-10-17), both from secondary sources; Fly.io (no free tier, a $1 seven-day trial, re-read 2026-11-18) and Railway (a trial, then $1 a month of credit); Hugging Face Spaces (Gradio and Docker Spaces need a paid plan, re-read 2026-11-18); Deno Deploy (sunset in April 2027, read 2026-11-18); PythonAnywhere (the free tier expires monthly); Netlify (no Python functions, re-read 2026-11-18); and shinyapps.io (no secrets, its free accounts move to Connect Cloud on 2027-01-28).

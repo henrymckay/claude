@@ -61,6 +61,7 @@ A secret is anything that grants access: an API key, a token, a password, an ung
 
 - **Keep each secret in one store per place it runs**: on a machine, the `.env` the settings read by its absolute path, ignored by git from the first commit and readable by the owner alone (`chmod 600`), or the keychain for a credential for an account with money in it (below); on a host, that host's secret store (`deploy-project`).
 - **Never put a secret in** the repository, public or private, a unit file, a static bundle, a URL that is logged, a message body, a commit message, an issue or a prompt; each is copied to places nobody tracks.
+- **Name every secret in the project's `DEPENDENCIES.md`** (`build-project`, Keep the records), so a leak or a retirement starts from a complete list.
 - **Bind it once at the composition root** and pass it to the adapter that uses it, where the settings type hides it from a `repr` (`structure-python`, Configuration).
 - **Scan every commit for secrets** with the `gitleaks` hook, added to the pre-commit config `setup-python` wires; it stops the commit that holds one, which a review after the push cannot, and `detect-secrets` is the alternative where a baseline of accepted findings must live in the repository (gitleaks 8.30.1):
 
@@ -82,7 +83,7 @@ Where writing is the job, as for a pipeline loading a database billed by use, th
 - **Behind an IP allow-list where the venue offers one**, which ties the consumer to a fixed address, so such a job runs on the owner's machine rather than a hosted runner whose address changes.
 - **One credential per consumer** — the nightly, the dashboard, a person's session — so a leak is revoked in one place and its reach is that consumer's alone.
 - **Kept out of the checkout**: in the operating system's keychain on a machine, read by `keyring.get_password` at the composition root, in the host's secret store on a host; a checkout is copied, synced and archived, and a `.env` inside it goes along, so the `.env` other secrets use does not serve here.
-- **Rotated on the venue's maximum lifetime or every 90 days, whichever comes first**, and revoked at once on any suspicion; the 90 days is a preference, bounding how long an unnoticed leak stays open, and the plan's Runs on gives the next rotation date beside the store.
+- **Rotated on the venue's maximum lifetime or every 90 days, whichever comes first**, and revoked at once on any suspicion; the 90 days is a preference, bounding how long an unnoticed leak stays open, and the project's `DEPENDENCIES.md` gives the next rotation date beside the store.
 - **Built against the venue's sandbox or paper account** where it has one, so no test can move real money.
 - **An order, a transfer or any other action that moves money needs a signed-off plan decision naming the account, the action and its limits, and a person confirming each action when it happens.** The code prepares the action and stops; the person confirms it in the venue's own interface or by an explicit reply to that one prepared action, never by the request that started the work, since an unattended mistake executes at market speed and cannot be recalled.
 - **Never in autonomous mode or a scheduled run**, whatever the plan says: no order, no transfer, no change to the account's settings; the run prepares and lists them for the user.

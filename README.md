@@ -15,7 +15,8 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a gate that runs the product.
   - [`design-interface`](plugins/manage-project/skills/design-interface) gives every screen, page and output one house look and a bar to clear.
   - [`review-project`](plugins/manage-project/skills/review-project) reviews against the plan and the skills, then fixes what it finds.
-  - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and reports its cost.
+  - [`retire-project`](plugins/manage-project/skills/retire-project) tears a project down from its records, confirming each removal.
+  - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and records its cost.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
   - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).

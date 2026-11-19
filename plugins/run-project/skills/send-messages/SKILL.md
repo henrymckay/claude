@@ -2,18 +2,19 @@
 name: send-messages
 description: >-
   How a deployed job or assistant reaches a person — what deserves a message
-  (a failure alert, a digest, a chat, never a routine success), alerting once
-  per change of state, and the channel: ntfy for an alert, email for a digest,
-  Claude Code channels for a chat. Use whenever adding a notification, alert,
-  digest or chat to a job — even if the user just says "text me when it
-  breaks", "email me a summary" or "let me chat with it from my phone".
+  (a failure alert, an event the job finds, a digest, a chat, never a routine
+  success), alerting once per change of state or event, and the channel: ntfy
+  for an alert, email for a digest, Claude Code channels for a chat. Use
+  whenever adding a notification, alert, digest or chat to a job — even if the
+  user just says "text me when it breaks", "ping me when it finds something"
+  or "let me chat with it from my phone".
 ---
 
 # Send messages
 
 How a deployed job or assistant reaches a person: the failure alert, the digest with its chart, the two-way conversation, and how a job reaches a Claude Code session.
 It builds on `run-unattended`, whose exit code and `status` command say when a message is earned, `store-data`, whose manifest holds the digest's counts, and `secure-project`, which says what a message may carry; the Stop and Notification hooks and the PushNotification tool are Claude Code's own and not covered here.
-Three mistakes account for most messages nobody reads: a success message every night, so the one failure scrolls past with the rest; a secret pasted into the unit file or the message body; and a channel that needs a Mac awake, chosen for a job that runs in the cloud.
+Three mistakes account for most messages nobody reads: a success message every night, or a push for every event a monitor finds, so the one that matters scrolls past with the rest; a secret pasted into the unit file or the message body; and a channel that needs a Mac awake, chosen for a job that runs in the cloud.
 
 **In an existing project, ask first.** Where a repo already has a notification channel, check with the user whether to keep it or apply these picks, and prefer these unless they choose to keep theirs.
 
@@ -35,6 +36,15 @@ Three mistakes account for most messages nobody reads: a success message every n
 
 Whether to build a notification at all is `run-unattended`'s call (Report the outcome).
 
+## Alert on events the job finds
+
+Where finding things is the job — a monitor that turns up many events a run, some worth a look and most not — each event is news, so the change-of-state rule does not apply; ration the pushes instead, or the strong events scroll past with the rest:
+
+- **Grade each event and push only the top grade, capped per run** — a handful, set in the plan — and fold the rest into one digest a run, grouped by kind, with the strongest first.
+- **Send each event once, keyed by a stable id** built from what the event is about, not from the run that found it (the item, the rule, the day), and recorded after the send in an append-only table of the store (`store-data`); a failed send stays unrecorded, so the next run retries it.
+- **Push only events inside a lookback window**, the catch-up window of `run-unattended`'s Make a run rerunnable, so a missed night's events still go out the next night, while a backfill or a changed rule that finds months of history stores it and pushes none of it.
+- **Give each kind of message its own priority on the one topic** — the job's own failure urgent, an event high, the digest low — so the reader can silence the digest without losing the alerts.
+
 ## Pick the channel
 
 Each pick is the default for its need; a `PLAN.md` decision overrides it, and a channel the reader already lives in is a reason to record one.
@@ -42,6 +52,8 @@ Every channel below sends from GitHub Actions, a cloud host or a launchd job ove
 
 - **Failure alert: ntfy.sh** with an unguessable topic and `Priority: urgent` — no account, no cost, one HTTP POST, and a phone app that shows it as a push.
 The topic name is the password, so generate it (`secrets.token_urlsafe(16)`); anyone who guesses it can post to the reader's phone and read every message.
+Without an account ntfy.sh allows 250 messages a day per IP address, keeps a message 12 hours and an attachment 3 hours, at 2 MB a file and 20 MB in all, and turns a message over 4,096 bytes into an attachment (`GET https://ntfy.sh/v1/account` and docs.ntfy.sh, 2026-11-19), so the event cap above stays well under the day's allowance; Markdown renders only in the web and Android apps, and only with a `Markdown: yes` header.
+An image with its text is one PUT, the file as the body with a `Filename` header and the text in a `Message` header, since the body is taken.
 Alternative: **Pushover** when an alert must repeat until acknowledged (priority 2), at $4.99 once per platform.
 - **Digest with a chart: email through the reader's own SMTP** — iCloud (`smtp.mail.me.com:587`, STARTTLS, an app-specific password) or Gmail (`smtp.gmail.com:465`, an app password behind 2-Step Verification, 500 a day) — with the PNG attached: already read daily, searchable, archived, nothing to install.
 Alternative: **Telegram `sendPhoto`** (caption 1024 characters, one message a second per chat) when the reader wants it in a chat and has installed Telegram; the reader must message the bot before `getUpdates` yields their chat id.
