@@ -56,7 +56,7 @@ Without a budget, time the real surface anyway and flag only what is slow at its
 
 ## Check the tests
 
-Measure branch coverage with the toolchain's own command (`setup-python`, Libraries), check the report shows the package's import lines as run before trusting its number, then read *which* branches are uncovered, and hold the suite to `write-tests` — above all that each fixture can exhibit the failure its test looks for, and that every overridden library default is pinned by its effect.
+Measure branch coverage with the toolchain's own command (`setup-python`, Libraries), check the report shows the package's import lines as run before trusting its number, check it against `write-tests`' two levels (Coverage and speed), then read *which* branches are uncovered, and hold the suite to `write-tests` — above all that each fixture can exhibit the failure its test looks for, and that every overridden library default is pinned by its effect.
 A high percentage over tests that assert nothing is a finding, not a pass.
 
 ## Check against the skills
@@ -78,6 +78,7 @@ Read the changelog before recommending a major upgrade.
 
 - **The README matches the code and the plan** — run its commands as written, check each claim about an outside tool against that tool's current docs, and read it against Decisions: a section describing something a decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **The project's `CLAUDE.md` is current** — no stale path or command, no default Claude follows anyway, nothing a skill contradicts; it and the README are judged whole against `write-markdown` for length and organisation, not only for truth.
+- **The records are true** (`build-project`, Keep the records) — `DEPENDENCIES.md` lists every secret the code, its workflows and its settings read, every host in Runs on, every tool the README's setup installs and every connector or plugin the build used, and nothing that has gone; `verification.csv`'s last row for each Verification line agrees with the review's own run of it, and the review's runs are appended with the stage `review`.
 - **The project keeps `secure-project`** — every input and output classed and nowhere its class forbids, no secret in the tree or its history, and the dependency audit and the security review clean, run as its Review it says.
 
 ## Get a cold read
