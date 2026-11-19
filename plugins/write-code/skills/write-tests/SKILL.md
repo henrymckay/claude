@@ -3,8 +3,8 @@ name: write-tests
 description: >-
   How to write and structure tests in any language — given-when-then, naming
   by behaviour, behaviour over implementation, where test data and expected
-  values come from, table-driven and property-based tests, and testing a
-  store, a dashboard and a CLI. Use whenever writing, editing or reviewing
+  values come from, table-driven and property-based tests, coverage levels,
+  and testing a store, a dashboard and a CLI. Use whenever writing, editing or reviewing
   tests or setting up a suite — even if the user just says "add tests", "test
   this" or names a runner like pytest.
 ---
@@ -103,7 +103,12 @@ A dashboard's test checks that each screen renders from a given store — in pro
 
 ## Coverage and speed
 
-Use coverage to find untested paths; no percentage is targeted and nothing fails under a number, since chasing one produces tests that execute code without checking it.
+**Measure branch coverage on every run that gates work, and hold it to two levels**, failing the run when either is missed:
+
+- **The pure core: every branch.** It is deterministic and needs no setup, so a branch no test reaches is a rule nobody has checked, never one too hard to reach; a branch that cannot run, such as the exhaustiveness guard at the end of a `match`, is excluded in the coverage configuration by a pattern, never line by line.
+- **The whole package: never below its last measured figure**, a floor kept in the configuration and raised to the new figure as each piece of work closes, lowered only by a recorded decision; adapters and drivers are proved by the real-surface run below, so their share is held, not chased.
+
+**Report the figure with what it misses** — each level, and each uncovered branch outside the core by file and line — since the number alone says nothing of quality: a test that runs a branch without asserting on its outcome counts as covering it, so a level is met only by tests that check behaviour, each Verification line in a plan names the test that proves it, and a review reads what the tests assert, not the percentage.
 Mutation testing is not run, and approval or snapshot tests have no tool until a project earns one by rendering output too large to assert on.
 Tag slow or external tests so the default run leaves them out.
 
@@ -117,6 +122,6 @@ Tag slow or external tests so the default run leaves them out.
 
 Read the file for the language you're working in:
 
-- **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis` and its health check, assert rewriting, `monkeypatch` and `time-machine`, `httpx.MockTransport` and the recording script, running).
+- **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis` and its health check, assert rewriting, `monkeypatch` and `time-machine`, `httpx.MockTransport` and the recording script, the coverage levels, running).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

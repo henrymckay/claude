@@ -179,6 +179,24 @@ A budget test passes `budget=2` and asserts the third call raises `QuotaError` w
 
 ## Coverage, speed and logs
 
+Hold the two levels in `pyproject.toml`, beside `setup-python`'s `[tool.coverage.run]` (`branch = true`, `source`):
+
+```toml
+[tool.coverage.report]
+exclude_also = ["typing.assert_never"]
+fail_under = 87
+show_missing = true
+```
+
+`fail_under` holds the package's floor, here 87 standing for the last measured figure, rounded down.
+The core's level is a second report over the core's packages alone — `structure-python`'s `transform`, `operate` and `port` in its layout — which exits 2 when a branch is missed (coverage 7.17):
+
+```bash
+uv run coverage run -m pytest
+uv run coverage report
+uv run coverage report --include "src/mypackage/code/transform/*,src/mypackage/code/operate/*,src/mypackage/code/port/*" --fail-under 100
+```
+
 - Mark slow or external tests `@pytest.mark.slow`, registered in `setup-python`'s `pytest` block.
 - Leave `pytest`'s log capture to show a failing test's logs, with `--log-cli-level INFO` to stream them live; don't wire a `RichHandler` into the suite to match the application's output, since the fixture it needs is longer than any test and `tee-sys` then streams every test's output on every run.
 
