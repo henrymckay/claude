@@ -36,7 +36,7 @@ Name a skill **verb-first** in a few kebab-case words, so the name says when Cla
 - **`write-`** — produce an artefact (`write-tests`).
 
 `write-tests`, not `testing-guide`.
-Each skill is `skills/<name>/SKILL.md` plus any `references/`; keep `skills/` flat, since the name already classifies it.
+Each skill is `skills/<name>/SKILL.md` plus any `references/` and `scripts/`; keep `skills/` flat, since the name already classifies it.
 
 ## Write the description
 
