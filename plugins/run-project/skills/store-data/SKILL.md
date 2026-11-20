@@ -14,6 +14,7 @@ description: >-
 
 Where a project's data lives, how it is written so a re-run is safe, and how it is read back.
 The store is a driven adapter in `structure-python`'s terms, the frames it moves obey `use-polars`, `run-unattended` reads the manifest it keeps, `write-sql` covers the SQL written against it, and `secure-project` decides which of its data may leave the machine.
+What each table holds is decided before this skill picks where it lives, in `design-pipeline`: its grain and key, its layer, how it loads, how an open record is kept apart and how fresh it must be.
 Three mistakes account for most lost data: appending on a re-run, so a retried night doubles its rows; writing a file in place, so a crash leaves a half-file every later scan trips over; and discarding the raw response, so a parser fix cannot reach history.
 
 **In an existing project, ask first.** Where a repo already has a store, check with the user whether to keep it or apply this layout, and prefer this layout unless they choose to keep theirs.
@@ -31,7 +32,7 @@ The read port is Polars because the core speaks frames; DuckDB is for a person's
 It is an outside service, so private or personal data goes there only under a plan decision naming it (`secure-project`).
 **A project that needs MotherDuck pins `duckdb` to the client MotherDuck accepts and uses Python 3.14 until MotherDuck supports DuckDB 2.0**, which overrides `setup-python`'s 3.15 floor for that project: MotherDuck's docs list clients 1.4.1 to 1.5.6 on 2026-11-12, a 2.0 client's `motherduck` extension refused to load ("not yet supported by MotherDuck"), and 1.5.6 ships wheels up to Python 3.14 only.
 Syncing Parquet to a bucket is the alternative and costs a sync step and credentials on every reader.
-- **SQLite** for small single-writer app state — a watermark table, a key-value cache — through the stdlib `sqlite3`.
+- **SQLite** for small single-writer app state — a cursor a source hands back, a key-value cache — through the stdlib `sqlite3`; a load's watermark is derived from the stored data instead (`design-pipeline`, Load idempotently).
 A JSON file is the alternative and loses atomic updates the moment two fields change together.
 - **Postgres** only for a multi-writer service; it earns a server to run, so a `PLAN.md` decision names it.
 
