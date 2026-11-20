@@ -94,7 +94,7 @@ ExecStart=/home/me/.local/bin/uv run --project /home/me/Git/myapp --frozen --no-
 
 ## The status unit
 
-Once an alert is earned (`SKILL.md`, Report the outcome), copy the nightly unit as `com.example.myapp.status` or `myapp-status.timer` and `.service`, with `status --alert` in place of `nightly` and its log options, firing a few hours after the nightly so a night that never started is already stale.
+Once an alert is earned (`SKILL.md`, Report the outcome), copy the nightly unit as `com.example.myapp.status` or `myapp-status.timer` and `.service`, with `status --alert` in place of `nightly` and its log options, firing later than the nightly by more than the stale margin plus the scheduler's lateness, so a night that never started is already stale (`SKILL.md`, Report the outcome).
 
 ## GitHub Actions (cloud)
 
