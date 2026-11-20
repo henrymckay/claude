@@ -120,7 +120,8 @@ extended_capitalisation_policy = "lower"
 ## Change a schema
 
 - **Adding a column is the one change readers survive**, and only readers that name their columns; files written before it hold none, so every read across old and new declares the whole schema and takes null for the old, or it fails or drops the column outright (the engine's option is in the reference; Polars' is in `store-data`, Read).
-- **A rename, a retype or a drop is a new schema.** In a file tree, rewrite every partition in one backfill, in the commit that changes the code and the documented queries, since a tree holding two shapes fails the scan that reads it as one table; in a database, write a migration.
+- **A rename, a retype or a drop is a new schema**, and where a reader outside the repository relies on the table, a new version of its contract (`design-pipeline`, Publish the contract).
+In a file tree, rewrite every partition in one backfill, in the commit that changes the code and the documented queries, since a tree holding two shapes fails the scan that reads it as one table; in a database, write a migration.
 - **A database's schema changes only through numbered, forward-only migration files**, `migrations/0001_create_readings.sql`, each applied in one transaction with the number of the last one applied recorded in the database.
 An undo is the next migration: a down script is the one path nobody runs until the day it matters.
 - **No migration framework** until a second deployer or a served database earns one; the common ones arrive with an object-relational mapper the house does not use (`store-data`, Pick the engine).
