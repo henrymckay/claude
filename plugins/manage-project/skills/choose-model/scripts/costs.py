@@ -67,6 +67,22 @@ class _Transcript:
     times: tuple[datetime.datetime, ...]
 
 
+def _describe_efforts(efforts: collections.Counter[str]) -> str:
+    """Return the efforts a row's responses ran at, a mixed row showing each.
+
+    A skill's frontmatter changes the turn's effort from the moment it loads, so
+    a stage can run partly at another effort than it was handed; naming only
+    the most common value would hide that.
+
+    :param efforts: How many responses ran at each effort.
+    :returns: The one effort, or each as ``effort:count``, most common first,
+        joined by ``/``; empty where no response recorded one.
+    """
+    if len(efforts) <= 1:
+        return next(iter(efforts), "")
+    return "/".join(f"{effort}:{count}" for effort, count in efforts.most_common())
+
+
 def _find_root(agent: str, *, parents: collections.abc.Mapping[str, str]) -> str:
     """Return the top-level subagent a nested one was spawned under.
 
@@ -311,7 +327,7 @@ def _total_stage(
                 "dollars": ""
                 if len(known) < len(priced)
                 else f"{sum(known, decimal.Decimal(0)):.2f}",
-                "effort": efforts.most_common(1)[0][0] if efforts else "",
+                "effort": _describe_efforts(efforts),
                 "input": str(sum(message.input for message in messages)),
                 "model": model,
                 "output": str(sum(message.output for message in messages)),

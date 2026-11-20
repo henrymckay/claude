@@ -16,10 +16,16 @@ import costs
 
 
 def _response(
-    identity: str, *, model: str, output: int, stamp: str, speed: str = "standard"
+    identity: str,
+    *,
+    effort: str = "medium",
+    model: str,
+    output: int,
+    stamp: str,
+    speed: str = "standard",
 ) -> dict[str, object]:
     return {
-        "effort": "medium",
+        "effort": effort,
         "message": {
             "id": identity,
             "model": model,
@@ -105,6 +111,23 @@ def test_when_nested_subagent_selected_then_only_it_totalled(
     assert [(row["stage"], row["dollars"]) for row in rows] == [
         ("Evaluate M2", "29.20")
     ]
+
+
+def test_when_stage_ran_at_two_efforts_then_each_shown(tmp_path: pathlib.Path) -> None:
+    main = tmp_path / "s2.jsonl"
+    opus = "claude-opus-5-5"
+    _write(
+        main,
+        [
+            _response(
+                "r1", effort="high", model=opus, output=0, stamp="2026-11-19T10:00:00Z"
+            ),
+            _response("r2", model=opus, output=0, stamp="2026-11-19T10:01:00Z"),
+            _response("r3", model=opus, output=0, stamp="2026-11-19T10:02:00Z"),
+        ],
+    )
+    rows = costs.total_session(main, agent="session")
+    assert [row["effort"] for row in rows] == ["medium:2/high:1"]
 
 
 def test_when_unknown_agent_selected_then_no_rows(session: pathlib.Path) -> None:
