@@ -1,7 +1,7 @@
 # Evaluate the running surface
 
 How `SKILL.md`'s evaluator step runs: the brief the evaluator gets, the screenshots it takes, and what it hands back.
-The criteria themselves are `design-interface`'s, Look at it running for a screen and Set the bar for the rest.
+The criteria themselves are `design-interface`'s, Look at it running for a screen and the Judge it list of the surface's reference for a message, a command line, an API, a README or a report.
 
 ## Brief the evaluator
 
@@ -109,9 +109,11 @@ if __name__ == "__main__":
 
 ## Judge a command or an API
 
-A command-line tool is judged from a session the evaluator runs in a scratch folder against a small real store: `--help` at the root and for each command, the everyday invocation in each output form, two wrong invocations (a bad option, a missing input), and the exit code of each.
-An API is judged from its docs page, screenshotted as above, and from a request to each route with good and bad parameters.
-The session's transcript is the evidence, saved beside the screenshots.
+A command-line tool is judged from a session the evaluator runs in a scratch folder against a small real store: `--help` at the root and for each command, the everyday invocation in each output form, on a terminal and piped, two wrong invocations (a bad option, a missing input), and the exit code of each.
+An API is judged from its docs page, screenshotted as above, and from a request to each route with good and bad parameters, and a range past its page limit.
+A message is judged from the preview of each kind, run against a fixed case, never from a real send, which is an outward action.
+A README is judged from a fresh clone in a scratch folder, its quick start run as written.
+The session's transcript is the evidence, saved beside the screenshots; the criteria to paste into the brief are the Judge it list of `design-interface`'s reference for that surface.
 
 ## Report the rounds
 
