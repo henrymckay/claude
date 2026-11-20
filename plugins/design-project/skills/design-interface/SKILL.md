@@ -1,25 +1,27 @@
 ---
 name: design-interface
 description: >-
-  How every surface a project ships should look and read — one house design
-  system (colour, type, spacing, charts, states), a design plan before code,
-  and the bar a dashboard, page, CLI, API, message or README must clear. Load
-  it before the first line of any screen, chart, page or styled output, even a
-  prototype. Use whenever designing, styling or judging a surface — even if
-  the user just says "make it look good", "add dark mode" or "this looks
-  primitive".
+  How every surface a person meets in a project looks and reads — a house
+  design system for screens and charts, and a standard for each alert,
+  digest, command line, API, README and report, planned before code and
+  judged running. Load it before the first line of any screen, chart, page,
+  message, help text or styled output, even a prototype. Use whenever
+  designing, styling, wording or judging a surface — even if the user just
+  says "make it look good", "add dark mode" or "make the alerts clearer".
 ---
 
 # Design the interface
 
-How a project's surfaces look and read: one house design system, the bar each kind of surface must clear, and the criteria a running surface is scored against.
-It layers on the built-in `dataviz` skill for choosing a chart's form and marks, whose reference palette the chart colours below adopt; `plan-project` sets each surface's ambition from the bar here, `write-entry-points` builds the surface, and `build-project`'s gate runs the evaluator against the criteria here.
+How every surface between a person and the finished work looks and reads — a screen, an alert, a command line, an API, a README, a report: one house design system, the bar each kind of surface must clear, and the criteria a running surface is scored against.
+It sits beside `design-pipeline`, which designs the data each surface shows, and layers on the built-in `dataviz` skill for choosing a chart's form and marks, whose reference palette the chart colours below adopt.
+`plan-project` sets each surface's ambition from the bar here; `write-entry-points` builds the command line, the API and the dashboard, `send-messages` decides which messages are sent and over what channel, `write-markdown` writes the README's prose, and `build-project`'s gate runs the evaluator against the criteria here.
 Three mistakes account for most surfaces that look primitive: a framework's default theme shipped because no instruction asked for anything else, a look decided afresh in each project so no two match and every one re-argues its colours, and a surface judged by reading its code rather than by looking at it running.
+A fourth accounts for most that read badly: a surface with no screen — an alert, a help page, an error body — written last, in the words the code happened to have, when it is what the owner reads most.
 
 - **Wrong** — the dashboard's tests pass and the build is ticked; nobody opened it, and it ships in the framework's default blue on white with a grey chart that stays white in dark mode.
 - **Right** — the tokens are written first, every screen is screenshotted at desktop and phone width in light and dark, and a fresh reader scores those screenshots against the criteria before the tick.
 
-**Technology-neutral here.** The web specifics live in `references/web.md`, the Python frameworks' in `references/python.md`.
+**Technology-neutral here.** The web specifics live in `references/web.md`, the Python frameworks' in `references/python.md`; each surface without a screen has its own reference, named in Set the bar.
 
 **In an existing project, ask first.** Where a repo already has a design system or a brand, check with the user whether to keep it or apply the house system, and prefer the house system unless they choose to keep theirs.
 
@@ -27,14 +29,17 @@ Three mistakes account for most surfaces that look primitive: a framework's defa
 
 Every surface a project ships aims at a best-in-class version of its kind, and the plan says so (`plan-project`).
 **Ambition is finish, presentation and completeness of what was asked, never extra features or extra risk**: nothing here loosens `secure-project`, the rule against outward action in autonomous mode, or building only what the plan needs, and a fix that would is reported, not made.
-The bar per kind of surface, each line a criterion the evaluator can check:
+The bar per kind of surface, each a summary of the criteria the evaluator checks; the surfaces without a screen get their depth, and their criteria in full, in a reference each:
 
 - **Dashboard** — the house system below in full, answer first, every state designed, light and dark, usable at phone width; each control answers within 200 ms on the real data where the browser holds it, within a second where it waits on a server.
 - **Web page or static site** — the same tokens; one characteristic thing first, not a generic hero; body text under 80 characters a line; a title, a description and a favicon; loads fast from a cold cache.
-- **Command-line tool** — `--help` that is the documentation (`write-entry-points`); an error that names what failed and how to fix it in one line, with the exit code; progress on standard error for anything over two seconds; `--format table` aligned, numbers right-aligned, colour only on a terminal and never when `NO_COLOR` is set (`write-entry-points` owns the data forms).
-- **API** — a docs page with a title, a description and every endpoint summarised with an example request and response, errors included; one name and one unit per field across endpoints.
-- **Message or digest** — the subject carries the verdict and the first line the answer; one chart, rendered with the tokens, where a trend matters; a link to the dashboard; counts only for private data (`send-messages`, `secure-project`).
-- **README** — one sentence saying what it is, a screenshot or a terminal capture near the top for anything a person looks at, then a quick start that runs as written.
+- **Alert, event push or digest** — the title is the verdict and the body's first line the evidence and next step, each readable cut short; one tap opens the place to act; priority and mark fixed per kind; a recovery closes every failure; a digest answer first with one chart from the tokens; a preview of each kind before anything is sent (`references/messages.md`).
+- **Command-line tool** — names from the plan's Terms; `--help` that is the documentation, with defaults and examples; progress on standard error for anything over two seconds; an error that says what failed, why and what to do in one line, with the exit code; `--format table` aligned and coloured only on a terminal without `NO_COLOR` (`references/cli.md`).
+- **API** — the plan's nouns and the store's column names; one name and unit per quantity; UTC times, string decimals, `null` for unknown; RFC 9457 problem details for every error; freshness in headers and cursor paging; docs with a real example and every error per route (`references/api.md`).
+- **README** — the name, one sentence, a current picture and the live address before any install line, then a quick start that runs as written, use by task, every setting, how it runs (`references/docs.md`).
+- **Report** — the verdict first, then what to open, then each claim with its evidence, then what is left (`references/docs.md`).
+
+Every surface shows its data's freshness and marks a record still forming (`design-pipeline`) as such, in its own form: an age on a screen, a time in a message, a header from an API, a line from `status`.
 
 ## The house design system
 
@@ -96,7 +101,7 @@ A project with its own brand swaps the values under a plan decision and keeps th
 
 - **One formatting module**, `en-GB`, with thousands separators; never a number shown as its language's default string, which is where `0.30000000000000004` and an unrounded float come from.
 - **Compact in a tile** (`1.9M`) with the exact figure in its context line or tooltip; a fixed number of decimals per column, chosen by the quantity (a measurement to the precision it is recorded at, a percentage to two places with its sign).
-- **Dates as `12 Nov 2026`**, times on the 24-hour clock with the zone named once per screen, and an age as `7 h ago` with the absolute time in its tooltip; ISO 8601 only in URLs, APIs and files.
+- **Dates as `12 Nov 2026`**, times on the 24-hour clock with the zone named once per screen, and an age as `7 h ago` with the absolute time in its tooltip; ISO 8601 only in URLs, APIs, files and a terminal's table (`references/cli.md`).
 - **A unit in the column header or axis title**, never repeated in every cell.
 
 ### States
@@ -105,7 +110,7 @@ Design four states besides the happy one:
 
 - **Loading** — a skeleton in the content's own shape, and fixed heights so nothing jumps when data arrives.
 - **Empty** — what would fill it and what to do ("No runs yet — the first nightly writes here").
-- **Stale** — the data's age always visible, `warning` once it is stale (`run-unattended`'s definition, per source: two missed nights unless the plan sets another) and `critical` when the last run failed, with text and an icon.
+- **Stale** — the data's age always visible, `warning` once it is stale (the freshness the plan states per table, `design-pipeline`, else `run-unattended`'s threshold in Report the outcome) and `critical` when the last run failed, with text and an icon.
 - **Error** — what failed and what to do about it, in the interface's voice, with the rest of the page still working.
 
 ### Light and dark
@@ -127,6 +132,15 @@ Each is a framework's or a model's default, and makes a surface look generated:
 Before any component, write the design into the plan's Interface, one entry per screen (`plan-project`): the question it answers, its tiles, each chart with its form (`dataviz`'s reference on choosing a form), its tables and its four states, and an ASCII wireframe of the main screen at desktop and phone width.
 Read that against Defaults to avoid and change what is generic; then build the tokens, then the shared pieces (tile, card, chart wrapper, table, status chip, error note, formatting), then the screens from them.
 
+**Every surface without a screen is written into the Interface too, as a sample of what the person will read**, before the code that produces it:
+
+- **Each kind of message** — its title, body, priority, mark and tap target, in the preview's form, for a real case and its recovery.
+- **The command line** — the root `--help`, the everyday command's session with its progress and output, and one error.
+- **The API** — the route table with one real response and one error body.
+- **The README** — its outline and the picture it opens with.
+
+A sample written first is the design: it shows a wording or a missing field while it costs a line to change, and the tests and the evaluator then hold the code to it.
+
 ## Look at it running
 
 **Judge a surface only from the running thing.** A dashboard is screenshotted at 1440 by 900 and 390 by 844, light and dark, each screen after its data has drawn; a command or an API is judged from a realistic session's transcript.
@@ -143,13 +157,22 @@ Look at every screenshot yourself as you build and fix what reads wrong; `build-
 9. **Access** — text contrast at least 4.5 to 1, a visible focus ring, status never by colour alone, each chart labelled for a screen reader.
 10. **Finish** — a title and a favicon, no page or console error, consistent spacing, nothing half-aligned.
 
-For a command, an API, a message or a README, the criteria are its lines in Set the bar.
+**A surface without a screen is judged from what it emits**: a message from its preview, a command line from a realistic session's transcript, an API from its docs page and a request to each route, a README from a fresh clone; the criteria are the Judge it list in its reference, scored the same way, pass or fail with evidence.
 
 ## Technology specifics
 
 Read the file for the technology you're building in:
 
-- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts themed from the tokens, candles included, the formatting module).
+- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts themed from the tokens, candles and a forming bar, the formatting module).
 - **Python** → `references/python.md` (one tokens module, the Plotly templates, Dash with Mantine and AG Grid, Shiny's theme and dark mode, a digest's chart image).
 
 Add a new `references/<technology>.md` when you build in another rather than adding its specifics to this file.
+
+## Surface references
+
+Read the file for each surface without a screen that the project ships:
+
+- **Messages** → `references/messages.md` (the push, the digest, the preview, judging them).
+- **Command line** → `references/cli.md` (names, help, progress, errors, the table, judging it).
+- **API** → `references/api.md` (names and units, answers, problem details, docs, judging it).
+- **README and reports** → `references/docs.md` (the README's order, a report's order, judging them).
