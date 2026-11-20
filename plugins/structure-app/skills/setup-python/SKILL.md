@@ -187,13 +187,20 @@ Declare deps inline (PEP 723) and run with `uv run script.py` — `uv` builds a 
 
 ## Pre-commit hooks
 
-Enforce formatting and linting on every commit with the `pre-commit` framework, in `.pre-commit-config.yaml`:
+Enforce formatting and linting on every commit, and the suite's coverage levels on every push, with the `pre-commit` framework, in `.pre-commit-config.yaml`:
 
 ```yaml
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
 repos:
   - repo: local
     hooks:
+      - id: coverage
+        name: suite at both coverage levels
+        entry: sh -c 'uv run coverage run -m pytest && uv run coverage report && uv run coverage report --include "src/mypackage/code/transform/*,src/mypackage/code/operate/*,src/mypackage/code/port/*" --fail-under 100'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
       - id: ruff-check
         name: ruff check
         entry: uv run ruff check --fix
@@ -222,7 +229,8 @@ repos:
 ```
 
 - **`repo: local` hooks run the `ruff` and `taplo` that `uv.lock` pins**, so the hook, the editor and the suite agree on one version; the `ruff-pre-commit` mirror pins its own `rev`, which drifts from the lock until a commit passes the hook and fails `uv run ruff check`.
-- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, pinned by `rev` like any hook from its own repository, such as `secure-project`'s `gitleaks`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` stage too, which it otherwise skips.
+- **`conventional-pre-commit`** enforces `use-git`'s Conventional Commits header, pinned by `rev` like any hook from its own repository, such as `secure-project`'s `gitleaks`; `default_install_hook_types` makes `pre-commit install` register the `commit-msg` and `pre-push` stages too, which it otherwise skips.
+- **The `coverage` hook runs the suite at `write-tests`' two levels before every push**, the one place both are enforced in a project with no CI or task runner; `--include` lists the core's packages (`structure-python`), and a push that must go out with a level missed is a recorded decision, never `--no-verify` (pre-commit 4.7, coverage 7.17).
 - **Add two `sqlfluff` hooks under `repo: local` in the commit that adds the project's first `.sql` file**, after `uv add --dev sqlfluff` and with the configuration `write-sql`'s Style gives in `pyproject.toml`; before then they would run on nothing:
 
 ```yaml
