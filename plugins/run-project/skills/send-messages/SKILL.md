@@ -66,11 +66,12 @@ A workspace made for one job is a second inbox nobody opens.
 
 ## Shape the message
 
-**Lead with what the reader would act on**, since a lock screen shows one line and a mail client a subject: `nightly failed: weather 503 x3, 2 of 3 sources stored`.
+**Lead with what the reader would act on**, since a lock screen shows one line and a mail client a subject: `Nightly failed: weather 503 x3, 2 of 3 sources stored`.
+How each kind of message reads in full — the title, the first line, the tap target, the mark and priority per kind, the recovery, the digest's order and chart, and a preview of each before anything is sent — is `design-interface`'s (`references/messages.md`), written into the plan as a sample before the sender is built; this skill adds what the channel and the record require:
 
-- **An alert is one line** plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
+- **An alert is a title and one line**, plus a link or path to the log, never the log itself: a traceback in a push is unreadable, and ntfy and Pushover truncate it anyway.
 - **A digest carries the counts `status` prints** — rows per source, rejected rows, the last day stored — with the chart attached, so the message and the command agree.
-- **The body carries no secret, no personal data, and of private data only counts** (`secure-project`, Decide where each class may go).
+- **The body carries no secret, no personal data, and nothing of private data but counts** (`secure-project`, Decide where each class may go).
 
 ## Send from the job
 
