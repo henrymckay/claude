@@ -1,6 +1,6 @@
 # 🤖 claude
 
-Five [Claude Code](https://code.claude.com/docs) plugins that let Claude plan, build, review and run a project from a short prompt.
+Six [Claude Code](https://code.claude.com/docs) plugins that let Claude plan, design, build, review and run a project from a short prompt.
 They settle in advance the decisions that recur across projects, so Claude neither asks nor re-decides them.
 When a skill steers Claude wrong, the gap is filed and a sweep fixes it, so the plugins improve as they are used.
 
@@ -13,7 +13,6 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
 - **`manage-project`** — a project's life from a loose conversation to a reviewed build.
   - [`plan-project`](plugins/manage-project/skills/plan-project) drafts one `PLAN.md` and asks one batch of questions.
   - [`build-project`](plugins/manage-project/skills/build-project) builds it milestone by milestone behind a gate that runs the product.
-  - [`design-interface`](plugins/manage-project/skills/design-interface) gives every screen, page and output one house look and a bar to clear.
   - [`review-project`](plugins/manage-project/skills/review-project) reviews against the plan and the skills, then fixes what it finds.
   - [`retire-project`](plugins/manage-project/skills/retire-project) tears a project down from its records, confirming each removal.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and records its cost.
@@ -21,6 +20,9 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).
   - [`write-markdown`](plugins/manage-project/skills/write-markdown) writes Markdown for humans and for models.
+- **`design-project`** — what a project shows and holds, settled before it is built.
+  - [`design-interface`](plugins/design-project/skills/design-interface) sets one house look and a bar for every surface: screen, alert, command line, API, README.
+  - [`design-pipeline`](plugins/design-project/skills/design-pipeline) shapes each table's grain, loads and freshness, daily or intraday.
 - **`write-code`** — how the code itself is written, whatever the toolchain.
   - [`be-functional`](plugins/write-code/skills/be-functional) is the default style.
   - [`be-oop`](plugins/write-code/skills/be-oop) is object-oriented design where it fits.

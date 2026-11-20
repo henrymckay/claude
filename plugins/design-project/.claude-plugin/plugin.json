@@ -1,0 +1,10 @@
+{
+  "name": "design-project",
+  "description": "Design what a project shows and holds before it is built: every surface a person meets, from a dashboard to an alert, a command line, an API and a README, and the data pipeline and its tables.",
+  "version": "0.1.0",
+  "author": {
+    "name": "claude contributors"
+  },
+  "repository": "https://github.com/henrymckay/claude",
+  "license": "MIT"
+}
