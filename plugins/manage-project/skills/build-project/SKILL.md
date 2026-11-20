@@ -1,6 +1,5 @@
 ---
 name: build-project
-effort: medium
 description: >-
   How to build a planned project milestone by milestone — each on the
   ladder's model through a subagent, failing tests first, a gate (the suite,
@@ -102,11 +101,11 @@ Each gate check names the command that ran it and what it printed — the suite'
 
 ## Keep the records
 
-**A project keeps three records at its root beside `PLAN.md`, each written as the work happens, never reconstructed at the end**, when an account opened three milestones back and a check run in the first are already forgotten.
+**A project keeps three records at its root beside `PLAN.md`, each written as the work happens, never reconstructed at the end**, when an account opened three milestones back and a check run in the first are already forgotten; the one exception is a project built before them (below).
 `PLAN.md` names them under its title (`plan-project`), the dependency record points back at the plan, and the final report points at all three, so each is found from the others:
 
 - **`DEPENDENCIES.md`** — everything outside the code the project depends on, as a lock file records its packages, so the owner can see what it costs, what to rotate and what to remove when it is retired (`retire-project`).
-- **`costs.csv`** — what each stage cost, a row per stage and model (`choose-model`, Record what a stage cost).
+- **`costs.csv`** — what each stage of the build cost, a row per stage and model (`choose-model`, Record what a stage cost); what the deployed project costs to run goes on each account's line in `DEPENDENCIES.md`, since it is a bill per service, not per stage.
 - **`verification.csv`** — what each check showed and when, appended at every gate that runs a Verification line and at the acceptance run, so a later reader sees what was proven without the session that proved it.
 
 **Start the dependency record from the plan's Inputs and Runs on at the first milestone, and add each entry in the commit that first uses or creates the thing**, with how it is removed, since that is when the command is known:
@@ -118,7 +117,7 @@ The plan is [`PLAN.md`](PLAN.md).
 
 ## Accounts and services
 
-- **<provider> <service>** — <the tier relied on and the limit that matters>; used by <artefact>; opened <date>; holds <every repository, database, bucket, topic, schedule or token created there>; removed by <command or console step>.
+- **<provider> <service>** — <the tier relied on and the limit that matters>; used by <artefact>; opened <date>; holds <every repository, database, bucket, topic, schedule or token created there>; running cost <the month's bill, $0 inside the tier> at <the usage read against that limit> on <date read>, cap <the spend limit, or none>; removed by <command or console step>.
 
 ## Credentials
 
@@ -139,6 +138,13 @@ The lock file lists them.
 
 - **Name, never value**: a credential by its variable name and where it is kept, an account by provider and purpose, so the record is safe in a public repository; the code host's own account counts, since the project dies with it.
 - **Runs on says what the design chose; this file says what exists.** Where they disagree, one of them is wrong, and `review-project` checks one against the other.
+- **Read each account's running cost from the provider once the artefact has run for a day**, from its usage or billing page or command, never estimated from the plan, and again at every review, so a service drifting toward the edge of its tier shows before it bills or stops.
+
+**A project built before these records existed gets them at its first review**, in three different ways, since only one can be rebuilt honestly:
+
+- **Reconstruct `DEPENDENCIES.md`** from the workflows, the host's secret listings, the plan's Runs on and each provider's console, and say so in its opening line (`Reconstructed <date> by review; entries before then were not recorded as they happened`).
+- **Start `verification.csv` at the review and the acceptance run**, never back-filled from milestone notes, whose checks no longer exist to re-run; the plan's notes stay where they are as the earlier evidence.
+- **Start `costs.csv` with its header and the review's own row**, and name in the report the stages whose transcripts are gone or were never totalled, rather than a row of guesses.
 
 **Append a row to `verification.csv` for each Verification line a gate or the acceptance run checks**, pass or not, with the columns `command`, `commit` (the short hash it ran on), `date`, `line` (the line's ID, `Acceptance`, or `coverage`), `printed` (the counts it printed, on one line), `result` (`pass`, `fail` or `not run`) and `stage` (the milestone, `review` or `acceptance`); never edit a row, so the last row for a line is what the project now shows and the rows before it say when that changed.
 

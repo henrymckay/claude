@@ -201,6 +201,8 @@ export const candles = (t: Tokens, bars: Bar[]): EChartsOption => {
 
 - **A bar is `[open, close, low, high]`**, in that order, not the OHLC order the data arrives in.
 - **The axis is a category of the bars' ISO dates**, so no viewer's offset moves a bar and a day with no trading leaves no gap.
+An intraday bar takes its period's start in UTC as the category, labelled in the viewer's zone with the zone named on the axis title, so a closed session leaves no gap either.
+- **Draw the bar still forming apart from the final ones** (`design-pipeline`, Keep open and final records apart): give its data item its own `itemStyle` at reduced `opacity` and say `forming, as of 14:05` in its tooltip, so a reader never takes a half-made bar for a closed one.
 - **Compute a moving average or any indicator in the data module** and draw it as a `line` series, since the series has none built in.
 - **Reach for a finance library only once a requirement names indicators, drawing tools or a live feed**: KLineChart (Apache-2.0, 10.1.1) ships both, at the cost of a second canvas engine outside the tokens.
 Lightweight Charts (Apache-2.0, 5.3.0) suits a series too long for ECharts to pan smoothly, but its licence requires a credit and link to TradingView on the page, and its default corner logo reads as a promise of the vendor's full product, so put the credit in the footer and set `layout.attributionLogo` to `false`.

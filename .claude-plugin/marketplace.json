@@ -8,6 +8,11 @@
   },
   "plugins": [
     {
+      "name": "design-project",
+      "source": "./plugins/design-project",
+      "description": "Design every surface a person meets and the data pipeline behind it, before either is built."
+    },
+    {
       "name": "maintain-plugin",
       "source": "./plugins/maintain-plugin",
       "description": "Author skills and review any plugin for drift; capture skill gaps as they surface."
@@ -15,7 +20,7 @@
     {
       "name": "manage-project",
       "source": "./plugins/manage-project",
-      "description": "Plan, build and review a project on the right model for each stage, deciding from precedent and keeping private data safe; git and Markdown conventions."
+      "description": "Plan, build, review and retire a project on the right model for each stage, deciding from precedent and keeping private data safe; git and Markdown conventions."
     },
     {
       "name": "write-code",

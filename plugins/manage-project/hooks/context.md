@@ -6,7 +6,6 @@ Where the user or the project names another plugin's method as driving, such as 
 
 - **`build-project`** when building a project from its `PLAN.md`, milestone by milestone.
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
-- **`design-interface`** before building or styling a screen, chart, page or any output a person reads.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
 - **`plan-project`** before building a new project, however small, or a new input, output or interface.
 - **`retire-project`** when retiring a project or removing what it created.
@@ -17,12 +16,13 @@ Where the user or the project names another plugin's method as driving, such as 
 
 ## Missing plugins
 
-The five plugins ship separately.
+The six plugins ship separately.
 Before a task, pick out from the map below every skill the task or a loaded skill calls for — a commit touches `use-git`, any Markdown `write-markdown`, a new Python project `setup-python` — and look for each among this session's available skills, under any plugin prefix.
 A skill not there is missing: don't try to load it; decide yourself what it would have settled, and record each such call as a proposed decision that names the skill and the plugin the map puts it in (`setup-python`, in `structure-app`, not installed: …), listed with your report's other decisions.
 
+- `design-project`, how a project's surfaces and data are designed before they are built: `design-interface`, `design-pipeline`
 - `maintain-plugin`, authoring and reviewing skills and plugins: `review-plugin`, `write-skills`
-- `manage-project`, a project's plan, design, build, review and retirement, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `design-interface`, `make-decisions`, `plan-project`, `retire-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
+- `manage-project`, a project's plan, build, review and retirement, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `make-decisions`, `plan-project`, `retire-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
 - `run-project`, stored data, scheduled jobs, hosting, messages: `deploy-project`, `run-unattended`, `send-messages`, `store-data`
 - `structure-app`, a Python project's set-up, layers and entry points: `setup-python`, `structure-python`, `write-entry-points`
 - `write-code`, how code is written, in any language: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`

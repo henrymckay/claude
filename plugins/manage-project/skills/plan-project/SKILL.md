@@ -14,7 +14,7 @@ description: >-
 # Plan the project
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
-It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, the finished build to `review-project`, and the project's end to `retire-project`.
+It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface` and each table's design from `design-pipeline`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, the finished build to `review-project`, and the project's end to `retire-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -74,7 +74,7 @@ Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verif
 
 ### Data flow
 
-1. **<stage>** — one row is <…>, keyed by <…>; <the transform to the next stage>. (IO)
+1. **<stage>** — one row is <…>, keyed by <…>; <its layer, how it loads and how fresh it must be (`design-pipeline`)>; <the transform to the next stage>. (IO)
 
 ### Outputs
 
@@ -100,7 +100,7 @@ Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verif
 
 ### Runs on
 
-- **<artefact>** — <host and tier, its limit that matters, how it is deployed from the repo; the date the tier was checked>.
+- **<artefact>** — <host and tier, its limit that matters and the expected use of it, the expected monthly running cost ($0 inside the tier), how it is deployed from the repo; the date the tier was checked>.
 - **Teardown** — <what is kept when the project is retired: the plan, the records, which data is archived and where; anything left standing> (`retire-project`).
 
 ### Errors
@@ -182,7 +182,7 @@ A new project is never a small change, however tiny: it gets a `PLAN.md`, planne
    Keep requirements to *what*; a *how* the user insisted on stays as a requirement, and one they only floated becomes a decision.
    **Hold each requirement as stated unless you can propose something better, never something worse**: an alternative that gives up any part of what was asked — a live read turned into a nightly copy, a named store into a local one — is worse, however much simpler, even where a house pick favours it.
    A conflict with a house pick is raised, never settled inside a proposed decision: a better alternative waits for the user, and with nobody present the requirement is built as stated and the alternative goes under Ideas with its case.
-5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points` and its look and bar from `design-interface`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, the store from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, any message to the user from `send-messages`, and each input's and output's class, with where it may go, from `secure-project`.
+5. **Draft every section**, following the skill that owns it: the interface from `write-entry-points` and its look, wording and bar from `design-interface`, the layers and boundary from `structure-python`, the data flow from `be-functional` and, for frames, `use-polars`, each table's grain, layer, load, freshness and contract from `design-pipeline` before the store is picked from `store-data`, a query other projects read it by from `write-sql`, Runs on from `deploy-project` and `run-unattended`, any message to the user from `send-messages`, and each input's and output's class, with where it may go, from `secure-project`.
    For a Python project M1 is the scaffold from `setup-python`, logging, and the first real path from input to output, however thin; each Verification line is a check `write-tests` would accept.
    For a job that runs unattended, M2 makes it run and fail visibly with nobody watching — the schedule, the lock, the exit codes and `status` — before any screen: a screen is earned by data worth showing, and a pipeline that stops silently leaves none.
    A notification is part of M2 only when a requirement asks for one; `run-unattended`'s Report the outcome says what signals a failure until then.

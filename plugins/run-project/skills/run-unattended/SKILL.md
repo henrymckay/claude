@@ -14,7 +14,7 @@ description: >-
 
 How a job behaves when a scheduler, not a person, starts it.
 The driver itself is the Jobs section of `write-entry-points`' Python reference; the manifest it writes and the data directory it locks are `store-data`'s; this skill covers what happens between the two when nobody is watching.
-`send-messages` builds the alert once one is earned, and the Actions workflows live in `deploy-project`'s `references/github-actions.md`.
+`send-messages` builds the alert once one is earned, and the Actions workflows live in `deploy-project`'s `references/github-actions.md`; how fresh each table must be, and so how often the job runs, is the plan's, from `design-pipeline`.
 Three mistakes account for most quiet failures: a slow night overlapping the next so two runs write one partition; a job that repairs missed nights without limit or without a trace, so a month offline becomes a bulk fetch on someone else's rate limit and nobody learns the machine was off; and a unit file that works in the shell and fails under the scheduler, whose environment has no `PATH` worth the name and no `.env`.
 
 **In an existing project, ask first.** Where a repo already has a scheduler and run conventions, check with the user whether to keep them or apply these, and prefer these unless they choose to keep theirs.
@@ -32,6 +32,8 @@ def yesterday(now: datetime.datetime) -> datetime.date:
 
 Size the hour from when the source publishes, not from midnight: a feed that posts yesterday's figures at 06:00 is empty at 02:00, and an empty answer stores as a quiet day (see `structure-python`, Write an adapter).
 **A source that publishes late in its own time zone or on a business calendar** names its last complete day from its own calendar and release time, and its `--days-back` window is sized to its publication lag plus its revision period.
+**A job that runs more often than daily names its period the same way**, the last complete period in UTC, and also stores the one still forming only where the plan says how an open record is kept (`design-pipeline`, Keep open and final records apart).
+A run outside the source's hours that finds nothing new writes no partition, records its manifest row with no rows and exits 0, and staleness counts only the hours the source publishes in, so a closed market or a weekend raises nothing.
 
 ## Make a run rerunnable
 
@@ -69,10 +71,13 @@ Rows rejected by validation alone leave a source `stored`, since the quarantine 
 - **A partial fetch stores what arrived**, lists the failed sources and items on standard error and exits 1.
 Discarding the good sources because one failed turns one outage into a full missed night.
 - **`status` reads the manifest and exits 1 when any source is stale or has a gap the catch-up left**, printing which and since when, and lists the days filled late; it is the health check, so anything that can run a command can watch the job.
-Define stale per source from how often it publishes, with a default of two missed nights.
+Define stale per source from the freshness the plan states for it (`design-pipeline`, State the freshness), else from how often it publishes, with a default of two missed periods while only a person reads `status`.
+- **Once a scheduled `status --alert` watches the job, set stale to one period plus a margin, and fire the watch later than the job's slot by more than that margin plus the scheduler's worst lateness**, so the watch after the first missed run reports it and a healthy late run is never called stale.
+With two missed periods as the threshold, a nightly watched seven hours after its slot first alerts about 55 hours after its last good run, a night later than the plan promised; with 26 hours (a two-hour margin) on a scheduler that fires within the hour, it alerts at that first watch, 31 hours on.
+On a scheduler that can run hours late, such as an Actions `schedule` (`deploy-project`, Run the pipeline), either trigger the job on time or widen the watch's offset past that lateness, since a margin smaller than the lateness alerts on a run that was merely late.
 - **No notification until the plan requires one or the first outage goes unnoticed**, and say so in the README: until then the exit code, the manifest and a dashboard that shows its own staleness are the signals, and an alert costs a credential on the machine.
 On Actions, GitHub's own mail for a failed run, which `nightly` and a scheduled `status` exit 1 into, is a signal with no credential and no code, but not an alert: it goes to whoever last edited the workflow's cron, only if their settings send Actions mail, on every failed run rather than a change of state, and never once the schedule is disabled; the plan names it under Decisions when it is relied on.
-When an alert is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit a few hours after the nightly: a night that never ran sends nothing of its own, so only a separate run can notice it.
+When an alert is earned, record it under Decisions, build it as `send-messages` says, and schedule `status --alert` as a second unit, timed as the stale rule above says: a night that never ran sends nothing of its own, so only a separate run can notice it.
 
 ## Log
 
@@ -91,8 +96,9 @@ The launchd and systemd files are in `references/schedulers.md` and the Actions 
 `--frozen` runs what is locked instead of re-resolving against the network every night, and `--no-dev` matches the deploy's sync: a bare `uv run` syncs the default groups first, so it installs the dev group the deploy left out (uv 0.11).
 - **Set environment variables in the unit; put secrets in a file the unit points at** — a `.env` the settings read by an absolute path (`write-entry-points`, Composition root), `EnvironmentFile=` on systemd, repository secrets on Actions — never in the unit, which is committed under `deploy/`; `secure-project` says where a credential that can act goes instead.
 - **Set `WorkingDirectory` to the repo in every unit**, since a scheduler starts the job in `/` and a relative path the command is given would resolve there; the `.env` is found by its absolute path either way.
-- **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions skips it, delays it under load, and disables an idle public schedule (`deploy-project`).
+- **Know what each does with a missed run.** launchd runs a missed `StartCalendarInterval` on wake, merging several into one; systemd does so only with `Persistent=true`; Actions promises no start time, delays a run under load, by hours on a new repository, may drop it, and disables an idle public schedule (`deploy-project`, Run the pipeline).
 The catch-up window fills what each misses, and `status` shows it.
+- **Pick the scheduler by how late the plan lets a run start**, not by platform alone: a job whose freshness allows hours of lateness takes its platform's scheduler as above, while one that must start within minutes of its slot runs on a machine that is awake under launchd or systemd, or on Actions triggered from outside (`deploy-project`, Run the pipeline).
 
 **Keep a service alive with a second unit**, `KeepAlive` or `Restart=on-failure`, one process per service; the dashboard reads the store, so a missed night shows there as staleness without the job and the dashboard sharing a process.
 

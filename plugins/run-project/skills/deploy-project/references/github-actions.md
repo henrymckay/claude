@@ -136,7 +136,7 @@ The site job's checkout keeps no credential (`persist-credentials: false`), sinc
 
 ## Status
 
-`.github/workflows/status.yml`, added once an alert is earned (`run-unattended`, Report the outcome): read the committed manifest a few hours after the nightly and alert when a source has gone stale, since a nightly that never fired cannot say so itself.
+`.github/workflows/status.yml`, added once an alert is earned (`run-unattended`, Report the outcome): read the committed manifest after the nightly, timed as `run-unattended`'s stale rule says, and alert when a source has gone stale, since a nightly that never fired cannot say so itself.
 
 ```yaml
 name: status
@@ -172,3 +172,64 @@ jobs:
 
 - It reads `runs.parquet` from the checkout, so it needs no MotherDuck token, and commits `alerts.json` back so tomorrow's run alerts only on a change (`send-messages`).
 - A stale source exits 1, so the run fails and GitHub's own mail reports it (`run-unattended`, Report the outcome).
+- Its offset after the nightly must exceed the stale margin plus the `schedule` event's own lateness, which on a new repository has run to hours, or a healthy late night reads as stale (`run-unattended`, Report the outcome); a job triggered on time (below) is watched by a trigger of its own.
+
+## Trigger on time
+
+For a job whose plan states a lag the `schedule` event cannot keep (`SKILL.md`, Run the pipeline): a Cloudflare Worker on Cron Triggers calls each workflow's `workflow_dispatch` endpoint, and the run itself stays on GitHub's runner.
+It lives in `trigger/` beside the package, with its own `package.json`, deployed with `uv run npx wrangler deploy` from that folder (Node from the project's `nodejs-wheel`, `setup-python`), its token set once with `uv run npx wrangler secret put GITHUB_TOKEN`.
+
+`trigger/wrangler.jsonc`:
+
+```jsonc
+{
+  "name": "myapp-trigger",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "triggers": { "crons": ["4 * * * *", "34 * * * *"] }
+}
+```
+
+`trigger/src/index.ts`:
+
+```typescript
+interface Env {
+  readonly GITHUB_TOKEN: string;
+}
+
+const REPOSITORY = "owner/myapp";
+const WORKFLOWS: Readonly<Record<string, string>> = {
+  "4 * * * *": "pipeline.yml",
+  "34 * * * *": "status.yml",
+};
+
+export default {
+  async scheduled(controller, env) {
+    const workflow = WORKFLOWS[controller.cron];
+    if (workflow === undefined) {
+      throw new Error(`no workflow for ${controller.cron}`);
+    }
+    const response = await fetch(
+      `https://api.github.com/repos/${REPOSITORY}/actions/workflows/${workflow}/dispatches`,
+      {
+        body: JSON.stringify({ ref: "main" }),
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+          "User-Agent": "myapp-trigger",
+        },
+        method: "POST",
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`${workflow}: ${response.status} ${await response.text()}`);
+    }
+  },
+} satisfies ExportedHandler<Env>;
+```
+
+- `GITHUB_TOKEN` here is a fine-grained personal access token for the one repository with **Actions: read and write**, the permission the dispatch endpoint needs, and an expiry date, listed in `DEPENDENCIES.md` with its rotation date (`secure-project`); the Actions `GITHUB_TOKEN` of the same name exists only inside a run (docs.github.com, REST permissions for fine-grained tokens, 2026-11-20).
+- Each workflow keeps `workflow_dispatch:` under `on:` and drops its `schedule:`, or keeps it at a later minute as a backstop where a doubled run is a no-op (the lock, `concurrency`).
+- `controller.cron` is the expression that fired, so one Worker serves both workflows within Workers Free's five Cron Triggers an account; a thrown error marks the invocation failed in the Worker's logs, and the next watch reports the run that never started.
+- After deploying, `gh run list --workflow pipeline.yml --event workflow_dispatch --json createdAt --limit 24` shows each run's start against its slot; record the worst delay under Verification.
+- Type-checked with TypeScript 7.0.2 against `@cloudflare/workers-types` 5.20261120.1, `strict` and `noUncheckedIndexedAccess` on (2026-11-20); not yet run against a live account.

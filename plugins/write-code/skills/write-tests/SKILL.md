@@ -103,7 +103,7 @@ A dashboard's test checks that each screen renders from a given store — in pro
 
 ## Coverage and speed
 
-**Measure branch coverage on every run that gates work, and hold it to two levels**, failing the run when either is missed:
+**Measure branch coverage on every run that gates work, and hold it to two levels**, failing the run when either is missed, in one gating command that runs by itself before work leaves the machine, a pre-push hook where the project has no CI; a level checked by a second command someone must remember drifts, since nothing fails when it is skipped:
 
 - **The pure core: every branch.** It is deterministic and needs no setup, so a branch no test reaches is a rule nobody has checked, never one too hard to reach; a branch that cannot run, such as the exhaustiveness guard at the end of a `match`, is excluded in the coverage configuration by a pattern, never line by line.
 - **The whole package: never below its last measured figure**, a floor kept in the configuration and raised to the new figure as each piece of work closes, lowered only by a recorded decision; adapters and drivers are proved by the real-surface run below, so their share is held, not chased.

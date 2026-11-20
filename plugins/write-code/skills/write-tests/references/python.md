@@ -197,6 +197,9 @@ uv run coverage report
 uv run coverage report --include "src/mypackage/code/transform/*,src/mypackage/code/operate/*,src/mypackage/code/port/*" --fail-under 100
 ```
 
+`fail_under` holds one level only, so the three run as one `pre-push` hook (`setup-python`, Pre-commit hooks), which fails the push when either level is missed, and `uv run pre-commit run coverage --hook-stage pre-push` runs it by hand; the README names that command, not the three.
+It checks what is committed, since `pre-commit` sets unstaged changes aside first (pre-commit 4.7, coverage 7.17).
+
 - Mark slow or external tests `@pytest.mark.slow`, registered in `setup-python`'s `pytest` block.
 - Leave `pytest`'s log capture to show a failing test's logs, with `--log-cli-level INFO` to stream them live; don't wire a `RichHandler` into the suite to match the application's output, since the fixture it needs is longer than any test and `tee-sys` then streams every test's output on every run.
 
