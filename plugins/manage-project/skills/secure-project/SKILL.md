@@ -100,7 +100,7 @@ A tool or connector that can act on such an account counts the same: Claude plac
   "expires_on": "2026-11-28",
   "run": {"budget_usd": 20, "max_turns": 400},
   "accounts": [
-    {"provider": "GitHub", "account": "owner-handle", "tier": "free", "actions": ["push"], "spend_limit_usd": 0}
+    {"provider": "GitHub", "account": "owner-handle", "tier": "free"}
   ],
   "remotes": ["github.com/owner-handle/project"],
   "secrets": ["PROJECT_API_TOKEN"],
@@ -110,9 +110,9 @@ A tool or connector that can act on such an account counts the same: Claude plac
 ```
 
 - **Who gave it, when and until when are required**, and a grant past its `expires_on`, malformed or missing one of them counts as no grant, so a mistake narrows what a run may do rather than widening it.
-- **Two scripts enforce part of it**: `build-project`'s launcher takes the `run` limits, passes only the environment variables `secrets` names, opens the sandbox's network to `network`, opens web fetches to every site where `web` is `open` and denies them where it is `off`, and runs from a snapshot kept outside the project, which is also the only grant the guard reads during the run; the guard hook allows a push only to a remote in `remotes`.
-- **A grant is used only once the owner has approved it for that project**, with `launch.py --approve-grant`, which records its SHA-256 beside the project's resolved path in `~/.config/claude-grants/approved`, replacing that project's earlier approval; the launcher refuses a grant whose hash is not the one approved for the project it runs in, wherever the file was found, and a grant that is a symlink, so a run that changed `grant.json` cannot widen the next run's, and the profile denies the file tools and sandboxed commands any write to it besides.
-- **The run itself reads `accounts`**: an outward action on an account is one of `push`, `create-repository`, `deploy`, `publish` or `message`, taken only where that account's entry lists it and within its `spend_limit_usd`; no script checks these yet, so the report lists each one taken.
+- **Two scripts enforce every field, and a field no script reads is refused**, so a grant never promises a limit nothing checks: `build-project`'s launcher takes the `run` limits, passes only the environment variables `secrets` names, opens the sandbox's network to `network`, opens web fetches to every site where `web` is `open` and denies them where it is `off`, and runs from a snapshot kept outside the project, which is also the only grant the guard reads during the run; the guard hook allows a push only to a remote in `remotes`.
+- **A grant is used only once the owner has approved it for that project**, with `launch.py --approve-grant`, which prints in plain words what the grant lets a run spend, push, hold, reach and fetch, asks for `y` (or takes `--yes` from an owner who has read it), and records its SHA-256 beside the project's resolved path in `~/.config/claude-grants/approved`, replacing that project's earlier approval; the launcher refuses a grant whose hash is not the one approved for the project it runs in, wherever the file was found, and a grant that is a symlink, so a run that changed `grant.json` cannot widen the next run's, and the profile denies the file tools and sandboxed commands any write to it besides.
+- **What a run can do on an account is set by the credential, not the grant.** `accounts` records which account each secret reaches, for the owner and the report; a push is limited by `remotes`, and every other outward action — creating a repository, deploying, publishing — is exactly what the secrets named can do, so create each with the narrowest scope its issuer offers (a token for one repository, a deploy key for one site), and the report lists each outward action taken.
 - **It never covers** deleting a repository, a store or an account, loosening a data class, or what Hold a credential for an account with money in it forbids a run, whatever it lists, since each is irreversible and a grant is written before the run has shown what it will do.
 - **Only the owner writes it**, and the guard asks before any change to it; it names accounts and secrets, never a secret's value, so it may be committed beside the plan in a private repository and stays untracked in a public one.
 
