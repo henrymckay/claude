@@ -278,7 +278,7 @@ The front end is its own folder beside `src/`:
 ```text
 web/
   index.html          the scheme script and the root element
-  package.json        with package-lock.json, committed
+  package.json        with package-lock.json, committed, and the scripts the TypeScript reference sets
   vite.config.ts      builds into src/mypackage/data/web; proxies /api in dev
   src/
     main.tsx
@@ -297,7 +297,7 @@ src/mypackage/
   data/web/           the build, git-ignored, shipped in the wheel
 ```
 
-- **Node is `setup-python`'s `nodejs-wheel`**: `uv run npm --prefix web ci`, then `uv run npm --prefix web run build`.
+- **Node is `setup-python`'s `nodejs-wheel`**: `uv run npm --prefix web ci`, then `uv run npm --prefix web run build`; the front end's own `tsconfig`, linter, formatter, test runner and `check` script are `references/typescript.md`'s, and its code `write-typescript`'s.
 - **Scaffold with the tools' own generators** — `npm create vite@latest web -- --template react-ts`, then Tailwind's Vite plugin and `npx shadcn@latest init --base radix --preset nova --no-monorepo`, whose flags answer every prompt an unattended run cannot (shadcn 4.23.0), the house tokens then replacing the preset's colours — and commit `package-lock.json`, which pins the front end as `uv.lock` pins the Python.
 - **Build into the package** with `build.outDir` set to `../src/mypackage/data/web` and `emptyOutDir: true`, so `uv_build` ships the built files in the wheel and the API finds them with `importlib.resources.files("mypackage.data") / "web"`.
 - **Mount the files after the routes**: `app.mount("/", fastapi.staticfiles.StaticFiles(directory=web, html=True), name="web")` as the last line of `driver.py`, since a mount at `/` registered first answers every `/api` request with a 404.
