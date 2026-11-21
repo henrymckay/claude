@@ -2,8 +2,8 @@
 
 A marketplace of Claude Code plugins that let Claude do impressive projects entirely autonomously and securely, from a short prompt to a retired project, with each plugin detachable from the rest.
 
-Signed off by the owner: the eight requirements (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), and D62 to D70 (decided under the owner's delegation, 2026-11-19).
-Everything else is proposed: D54 to D60, D71 to D115, the coverage map, the Design's text and the Not yet list as rewritten here.
+Signed off by the owner: the eight requirements (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), D62 to D70 (decided under the owner's delegation, 2026-11-19), and D71 to D81 (2026-11-20).
+Everything else is proposed: D54 to D60, D82 to D115, the coverage map, the Design's text and the Not yet list as rewritten here.
 The security policy (R3, D47, `secure-project`) stays open to refinement as real projects reach it.
 
 ## Brief
