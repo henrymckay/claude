@@ -1,6 +1,6 @@
 # Design the interface on the web
 
-The technology-neutral system is in `SKILL.md`; this is how it lands in a built web front end: Vite, React and TypeScript, Tailwind with shadcn/ui, ECharts for every chart, candles included (`write-entry-points` owns the `web/` folder and its data module).
+The technology-neutral system is in `SKILL.md`; this is how it lands in a built web front end: Vite, React and TypeScript, Tailwind with shadcn/ui, ECharts for every chart, candles included (`write-entry-points` owns the `web/` folder and its data module, `write-typescript` how its code is written, and the examples here pass its compiler settings, linter and formatter).
 
 ## Tokens
 
@@ -101,41 +101,76 @@ Icons are `lucide-react`, which shadcn/ui already uses, so one stroke weight.
 Register only the charts and components used, from `echarts/core`, in `lib/charts.ts`, so the bundle carries a few hundred kilobytes, not the whole library:
 
 ```ts
+import type {
+  EChartsOption,
+  XAXisComponentOption,
+  YAXisComponentOption,
+} from "echarts";
 import { BarChart, LineChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 
-echarts.use([BarChart, LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([
+  BarChart,
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  CanvasRenderer,
+]);
 
-export type Tokens = Record<
-  "axis" | "border" | "down" | "grid" | "muted" | "raised" | "surface" | "text" | "up",
-  string
+export type Tokens = Readonly<
+  Record<
+    | "axis"
+    | "border"
+    | "down"
+    | "grid"
+    | "muted"
+    | "raised"
+    | "surface"
+    | "text"
+    | "up",
+    string
+  >
 >;
 
-const font = "Inter Variable, system-ui, sans-serif";
+const FONT = "Inter Variable, system-ui, sans-serif";
 
-export const frame = (t: Tokens) => ({
-  animation: false,
-  textStyle: { color: t.muted, fontFamily: font, fontSize: 11 },
-  tooltip: {
-    backgroundColor: t.raised,
-    borderColor: t.border,
-    textStyle: { color: t.text, fontFamily: font, fontSize: 12 },
-  },
-});
+/** Build the option every chart starts from. */
+export function frame(t: Tokens): EChartsOption {
+  return {
+    animation: false,
+    textStyle: { color: t.muted, fontFamily: FONT, fontSize: 11 },
+    tooltip: {
+      backgroundColor: t.raised,
+      borderColor: t.border,
+      textStyle: { color: t.text, fontFamily: FONT, fontSize: 12 },
+    },
+  };
+}
 
-export const xAxis = (t: Tokens) => ({
-  axisLabel: { color: t.muted },
-  axisLine: { lineStyle: { color: t.axis } },
-  axisTick: { show: false },
-});
+/** Build a category axis of the given labels. */
+export function xAxis(
+  t: Tokens,
+  labels: readonly string[],
+): XAXisComponentOption {
+  return {
+    axisLabel: { color: t.muted },
+    axisLine: { lineStyle: { color: t.axis } },
+    axisTick: { show: false },
+    data: [...labels],
+    type: "category",
+  };
+}
 
-export const yAxis = (t: Tokens) => ({
-  axisLabel: { color: t.muted },
-  splitLine: { lineStyle: { color: t.grid } },
-  type: "value" as const,
-});
+/** Build a value axis. */
+export function yAxis(t: Tokens): YAXisComponentOption {
+  return {
+    axisLabel: { color: t.muted },
+    splitLine: { lineStyle: { color: t.grid } },
+    type: "value",
+  };
+}
 ```
 
 - **Pass `{ notMerge: true }` to `setOption` when the scheme changes**, or ECharts merges the new colours into the old option and some keep the old scheme.
@@ -152,22 +187,22 @@ import type { EChartsOption } from "echarts";
 import { CandlestickChart } from "echarts/charts";
 import { DataZoomComponent } from "echarts/components";
 import * as echarts from "echarts/core";
-
-import { frame, type Tokens, xAxis, yAxis } from "./charts";
+import { frame, type Tokens, xAxis, yAxis } from "@/lib/charts.ts";
 
 echarts.use([CandlestickChart, DataZoomComponent]);
 
-export type Bar = {
-  close: number;
-  day: string;
-  high: number;
-  low: number;
-  open: number;
-  volume: number;
-};
+export interface Bar {
+  readonly close: number;
+  readonly day: string;
+  readonly high: number;
+  readonly low: number;
+  readonly open: number;
+  readonly volume: number;
+}
 
-export const candles = (t: Tokens, bars: Bar[]): EChartsOption => {
-  const days = bars.map((b) => b.day);
+/** Build a candle chart with a volume pane beneath it. */
+export function candles(t: Tokens, bars: readonly Bar[]): EChartsOption {
+  const days = bars.map((bar) => bar.day);
   return {
     ...frame(t),
     axisPointer: { link: [{ xAxisIndex: "all" }] },
@@ -175,12 +210,17 @@ export const candles = (t: Tokens, bars: Bar[]): EChartsOption => {
     grid: [{ bottom: "30%" }, { bottom: 24, height: "18%" }],
     series: [
       {
-        data: bars.map((b) => [b.open, b.close, b.low, b.high]),
-        itemStyle: { borderColor: t.up, borderColor0: t.down, color: t.up, color0: t.down },
+        data: bars.map((bar) => [bar.open, bar.close, bar.low, bar.high]),
+        itemStyle: {
+          borderColor: t.up,
+          borderColor0: t.down,
+          color: t.up,
+          color0: t.down,
+        },
         type: "candlestick",
       },
       {
-        data: bars.map((b) => b.volume),
+        data: bars.map((bar) => bar.volume),
         itemStyle: { color: t.muted },
         type: "bar",
         xAxisIndex: 1,
@@ -188,15 +228,15 @@ export const candles = (t: Tokens, bars: Bar[]): EChartsOption => {
       },
     ],
     xAxis: [
-      { ...xAxis(t), data: days, type: "category" },
-      { ...xAxis(t), axisLabel: { show: false }, data: days, gridIndex: 1, type: "category" },
+      xAxis(t, days),
+      { ...xAxis(t, days), axisLabel: { show: false }, gridIndex: 1 },
     ],
     yAxis: [
       { ...yAxis(t), scale: true },
       { ...yAxis(t), gridIndex: 1, splitNumber: 2 },
     ],
   };
-};
+}
 ```
 
 - **A bar is `[open, close, low, high]`**, in that order, not the OHLC order the data arrives in.
@@ -213,12 +253,35 @@ TradingView's Advanced Charts may not sit in a public repository (versions and t
 `lib/format.ts` builds every formatter once from `Intl`:
 
 ```ts
-const integer = new Intl.NumberFormat("en-GB");
-const compact = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1, notation: "compact" });
-const day = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", timeZone: "UTC", year: "numeric" });
+const INTEGER = new Intl.NumberFormat("en-GB");
+const COMPACT = new Intl.NumberFormat("en-GB", {
+  maximumFractionDigits: 1,
+  notation: "compact",
+});
+const DAY = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  timeZone: "UTC",
+  year: "numeric",
+});
 
-export const formatCompact = (n: number) => compact.format(n);
-export const formatDay = (iso: string) => day.format(Date.parse(iso));
-export const formatInteger = (n: number) => integer.format(n);
-export const formatPercent = (x: number) => `${x > 0 ? "+" : ""}${x.toFixed(2)}%`;
+/** Write a number compactly, such as 1.2M. */
+export function formatCompact(value: number): string {
+  return COMPACT.format(value);
+}
+
+/** Write an ISO date as a day, such as 12 Nov 2026. */
+export function formatDay(iso: string): string {
+  return DAY.format(Date.parse(iso));
+}
+
+/** Write a whole number with thousands separators. */
+export function formatInteger(value: number): string {
+  return INTEGER.format(value);
+}
+
+/** Write a change in percent with its sign, such as +1.25%. */
+export function formatPercent(change: number): string {
+  return `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
+}
 ```
