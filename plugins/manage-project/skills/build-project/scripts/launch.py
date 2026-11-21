@@ -16,12 +16,12 @@ import collections.abc
 import dataclasses
 import datetime
 import decimal
+import hashlib
 import json
 import os
 import pathlib
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import threading
@@ -116,6 +116,7 @@ _CLAUDE_CREDENTIALS: typing.Final = (
     "ANTHROPIC_API_KEY",
     "CLAUDE_CODE_OAUTH_TOKEN",
 )
+_FILE_WRITERS: typing.Final = ("Edit", "NotebookEdit", "Write")
 _TOOLS: typing.Final = (
     "Bash",
     "Edit",
@@ -341,6 +342,15 @@ def build_profile(
         "open": ["WebFetch"],
         "off": [],
     }[web]
+    protected = (
+        project / grant_.FILE_NAME,
+        project / ".mcp.json",
+        layout.grant,
+        layout.log,
+        layout.mcp,
+        layout.profile,
+        layout.status,
+    )
     transcripts = (
         pathlib.Path.home()
         / ".claude"
@@ -351,9 +361,21 @@ def build_profile(
         "disableClaudeAiConnectors": True,
         "enableAllProjectMcpServers": False,
         "permissions": {
-            "allow": [tool for tool in _TOOLS if tool != "WebFetch"] + fetch,
+            "allow": [
+                *(tool for tool in _TOOLS if tool not in _FILE_WRITERS + ("WebFetch",)),
+                f"Edit(/{project}/**)",
+                f"Edit(/{layout.work}/**)",
+                *fetch,
+            ],
             "defaultMode": mode,
-            "deny": [*_SECRET_READS, *(["WebFetch"] if web == "off" else [])],
+            "deny": [
+                *_SECRET_READS,
+                *(f"Edit(/{path})" for path in protected),
+                *(f"Edit(/{plugin}/**)" for plugin in plugins),
+                "Edit(~/.claude/**)",
+                "Edit(~/.config/**)",
+                *(["WebFetch"] if web == "off" else []),
+            ],
             "disableBypassPermissionsMode": "disable",
         },
         "sandbox": {
@@ -376,6 +398,10 @@ def build_profile(
                     *reads,
                 ],
                 "allowWrite": [str(layout.work)],
+                "denyWrite": [
+                    *(str(path) for path in protected),
+                    *(str(p) for p in plugins),
+                ],
                 "denyRead": ["~/", *_TOOLCHAIN_SECRETS],
             },
             "network": {
@@ -433,39 +459,70 @@ def build_command(
     return [*command, prompt]
 
 
-def measure(session: str) -> tuple[decimal.Decimal, int]:
-    """Return a session's list-price spend and turns so far, read from its transcripts.
+def _count_responses(
+    path: pathlib.Path,
+) -> tuple[decimal.Decimal, set[str], decimal.Decimal]:
+    """Return the priced responses, their ids and the results' total in a stream or transcript.
 
+    :param path: A transcript, or the launcher's log of every invocation's stream.
+    :returns: The list-price dollars of the distinct responses, their ids, and the sum of
+        ``total_cost_usd`` over the result records.
+    """
+    prices = costs._prices()
+    priced: dict[str, decimal.Decimal] = {}
+    results = decimal.Decimal(0)
+    if not path.exists():
+        return decimal.Decimal(0), set(), results
+    with path.open(encoding="utf-8") as lines:
+        for line in lines:
+            try:
+                record = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(record, dict):
+                continue
+            message = record.get("message")
+            if record.get("type") == "assistant" and isinstance(message, dict):
+                parsed = costs._parse_message(message, agent="", effort="")
+                dollars = costs._price_message(parsed, prices=prices)
+                identity = str(message.get("id") or record.get("uuid"))
+                priced[identity] = dollars or decimal.Decimal(0)
+            if record.get("type") == "result":
+                results += decimal.Decimal(str(record.get("total_cost_usd") or 0))
+    return sum(priced.values(), decimal.Decimal(0)), set(priced), results
+
+
+def measure(session: str, log: pathlib.Path) -> tuple[decimal.Decimal, int]:
+    """Return a run's list-price spend and turns so far, the larger of two records.
+
+    Both live where the run cannot write: the session's transcripts under
+    ``~/.claude/projects``, outside every folder the run's file tools and sandbox reach,
+    and the launcher's own log of the stream it captured, in the run folder beside them;
+    so a run that hid its spend from one still meets the limit through the other.
     A turn is one response of the session's own model loop, as ``--max-turns`` counts
     them, subagents' responses not counted; the result's ``num_turns`` counts tool calls
     instead, so forty calls made in parallel in one response read as 41 there and 1 here.
     The launcher passes ``--max-turns`` too, but it resets on each resume.
 
     :param session: The session's id.
-    :returns: The dollars, subagents included, and the turns; zero for both before the
-        transcript exists.
+    :param log: The launcher's log of every invocation's stream.
+    :returns: The dollars, subagents included, and the turns.
     """
     found = sorted(
         (pathlib.Path.home() / ".claude" / "projects").glob(f"*/{session}.jsonl")
     )
-    if not found:
-        return decimal.Decimal(0), 0
-    rows = costs.total_session(found[0])
-    spent = sum(
-        (decimal.Decimal(row["dollars"]) for row in rows if row["dollars"]),
-        decimal.Decimal(0),
-    )
-    responses: set[str] = set()
-    with found[0].open(encoding="utf-8") as lines:
-        for line in lines:
-            try:
-                record = json.loads(line)
-            except ValueError:
-                continue
-            message = record.get("message") if isinstance(record, dict) else None
-            if record.get("type") == "assistant" and isinstance(message, dict):
-                responses.add(str(message.get("id") or record.get("uuid")))
-    return spent, len(responses)
+    transcript_spent = decimal.Decimal(0)
+    transcript_ids: set[str] = set()
+    if found:
+        rows = costs.total_session(found[0])
+        transcript_spent = sum(
+            (decimal.Decimal(row["dollars"]) for row in rows if row["dollars"]),
+            decimal.Decimal(0),
+        )
+        transcript_ids = _count_responses(found[0])[1]
+    stream_spent, stream_ids, results = _count_responses(log)
+    spent = max(transcript_spent, stream_spent, results)
+    return spent, max(len(transcript_ids), len(stream_ids))
 
 
 def _read_outcome(lines: collections.abc.Iterable[str], *, killed: str) -> Outcome:
@@ -534,7 +591,7 @@ def _invoke(
 
         def watch() -> None:
             while process.poll() is None:
-                spent, turns = measure(session)
+                spent, turns = measure(session, layout.log)
                 if spent >= limits.budget_usd:
                     stopped.append("spend")
                 elif limits.max_turns is not None and turns >= limits.max_turns:
@@ -627,7 +684,7 @@ def run(
     drops = 0
     why = ""
     while True:
-        spent, measured = measure(session)
+        spent, measured = measure(session, layout.log)
         turns = max(turns, measured)
         report = _reporter(
             session=session, spent=spent, turns=turns, invocations=invocations
@@ -666,7 +723,7 @@ def run(
         invocations += 1
         state, detail = _classify(outcome)
         if state != "resume":
-            final_spent, measured = measure(session)
+            final_spent, measured = measure(session, layout.log)
             spent = max(final_spent, spent + outcome.cost_usd)
             turns = max(measured, turns)
             return _reporter(
@@ -705,8 +762,54 @@ def _reporter(
     return build
 
 
+def _is_within(path: pathlib.Path, folder: pathlib.Path) -> bool:
+    """Return whether a path resolves inside a folder.
+
+    :param path: The path.
+    :param folder: The folder.
+    :returns: True where the run, which may write the folder, could change the path.
+    """
+    return path.resolve().is_relative_to(folder.resolve())
+
+
+def _is_approved(content: bytes, approvals: pathlib.Path) -> bool:
+    """Return whether the owner approved a grant with exactly this content.
+
+    :param content: The grant file's bytes.
+    :param approvals: The file of approved hashes, outside anything a run can write.
+    :returns: True where its SHA-256 is listed.
+    """
+    digest = hashlib.sha256(content).hexdigest()
+    if not approvals.exists():
+        return False
+    return any(
+        line.split()[:1] == [digest] for line in approvals.read_text().splitlines()
+    )
+
+
+def approve_grant(path: pathlib.Path, approvals: pathlib.Path) -> str:
+    """Record that the owner approved a grant, by the hash of its content.
+
+    :param path: The grant file the owner has read.
+    :param approvals: The file of approved hashes.
+    :returns: The hash recorded.
+    :raises LaunchError: If the grant is malformed or expired.
+    """
+    try:
+        grant_.read_grant(path)
+    except grant_.GrantError as failure:
+        raise LaunchError(str(failure)) from failure
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    approvals.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with approvals.open("a", encoding="utf-8") as lines:
+        lines.write(f"{digest}  {path.resolve()}  {_now()}\n")
+    approvals.chmod(0o600)
+    return digest
+
+
 def _prepare(
     *,
+    approvals: pathlib.Path,
     grant_path: pathlib.Path | None,
     mcp_config: pathlib.Path | None,
     project: pathlib.Path,
@@ -714,12 +817,14 @@ def _prepare(
 ) -> tuple[Layout, grant_.Grant | None]:
     """Return the run's folders, made, with the grant snapshot and MCP configuration in place.
 
+    :param approvals: The file of grant hashes the owner approved.
     :param grant_path: The grant to snapshot, if any.
     :param mcp_config: The MCP servers the project needs, if any.
     :param project: The project folder.
     :param runs: The folder that holds every run's own folder, outside any temp folder.
     :returns: The layout and the grant read from the snapshot.
-    :raises LaunchError: If the grant is malformed or expired.
+    :raises LaunchError: If the grant is malformed, expired, or inside the project and
+        not approved.
     """
     stamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
     root = runs / f"{project.name}-{stamp}-{uuid.uuid4().hex[:6]}"
@@ -728,13 +833,17 @@ def _prepare(
     root.chmod(0o700)
     grant = None
     if grant_path is not None:
+        content = grant_path.read_bytes()
+        if _is_within(grant_path, project) and not _is_approved(content, approvals):
+            raise LaunchError(
+                f"{grant_path} is not approved: read it, then run launch.py --approve-grant"
+            )
+        layout.grant.write_bytes(content)
+        layout.grant.chmod(0o400)
         try:
-            grant = grant_.read_grant(grant_path)
+            grant = grant_.read_grant(layout.grant)
         except grant_.GrantError as failure:
             raise LaunchError(str(failure)) from failure
-        shutil.copyfile(grant_path, layout.grant)
-        layout.grant.chmod(0o400)
-        grant = grant._replace(path=layout.grant)
     servers = (
         json.loads(mcp_config.read_text(encoding="utf-8"))
         if mcp_config
@@ -790,7 +899,18 @@ def _notify(command: str, line: str) -> None:
 def main() -> None:
     """Parse the command line, launch the run and report how it ended."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("prompt", type=pathlib.Path, help="the prompt file")
+    parser.add_argument("prompt", nargs="?", type=pathlib.Path, help="the prompt file")
+    parser.add_argument(
+        "--approvals",
+        type=pathlib.Path,
+        default=pathlib.Path.home() / ".config" / "claude-grants" / "approved",
+        help="the file of grant hashes the owner approved, outside anything a run writes",
+    )
+    parser.add_argument(
+        "--approve-grant",
+        action="store_true",
+        help="record the project's grant as read and approved, then exit",
+    )
     parser.add_argument(
         "--allow-read",
         action="append",
@@ -864,10 +984,21 @@ def main() -> None:
     )
     arguments = parser.parse_args()
     project = arguments.project.resolve()
+    if arguments.approve_grant:
+        grant_path = arguments.grant or project / grant_.FILE_NAME
+        try:
+            digest = approve_grant(grant_path, arguments.approvals)
+        except (LaunchError, OSError) as failure:
+            raise SystemExit(f"launch: {failure}") from failure
+        print(f"approved {grant_path} ({digest[:12]})")
+        return
+    if arguments.prompt is None:
+        parser.error("the prompt file is required")
     try:
         prompt = arguments.prompt.read_text(encoding="utf-8")
         grant_path = arguments.grant or grant_.find_grant(project)
         layout, grant = _prepare(
+            approvals=arguments.approvals,
             grant_path=grant_path,
             mcp_config=arguments.mcp_config,
             project=project,

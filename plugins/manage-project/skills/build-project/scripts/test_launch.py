@@ -46,6 +46,13 @@ _FAKE = textwrap.dedent(
         print(json.dumps({"type": "result", "subtype": subtype, "result": text,
                           "num_turns": turns, "total_cost_usd": 0.10, "session_id": session}))
 
+    if outcome == "spin_stream":
+        for n in range(200):
+            record = {"type": "assistant", "message": {"id": f"s-{n}", "model": "claude-opus-5-5",
+                      "usage": {"input_tokens": 25_000}}}
+            print(json.dumps(record), flush=True)
+            time.sleep(0.1)
+        sys.exit(0)
     if outcome == "spin":
         for n in range(200):
             spend(0.10, n)
@@ -268,8 +275,18 @@ def test_when_no_spend_limit_then_refused(
     assert (done.returncode, "no spend limit" in done.stderr) == (1, True)
 
 
-@pytest.fixture
-def grant(project: pathlib.Path) -> pathlib.Path:
+def _approve(home: pathlib.Path, project: pathlib.Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(_HERE / "launch.py"), "--approve-grant", "--project", str(project)],
+        capture_output=True,
+        check=False,
+        env={"HOME": str(home), "PATH": os.environ["PATH"]},
+        text=True,
+        timeout=60,
+    )
+
+
+def _write_grant(project: pathlib.Path) -> pathlib.Path:
     path = project / "grant.json"
     path.write_text(
         json.dumps(
@@ -283,6 +300,58 @@ def grant(project: pathlib.Path) -> pathlib.Path:
         )
     )
     return path
+
+
+@pytest.fixture
+def unapproved(project: pathlib.Path) -> pathlib.Path:
+    return _write_grant(project)
+
+
+@pytest.fixture
+def grant(home: pathlib.Path, project: pathlib.Path) -> pathlib.Path:
+    path = _write_grant(project)
+    _approve(home, project)
+    return path
+
+
+def test_when_project_grant_not_approved_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, unapproved: pathlib.Path
+) -> None:
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_project_grant_changed_after_approval_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+) -> None:
+    grant.write_text(grant.read_text().replace('"secrets"', '"network": ["evil.example"], "secrets"'))
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_run_starts_then_file_tools_scoped_and_grant_and_plugins_denied(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    profile = json.loads(pathlib.Path(_argument(_calls(home)[0]["argv"], "--settings")).read_text())
+    allow, deny = profile["permissions"]["allow"], profile["permissions"]["deny"]
+    deny_write = profile["sandbox"]["filesystem"]["denyWrite"]
+    assert (
+        {"Edit", "Write", "NotebookEdit"} & set(allow),
+        f"Edit(/{project}/**)" in allow,
+        "Edit(~/.claude/**)" in deny,
+        f"Edit(/{project}/grant.json)" in deny,
+        f"Edit(/{home / 'plugin'}/**)" in deny,
+        str(project / "grant.json") in deny_write,
+        str(home / "plugin") in deny_write,
+    ) == (set(), True, True, True, True, True, True)
+
+
+def test_when_stream_shows_budget_spent_though_transcript_does_not_then_stopped(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(home, fake_claude, project, "spin_stream", "--budget-usd", "1")
+    assert (done.returncode, done.stdout.split(":")[0]) == (4, "limit")
 
 
 def test_when_grant_lower_than_command_line_then_grant_caps_budget(
