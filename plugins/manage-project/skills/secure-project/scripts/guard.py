@@ -7,7 +7,8 @@ repository's hooks, filters, attributes, pager, fsmonitor and external diff out 
 and treats a call it cannot check in time as one it must guard.
 
 It guards a force-push or a rewrite of pushed history and the destructive git commands,
-deleting a repository or a hosted store, printing a secret, committing a secret, a push to
+deleting a repository or a hosted store, a connector call that trades, moves money, sends
+or shares, printing a secret, committing a secret, a push to
 a remote the standing grant does not name, a change to the grant, and a change to the
 configuration that would run code outside the sandbox. It answers ``ask`` when a person
 may be present and ``deny`` when nobody is. It is a guard against slips, not a boundary:
@@ -36,6 +37,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import grant as grant_
 
+_GRANT_APPROVAL: typing.Final = re.compile(r"claude-grants|--appr", re.IGNORECASE)
+_EXPANDS: typing.Final = re.compile(r"[$*?\[]")
+_SAFE_PATH: typing.Final = "/usr/bin:/bin:/usr/sbin:/sbin"
+_OWNER_CONFIG_READS: typing.Final = frozenset(("config", "remote", "rev-parse"))
 _ALIAS_DEPTH: typing.Final = 5
 _DIFF_LIMIT: typing.Final = 4 * 1024 * 1024
 _FILE_LIMIT: typing.Final = 512 * 1024
@@ -206,6 +211,28 @@ _MCP_DESTRUCTIVE: typing.Final = re.compile(
     r"(^|_)(delete|drop|trash|destroy|purge|revoke|wipe|clear|erase|remove)(?!_(labels?|tags?))"
     r"(_|$)"
 )
+_MCP_OUTWARD: typing.Final = re.compile(
+    r"(^|_)(buy|sell|trade|transfer|withdraw|withdrawal|deposit|pay|payment|payout|x402"
+    r"|swap|send|reply|forward|share|publish|invite|grant)(_|$)"
+    r"|(^|_)post_(message|comment|reply)(_|$)"
+    r"|(^|_)orders?_(create|edit|modify|replace|cancel|close|place|submit)(_|$)"
+    r"|(^|_)(create|edit|modify|replace|cancel|close|place|submit)_(\w+_)?orders?(_|$)"
+    r"|(^|_)(convert|order|quote|swap|trade)_(accept|commit|confirm|execute)(_|$)"
+    r"|(^|_)close_position(_|$)"
+)
+_MCP_SIDE_KEYS: typing.Final = frozenset(("action", "direction", "orderside", "side"))
+_MCP_SIDE_VALUE: typing.Final = re.compile(r"(?i)^\s*(buy|sell|short)")
+_MCP_DESTINATION_KEYS: typing.Final = frozenset(
+    "address bcc cc destination destinationaddress payee recipient recipients to "
+    "toaddress".split()
+)
+_MCP_START_KEYS: typing.Final = frozenset(
+    "begin from fromdate since start startdate starttime".split()
+)
+_ISO_DATE: typing.Final = re.compile(
+    r"\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?)?"
+)
+_WALK_DEPTH: typing.Final = 12
 _MCP_HIDDEN_DELETE: typing.Final = re.compile(
     r"\"(?i:trashed)\"\s*:\s*true|\"(delete|remove|clear)[A-Z]\w*\"\s*:"
 )
@@ -307,7 +334,11 @@ def _git(
 
     Command-line settings outrank every config file, so the repository's hooks, pager,
     fsmonitor and attributes file cannot run anything; content filters are refused by
-    the callers that would read the work tree (``_worktree_safe``).
+    the callers that would read the work tree (``_worktree_safe``). Git runs from a fixed
+    ``PATH``, never the session's, with every transport refused and lazy fetching off, so
+    a repository missing an object cannot make it run an ``ssh`` command, an
+    ``uploadpack`` or an ``ext::`` address to fetch one; the owner's global config is read
+    only by the calls that read settings and touch no object (aliases, remote URLs).
 
     :param context: The shared budget.
     :param cwd: The repository folder.
@@ -336,13 +367,17 @@ def _git(
         *arguments,
     ]  # fmt: skip
     environment = {
+        "GIT_ALLOW_PROTOCOL": "",
         "GIT_ATTR_NOSYSTEM": "1",
         "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_LAZY_FETCH": "1",
         "GIT_OPTIONAL_LOCKS": "0",
         "GIT_TERMINAL_PROMPT": "0",
         "HOME": os.environ.get("HOME", "/nonexistent"),
-        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "PATH": _SAFE_PATH,
     }
+    if arguments[0] not in _OWNER_CONFIG_READS:
+        environment["GIT_CONFIG_GLOBAL"] = "/dev/null"
     remaining = max(0.5, min(_GIT_TIMEOUT, context.deadline - time.monotonic()))
     try:
         done = subprocess.run(
@@ -1256,7 +1291,43 @@ def _check_words(
         _mentions_grant(word, cwd) for word in arguments
     ):
         findings.append("changing the standing grant")
+    if any(_touches_approvals(word, cwd) for word in (*assignments, *words)):
+        findings.append("approving a standing grant or touching the owner's approvals")
     return findings
+
+
+def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
+    """Return whether a word could approve a grant or reach the owner's approvals.
+
+    One strict rule rather than a parser: any option starting ``--appr``, which the
+    launcher's own options and their abbreviations all do; the approvals folder's name
+    anywhere in the word; a word under a ``.config`` folder that still holds an expansion
+    or a glob, or a variable set to a path there, since what it reaches is known only when
+    the shell runs it; or a word that,
+    as a glob or with ``~`` and ``$HOME`` expanded, matches the approvals folder.
+
+    :param word: One word of a command, dequoted.
+    :param cwd: The folder the command runs in.
+    :returns: True where the word may approve a grant or reach the approvals.
+    """
+    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    if _GRANT_APPROVAL.search(word):
+        return True
+    home = os.path.expanduser("~")
+    expanded = os.path.expanduser(
+        word.replace("${HOME}", home).replace("$HOME", home)
+    )
+    if ".config" in expanded and (
+        _EXPANDS.search(expanded) or re.match(r"^\w+=", word)
+    ):
+        return True
+    protected = os.path.join(home, ".config", "claude-grants")
+    return any(
+        fnmatch.fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
+        for candidate in (expanded, *_glob(cwd, expanded))
+        for target in (protected, os.path.join(protected, "approved"))
+    )
 
 
 def _mentions_grant(word: str, cwd: pathlib.Path) -> bool:
@@ -1347,6 +1418,8 @@ def _check_shell(
         findings.append(
             "setting git's configuration, repository or commands through the environment"
         )
+    if _GRANT_APPROVAL.search(re.sub(r"[\"'\\]", "", _normalise(text))):
+        findings.append("approving a standing grant or touching the owner's approvals")
     try:
         line = _split(text)
     except ValueError:
@@ -1366,6 +1439,8 @@ def _check_shell(
             if re.search(r"\s", word.strip()) and depth < _NEST_DEPTH:
                 findings += _check_shell(word, cwd, context, depth + 1)
         assignments, plain = _unwrap(words)
+        if any(_touches_approvals(word, cwd) for word in assignments):
+            findings.append("approving a standing grant or touching the owner's approvals")
         if not plain:
             continue
         if plain[0] in ("cd", "pushd") and len(plain) > 1:
@@ -1403,6 +1478,83 @@ def _names_grant(word: str) -> bool:
 
     name = os.path.basename(os.path.normpath(word)).lower()
     return name == grant_.FILE_NAME or fnmatch.fnmatch(grant_.FILE_NAME, name)
+
+
+def _snake(name: str) -> str:
+    """Return a name in lower snake case, as the connector rules compare names.
+
+    :param name: A tool's action or an argument's key, in any case or separator.
+    :returns: ``placeOrder`` and ``Place-Order`` both as ``place_order``.
+    """
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).lower().replace("-", "_")
+
+
+def _carries_order_or_recipient(value: object, *, depth: int) -> bool:
+    """Return whether a connector call's arguments name an order side or a destination.
+
+    The arguments are walked as data, every nested object and list included, and a string
+    that parses as JSON is walked too, so neither a key's case nor its nesting nor its
+    encoding hides it; a call too deep to walk counts as carrying one.
+
+    :param value: The arguments, or a part of them.
+    :param depth: How deep the walk is.
+    :returns: True where a key holds a character outside ASCII, a side key holds buy or
+        sell, or a destination key holds anything but a ``to`` that is wholly an ISO date
+        or time beside a start key that is one too, the end of a date range.
+    """
+    if depth > _WALK_DEPTH:
+        return True
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped.startswith(("{", "[")):
+            return False
+        try:
+            decoded = json.loads(stripped)
+        except ValueError:
+            return False
+        return _carries_order_or_recipient(decoded, depth=depth + 1)
+    if isinstance(value, list):
+        return any(_carries_order_or_recipient(v, depth=depth + 1) for v in value)
+    if not isinstance(value, dict):
+        return False
+    names = {_key(str(key)): item for key, item in value.items()}
+    starts_on_date = any(
+        isinstance(item, str) and _ISO_DATE.fullmatch(item)
+        for name, item in names.items()
+        if name in _MCP_START_KEYS
+    )
+    for key, item in value.items():
+        name = _key(str(key))
+        if not str(key).isascii():
+            return True
+        if name in _MCP_SIDE_KEYS and isinstance(item, str):
+            if _MCP_SIDE_VALUE.match(item):
+                return True
+        if name in _MCP_DESTINATION_KEYS and item not in ("", None, [], {}):
+            is_range_end = (
+                name == "to"
+                and starts_on_date
+                and isinstance(item, str)
+                and _ISO_DATE.fullmatch(item)
+            )
+            if not is_range_end:
+                return True
+        if _carries_order_or_recipient(item, depth=depth + 1):
+            return True
+    return False
+
+
+def _key(name: str) -> str:
+    """Return an argument's key as the connector rules compare keys.
+
+    :param name: The key as the call wrote it.
+    :returns: It in NFKC form, case-folded, with every character but letters and digits
+        dropped, so ``orderSide``, ``ORDER.SIDE`` and ``order side`` all read ``orderside``.
+    """
+    import unicodedata  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    folded = unicodedata.normalize("NFKC", name).casefold()
+    return "".join(character for character in folded if character.isalnum())
 
 
 def check(call: Call, context: Context) -> list[str]:
@@ -1459,6 +1611,8 @@ def check(call: Call, context: Context) -> list[str]:
         findings = []
         if _names_grant(path) or _names_grant(os.path.realpath(path)):
             findings.append("changing the standing grant")
+        if _GRANT_APPROVAL.search(path) or _GRANT_APPROVAL.search(os.path.realpath(path)):
+            findings.append("approving a standing grant or touching the owner's approvals")
         if _CONFIG_FILE.search(path) or _CONFIG_FILE.search(os.path.realpath(path)):
             findings.append("changing configuration that runs code outside the sandbox")
         if _SECRET_VALUE.search(text) and not _is_secret_path(path):
@@ -1473,13 +1627,14 @@ def check(call: Call, context: Context) -> list[str]:
             else []
         )
     if tool.startswith("mcp__"):
-        action = tool.split("__", 2)[-1]
-        action = (
-            re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", action).lower().replace("-", "_")
-        )
+        action = _snake(tool.split("__", 2)[-1])
         findings = []
         if _MCP_DESTRUCTIVE.search(action):
             findings.append(f"a connector call that deletes or revokes ({tool})")
+        if _MCP_OUTWARD.search(action) or _carries_order_or_recipient(data, depth=0):
+            findings.append(
+                f"a connector call that trades, moves money, sends or shares ({tool})"
+            )
         if _MCP_HIDDEN_DELETE.search(text):
             findings.append(f"a connector call that deletes inside an update ({tool})")
         cleaned = re.sub(r"/\*.*?\*/", " ", text.replace("\\u00a0", " "))

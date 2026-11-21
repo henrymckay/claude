@@ -26,13 +26,18 @@ class GrantError(Exception):
     """A grant file that is missing a field, malformed or expired."""
 
 
+_FIELDS: typing.Final = frozenset(
+    "accounts expires_on given_by given_on network remotes run secrets web".split()
+)
+_ACCOUNT_FIELDS: typing.Final = frozenset(("account", "provider", "tier"))
+_RUN_FIELDS: typing.Final = frozenset(("budget_usd", "max_turns"))
+
+
 class Account(typing.NamedTuple):
-    """One account the grant lets a run act on."""
+    """One account a run reaches through a secret the grant passes, for the record."""
 
     account: str
-    actions: tuple[str, ...]
     provider: str
-    spend_limit_usd: float
     tier: str
 
 
@@ -189,6 +194,24 @@ def _read_remotes(value: object) -> tuple[str, ...]:
     return typing.cast("tuple[str, ...]", keys)
 
 
+def _refuse_unknown(
+    data: dict[str, object], *, allowed: frozenset[str], where: str
+) -> None:
+    """Refuse a field no script enforces, so nobody relies on one that does nothing.
+
+    :param data: An object from the grant.
+    :param allowed: The fields a script reads.
+    :param where: Which object it is, for the error.
+    :raises GrantError: If it holds any other field.
+    """
+    unknown = sorted(set(data) - allowed)
+    if unknown:
+        raise GrantError(
+            f"{where} has fields no script enforces: {', '.join(unknown)}; what a "
+            "secret lets a run do is limited by its scope at the issuer"
+        )
+
+
 def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Grant:
     """Return a grant, refusing one that is malformed or past its expiry.
 
@@ -210,6 +233,7 @@ def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Gra
         raise GrantError(f"{path} is not JSON") from failure
     if not isinstance(data, dict):
         raise GrantError(f"{path} must hold a JSON object")
+    _refuse_unknown(data, allowed=_FIELDS, where=str(path))
     missing = [field for field in _REQUIRED if not data.get(field)]
     if missing:
         raise GrantError(f"{path} lacks {', '.join(missing)}")
@@ -219,10 +243,13 @@ def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Gra
     run = data.get("run") or {}
     if not isinstance(run, dict):
         raise GrantError("run must be an object")
+    _refuse_unknown(run, allowed=_RUN_FIELDS, where="run")
     turns = _read_number(run.get("max_turns"), field="run.max_turns")
     accounts = data.get("accounts") or []
     if not isinstance(accounts, list) or not all(isinstance(a, dict) for a in accounts):
         raise GrantError("accounts must be a list of objects")
+    for entry in accounts:
+        _refuse_unknown(entry, allowed=_ACCOUNT_FIELDS, where="an account")
     web = str(data.get("web", "docs"))
     if web not in ("docs", "open", "off"):
         raise GrantError("web must be docs, open or off")
@@ -230,12 +257,7 @@ def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Gra
         accounts=tuple(
             Account(
                 account=str(entry.get("account", "")),
-                actions=_read_strings(entry.get("actions"), field="accounts.actions"),
                 provider=str(entry.get("provider", "")),
-                spend_limit_usd=_read_number(
-                    entry.get("spend_limit_usd", 0), field="accounts.spend_limit_usd"
-                )
-                or 0.0,
                 tier=str(entry.get("tier", "")),
             )
             for entry in accounts

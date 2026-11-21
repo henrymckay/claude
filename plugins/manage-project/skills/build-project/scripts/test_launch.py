@@ -4,9 +4,11 @@
 # ///
 """Tests for launch.py, run with ``uv run --script test_launch.py``.
 
-A fake ``claude`` stands in for the real one: each invocation takes the next outcome from
-a scenario file, appends a priced response to the session's transcript under a throwaway
-home, and prints the stream-json result Claude Code 2.1.330 prints, or nothing for a drop.
+A fake ``claude`` stands in for the real one. A run's invocation takes the next outcome
+from a scenario file, appends a priced response to the session's transcript under a
+throwaway home, and prints the stream-json result Claude Code 2.1.330 prints, or nothing
+for a drop. A preflight or gate session prints the init record and a tool call and result
+for each probe it was asked to make, refused, passed or leaked as the test sets.
 """
 
 import json
@@ -19,19 +21,87 @@ import textwrap
 import pytest
 
 _HERE = pathlib.Path(__file__).resolve().parent
+_PLUGIN = _HERE.parents[2]
 
 _FAKE = textwrap.dedent(
     """\
-    import json, os, pathlib, sys, time
+    import json, os, pathlib, shlex, subprocess, sys, time
     home = pathlib.Path(os.environ["HOME"])
-    log = home / "calls.jsonl"
-    with log.open("a") as out:
-        out.write(json.dumps({"argv": sys.argv[1:], "env": sorted(os.environ)}) + "\\n")
+    argv = sys.argv[1:]
+
+    def log(kind):
+        with (home / "calls.jsonl").open("a") as out:
+            out.write(json.dumps({"argv": argv, "env": sorted(os.environ), "kind": kind}) + "\\n")
+
+    def mode(name, default):
+        path = home / name
+        tokens = path.read_text().split() if path.exists() else []
+        if not tokens:
+            return default
+        if len(tokens) > 1:
+            path.write_text(" ".join(tokens[1:]))
+        return tokens[0]
+
+    def emit(record):
+        print(json.dumps(record), flush=True)
+
+    if argv == ["--version"]:
+        log("version")
+        print("9.9.9 (Claude Code)")
+        sys.exit(0)
+    prompt = argv[-1]
+    if "LAUNCHER-PREFLIGHT" in prompt or "LAUNCHER-GATE" in prompt:
+        kind = "preflight" if "LAUNCHER-PREFLIGHT" in prompt else "gate"
+        log(kind)
+        behaviour = mode(f"{kind}.txt", "refuse" if kind == "preflight" else "pass")
+        servers = {"connector": [{"name": "mail", "status": "connected"}],
+                   "docsserver": [{"name": "docs", "status": "connected"}]}.get(behaviour, [])
+        plugins = [{"name": "p", "path": argv[n + 1]} for n, a in enumerate(argv) if a == "--plugin-dir"]
+        emit({"type": "system", "subtype": "init", "tools": ["Bash", "Read"], "mcp_servers": servers,
+              "plugins": plugins})
+        status = mode("status.txt", "clean") if kind == "gate" else ""
+        for n, probe in enumerate(json.loads(prompt.split("```json")[1].split("```")[0])):
+            if behaviour == "skip":
+                continue
+            given = dict(probe["input"])
+            if behaviour == "near":
+                given = {k: v + " " for k, v in given.items()}
+            if behaviour == "background":
+                given["run_in_background"] = True
+            emit({"type": "assistant", "message": {"id": f"m{n}", "content": [
+                {"type": "tool_use", "id": f"t{n}", "name": probe["tool"], "input": given}]}})
+            text, failed = "Permission denied by the sandbox", True
+            command = probe["input"].get("command", "")
+            if kind == "gate" and command.startswith("git status") and status == "dirty":
+                text, failed = "?? loose.py\\nporcelain-end", False
+            elif kind == "gate" and command.startswith("git ") and pathlib.Path(".git").is_file():
+                text, failed = "fatal: the stand-in sandbox runs no planted git", True
+            elif kind == "gate" and command.startswith("git "):
+                done = subprocess.run(command, shell=True, capture_output=True, text=True)
+                text, failed = done.stdout + done.stderr, done.returncode != 0
+            elif command.startswith('echo "path-probe='):
+                seen = f"{os.getcwd()}/.venv/bin:/usr/bin" if behaviour == "badpath" else "/usr/bin:/bin"
+                text, failed = f"path-probe={seen}", False
+            elif kind == "gate" and behaviour == "moved":
+                text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
+            elif kind == "gate":
+                text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
+            elif behaviour == "leak" and probe["tool"] in ("Read", "Bash"):
+                path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
+                if pathlib.Path(path).exists():
+                    text, failed = pathlib.Path(path).read_text(), False
+            emit({"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": f"t{n}", "content": text, "is_error": failed}]}})
+        if behaviour != "noresult":
+            emit({"type": "result", "subtype": "success", "result": "done", "num_turns": 2,
+                  "total_cost_usd": 0.01, "session_id": "probe"})
+        sys.exit(0)
+    log("run")
     scenario = home / "scenario.txt"
     outcomes = scenario.read_text().split()
     outcome, rest = outcomes[0], outcomes[1:]
     scenario.write_text(" ".join(rest))
-    session = sys.argv[sys.argv.index("--session-id" if "--session-id" in sys.argv else "--resume") + 1]
+    session = argv[argv.index("--session-id" if "--session-id" in argv else "--resume") + 1]
     transcript = home / ".claude" / "projects" / "-fake" / f"{session}.jsonl"
     transcript.parent.mkdir(parents=True, exist_ok=True)
 
@@ -43,14 +113,13 @@ _FAKE = textwrap.dedent(
             out.write(json.dumps(record) + "\\n")
 
     def result(subtype, text="", turns=3):
-        print(json.dumps({"type": "result", "subtype": subtype, "result": text,
-                          "num_turns": turns, "total_cost_usd": 0.10, "session_id": session}))
+        emit({"type": "result", "subtype": subtype, "result": text,
+              "num_turns": turns, "total_cost_usd": 0.10, "session_id": session})
 
     if outcome == "spin_stream":
         for n in range(200):
-            record = {"type": "assistant", "message": {"id": f"s-{n}", "model": "claude-opus-5-5",
-                      "usage": {"input_tokens": 25_000}}}
-            print(json.dumps(record), flush=True)
+            emit({"type": "assistant", "message": {"id": f"s-{n}", "model": "claude-opus-5-5",
+                  "usage": {"input_tokens": 25_000}}})
             time.sleep(0.1)
         sys.exit(0)
     if outcome == "spin":
@@ -67,10 +136,104 @@ _FAKE = textwrap.dedent(
         result("success", "Stopped.\\nLAUNCHER: blocked: the owner must create the repository")
     elif outcome == "nomarker":
         result("success", "I will carry on later.", turns=5)
+    elif outcome == "usage":
+        emit({"type": "result", "subtype": "success", "is_error": True,
+              "result": "You've hit your session limit · resets 3pm", "num_turns": 1,
+              "total_cost_usd": 0.10, "session_id": session})
+    elif outcome == "usagetext":
+        result("success", "Noted: You've hit your session limit is a message I handle.\\nLAUNCHER: finished")
+    elif outcome == "finishedrec":
+        pathlib.Path("DEPENDENCIES.md").write_text("# Dependencies\\n")
+        pathlib.Path("costs.csv").write_text("stage,model,dollars\\n")
+        pathlib.Path("verification.csv").write_text(
+            "command,commit,date,line,printed,result,stage\\n"
+            "t,abc,2026-11-21,R1,ok,pass,acceptance\\n"
+            "t,abc,2026-11-21,Acceptance,ok,pass,acceptance\\n"
+        )
+        result("success", "All done.\\nLAUNCHER: finished")
+    elif outcome == "hostile":
+        evil = pathlib.Path.cwd().parent / "evil.git"
+        os.rename(".git", evil)
+        pathlib.Path(".git").write_text(f"gitdir: {evil}\\n")
+        with (evil / "config").open("a") as config:
+            config.write(f'[filter "evil"]\\n\\tclean = touch {home / "marker"}\\n')
+            config.write(f"[core]\\n\\tfsmonitor = touch {home / 'marker'}\\n")
+        pathlib.Path(".gitattributes").write_text("* filter=evil\\n")
+        time.sleep(1.1)
+        pathlib.Path("prompt.md").write_text("changed\\n")
+        result("success", "All done.\\nLAUNCHER: finished")
     else:
         result(outcome)
     """
 )
+
+_PLAN = """# Thing
+
+## Delivery
+
+### Verification
+
+- **R1** — the suite passes.
+- **Acceptance** — the thing runs from a fresh clone.
+
+### Milestones
+
+- [x] **M1 Thing** — R1; done when it runs.
+"""
+
+_RECORDS = {
+    "DEPENDENCIES.md": "# Dependencies\n\nThe plan is PLAN.md.\n",
+    "costs.csv": "stage,model,dollars\nM1,sonnet,1.00\n",
+    "verification.csv": (
+        "command,commit,date,line,printed,result,stage\n"
+        "uv run pytest,{commit},2026-11-21,R1,3 passed,pass,acceptance\n"
+        "uv run thing,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n"
+    ),
+}
+
+
+def _head(folder: pathlib.Path) -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=folder,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+
+
+def _commit_all(folder: pathlib.Path) -> None:
+    for command in (
+        ["git", "init", "-q", "-b", "main"],
+        ["git", "add", "-A"],
+        [
+            "git",
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@example.com",
+            "commit",
+            "-q",
+            "-m",
+            "x",
+        ],
+    ):
+        subprocess.run(command, cwd=folder, check=True, capture_output=True)
+
+
+def _make_project(folder: pathlib.Path, records: dict[str, str]) -> pathlib.Path:
+    folder.mkdir()
+    (folder / "prompt.md").write_text("Build the thing.\n")
+    (folder / "PLAN.md").write_text(_PLAN)
+    for name, text in records.items():
+        if name != "verification.csv":
+            (folder / name).write_text(text)
+    _commit_all(folder)
+    if "verification.csv" in records:
+        rows = records["verification.csv"].replace("{commit}", _head(folder))
+        (folder / "verification.csv").write_text(rows)
+        _commit_all(folder)
+    return folder
 
 
 @pytest.fixture
@@ -92,10 +255,12 @@ def fake_claude(tmp_path: pathlib.Path) -> pathlib.Path:
 
 @pytest.fixture
 def project(tmp_path: pathlib.Path) -> pathlib.Path:
-    folder = tmp_path / "project"
-    folder.mkdir()
-    (folder / "prompt.md").write_text("Build the thing.\n")
-    return folder
+    return _make_project(tmp_path / "project", _RECORDS)
+
+
+@pytest.fixture
+def unrecorded(tmp_path: pathlib.Path) -> pathlib.Path:
+    return _make_project(tmp_path / "unrecorded", {})
 
 
 def _launch(
@@ -105,6 +270,7 @@ def _launch(
     scenario: str,
     *extra: str,
     environment: dict[str, str] | None = None,
+    plugin: pathlib.Path = _PLUGIN,
 ) -> subprocess.CompletedProcess[str]:
     (home / "scenario.txt").write_text(scenario)
     return subprocess.run(
@@ -119,7 +285,7 @@ def _launch(
             "--runs-dir",
             str(home / "runs"),
             "--plugin-dir",
-            str(home / "plugin"),
+            str(plugin),
             "--poll-seconds",
             "0.2",
             "--retry-wait",
@@ -134,17 +300,30 @@ def _launch(
     )
 
 
-def _calls(home: pathlib.Path) -> list[dict[str, list[str]]]:
-    return [
-        json.loads(line) for line in (home / "calls.jsonl").read_text().splitlines()
-    ]
+def _calls(home: pathlib.Path, kind: str = "run") -> list[dict[str, list[str]]]:
+    lines = (home / "calls.jsonl").read_text().splitlines()
+    return [call for call in map(json.loads, lines) if call["kind"] == kind]
+
+
+def _calls_or_none(home: pathlib.Path) -> list[dict[str, list[str]]]:
+    return _calls(home) if (home / "calls.jsonl").exists() else []
+
+
+def _status(home: pathlib.Path) -> dict[str, object]:
+    return json.loads(next((home / "runs").glob("*/status.json")).read_text())
 
 
 def _argument(argv: list[str], flag: str) -> str:
     return argv[argv.index(flag) + 1]
 
 
-def test_when_run_finishes_then_exit_zero(
+def _profile(home: pathlib.Path) -> dict[str, dict[str, object]]:
+    return json.loads(
+        pathlib.Path(_argument(_calls(home)[0]["argv"], "--settings")).read_text()
+    )
+
+
+def test_when_run_finishes_and_gate_passes_then_exit_zero(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
@@ -165,15 +344,35 @@ def test_when_run_starts_then_profile_sandboxes_and_drops_connectors(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
     _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
-    profile = json.loads(
-        pathlib.Path(_argument(_calls(home)[0]["argv"], "--settings")).read_text()
-    )
+    profile = _profile(home)
     assert (
         profile["sandbox"]["enabled"],
         profile["sandbox"]["allowUnsandboxedCommands"],
         profile["disableClaudeAiConnectors"],
         profile["sandbox"]["filesystem"]["denyRead"][0],
     ) == (True, False, True, "~/")
+
+
+def test_when_no_local_binding_flag_then_profile_leaves_it_off(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert _profile(home)["sandbox"]["network"].get("allowLocalBinding", False) is False
+
+
+def test_when_local_binding_flag_then_profile_allows_it(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--allow-local-binding",
+    )
+    assert _profile(home)["sandbox"]["network"]["allowLocalBinding"] is True
 
 
 def test_when_run_drops_then_same_session_resumed(
@@ -218,12 +417,37 @@ def test_when_claude_reports_budget_reached_then_limit(
     assert (done.returncode, done.stdout.split(":")[0]) == (4, "limit")
 
 
+def test_when_plan_usage_limit_hit_then_limit_without_resuming(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(home, fake_claude, project, "usage finished", "--budget-usd", "5")
+    assert (done.returncode, len(_calls(home)), "usage limit" in done.stdout) == (
+        4,
+        1,
+        True,
+    )
+
+
+def test_when_run_starts_then_usage_window_waited_out_by_claude(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    names = set(_calls(home)[0]["env"])
+    assert {
+        "CLAUDE_CODE_RETRY_WATCHDOG",
+        "CLAUDE_CODE_RETRY_WATCHDOG_MAX_USAGE_LIMIT_WAIT_MS",
+        "CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS",
+    } <= names
+
+
 def test_when_transcript_passes_budget_then_run_stopped(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
     done = _launch(home, fake_claude, project, "spin", "--budget-usd", "1")
-    status = json.loads(next((home / "runs").glob("*/status.json")).read_text())
-    assert (done.returncode, status["detail"]) == (4, "the spend limit was reached")
+    assert (done.returncode, _status(home)["detail"]) == (
+        4,
+        "the spend limit was reached",
+    )
 
 
 def test_when_transcript_passes_turns_then_run_stopped(
@@ -232,8 +456,10 @@ def test_when_transcript_passes_turns_then_run_stopped(
     done = _launch(
         home, fake_claude, project, "spin", "--budget-usd", "100", "--max-turns", "10"
     )
-    status = json.loads(next((home / "runs").glob("*/status.json")).read_text())
-    assert (done.returncode, status["detail"]) == (4, "the turn limit was reached")
+    assert (done.returncode, _status(home)["detail"]) == (
+        4,
+        "the turn limit was reached",
+    )
 
 
 def test_when_turns_used_up_then_limit_before_next_invocation(
@@ -275,18 +501,255 @@ def test_when_no_spend_limit_then_refused(
     assert (done.returncode, "no spend limit" in done.stderr) == (1, True)
 
 
-def _approve(home: pathlib.Path, project: pathlib.Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [sys.executable, str(_HERE / "launch.py"), "--approve-grant", "--project", str(project)],
-        capture_output=True,
-        check=False,
-        env={"HOME": str(home), "PATH": os.environ["PATH"]},
-        text=True,
-        timeout=60,
+def test_when_run_ends_then_status_names_cli_version_and_release(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    status = _status(home)
+    assert (status["cli_version"], bool(status["release"])) == ("9.9.9", True)
+
+
+def test_when_records_missing_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, unrecorded: pathlib.Path
+) -> None:
+    done = _launch(
+        home,
+        fake_claude,
+        unrecorded,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, "DEPENDENCIES.md" in done.stdout) == (5, True)
+
+
+def test_when_gate_fails_then_run_resumed_with_reason(
+    home: pathlib.Path, fake_claude: pathlib.Path, unrecorded: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, unrecorded, "finished finished", "--budget-usd", "5")
+    resumed = _calls(home)[1]["argv"][-1]
+    assert "gate" in resumed and "verification.csv" in resumed
+
+
+def test_when_acceptance_row_failed_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    rows = project / "verification.csv"
+    rows.write_text(
+        rows.read_text()
+        + "uv run thing,def5678,2026-11-22,Acceptance,boom,fail,acceptance\n"
+    )
+    _commit_all(project)
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, "Acceptance" in done.stdout) == (5, True)
+
+
+def test_when_work_left_uncommitted_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "status.txt").write_text("dirty")
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, "uncommitted" in done.stdout) == (5, True)
+
+
+def test_when_run_plants_hostile_git_then_launcher_runs_none_of_it(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(
+        home, fake_claude, project, "hostile", "--budget-usd", "5", "--max-resumes", "0"
+    )
+    assert not (home / "marker").exists()
+
+
+def test_when_project_git_is_not_a_folder_then_refused(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    (project / ".git").rename(tmp_path / "moved.git")
+    (project / ".git").write_text(f"gitdir: {tmp_path / 'moved.git'}\n")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, ".git" in done.stderr, _calls_or_none(home)) == (
+        1,
+        True,
+        [],
     )
 
 
-def _write_grant(project: pathlib.Path) -> pathlib.Path:
+def test_when_gate_session_ends_without_result_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "gate.txt").write_text("noresult")
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, "gate" in done.stdout) == (5, True)
+
+
+def test_when_later_gate_session_tries_nothing_then_earlier_one_does_not_count(
+    home: pathlib.Path, fake_claude: pathlib.Path, unrecorded: pathlib.Path
+) -> None:
+    (home / "gate.txt").write_text("pass skip")
+    done = _launch(
+        home, fake_claude, unrecorded, "finished finishedrec", "--budget-usd", "5",
+        "--max-resumes", "1", "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, "was not run" in done.stdout) == (5, True)
+
+
+def test_when_preflight_call_differs_from_probe_then_not_tried(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "preflight.txt").write_text("near")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not tried" in done.stdout) == (5, True)
+
+
+def test_when_gate_command_fails_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "gate.txt").write_text("fail")
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0", "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, "uv run pytest -q" in done.stdout) == (5, True)
+
+
+def test_when_gate_command_passes_then_finished(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, len(_calls(home, "gate"))) == (0, 1)
+
+
+def test_when_preflight_refuses_every_probe_then_run_starts(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    preflight = _calls(home, "preflight")
+    assert (len(preflight), _argument(preflight[0]["argv"], "--model")) == (1, "haiku")
+
+
+@pytest.mark.parametrize(
+    ("behaviour", "said"),
+    [("leak", "got through"), ("connector", "connector"), ("skip", "not tried")],
+)
+def test_when_preflight_not_clean_then_run_refused(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    behaviour: str,
+    said: str,
+) -> None:
+    (home / "preflight.txt").write_text(behaviour)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, said in done.stdout, len(_calls(home))) == (5, True, 0)
+
+
+def test_when_guard_not_loaded_then_run_refused(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5", plugin=tmp_path
+    )
+    assert (done.returncode, "no guard hook" in done.stdout) == (5, True)
+
+
+def test_when_runs_folder_outside_home_then_refused(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--runs-dir", str(tmp_path / "runs"),
+    )  # fmt: skip
+    assert (done.returncode, "home folder" in done.stderr) == (1, True)
+
+
+def test_when_preflight_ends_then_decoys_removed(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    run = next((home / "runs").iterdir())
+    left = [
+        *run.rglob("decoy*"),
+        *run.rglob("*.pem"),
+        *home.glob(".cache/claude-preflight/*"),
+    ]
+    assert left == []
+
+
+def _approve(
+    home: pathlib.Path,
+    project: pathlib.Path,
+    *extra: str,
+    answer: str | None = "y",
+) -> subprocess.CompletedProcess[str]:
+    """Approve at a terminal answering ``answer``, or with no terminal where it is None."""
+    controller, terminal = os.openpty() if answer is not None else (-1, -1)
+    if answer is not None:
+        os.write(controller, f"{answer}\n".encode())
+    try:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(_HERE / "launch.py"),
+                "--approve-grant",
+                "--project",
+                str(project),
+                *extra,
+            ],
+            capture_output=True,
+            check=False,
+            env={"HOME": str(home), "PATH": os.environ["PATH"]},
+            stdin=terminal if answer is not None else subprocess.DEVNULL,
+            text=True,
+            timeout=60,
+        )
+    finally:
+        if answer is not None:
+            os.close(controller)
+            os.close(terminal)
+
+
+def _write_grant(project: pathlib.Path, **extra: object) -> pathlib.Path:
     path = project / "grant.json"
     path.write_text(
         json.dumps(
@@ -294,9 +757,11 @@ def _write_grant(project: pathlib.Path) -> pathlib.Path:
                 "expires_on": "2999-01-01",
                 "given_by": "owner",
                 "given_on": "2026-11-21",
+                "remotes": ["github.com/owner/thing"],
                 "run": {"budget_usd": 1.5, "max_turns": 40},
                 "secrets": ["PROJECT_TOKEN"],
             }
+            | extra
         )
     )
     return path
@@ -314,23 +779,313 @@ def grant(home: pathlib.Path, project: pathlib.Path) -> pathlib.Path:
     return path
 
 
+def test_when_grant_approved_then_summary_says_what_it_allows(
+    home: pathlib.Path, project: pathlib.Path, unapproved: pathlib.Path
+) -> None:
+    done = _approve(home, project)
+    assert all(
+        phrase in done.stdout
+        for phrase in ("github.com/owner/thing", "PROJECT_TOKEN", "$1.50", "2999-01-01")
+    )
+
+
+@pytest.mark.parametrize(
+    ("extra", "answer"), [((), "n"), ((), None), (("--yes",), None)]
+)
+def test_when_approval_not_confirmed_at_a_terminal_then_grant_not_approved(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    unapproved: pathlib.Path,
+    extra: tuple[str, ...],
+    answer: str | None,
+) -> None:
+    _approve(home, project, *extra, answer=answer)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+@pytest.mark.parametrize("option", ["--approve-g", "--appro"])
+def test_when_approval_option_abbreviated_then_grant_not_approved(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    unapproved: pathlib.Path,
+    option: str,
+) -> None:
+    controller, terminal = os.openpty()
+    os.write(controller, b"y\n")
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                str(_HERE / "launch.py"),
+                option,
+                "--project",
+                str(project),
+            ],
+            capture_output=True,
+            check=False,
+            env={"HOME": str(home), "PATH": os.environ["PATH"]},
+            stdin=terminal,
+            text=True,
+            timeout=60,
+        )
+    finally:
+        os.close(controller)
+        os.close(terminal)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_profile_built_then_approvals_folder_unwritable_by_tools_and_commands(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    profile = _profile(home)
+    approvals = home / ".config" / "claude-grants" / "approved"
+    writable = [
+        pathlib.Path(os.path.expanduser(p))
+        for p in profile["sandbox"]["filesystem"]["allowWrite"]
+    ]
+    edits = [
+        rule[len("Edit(/") : -len("/**)")]
+        for rule in profile["permissions"]["allow"]
+        if rule.startswith("Edit(/")
+    ]
+    assert (
+        "Edit(~/.config/**)" in profile["permissions"]["deny"],
+        any(approvals.is_relative_to(p) for p in writable),
+        any(approvals.is_relative_to(p) for p in map(pathlib.Path, edits)),
+    ) == (True, False, False)
+
+
+def test_when_path_starts_inside_project_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    planted = f"{project}/.venv/bin"
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        environment={"PATH": f"{planted}:{os.environ['PATH']}"},
+    )  # fmt: skip
+    assert (done.returncode, planted in done.stderr, _calls_or_none(home)) == (
+        1,
+        True,
+        [],
+    )
+
+
+def test_when_path_holds_relative_entry_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        environment={"PATH": f"node_modules/.bin:{os.environ['PATH']}"},
+    )  # fmt: skip
+    assert (done.returncode, "node_modules/.bin" in done.stderr) == (1, True)
+
+
+def test_when_session_sees_a_writable_path_entry_then_run_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "preflight.txt").write_text("badpath")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (
+        done.returncode,
+        f"{project}/.venv/bin" in done.stdout,
+        len(_calls(home)),
+    ) == (
+        5,
+        True,
+        0,
+    )
+
+
+@pytest.mark.parametrize("behaviour", ["background", "moved"])
+def test_when_gate_command_not_finished_in_the_foreground_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, behaviour: str
+) -> None:
+    (home / "gate.txt").write_text(behaviour)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0", "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, "uv run pytest -q" in done.stdout) == (5, True)
+
+
+def test_when_gate_runs_then_background_off_and_bash_timeout_set(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    names = set(_calls(home, "gate")[0]["env"])
+    assert {
+        "BASH_DEFAULT_TIMEOUT_MS",
+        "BASH_MAX_TIMEOUT_MS",
+        "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS",
+    } <= names
+
+
+@pytest.mark.parametrize(
+    ("rows", "said"),
+    [
+        (
+            "t,{commit},2026-11-21,R1,ok,pass,acceptance\nt,0000000,2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "commit",
+        ),
+        (
+            "t,{commit},2026-11-20,R1,x,fail,acceptance\nt,{commit},2026-11-19,R1,ok,pass,acceptance\nt,{commit},2026-11-20,Acceptance,ok,pass,acceptance\n",
+            "order",
+        ),
+        (
+            "t,{commit},2999-01-01,R1,ok,pass,acceptance\nt,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "date",
+        ),
+        (
+            "t,{commit},someday,R1,ok,pass,acceptance\nt,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "date",
+        ),
+    ],
+)
+def test_when_acceptance_rows_do_not_hold_then_finish_not_accepted(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    tmp_path: pathlib.Path,
+    rows: str,
+    said: str,
+) -> None:
+    header = "command,commit,date,line,printed,result,stage\n"
+    project = _make_project(
+        tmp_path / "rows", _RECORDS | {"verification.csv": header + rows}
+    )
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, said in done.stdout) == (5, True)
+
+
+def test_when_mcp_config_names_a_server_then_only_it_may_load(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    config = tmp_path / "mcp.json"
+    config.write_text(json.dumps({"mcpServers": {"docs": {"command": "true"}}}))
+    (home / "preflight.txt").write_text("docsserver")
+    allowed = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--mcp-config",
+        str(config),
+    )
+    (home / "preflight.txt").write_text("connector")
+    other = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--mcp-config",
+        str(config),
+    )
+    assert (allowed.returncode, other.returncode) == (0, 5)
+
+
+def test_when_final_message_only_mentions_usage_limit_then_finished(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(home, fake_claude, project, "usagetext", "--budget-usd", "5")
+    assert (done.returncode, done.stdout.split(":")[0]) == (0, "finished")
+
+
+@pytest.mark.parametrize("damage", ["byte", "field"])
+def test_when_records_unreadable_then_failed_with_status_and_notice(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, damage: str
+) -> None:
+    if damage == "byte":
+        (project / "PLAN.md").write_bytes(_PLAN.encode() + b"\xff\xfe\n")
+    else:
+        rows = project / "verification.csv"
+        rows.write_text(
+            rows.read_text()
+            + 'x,y,2026-11-21,R9,"'
+            + "z" * 200_000
+            + '",pass,acceptance\n'
+        )
+    _commit_all(project)
+    sink = home / "notified.txt"
+    notifier = home / "notify.sh"
+    notifier.write_text(f'#!/bin/sh\nprintf "%s" "$1" > "{sink}"\n')
+    notifier.chmod(0o755)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5", "--max-resumes", "0",
+        "--notify", str(notifier),
+    )  # fmt: skip
+    assert (done.returncode, _status(home)["state"], sink.exists()) == (
+        5,
+        "failed",
+        True,
+    )
+
+
+def test_when_grant_lists_account_actions_then_refused(
+    home: pathlib.Path, project: pathlib.Path
+) -> None:
+    _write_grant(
+        project,
+        accounts=[
+            {
+                "provider": "GitHub",
+                "account": "o",
+                "tier": "free",
+                "actions": ["deploy"],
+            }
+        ],
+    )
+    done = _approve(home, project)
+    assert (done.returncode != 0, "actions" in done.stderr) == (True, True)
+
+
 def test_when_project_grant_not_approved_then_refused(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, unapproved: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    unapproved: pathlib.Path,
 ) -> None:
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
 
 
 def test_when_project_grant_changed_after_approval_then_refused(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    grant: pathlib.Path,
 ) -> None:
-    grant.write_text(grant.read_text().replace('"secrets"', '"network": ["evil.example"], "secrets"'))
+    grant.write_text(
+        grant.read_text().replace('"secrets"', '"network": ["evil.example"], "secrets"')
+    )
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
 
 
 def test_when_project_grant_is_symlink_to_outside_then_refused(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, tmp_path: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
 ) -> None:
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -342,7 +1097,10 @@ def test_when_project_grant_is_symlink_to_outside_then_refused(
 
 
 def test_when_same_grant_approved_for_other_project_then_refused(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, tmp_path: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
 ) -> None:
     other = tmp_path / "other"
     other.mkdir()
@@ -354,7 +1112,10 @@ def test_when_same_grant_approved_for_other_project_then_refused(
 
 
 def test_when_grant_reapproved_then_earlier_version_no_longer_approved(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    grant: pathlib.Path,
 ) -> None:
     first = grant.read_text()
     grant.write_text(first.replace('"secrets"', '"network": ["pypi.org"], "secrets"'))
@@ -365,10 +1126,13 @@ def test_when_grant_reapproved_then_earlier_version_no_longer_approved(
 
 
 def test_when_run_starts_then_file_tools_scoped_and_grant_and_plugins_denied(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    grant: pathlib.Path,
 ) -> None:
     _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
-    profile = json.loads(pathlib.Path(_argument(_calls(home)[0]["argv"], "--settings")).read_text())
+    profile = _profile(home)
     allow, deny = profile["permissions"]["allow"], profile["permissions"]["deny"]
     deny_write = profile["sandbox"]["filesystem"]["denyWrite"]
     assert (
@@ -376,9 +1140,9 @@ def test_when_run_starts_then_file_tools_scoped_and_grant_and_plugins_denied(
         f"Edit(/{project}/**)" in allow,
         "Edit(~/.claude/**)" in deny,
         f"Edit(/{project}/grant.json)" in deny,
-        f"Edit(/{home / 'plugin'}/**)" in deny,
+        f"Edit(/{_PLUGIN}/**)" in deny,
         str(project / "grant.json") in deny_write,
-        str(home / "plugin") in deny_write,
+        str(_PLUGIN) in deny_write,
     ) == (set(), True, True, True, True, True, True)
 
 
@@ -475,4 +1239,4 @@ def test_when_notify_given_then_report_line_handed_to_it(
 
 
 if __name__ == "__main__":
-    raise SystemExit(pytest.main([__file__, "-q"]))
+    raise SystemExit(pytest.main([__file__, "-q", *sys.argv[1:]]))

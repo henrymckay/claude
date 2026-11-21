@@ -2,11 +2,11 @@
 name: review-plugin
 effort: high
 description: >-
-  How to review a Claude Code plugin, a marketplace or a skills repo for drift
-  — skill feedback first, then every drift check: word and character counts,
-  descriptions against bodies, duplicates and contradictions, claims re-run,
-  the instruction files, manifests, hooks, trigger suites and memory, landed
-  as one pull request. Use whenever the user asks to review, audit, tidy or
+  How to review a Claude Code plugin, marketplace or skills repo for drift —
+  skill feedback, every check (counts, descriptions, duplicates, claims,
+  instruction files, manifests, hooks, trigger suites, records, memory), the
+  coverage map, trial builds, how a sweep runs, an outside review on the top
+  model, one pull request. Use whenever the user asks to review, audit, tidy or
   sweep skills or a plugin — even if they just say "check the skills for
   drift" or "work through the skill feedback".
 ---
@@ -19,7 +19,7 @@ Where the user can push, it fixes and commits; where they cannot, it stops at th
 It runs `review-project` with the skills as the code under review and adds the checks below, judging against `write-skills` and `write-markdown` rather than restating them.
 Anthropic's `plugin-dev` plugin, if installed, checks hooks, manifests, agents and commands more deeply than Check the wiring; without it, `claude plugin validate --strict` and running each hook are the floor.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
-**Run every check below in every sweep, whatever the brief names.** A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
+**Run every check in the Check sections below in every sweep, whatever the brief names**; a trial build is a separate, paid event the owner starts. A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
 
 - **Wrong** — the issue says a skill steered a build wrong; the sweep rewords the rule, reads it back, and closes the issue.
 - **Right** — the sweep reruns the build step the issue describes against the new wording, and closes the issue only when that run comes out right.
@@ -54,8 +54,41 @@ Started headless, it runs through `build-project`'s launcher (Run it with nobody
 Where the plan of the marketplace under review keeps a coverage map — a project's stages against the qualities its requirements name, each cell naming what delivers it and what proved it — re-read it whole in every sweep, since gaps otherwise surface only when someone asks again what is missing:
 
 - **Each cell still true**: the skill or hook it names exists and still does what the cell says, and an issue it cites is still open, or the cell moves to what closed it.
-- **Designed is not proven**: a cell whose evidence is only a skill's text, a unit test or a probe stays marked unproven until a trial build or a real run exercised it, and the map's table of project kinds calls a kind built only once a build has completed it.
+- **Three grades, each citing a dated run**: *seen once* — one real run exercised it and passed; *repeated* — runs on two kinds of project passed; *failing* — its last recorded result failed.
+A cell keeps a passing grade only while the last recorded result for it, in the cited project's own `verification.csv` or this repo's, is a pass — for a project built before the records, the dated milestone note, until its next run replaces it — so check the map against those records, never against the plan's own text; a cell whose evidence is only a skill's text, a unit test or a probe is *designed*, not graded, and the map's table of project kinds calls a kind built only once a build has completed it.
+- **A default resting on one kind of project is provisional**: a skill default or decision drawn from a single project says so until a second kind of project confirms it, so the next project tests it rather than inherits it.
 - **Every open skill-feedback issue sits in a cell**, and every empty cell has an issue or a reason it is not wanted yet; a sweep that closes an issue moves its cell to the fix and the run that showed it.
+
+## Run the sweep
+
+How a sweep is carried out, so another session or another user of the plugin runs it the same way and the report shows each step happened:
+
+- **One builder, isolated**: a single agent on `choose-model`'s rung for skill edits, in its own git worktree on a branch from `main`, never in the main checkout, in the background so the coordinating session stays free to relay; it works the feedback and runs every check in this skill.
+- **One checker, who re-runs rather than reads**: before the merge, the coordinating session re-runs itself every test suite, `claude plugin validate --strict`, the trigger cases the sweep changed and each artefact the report cites (a run folder, a status file, a transcript), and takes from the builder's report only what it read (a docs page, a count); the report marks each claim as re-run or reported, and the merge note names what the checker re-ran.
+- **Findings from an automated review** (a commit security review on push, say) go back to the builder one by one, each fixed with a test that fails first or rebutted with a test showing the case already refused, weighed by layer: a way past the boundary (the run profile, the approved grant) blocks the merge, and a way past a second layer (the guard's patterns) is fixed in the sweep with a simpler, stricter rule where that is cheap, and filed where it is not, since each added parser case is one more to get wrong.
+- **The outside review** (below) runs once the builder has finished and before the merge.
+- **The cost is recorded**: the sweep's rows in the repo's `costs.csv`, per model, totalled with `choose-model`'s script from the transcripts and held against the plan's per-sweep budget; a sweep over budget says why.
+- **The owner is asked only for what is theirs, on one screen at the top of the report**: the steps the merge leaves them (Land it as one pull request), each decision left proposed with its recommended answer, and the release tag, with the plan's count of what is still unsigned brought up to date; the detail follows below it, for whoever wants it.
+
+## Review it from outside
+
+**End every sweep with one targeted review by a fresh agent on the best available model at its highest effort (`choose-model`), read-only, given the diff and the plan but none of the builder's reasoning or report**, since a builder checked by its own model and effort finds what it already looked for: twelve sweeps passed their own checks while an outside review found unproven claims graded proven, a boundary tested less than its second layer and a plan too long to act on.
+Brief it with the questions below rather than having it load this skill, whose frontmatter effort would hold it at `high` for the rest of its turn (`choose-model`, Set the model from inside Claude).
+It has two parts:
+
+1. **The plan and the trajectory, always**, by the same questions every sweep, so one sweep's answers can be compared with the last:
+   1. Do the requirements still follow from the aim, and can each still fail observably?
+   2. Is every cell the coverage map grades as passing still backed by its last recorded result? Check the map against the records of the projects it cites, not against the plan's own text.
+   3. Is the `Next` list the best next step, or is more valuable evidence being deferred?
+   4. Which decisions now contradict, repeat or no longer hold; which defaults rest on one project?
+   5. Can a fresh session act on the plan at its current size?
+   6. What is the weakest part of the whole approach to a sceptical outsider, and what would they do instead?
+   7. What did the last review propose, and was it done, declined with a reason, or dropped silently?
+2. **The sweep's riskiest change, chosen per sweep**: code that runs, a boundary, or the skill a build depends on most, reviewed from the diff.
+
+- **The report ranks findings by how much each should change what is done next**, marks each verified (re-run) or inferred (read), and ends with proposals the owner accepts or declines.
+- **A finding that blocks the merge is fixed in the sweep; the rest are filed** as issues, so the next sweep starts from them.
+- **It records its cost against the plan's budget for it**, and is skipped only with the reason in the report; a full review of every skill stays a separate, rarer event.
 
 ## Land it as one pull request
 
@@ -130,4 +163,5 @@ Read every free-tier limit and price a skill quotes against the vendor's plan pa
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
 - **State the net words across skills and references, and each top-level file's count before and after**; justify any growth, since a sweep that only adds leaves the next reader more to read.
-- **List every check in the report as done, with what it found, or skipped, with why** — one line each for the README, each instruction file and each context file — so a check left out shows as a gap rather than passing unseen.
+- **The records apply to a plugin repo too** (`review-project`, The records are true), each created where missing: `DEPENDENCIES.md` lists the Claude Code version the hooks and any launcher were last proved on, the validators and eval tool, each hook's interpreter and the oldest version it supports, any scheduled sweep (by name, never its id in a public repo) and the tracker; `costs.csv` holds a row per sweep, trial build and outside review, per model, with its source and a blank where a figure is unknown, never an estimate; `verification.csv` holds a row per Verification line with its dated result, which the coverage map cites.
+- **List every check in the report as done, with what it found, or skipped, with why** — each check `review-project` names, the records among them, and each of this skill's, by name, one line each for the README, each instruction file and each context file — so a check either skill names shows as a gap rather than passing unseen.

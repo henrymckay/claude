@@ -2,7 +2,7 @@
 
 Six [Claude Code](https://code.claude.com/docs) plugins that let Claude plan, design, build, review and run a project from a short prompt.
 They settle in advance the decisions that recur across projects, so Claude neither asks nor re-decides them.
-When a skill steers Claude wrong, the gap is filed and a sweep fixes it, so the plugins improve as they are used.
+When a skill steers Claude wrong, the gap is filed and a sweep fixes it.
 
 [`PLAN.md`](PLAN.md) holds the aim, the decisions and what is left out on purpose.
 
@@ -17,7 +17,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`retire-project`](plugins/manage-project/skills/retire-project) tears a project down from its records, confirming each removal.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and records its cost.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
-  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows, with a hook that asks before a force-push, a deletion or a leaked secret.
+  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows, with a hook that asks before a force-push, a deletion, a leaked secret or a connector call that pays or sends.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).
   - [`write-markdown`](plugins/manage-project/skills/write-markdown) writes Markdown for humans and for models.
 - **`design-project`** — what a project shows and holds, settled before it is built.
@@ -54,8 +54,6 @@ claude plugin install manage-project@henrymckay
 claude plugin install write-code@henrymckay
 ```
 
-Each plugin prints its skill list into every session and subagent, so `CLAUDE.md` needs only your own rules.
-
 Where plugins cannot be installed, symlink them instead.
 
 ```bash
@@ -76,11 +74,11 @@ With symlinks, merge the `Stop` entry of `maintain-plugin`'s [`hooks.json`](plug
   Use `file` on a machine whose work must not reach a public tracker.
 - **Guard** — `claude plugin configure manage-project` sets `guard` to `on` (the default) or `off` for sessions you attend.
   A run nobody watches stays guarded.
-- **`CLAUDE.md`** — only your own rules with the plugins installed, like the owner's [`installed.md`](instructions/installed.md); with symlinks, [`symlinked.md`](instructions/symlinked.md) adds the skill list, plugin map and feedback rule.
+- **`CLAUDE.md`** — only your own rules with the plugins installed, since each plugin prints its skill list into every session and subagent, like the owner's [`installed.md`](instructions/installed.md); with symlinks, [`symlinked.md`](instructions/symlinked.md) adds the skill list, plugin map and feedback rule.
 
 ## 🧩 Companions
 
-From Anthropic's [official marketplace](https://github.com/anthropics/claude-plugins-official); each skill that uses one says what to do without it.
+From Anthropic's [official marketplace](https://github.com/anthropics/claude-plugins-official); each skill using one works without it.
 
 - **`skill-creator`** tests a skill with and without it and tunes its description, for `write-skills`.
 - **`plugin-dev`** checks hooks, manifests, agents and commands, for `review-plugin`.
@@ -93,9 +91,9 @@ Beyond these, `plan-project` looks for an outside plugin where no skill here cov
 
 1. **Feedback** — when a skill steers Claude wrong, Claude files an issue labelled `skill-feedback` on the plugin's repository.
    A `Stop` hook sends Claude back if it forgot.
-2. **Sweep** — [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) works through the open issues, then runs every drift check.
+2. **Sweep** — [`review-plugin`](plugins/maintain-plugin/skills/review-plugin) works through the open issues, runs every drift check, and ends with a read-only review on the top model.
    It runs weekly, or when you say "review the skills".
-3. **Pull request** — each sweep lands as one pull request whose body is its report, listing every rule it cut or changed.
+3. **Pull request** — each sweep lands as one pull request whose body is its report.
 
 Each plugin's `evals/` holds a casual prompt that should fire each skill, and, where a neighbour could claim one, a prompt that should not.
 Pass `--trust-plugin` only for a plugin whose source you have read.
@@ -108,8 +106,9 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-A fresh headless session, started by [`build-project`](plugins/manage-project/skills/build-project)'s launcher with only the house plugins, no connectors, the sandbox on and a spend limit, plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action the project's standing grant does not name; a sweep then works through its feedback and transcript.
-[`PLAN.md`](PLAN.md)'s milestones list the builds.
+A fresh headless session, started by [`build-project`](plugins/manage-project/skills/build-project)'s launcher with only the house plugins, no connectors, the sandbox on and a spend limit, plans, builds and reviews a project from one prompt, taking no outward action its standing grant does not allow.
+The launcher proves the sandbox first and accepts a finish only through its own gate; a sweep then works through the build's feedback.
+[`PLAN.md`](PLAN.md)'s `Next` list orders them.
 
 ## 📄 Licence
 

@@ -107,6 +107,7 @@ def run(tmp_path: pathlib.Path) -> Run:
         base = {
             "HOME": str(tmp_path / "home"),
             "PATH": os.pathsep.join([str(folder), str(git_folder), "/usr/bin", "/bin"]),
+            "CLAUDE_GUARD_PYTHON": str(folder / "python3"),
         }
         done = subprocess.run(
             ["sh", str(_HERE / "guard.sh")],
@@ -474,7 +475,10 @@ def no_python(tmp_path: pathlib.Path) -> dict[str, str]:
     folder.mkdir()
     (folder / "python3").write_text("#!/bin/sh\nexit 127\n")
     (folder / "python3").chmod(0o755)
-    return {"PATH": os.pathsep.join([str(folder), "/usr/bin", "/bin"])}
+    return {
+        "PATH": os.pathsep.join([str(folder), "/usr/bin", "/bin"]),
+        "CLAUDE_GUARD_PYTHON": str(folder / "python3"),
+    }
 
 
 def test_when_python_missing_and_risky_then_asked(
@@ -625,6 +629,78 @@ def test_when_repository_filter_configured_then_hook_runs_none(
     assert not marker.exists()
 
 
+def test_when_path_leads_with_planted_programs_then_guard_still_denies_and_runs_none(
+    run: Run, repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    planted = tmp_path / "planted"
+    planted.mkdir()
+    marker = tmp_path / "planted-ran"
+    for name in ("python3", "head", "tr", "grep", "dirname", "cat", "git", "printf"):
+        (planted / name).write_text(f"#!/bin/sh\ntouch {marker}\nexit 0\n")
+        (planted / name).chmod(0o755)
+    answer = run(
+        repo,
+        {"command": "git push --force origin main"},
+        environment={
+            "CLAUDE_GUARD": "deny",
+            "PATH": os.pathsep.join([str(planted), "/usr/bin", "/bin"]),
+        },
+    )
+    assert (answer.get("permissionDecision"), marker.exists()) == ("deny", False)
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("Bash", {"command": "uv run --script ~/claude/launch.py --approve-grant"}),
+        ("Bash", {"command": "python3 launch.py prompt.md --approvals /tmp/approved"}),
+        ("Bash", {"command": "echo abc >> ~/.config/claude-grants/approved"}),
+        ("Bash", {"command": "cp list ~/.config/claude-grants/approved"}),
+        ("Write", {"file_path": "/home/u/.config/claude-grants/approved", "content": "x"}),
+        ("Bash", {"command": "python3 launch.py --approve-g"}),
+        ("Bash", {"command": "uv run --script launch.py --appro"}),
+        ("Bash", {"command": "python3 launch.py p.md --approval=/tmp/approved"}),
+        ("Bash", {"command": "python3 launch.py p.md '--app''rovals=/tmp/x'"}),
+        ("Bash", {"command": "echo x >> ~/.config/claude-gr*/approved"}),
+        ("Bash", {"command": "cp list $HOME/.config/cl?ude-grants/approved"}),
+        ("Bash", {"command": "x=claude-gr; echo y >> ~/.config/${x}ants/approved"}),
+        ("Bash", {"command": "d=$HOME/.config; echo y >> \"$d\"/cla[u]de-grants/approved"}),
+    ],
+)
+def test_when_grant_approval_touched_then_asked(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize("route", ["ssh", "uploadpack"])
+def test_when_repository_lacks_an_object_then_guard_fetches_nothing(
+    run: Run, repo: pathlib.Path, tmp_path: pathlib.Path, route: str
+) -> None:
+    marker = tmp_path / "fetched"
+    (repo / "notes.txt").write_text("a staged blob the guard will want to read\n")
+    _git(repo, "add", "notes.txt")
+    blob = subprocess.run(
+        ["git", "rev-parse", ":notes.txt"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (repo / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+    _git(repo, "config", "core.repositoryformatversion", "1")
+    _git(repo, "config", "extensions.partialClone", "origin")
+    _git(repo, "config", "remote.origin.promisor", "true")
+    if route == "ssh":
+        _git(repo, "config", "remote.origin.url", "ssh://example.invalid/r")
+        _git(repo, "config", "core.sshCommand", f"touch {marker}; false")
+    else:
+        _git(repo, "config", "remote.origin.uploadpack", f"touch {marker}; false")
+    run(repo, {"command": "git commit -m x"})
+    assert not marker.exists()
+
+
 def test_when_python_missing_and_unattended_then_every_call_denied(
     run: Run, repo: pathlib.Path, no_python: dict[str, str]
 ) -> None:
@@ -632,6 +708,16 @@ def test_when_python_missing_and_unattended_then_every_call_denied(
         repo, {"command": "ls -la"}, environment=no_python | {"CLAUDE_GUARD": "deny"}
     )
     assert answer.get("permissionDecision") == "deny"
+
+
+@pytest.mark.parametrize(
+    "tool", ["mcp__mail__send_message", "mcp__exchange__orders_create"]
+)
+def test_when_python_missing_and_connector_sends_then_asked(
+    run: Run, repo: pathlib.Path, no_python: dict[str, str], tool: str
+) -> None:
+    answer = run(repo, {"body": "hi"}, environment=no_python, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
 
 
 @pytest.mark.parametrize(
@@ -825,6 +911,98 @@ def test_when_unattended_push_to_granted_local_remote_then_no_decision(
     answer = run(
         repo, {"command": "git push origin main"}, environment={"CLAUDE_GUARD": "deny"}
     )
+    assert answer == {}
+
+
+_OUTWARD_CONNECTOR_CALLS = [
+    ("mcp__broker__create_order_instruction", {"symbol": "X", "quantity": 1}),
+    ("mcp__broker__placeOrder", {"symbol": "X"}),
+    ("mcp__exchange__orders_create", {"product_id": "X-USD"}),
+    ("mcp__exchange__orders_edit", {"order_id": "1"}),
+    ("mcp__exchange__orders_cancel", {"order_ids": ["1"]}),
+    ("mcp__exchange__orders_close_position", {"product_id": "X"}),
+    ("mcp__exchange__convert_execute", {"trade_id": "1"}),
+    ("mcp__exchange__transfer", {"amount": "1"}),
+    ("mcp__exchange__x402_pay", {"url": "https://example.com"}),
+    ("mcp__exchange__x402_fetch", {"url": "https://example.com"}),
+    ("mcp__wallet__swap_tokens", {"from": "A", "to": "B"}),
+    ("mcp__bank__create_payment", {"amount": "1"}),
+    ("mcp__payments__create_payout", {"amount": 1}),
+    ("mcp__bank__withdraw", {"amount": "1"}),
+    ("mcp__mail__send_message", {"body": "hi"}),
+    ("mcp__mail__reply", {"thread_id": "1", "body": "hi"}),
+    ("mcp__mail__forward", {"message_id": "1"}),
+    ("mcp__chat__chat_postMessage", {"channel": "C1", "text": "hi"}),
+    ("mcp__drive__share_file", {"file_id": "1"}),
+    ("mcp__warehouse__grant_access", {"share": "x"}),
+    ("mcp__blog__publish_post", {"id": "1"}),
+    ("mcp__generic__run", {"action": "x", "side": "BUY", "qty": 1}),
+    ("mcp__mail__update_draft", {"draft_id": "1", "recipients": ["a@example.com"]}),
+    ("mcp__exchange__preview_and_send", {"id": "1"}),
+    ("mcp__exchange__quote_execute", {"quote_id": "1"}),
+    ("mcp__exchange__orders_edit_preview", {"order_id": "1"}),
+    ("mcp__exchange__orders_preview", {"product_id": "X-USD", "side": "BUY"}),
+    ("mcp__generic__run", {"Side": "Buy"}),
+    ("mcp__generic__run", {"orderSide": "SELL"}),
+    ("mcp__generic__run", {"order": [{"legs": [{"action": "buy"}]}]}),
+    ("mcp__generic__run", {"payload": '{"side": "sell", "qty": 1}'}),
+    ("mcp__generic__run", {"spec": {"payload": '{"Recipients": ["a@example.com"]}'}}),
+    ("mcp__generic__run", {"Direction": "SELL"}),
+    ("mcp__generic__run", {"payee": "acct-1", "amount": "5"}),
+    ("mcp__generic__run", {"destination": "0xabc", "amount": "5"}),
+    ("mcp__generic__run", {"To": "someone@example.com", "body": "hi"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01 someone@example.com"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01,someone@example.com"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01;acct-1"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01 acct-1"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": ["2026-01-01", "a@example.com"]}),
+    ("mcp__generic__run", {"to": "2026-01-01"}),
+    ("mcp__generic__run", {"order side": "buy"}),
+    ("mcp__generic__run", {"ORDER.SIDE": "SELL"}),
+    ("mcp__generic__run", {"to__address": "acct-1"}),
+    ("mcp__generic__run", {"Re-Cipients": "a@example.com"}),
+    ("mcp__generic__run", {"ｓｉｄｅ": "buy"}),
+    ("mcp__generic__run", {"sіde": "buy"}),
+]
+
+
+@pytest.mark.parametrize(("tool", "tool_input"), _OUTWARD_CONNECTOR_CALLS)
+def test_when_connector_trades_pays_or_sends_then_asked(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize(("tool", "tool_input"), _OUTWARD_CONNECTOR_CALLS[:3])
+def test_when_connector_trades_unattended_then_denied(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool, environment={"CLAUDE_GUARD": "deny"})
+    assert answer.get("permissionDecision") == "deny"
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("mcp__broker__get_account_positions", {}),
+        ("mcp__broker__get_account_trades", {}),
+        ("mcp__broker__get_price_history", {"from": "2026-01-01", "to": "2026-02-01"}),
+        (
+            "mcp__broker__get_price_history",
+            {"start": "2026-01-01T00:00:00Z", "to": "2026-02-01T00:00:00Z"},
+        ),
+        ("mcp__exchange__orders_list", {}),
+        ("mcp__exchange__orders_preview", {"product_id": "X-USD"}),
+        ("mcp__mail__search_threads", {"query": "invoice to:someone"}),
+        ("mcp__mail__create_draft", {"body": "hi"}),
+        ("mcp__drive__get_file_permissions", {"file_id": "1"}),
+    ],
+)
+def test_when_connector_reads_or_previews_then_no_decision(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
     assert answer == {}
 
 

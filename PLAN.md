@@ -2,123 +2,102 @@
 
 A marketplace of Claude Code plugins that let Claude do impressive projects entirely autonomously and securely, from a short prompt to a retired project, with each plugin detachable from the rest.
 
-Signed off by the owner: the eight requirements (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), D62 to D70 (decided under the owner's delegation, 2026-11-19), and D71 to D81 (2026-11-20).
-Everything else is proposed: D54 to D60, D82 to D115, the coverage map, the Design's text and the Not yet list as rewritten here.
-The security policy (R3, D47, `secure-project`) stays open to refinement as real projects reach it.
+Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv).
+
+Signed off by the owner: R1 to R8 (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), D62 to D70 (under the owner's delegation, 2026-11-19) and D71 to D81 (2026-11-20).
+Everything else is proposed: R9, the Fails-when lines under R1 to R8, D54 to D60, D82 onwards, the amendments dated 2026-11-21, the coverage map, the Design's text and the Not yet list.
+The unsigned backlog is counted under Open.
+This file keeps one line per decision; the full text of every signed decision is at commit `7aa0625` (`main` before this cut), and test logs and long rationale live in the pull request or skill each line points at.
 
 ## Brief
 
 ### Goal
 
 The owner's aim, in their words: "I want these plugins to let claude do impressive projects entirely autonomously and in a secure way. and for different plugins to be detachable."
-Claude gets one prompt and delivers a project that is elegant, efficient, correct and well tested, designed beyond the brief and named in its domain's language, with the planning, deployment, operation and retirement done as well as the code.
-The plugins settle in advance the decisions that recur across projects, so Claude neither asks nor re-decides them; since no such set is ever complete, they also find and fix their own gaps.
-The eight requirements below are the qualities every part is judged by, and the coverage map under Verification shows, stage by stage, which part delivers each and what proved it, so "what is still missing" is read from the plan rather than found by asking again.
-Done looks like: every cell of the coverage map proven by a run or deliberately left out, two trial builds of different kinds run from one prompt with nobody present and leaving `review-project` no defect, and each plugin shown to work installed alone.
+Claude gets one prompt and delivers a project that is elegant, correct and well tested, designed beyond the brief, planned, deployed, run and retired as well as coded; the plugins settle recurring decisions in advance and find and fix their own gaps.
+Done looks like: every map row graded *repeated* or deliberately left out, two trials of different kinds run through the launcher from one prompt leaving `review-project` no defect, each plugin shown to work alone, and a change shown to beat a fixed control (issue 150).
 
 ### Terms
 
-- **skill** — a `plugins/<plugin>/skills/<name>/SKILL.md` with frontmatter, plus any `references/` and `scripts/`, per the Agent Skills standard.
-- **plugin** — a folder under `plugins/` with a manifest, skills, a session-start hook and a trigger suite, named verb-first and installable alone; the repo is a **marketplace** of six (D88).
-- **context file** — a plugin's `hooks/context.md`, its always-on skill list, printed into every session and subagent (D92).
-- **shared rules** — a plugin's `hooks/shared.md`, identical in all six: how to use the lists, and the map each plugin uses to name what it lacks, printed once however many plugins are installed (D93).
-- **instruction file** — `instructions/installed.md`, the owner's own rules for a machine with the plugins, or `instructions/symlinked.md`, which adds everything the plugins print, for the symlink wiring (D94).
-- **description** — a skill's frontmatter trigger text, all Claude sees when deciding to load it.
-- **reference** — a file under a skill's `references/`, loaded only when the skill points there.
-- **always-on file** — an instruction file, a context file or the shared rules: read, and paid for, in every session and subagent.
-- **house pick** — a library or tool a skill chooses over its rivals.
-- **drift** — a skill's description, rules or examples falling out of line with its body, its neighbours or current tools.
-- **skill feedback** — a GitHub issue labelled `skill-feedback` on the owning plugin's repository, filed when a skill steered Claude wrong in real work; a machine that must not reach a public tracker records it to a file instead.
-- **autonomous mode** — a run with no user present: Claude proceeds on its recommended answers, records each as an assumption, and takes no outward action the standing grant does not name (D35, D111).
+- **skill** — a `SKILL.md` with any `references/` and `scripts/`.
+- **plugin** — a folder under `plugins/`, installable alone; the repo is a **marketplace** of six.
+- **always-on file** — a plugin's `hooks/context.md` or `hooks/shared.md`, or an instruction file: paid for in every session and subagent.
+- **sweep** — one `review-plugin` run: the open skill feedback, every drift check, the outside review, landed as one pull request.
+- **trial build** — a real project built with the plugins to test them.
+- **launcher** — `build-project`'s `scripts/launch.py`: it starts an unattended run under the **run profile** (settings that give it less than the owner has), proves the profile with a **preflight** and accepts a finish only through its **gate**.
+- **standing grant** — a project's `grant.json`, approved in advance by the owner.
+- **guard hook** — `manage-project`'s `PreToolUse` hook: it asks before, or unattended refuses, what cannot be undone.
+- **autonomous mode** — no user present: answers assumed, decisions proposed, no outward action the grant does not allow.
 - **outward action** — creating a repository, publishing, deploying, messaging, spending or moving money, or acting on an account.
-- **standing grant** — a project's `grant.json`: what the owner approved in advance for runs with nobody present, in a fixed form the launcher and the guard hook read (D111).
-- **run profile** — the settings, flags and environment an unattended run starts under: only the tools and servers the project needs, the sandbox on, writes confined, named secrets only (D109).
-- **launcher** — `build-project`'s `scripts/launch.py`, which starts an unattended run under the run profile, resumes it after a drop and stops it at its limit (D110).
-- **guard hook** — `manage-project`'s `PreToolUse` hook, which asks before, or with nobody present refuses, an action that cannot be taken back (D108).
-- **the ladder** — which model and effort runs each stage (D27).
-- **trial build** — a real project planned, built and reviewed with the plugins to test them, its skill feedback worked through by a sweep.
-- **sweep** — one `review-plugin` run over the repo: the open skill feedback first, then every drift check, landed as one pull request.
-- **trigger suite** — a plugin's `evals/` cases, a casual prompt per skill that should fire it and a few a near neighbour's skill should not, run with `claude plugin eval` to show each description still fires.
-- **data class** — public, licensed, private or personal, recorded for each input and output of a project (`secure-project`).
-- **house design system** — the one look every project's surfaces share, defined as tokens independent of technology (`design-interface`).
-- **evaluator** — a fresh-context subagent in `build-project`'s gate that runs the surface and scores it against written criteria.
-- **coverage map** — the table under Verification of a project's stages against the eight requirements, each cell naming what delivers it and what proved it (D107).
-- **proven** — exercised by a trial build or a real run, as against **designed**: written into a skill, a script or a test and checked only by reading, a unit test or a probe.
 
 ### Requirements
 
-The owner named these eight as the qualities every plugin, skill and project is judged by; which plugin holds what is design, under Interface.
+The owner named R1 to R8 as the qualities every plugin, skill and project is judged by; R9 is proposed.
+Each states the result that would show it failing, and what it costs.
 
-- **R1 Autonomous** — one prompt, nobody present, start to finish.
-  - Within it: a project runs with one batch of answers from the user, or with none (D35); a run that stops is resumed, a run that overspends is stopped, and the owner learns which.
-  - Cost: plans stay unsigned until read; every outward action the standing grant does not name waits for the owner; a launcher and a run profile for every run.
-- **R2 Impressive** — best-in-class design and ideas beyond the brief; not boxed in by this plugin set (other languages, outside skills).
-  - Within it: a skill's default is a default; Claude researches, proposes ideas beyond the brief and the skills, and shows its decisions, alternatives, costs and sources for the owner to challenge.
-  - Cost: longer plans and gates (D57, D58), a research step per project, and an outside plugin vetted before it is proposed (D105).
-- **R3 Secure** — safe with data, credentials and money, enforced and not only advised; the public repo carries no secrets or project data.
-  - Within it: a project whose data is private, or which holds a credential for an account with money in it, exposes neither without the owner having to notice: the data is private until the plan says otherwise, nothing moves money without a person confirming it, and what a project reads is data, never instructions; the repo holds generic conventions only, no secrets, no project data, no machine-local state.
-  - Cost: a class per input and output in every plan, hosts picked from it, the owner's machine in place of the free public hosts for private data, a security step in every gate, a guard hook before every tool call (D108) and a run profile that gives an unattended run less than the owner has (D109).
+- **R1 Autonomous** — one prompt, nobody present, start to finish, with one batch of answers from the owner or none; a stopped run resumes, an overspending one stops, and the owner learns which.
+  - Fails when a launcher run waits on a question, ends `finished` without the launcher's gate, or takes an outward action its grant does not make possible.
+  - Cost: unsigned plans, outward steps that wait, a launcher and profile for every run.
+- **R2 Impressive** — best-in-class design and ideas beyond the brief, not boxed in by this plugin set.
+  - Fails when a trial plan lacks a best-in-class line per surface or an idea beyond the brief, or its evaluator still fails a surface after three rounds.
+  - Cost: longer plans and gates, a research step, outside plugins vetted.
+- **R3 Secure** — safe with data, credentials and money, enforced, not only advised; no secret or project data in the public repo.
+  - Fails when the preflight lets a probe through, an attack passes a profile deny or the approved grant, a secret or project data reaches the repo or a tracker, or a money-moving connector call runs unconfirmed.
+  - Cost: a class per input and output, a security step per gate, the guard before every tool call, a profile narrower than the owner.
 - **R4 Modular** — any plugin works alone or with the others, on any machine.
-  - Within it: each plugin installs and works on its own and they work as a group; a machine that cannot install plugins symlinks them; `maintain-plugin` assumes no particular repository, tracker or toolchain.
-  - Cost: a context file per plugin, shared rules in six identical copies, pointers that read correctly alone, releases an install can pin, and a feedback destination per install.
-- **R5 Proven** — results are right and shown to be right, with the plan, requirements, cost and test results recorded.
-  - Within it: a requirement is ticked by a run, not by a skill existing (D39); each project keeps its plan, dependencies, costs and checks beside its code (D75); the plugins keep this plan's coverage map.
-  - Cost: a run per requirement, three records per project, trial builds, and the map kept true each sweep.
-- **R6 Complete** — the whole life of a project: plan, build, verify, deploy, operate, undo and retire.
-  - Within it: designed, built, reviewed, deployed and run from a minimal prompt, consistent from project to project.
-  - Cost: every other requirement; scope held to Python data, command-line, API and dashboard projects with a TypeScript front end or Worker beside them, until a project earns more.
-- **R7 Frugal** — build cost and running cost are bounded and known.
-  - Within it: each stage runs on the cheapest model that does it well, a run stops at its limit, each deployed account's bill is read, and each skill is worth what it costs to load: clear, concise, consistent with its neighbours, general, holding nothing Claude does unprompted, with the always-on files as short as their job allows.
-  - Cost: a subagent hand-off per stage (D27), a ledger per project (D76), the launcher's limit (D110), word budgets (D54) and description limits (D63); free tiers change yearly and the picks are one person's, so an install with its own infrastructure leaves `run-project` out.
-- **R8 Adaptive** — the plugins find and fix their own gaps, respond to feedback, keep up as tools and prices change, and show that a change improved things.
-  - Within it: a gap is captured when it surfaces, worked through on a schedule and on demand, and each fix verified by running the case; the owner reviews the result, and no skill is edited mid-build.
-  - Cost: a hook, a scheduled sweep, a trigger suite per plugin, trial builds, every claim and price re-checked each sweep, and a regression build not yet built (issue 150).
+  - Fails when `validate --strict` or a trigger case fails, or a plugin alone makes a call a missing skill owns without naming it.
+  - Cost: a context file per plugin, six copies of the shared rules, pinnable releases.
+- **R5 Proven** — results right and shown right, with plan, cost and test results recorded.
+  - Fails when a cell graded as passing has a last recorded result that is not a pass, or a build or this repo lacks a record.
+  - Cost: a run per requirement, three records per project, the map kept true.
+- **R6 Complete** — plan, build, verify, deploy, operate, undo and retire.
+  - Fails when a row of the map has nothing above *designed*: today undo and retire, each with its issue or reason.
+  - Cost: every other requirement; scope held to Python data, command-line, API and dashboard projects, with a TypeScript front end or Worker beside them.
+- **R7 Frugal** — build and running cost bounded and known; each skill worth its load.
+  - Fails when a run passes its limit by more than one poll, a sweep passes its budget unexplained, or a file or description passes its budget.
+  - Cost: a hand-off per stage, a ledger per project, the launcher's limit, the budget table.
+- **R8 Adaptive** — the plugins find and fix their own gaps, keep up with tools and prices, and show a change improved things.
+  - Fails when a feedback issue survives two sweeps unsettled and unmapped, or a change is called an improvement without a run against the control (issue 150).
+  - Cost: hooks, a weekly sweep, trigger suites, claims re-checked, a control build.
+- **R9 Legible** *(proposed, D125)* — what the owner must read and decide after a run or sweep fits on one screen; sign-off is by exception; the unsigned backlog is tracked.
+  - Fails when a report's part for the owner runs past one screen (about 40 lines), the plan calls something signed that the owner did not sign, or the backlog line under Open is stale.
+  - Cost: detail deferred to the pull request; decisions stand as proposed until read.
+
 
 ### Not yet
 
-- **A repository per plugin** — earned when a plugin needs different visibility or another owner (D30).
-- **Icons, and a listing in the public plugin directory** — earned by wanting other people to find the plugins.
-- **Toolchain skills other than `uv`** — they belong in the repo that uses the toolchain, as project skills or a private plugin; the one exception is the TypeScript toolchain of a front end or Worker beside a Python package, a reference in `write-entry-points` (D97).
-- **A debugging skill** — earned when skill feedback shows debugging going wrong; issue 148 now asks for one.
-- **References for a language other than Python and TypeScript** — earned by the first project in it, which looks first for an outside plugin (D105).
-- **A skill for architecture across components** — services, several applications, a non-Python stack beyond the front end and a Worker — earned when a project with several components shows a seam decided badly that `make-decisions`' general case did not catch (D104).
-- **CI for projects** — marginal for one-machine unattended tools; earned by a second contributor or a deploy.
-- **An evaluation per fixed issue** — too big; the trigger suites check that descriptions fire, and a sweep runs each issue's case; a regression build before a release is issue 150.
-- **Snapshot tests, mutation testing, a task runner, Docker, dev containers, docs generation** — each earned by the first project that needs it; the skills say "none" until then; a container or virtual machine around a whole unattended run is I5.
-- **`agents/`, `commands/` and `rules/`** — none yet.
-- **Slack as a message channel** — earned once the user has a workspace they read.
-- **An `advisor` second-model step mid-task** — earned when a build stage keeps failing its gate on Sonnet.
-- **More SQL dialects for `write-sql`** — earned by the first project on one; DuckDB is the only reference.
-- **A plugin per domain** (accounting, tax, trading) — a domain skill starts in its project's `.claude/skills/` and is promoted to a plugin, private if need be, once a second repository needs it; issue 71 holds the ideas for trading.
-- **Asking the owner one question from afar mid-run** — designed in D112, built once a test needs no message sent to anyone (issue 155).
+- **A repository per plugin** — earned by different visibility or another owner (D30).
+- **A listing in the plugin directory, icons; `agents/`, `commands/`, `rules/`; Slack; an `advisor` step** — none earned yet.
+- **Toolchain skills beyond `uv`, languages beyond Python and TypeScript, more SQL dialects, architecture across components** — each earned by the first project that needs it, which looks first for an outside plugin (D97, D104, D105).
+- **A debugging skill** — issue 148.
+- **CI, snapshot or mutation tests, a task runner, Docker, docs generation** — each earned by the first project that needs it; a container around a run is I5.
+- **A plugin per domain** — a domain skill starts in its project and is promoted once a second repository needs it; issue 71 holds trading.
+- **Asking the owner one question from afar mid-run** — designed (D112), issue 155.
+- **A browser inside an unattended run on macOS** — earned once one starts inside the sandbox (D117).
 
 ## Design
 
 ### Inputs
 
-- **The owner's conversations and corrections** — the requirements and most rules; corrections about skills arrive as skill feedback.
-- **Skill feedback issues** — labelled `skill-feedback` on the repository each `plugin.json` names; public, so they carry the shape of a case and never a project's data.
-- **Current tool docs and releases** — every skill claim is checked against the current release.
-- **Trial builds** — each files skill feedback for the next sweep and fills in the coverage map's evidence.
+- **The owner's conversations and corrections** — the requirements and most rules.
+- **Skill-feedback issues** — labelled `skill-feedback` on the repository each `plugin.json` names; public, so they carry a case's shape, never a project's data.
+- **Current tool docs and releases** — every skill claim is checked against them each sweep.
+- **Trial builds and their records** — each files feedback and grades the map from its own `verification.csv`.
 
 ### Data flow
 
-1. **Skill source** — `plugins/<plugin>/skills/<name>/SKILL.md` with its references and scripts, edited only in a sweep or by the owner. (IO)
-2. **Wiring** — the plugins installed from the marketplace with `~/.claude/CLAUDE.md` linked to `instructions/installed.md`, or `~/.claude/skills` and `~/.claude/CLAUDE.md` symlinked to the repo's `skills/` and `instructions/symlinked.md`; never both on one machine, which loads every skill twice. (IO)
-3. **Loading** — every session and subagent loads each description and the always-on files; a skill's body loads when its description or the list triggers it, a reference when the body points there; the guard hook runs before every tool call.
-4. **Applying** — Claude follows the loaded skills in real work in other repos, an unattended run under the launcher's run profile.
-5. **Feedback** — a skill that steers wrong becomes skill feedback on the owning plugin's repository. (IO)
-6. **Sweep** — `review-plugin` works the issues, then the drift checks and the coverage map, and opens one pull request, whose merge loops back to stage 1.
+1. **Skill source** — edited in a sweep or by the owner. (IO)
+2. **Wiring** — installed plugins with `installed.md`, or the symlink route with `symlinked.md`, never both. (IO)
+3. **Loading** — descriptions and always-on files in every session and subagent; the guard before every tool call.
+4. **Applying** — real work elsewhere; unattended runs through the launcher.
+5. **Feedback** — a skill that steers wrong becomes an issue. (IO)
+6. **Sweep** — issues, checks and the outside review in one pull request, whose merge loops to stage 1.
 
 ### Outputs
 
-- **`plugins/<plugin>/skills/<name>/SKILL.md`**, its `references/` and any `scripts/` — laid out by `write-skills`; read or run by Claude. The scripts: `choose-model`'s `costs.py`, `build-project`'s `launch.py`, `secure-project`'s `guard.sh`, `guard.py` and `grant.py`, each with its tests.
-- **`plugins/<plugin>/`** — `.claude-plugin/plugin.json`, `hooks/` (the context file, the shared rules and the script that prints them; `maintain-plugin` adds the feedback rule and the `Stop` hook, `manage-project` the `PreCompact` instructions and the `PreToolUse` guard) and `evals/` (one trigger case per skill).
-- **`.claude-plugin/marketplace.json`** — the six plugins by relative path.
-- **`skills/<name>`** — a relative symlink to each skill, for the symlink wiring.
-- **`instructions/installed.md` and `instructions/symlinked.md`** — the owner's working rules, and with them for the symlink wiring the skill list, map and feedback rule; read by Claude in every session and subagent. The root `CLAUDE.md` links to `symlinked.md` until the owner's link moves (D94).
-- **`README.md`** — for humans: the plugins, install, configuration, feedback and trial builds.
-- **`PLAN.md`** — this file, with the coverage map.
+- **Skills and their scripts** — `costs.py`, `launch.py`, `guard.sh`, `guard.py`, `grant.py`, each with tests.
+- **Each plugin's wiring** — manifest, `hooks/` and `evals/`.
+- **`.claude-plugin/marketplace.json`**, **`skills/`** symlinks, **`instructions/`**, **`README.md`**, this plan and its three records.
 
 ### Interface
 
@@ -127,311 +106,302 @@ claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs -
 claude plugin install manage-project@henrymckay
 ```
 
-Symlinked instead, where plugins cannot be installed:
-
-```bash
-git clone https://github.com/henrymckay/claude.git
-ln -s "$PWD/claude/skills" ~/.claude/skills
-ln -s "$PWD/claude/instructions/symlinked.md" ~/.claude/CLAUDE.md
-```
-
 An unattended build, from the project's folder:
 
 ```bash
-uv run --script <manage-project>/skills/build-project/scripts/launch.py prompt.md --budget-usd 20 --commit-as "Name <noreply address>"
+uv run --script <manage-project>/skills/build-project/scripts/launch.py prompt.md --budget-usd 20 --gate-command "uv run pytest -q" --commit-as "Name <noreply address>"
 ```
 
-It prints one line, `finished`, `blocked`, `limit` or `failed`, with the spend, turns and session, and exits 0, 3, 4 or 5.
-
-Skills trigger from their descriptions or by name (`/plan-project`, or `/manage-project:plan-project` when installed); "review the skills" runs `review-plugin`.
-
-Each plugin gives Claude one ability, so an install can take some and not others (D30, D31, D88):
-
-- **`manage-project`** — plan, build, review and retire a project, each stage on the ladder's model whatever the session's default, with the git, Markdown, decision and security conventions any repository needs, the launcher for a run nobody watches and the guard hook; cost: a subagent hand-off per stage.
-- **`design-project`** — the design of what a project shows and holds before it is built: every interface between a person and the finished work ("not just be how dashboards look , but also how alerts look, the kind of things that command line interfaces or apis expose", the owner, 2026-11-20) and the tables of a pipeline, daily or intraday; cost: a sixth plugin to install and keep in the map.
-- **`write-code`** — the house style for the code itself, toolchain-free: functional, object-oriented, Python, TypeScript, SQL, tests, Polars; cost: house picks the owner cannot verify alone, re-checked each sweep.
-- **`structure-app`** — a Python application's set-up and shape: the `uv` toolchain, house-pick libraries, layers, entry points; cost: the one plugin tied to a toolchain.
-- **`run-project`** — a project's life after the build: its data, a job nobody watches, a free or near-free host per artefact, messages to the owner; cost: free tiers change yearly, and the picks are one person's.
-- **`maintain-plugin`** — maintain any plugin whose source Claude can read, on any machine: author a skill, review for drift, capture gaps; cost: a feedback destination per install, and a report where it cannot push.
+It prints one line, `finished`, `blocked`, `limit` or `failed`, and exits 0, 3, 4 or 5; `--preflight-only` proves the profile and starts nothing.
 
 | Plugin | Skills |
 |---|---|
-| `maintain-plugin` | `review-plugin`, `write-skills`, the feedback rule and `Stop` hook |
-| `manage-project` | `plan-project`, `build-project`, `review-project`, `retire-project`, `choose-model`, `make-decisions`, `secure-project`, `use-git`, `write-markdown`, the guard hook |
+| `manage-project` | `plan-project`, `build-project`, `review-project`, `retire-project`, `choose-model`, `make-decisions`, `secure-project`, `use-git`, `write-markdown`; the launcher and the guard |
 | `design-project` | `design-interface`, `design-pipeline` |
 | `write-code` | `be-functional`, `be-oop`, `write-python`, `write-typescript`, `write-sql`, `write-tests`, `use-polars` |
 | `structure-app` | `setup-python`, `structure-python`, `write-entry-points` |
 | `run-project` | `store-data`, `run-unattended`, `deploy-project`, `send-messages` |
+| `maintain-plugin` | `review-plugin`, `write-skills` |
 
 ### Runs on
 
-- **The skills and the instruction file** — the owner's machine, with the six plugins installed from the repo as a local marketplace, which loads them in place so edits stay live, and `~/.claude/CLAUDE.md` symlinked to `instructions/installed.md` (D94); another machine installs a release from GitHub, or symlinks; nothing is deployed.
-- **The weekly sweep** — a Claude Code cloud scheduled task (`trig_01NmQMC42vGPjqQEDE8XrgzQ`), Mondays 02:00 UTC on Opus, cloning the public repo and opening one pull request; no connectors.
-- **The `Stop` hook** — carried by `maintain-plugin` (`plugins/maintain-plugin/hooks/hooks.json`); with the symlink wiring its entry is merged into `~/.claude/settings.json`.
-- **The guard hook** — carried by `manage-project` (`plugins/manage-project/hooks/hooks.json`), on by default, about 0.1 to 0.2 seconds per tool call; with the symlink wiring its entry is merged into `~/.claude/settings.json` by hand.
-- **An unattended run** — the owner's machine, started by the launcher, its folder under `~/.cache/claude-runs/`; the sandbox needs macOS, Linux or WSL2.
-- **The trigger suites** — `claude plugin eval` on the owner's machine, or in a sweep where the CLI is available.
-- **Threat model** — the plugins run with the owner's permissions in every session: a hook runs as a shell command and a skill enters the context as instructions, so a change merged here reaches every install that updates, which is why every change lands by a reviewed pull request (D2, D24) and an install pins a release (D41); the repo holds no credential, and the weekly sweep runs with no connectors (D28); what a project reads, an issue's text included, is data to a session (`secure-project`); an unattended run holds only the run profile's tools, the project's folder and the secrets its grant names, and the guard refuses within it what cannot be undone.
-- **Unattended runs** — trial builds start through the launcher with a spend limit; this repo grants nothing (no `grant.json`), so a run here takes no outward action.
+- **The skills** — the owner's machine, installed from the repo as a local marketplace; elsewhere a release, or symlinks.
+- **The weekly sweep** — a Claude Code cloud scheduled task on Opus with no connectors, opening one pull request; its identifier stays off this public file.
+- **The hooks** — `maintain-plugin`'s `Stop` hook and `manage-project`'s guard, about 0.1 to 0.4 seconds a call; merged by hand under the symlink wiring.
+- **An unattended run** — the owner's machine, through the launcher, its folder under `~/.cache/claude-runs/`.
+- **Threat model** — a hook runs as a shell command and a skill as instructions, so changes land by reviewed pull request (D2, D24) and installs pin a release (D41); the repo holds no credential; an unattended run's boundary is the run profile plus the approved grant, proved by the preflight; the guard's patterns are defence in depth, its bypass cases kept in its tests.
+- **Unattended runs** — trial builds start through the launcher; this repo grants nothing, so a run here takes no outward action.
 
 ### Errors
 
-- **A description fails to trigger, or fires on the wrong task** — found by `review-plugin`'s trigger-overlap check, a should-not-trigger case or skill feedback; fixed in the description.
-- **A description outgrows the listing's budget** — found by `review-plugin`'s inventory in characters and `claude plugin details`; cut to `write-skills`' limit (D63).
-- **A rule is duplicated or contradicted** — found by `review-plugin`; kept where it belongs, pointed at from elsewhere.
-- **A library claim goes stale** — found by re-running every claim against the current release each sweep.
-- **A symlink dangles** — found by `review-plugin`'s wiring check.
-- **An always-on file or the README grows past its budget** — found by `review-plugin`'s inventory; the file is rewritten whole (D54).
-- **Feedback carries project data** — the feedback rule requires the shape of the case only; delete or edit such an issue on sight.
-- **The guard asks about an ordinary command** — approve it, file the case as skill feedback against `secure-project`, and set `guard` to `off` while it waits if it keeps asking.
-- **The guard misses a dangerous command** — filed as skill feedback with the command's shape; the run profile, not the guard, is an unattended run's boundary.
-- **An unattended run needs more than its profile gives** — it ends `blocked` naming what it needs, and the owner adds it to the grant or the launcher's flags.
+- **A description misfires, a rule drifts or a file outgrows its budget** — found by the sweep and fixed where the rule belongs; feedback holding project data is edited on sight.
+- **The guard asks about an ordinary command, or misses a dangerous one** — file the case; set `guard` to `off` meanwhile if it keeps asking; the run profile, not the guard, is the boundary.
+- **The preflight refuses a run** — read `status.json`; fix the launcher before any run.
+- **An unattended run needs more than its profile gives** — it ends `blocked` naming what it needs.
 
 ### Decisions
 
-Numbers are stable; the groups are for reading.
+Numbers are stable; each line is the choice, what it beat, and where the evidence lives.
+
+**Budgets** (D54, amended by D81, D91, D95, D106, D115, D125, D128; figures in words unless marked):
+
+| Item | Budget | Now |
+|---|---|---|
+| `instructions/installed.md` | 180 | 176 |
+| `instructions/symlinked.md` | 1,055 | 1,050 |
+| `hooks/shared.md`, each copy | 380 | 377 |
+| `manage-project`'s context file | 170 | 167 |
+| `write-code`'s context file | 80 | 75 |
+| Every other context file | 70 | 59 at most |
+| `hooks/compact.md` (D72) | 65 | 65 |
+| `README.md` | 980 | 977 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,492 |
+| A skill description | 500 characters | all under |
+| A sweep, build and checks | $40 | `costs.csv` |
+| A sweep's outside review | $25 | `costs.csv` |
+| The launcher's preflight | $0.05 a run | about $0.01 |
 
 **The repository and its wiring**
 
-- **D30 One repo as a marketplace of five plugins** over one plugin or a repo each — an install takes some and not others, and one repo keeps one tracker, one sweep and cross-plugin drift in view; cost: a plugin needing other visibility must move out (Not yet). Source: code.claude.com/docs/en/plugins/create-marketplace.
-- **D31 Five plugins, each named verb-first for the ability it gives** (the user's) — `use-git` and `write-markdown` sit in `manage-project` because any repo needs them; `uv` lives only in `structure-app`; `run-project` holds one person's free-tier picks, so an install can leave it out, and `deploy-project` sits there because its body is host picks; `choose-model` sits in `manage-project`, where three of the four skills it governs live. The validator reserves the name `claude`; cost: moving a skill means updating its plugin's context file and the map in six copies.
-- **D1 Symlinks into `~/.claude` stay a supported wiring** for a machine that cannot install plugins, over installed plugins only; the authoring machine runs the installed plugins, so it runs what others install; cost: the symlink wiring merges the `Stop` hook by hand.
-- **D32 Always-on instructions per plugin are a context file printed by a `SessionStart` hook** over a plugin `CLAUDE.md`, which Claude Code does not load; `CLAUDE.md` carries the same lines for the symlink wiring, and `review-plugin` checks they agree; cost: the same lines in six files, checked each sweep.
-- **D34 A toolchain's commands live in the skill that owns it** over each skill naming `uv` commands — `uv` in `setup-python`, with `run-project` building on it; `manage-project` and `write-code` name a `uv` command only as that toolchain's example, so they hold under any toolchain; cost: without `structure-app`, a reader gets examples, not commands.
-- **D2 Commit as the owner's GitHub no-reply identity; a sweep lands by pull request, and only an edit the user makes or asks for outside a sweep goes straight to `main`** over everything straight to `main` — every skill change is reviewed in one place before it reaches an install; overrides `use-git`'s branch default for those direct edits; cost: a direct fix to a skill waits for a merge.
-- **D10 Not yet lives in this plan** over `enhancement` issues — issues are kept for skill feedback; cost: ideas are tracked apart from issues.
-- **D11 The README is for humans and points at this plan** over copying it; cost: a reader wanting the decisions follows a link.
-- **D12 Memory holds only what this plan doesn't** over memory as a record — the plan is visible and versioned; memory is per-machine; cost: memory is pruned by hand, since a sweep may not edit it.
-- **D9 No performance budget** over a budget — nothing here runs; cost: none until something here runs.
-- **D41 A release is a tag `v<major>.<minor>` on `main`, cut after a sweep is merged and its suites pass,** over installing from the tip — an install pins a tag, so a sweep cannot change behaviour on another machine mid-week; cost: one tag per sweep, cut by the user; overrides `use-git`, Release (a tag per milestone).
-- **D43 The MIT licence** over Apache 2.0 or none — without one nobody else may use the plugins, and MIT is the one an organisation approves most readily; cost: anyone may reuse the plugins without giving back.
-- **D44 Nothing in the repo distinguishes one of the user's machines or settings from another** over naming machines — the plugins are for anyone; a constraint is named for what it is (a tracker that must stay private, a toolchain other than `uv`, a marketplace that is not allowed); cost: a constraint is described, not located.
-- **D54 Word budgets for the top-level files** — `CLAUDE.md` 900 words, each context file 325 (`manage-project`'s 425, raised from 410 for its ninth skill's line), the README 800; `PLAN.md` has none, but its decisions keep the shape decision, alternative, cost, source — over no budget, under which `CLAUDE.md` grew ninefold one sentence at a time (issue 69); cost: an addition must say what it removed, and a file near its budget is rewritten whole rather than patched (`review-plugin`); its figures are amended by D81, D91, D95, D106 and D115.
+- **D1** Symlinks into `~/.claude` stay a supported wiring beside installed plugins.
+- **D2** Commit as the owner's no-reply identity; a sweep lands by pull request, and only an edit the owner makes or asks for outside a sweep goes straight to `main`; overrides `use-git`, Branches.
+- **D9** No performance budget. *Amended 2026-11-21 (proposed): hooks and the launcher now run; their time and cost are in the budget table.*
+- **D10** Not yet lives in this plan, over `enhancement` issues.
+- **D11** The README is for humans and points here.
+- **D12** Memory holds only what this plan doesn't. *Amended 2026-11-21 (proposed): next steps live in `Next`, never in memory.*
+- **D30** One repo as a marketplace, over one plugin or a repo each. *Amended by D88: six plugins.*
+- **D31** Plugins named verb-first for their ability; `use-git` and `write-markdown` in `manage-project`. *Amended by D88: six plugins.*
+- **D32** Always-on lists printed by hooks, over a plugin `CLAUDE.md`; amended by D92 to D94.
+- **D34** A toolchain's commands live in the skill that owns it.
+- **D41** A release is a tag `v<major>.<minor>` on `main` after a merged sweep, cut by the owner; overrides `use-git`, Release.
+- **D43** The MIT licence.
+- **D44** Nothing in the repo tells the owner's machines apart.
+- **D54** Word budgets for the always-on files and the README, in the table above; an addition says what it removed.
+- **D60** The install line looks up the newest release tag, over naming it.
+- **D61** The owning account is named only where an install needs it. *(proposed: `author.name` reads `claude contributors`.)*
+- **D62** Keep the marketplace name until the repository moves.
+- **D63** A description under 500 characters, never past 1,000 — `write-skills`.
+- **D64** A should-not-trigger case only beside a near neighbour.
+- **D65** Beside another authoring plugin, `write-skills` sets what a skill says.
+- **D66** `use-git`'s no-footer rule calls itself the owner's instruction.
+- **D88** A sixth plugin, `design-project`, for `design-interface` and `design-pipeline`; amends D30, D31, D55.
+- **D92** Each plugin prints its rules into every subagent from a `SubagentStart` hook; PR 146.
+- **D93** The shared rules print once per start through an atomic marker; PR 146.
+- **D94** Two instruction files, `installed.md` and `symlinked.md`; completed by D129.
+- **D95, D106, D115** Budgets after the instruction-file split and later additions; figures in the table.
+- **D129** *(proposed)* The root `CLAUDE.md` link is removed: the owner's link points at `installed.md`, and the link loaded the skill list twice here; completes D94.
 
 **How a project runs**
 
-- **D13 A skill's default is a default** over skills as fixed rules — a signed-off `PLAN.md` decision overrides a skill; a reason Claude finds is a proposed decision, raised before it is built on (in autonomous mode, recorded and built on); a rule stays imperative with its exception in the same sentence, because softened rules were ignored outright; cost: a deviation is written up before it is built.
-- **D14 Decisions are surfaced, not buried** over decisions left in prose — `plan-project`'s one batch lists Claude's decisions with alternatives, costs and sources beside the questions and assumptions; build and review reports list the calls made; cost: longer reports.
-- **D35 Autonomous mode** over stopping at each question — with no user present, Claude proceeds on its recommended answers, records each as an assumption, keeps decisions proposed and takes no outward action; `plan-project` defines it, `build-project` and `review-project` state it; skill feedback is still recorded as the feedback rule says; cost: plans stay unsigned and outward steps wait (R1); amended by D111, under which the actions a standing grant names are taken.
-- **D5 `review-project` general, `review-plugin` layered on it** over two independent reviews — one set of review mechanics; cost: a change to `review-project` reaches plugin reviews too.
-- **D6 `build-project`** over `develop-project` — matches "the build" across the skills; cost: none.
-- **D26 A fourth sweep outcome, "needs the user"** over the sweep deciding — an unattended run never changes a decision or settles policy; it leaves the issue open with a recommended answer; cost: such an issue stays open until the user answers.
-- **D46 Settle an open question from precedent** (`make-decisions`, in `manage-project`) over every gap becoming a question or a proposed decision, which left the first autonomous build with more calls than the user could read — cite the nearest answered decision, mark the call *(by precedent)*, report those as a count, and escalate only the irreversible, outward-facing, costly, security-touching or unprecedented.
-- **D47 `secure-project` in `manage-project`, private by default,** over a section of `deploy-project` or a sixth plugin — every project needs it whatever its hosts, and `run-project` is the plugin an install is likeliest to leave out; an input or output with no class is private, licensed data under personal-use terms is private, a looser class is the user's call, a loopback server checks `Host` and `Origin`, and nothing that moves money happens without a signed-off decision and a person confirming each action, never in autonomous mode; cost: the security step in every gate (R3); open to refinement.
-- **D52 Another method plugin driving takes the lead** over this family winning silently — where the user or the project names another plugin's method (one that plans, builds or reviews, such as `superpowers`), `plan-project`, `build-project` and `review-project` stand down unless named, the convention skills still apply, and `plan-project` takes a brainstorming or design skill's output as its input rather than replacing it; cost: a line in `manage-project`'s context file and `CLAUDE.md`, and one in `plan-project`. Source: issue 54's trials beside `superpowers` 7.0.2, where the prompt's wording, not a rule, decided which plugin led.
+- **D5** `review-project` general, `review-plugin` layered on it.
+- **D6** `build-project`, over `develop-project`.
+- **D13** A skill's default is a default; a signed decision overrides it, a reason Claude finds is a proposed decision.
+- **D14** Decisions surfaced with alternatives, costs and sources.
+- **D26** A sweep outcome "needs the user" for policy.
+- **D35** Autonomous mode: answers assumed, decisions proposed, no outward action; amended by D111, D123.
+- **D46** Settle an open question from precedent, escalating only what `make-decisions` lists.
+- **D47** `secure-project` in `manage-project`, private by default; nothing moves money without a signed decision and a person confirming; the policy stays open to refinement as real projects reach it.
+- **D52** A named method plugin leads; the convention skills still apply.
+- **D57** Every shipped surface aims at the best in class.
+- **D58** An evaluator pass in the gate, up to three rounds.
+- **D59** The ladder holds when a prompt calls the work small.
+- **D74** A build ends with the review, then an acceptance run.
+- **D75** Three records beside `PLAN.md` (`build-project`, Keep the records).
+- **D76** Stage costs totalled into `costs.csv` by `costs.py`.
+- **D77** Coverage at two levels, every core branch and a rising floor; overrides `write-tests`' old "no percentage".
+- **D78** A commit identity before the first commit; a schedule is deployed once it has fired.
+- **D79** Each check's result appended to `verification.csv`, never edited.
+- **D80** Teardown is `retire-project`, each irreversible step confirmed.
+- **D83** Running cost on each account's line in `DEPENDENCIES.md`.
+- **D84** A project older than the records gets them at its first review.
+- **D85** Both coverage levels run as one `pre-push` hook.
+- **D104** Reasoning from the general case is a section of `make-decisions`, over a design skill; PR 158.
+- **D105** Outside plugins are looked for, vetted and proposed; installing is the owner's step; PR 158.
+- **D113** Untrusted content is a section of `secure-project`.
+- **D114** Threat model and Unattended runs lines in a plan's Runs on.
+- **D125** *(proposed)* A plan holds to about 5,000 words, 5,500 at most, with a `Next` list, one line per decision and one budget table, cut without waiting for sign-off, over the 17,000 words this one reached; adds R9; `plan-project`; issue 165.
 
-**The feedback loop**
+**Running unattended**
 
-- **D3 Skill feedback as GitHub issues** over memory or a notes file — visible to the user, closable from a commit, not per-machine; cost: a public tracker, hence D33's file option.
-- **D4 The filing rule is always on** (`CLAUDE.md`, or `maintain-plugin`'s hook) over a skill — a skill loads only for a matching task, and feedback arises mid-task in any work; cost: every session pays its words.
-- **D33 Feedback goes to the owning plugin's repository**, read from its manifest or named in the user's `CLAUDE.md`, over a repository written into the skills; `maintain-plugin`'s `feedback` option (`issues`, `file`, `off`) redirects it on a machine whose work must not reach a public tracker; cost: a destination per install.
-- **D25 A `Stop` hook prompts for unfiled skill gaps** over the rule alone — the only hook that can reach the model, since `SessionEnd` cannot; cost: a Haiku check at the end of every turn.
-- **D24 Every sweep lands as one pull request**, scheduled or run in a session, over a session sweep committing to `main` — the pull request is where a sweep is reviewed; cost: a pull request even for a one-line sweep.
-- **D45 The coordinating session reviews and merges a sweep's pull request** over the user merging every sweep or the sweep merging its own — the sweep opens it and stops, and the coordinator checks the report against the branch and merges; cost: a rule change the user never reads unless the report flags it, which is why every rule cut, generalised or left is listed there.
-- **D28 The weekly sweep runs on Opus with no connectors** over Sonnet — skill edits are reasoning work, and a connector acting as the user is a risk the sweep doesn't need; cost: Opus prices for a weekly run.
-- **D23 A trigger suite per plugin at `plugins/<plugin>/evals/`**, the folder `claude plugin eval` reads, over one suite at the root — an eval run targets one plugin; cost: five suites to run.
-- **D39 A requirement is verified by behaviour** over by a skill existing — the ladder's milestone was once ticked when `choose-model` was written, and the first trial build then ran on the wrong model; each Verification line names a run and what it must show; cost: a run per requirement before it is ticked.
-- **D40 No brief-and-answers evaluations** over the `evaluate/` folder — trial builds and the trigger suites do its job with real feedback; replaces D8; cost: no fixed benchmark between sweeps.
+- **D108** A guard hook in `manage-project`, on by default, asking a person present and refusing when nobody is, over permission rules alone; Python 3.9 and named tuples for that script, overriding `write-python`; `secure-project`, PR 161.
+- **D109** An unattended run starts under the run profile, over the owner's settings, `--bare` or a container; `build-project`, PR 161.
+- **D110** The launcher starts, resumes and bounds a run by spend and turns read from records the run cannot write; PR 161.
+- **D111** A standing grant is `grant.json`, used only as the owner approved its SHA-256 for that project; amends D35; amended by D123.
+- **D112** Asking the owner one question from afar is designed and not built (issue 155).
+- **D116** *(proposed)* Local binding opt-in per run (`--allow-local-binding`): on macOS it opens every localhost service and nothing narrower exists (code.claude.com/docs/en/sandboxing, 2026-11-21).
+- **D117** *(proposed)* No browser in an unattended run, over opening `~/Library` to writes: Chrome fails inside the macOS sandbox, so screenshots wait for an attended session.
+- **D118** *(proposed)* A preflight before every run on Haiku, plus guard probes the launcher runs, refusing to start on anything through, untried or unfinished, an unnamed MCP server or a writable PATH folder; about $0.01; the keychain's sandbox refusal untested.
+- **D119** *(proposed)* The run folder sits inside the home folder, since the sandbox lets commands write to temp folders; the preflight found it.
+- **D120** *(proposed)* `finished` is the launcher's gate, not the model's line: records read as data, rows dated, in order and on the current commit, `git status`, `git log` and the gate commands run in the foreground of a sandboxed Haiku session; what still runs outside the sandbox is the guard's own git, hardened, and the launcher's `git init` and `git config` before the run.
+- **D121** *(proposed)* The usage window is waited out by Claude Code's retry watchdog up to `--usage-wait-hours`, over fixed retries (code.claude.com/docs/en/errors, 2026-11-21); not met live.
+- **D122** *(proposed)* `status.json` records the Claude Code version, the release, the preflight and the probe cost.
+- **D123** *(proposed)* Grant approval shows a plain summary and needs a `y` typed at a terminal; the guard asks about any approval or change to the approvals; a field no script enforces is refused, so account `actions` and limits leave the format; amends D111.
+- **D124** *(proposed)* The guard asks before, or unattended refuses, a connector call that trades, moves money, sends or shares, from its name and its arguments read as data; issue 164.
 
 **Models**
 
-- **D27 The model ladder** over one model throughout — Opus (Fable for the hardest design) at high effort for planning, reviews and skill edits; Sonnet for build milestones, cold reads and research; Haiku for graders, hooks and trigger evals. It holds whatever the session's default is: frontmatter changes the model a session is told it is on, not the one serving it (Claude Code 2.1.322, per-message transcript models), so each stage hands its work to a subagent with the model and effort set; cost: a subagent hand-off per stage.
-- **D42 No skill names a model in its frontmatter** over keeping the lines as documentation — such a line only misleads (D27); the `effort` lines stay; cost: none.
+- **D27** The model ladder, each stage handed to a subagent with its model set — `choose-model`.
+- **D42** No skill names a model in its frontmatter; amended by D82.
+- **D70** A build milestone with a visible surface stays on Sonnet: $5.45 against $10.75 on Opus for one plan, both passing.
+- **D73** A stage's subagent runs in the foreground, with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` as backstop.
+- **D82** A skill names an effort only to raise it, so `build-project` dropped its `effort: medium`; overrides D42 for that line.
+- **D126** *(proposed)* Every sweep ends with a read-only outside review on the best model at its highest effort, seven fixed questions then the riskiest change, over the builder checking itself; `review-plugin`; issue 162.
 
-**House picks**
+**The feedback loop**
 
-The skill named holds the pick, its alternative, its reason and its cost.
+- **D3** Skill feedback as GitHub issues.
+- **D4** The filing rule is always on.
+- **D23** A trigger suite per plugin at `plugins/<plugin>/evals/`.
+- **D24** Every sweep lands as one pull request.
+- **D25** A `Stop` hook prompts for unfiled skill gaps.
+- **D28** The weekly sweep runs on Opus with no connectors.
+- **D33** Feedback goes to the owning plugin's repository, or a file where it must not be public.
+- **D39** A requirement is verified by behaviour, not by a skill existing.
+- **D40** No brief-and-answers evaluations; trial builds and trigger suites instead. *(proposed 2026-11-21: superseded by issue 150's control build if the owner accepts it.)*
+- **D45** The coordinating session reviews and merges a sweep's pull request.
+- **D107** The owner's qualities as requirements, with a coverage map; PR 161.
+- **D127** *(proposed)* `review-plugin` says how a sweep is run and checked, over a coordinator's memory; issue 166.
+- **D128** *(proposed)* This repo keeps the three records, costs back-filled only from pull requests with unknowns blank; issue 167.
+- **D130** *(proposed)* The coverage map grades cells seen once, repeated or failing from dated runs, held only while the last result passes, over proven against designed; issue 165.
 
-- **D7 `be-functional` the default style, `be-oop` opt-in.**
-- **D15 `functools.partial`, closures and `match`** over `toolz` and `plum`, which stay mentioned — `be-functional`.
-- **D16 One error model**: raise from `error/`, convert at an adapter's seam, decide in a driver, catch nothing in the core — `write-python`.
-- **D17 One record type**, the frozen, slotted, keyword-only dataclass — `write-python`.
-- **D18 `uv_build`** over `hatchling` — `setup-python`.
-- **D19 pyright `strict`** — `setup-python`.
-- **D20 House picks for datetime, money, storage, config, HTTP, logging, plotting and test doubles**, each named with its alternative in the skill that owns it: `write-python`, `store-data`, `structure-python`, `setup-python`, `write-tests`. The dashboard pick moved to D56.
-- **D21 `store-data` and `run-unattended` exist** because a gap probe left 72 decisions open and they absorb most.
-- **D22 MotherDuck's token variable is lower case**, `motherduck_token` — `store-data`.
-- **D53 A project that needs MotherDuck pins the DuckDB client MotherDuck accepts and runs on Python 3.14** over the house floor of 3.15 — MotherDuck accepts DuckDB 1.4.1 to 1.5.6, a 2.0 client's extension refuses to load, and 1.5.6 has no 3.15 wheel; cost: one project off the floor until MotherDuck supports DuckDB 2.0; overrides `setup-python`'s floor for that project — `store-data`.
-- **D29 Message channels**: ntfy for an alert, email for a digest, Claude Code channels for a chat; Slack once a workspace exists — `send-messages`.
-- **D36 A `write-sql` skill in `write-code`** over a section of `store-data` — decisions only (SQL against Polars, where SQL lives, style, schema changes, testing a documented query) in a dialect-neutral body with a reference per dialect, DuckDB first.
-- **D37 `coverage run -m pytest`** over `pytest-cov` — the `-p` plugin in `setup-python`'s `addopts` imports the package before `--cov` measures, which read 33% for a true 83% (pytest-cov 7.1, coverage 7.17); cost: two commands where one flag did.
-- **D38 A run that finds the lock held writes no manifest row** over a `skipped` row — the run in progress records the night, and a `skipped` row would exit 1 where the lock rule exits 0.
-- **D48 A stored table's columns in alphabetical order, its timestamps UTC with their zone** — `store-data`, Shape a stored table; partition keys stay in the path, and the manifest and a plan's schema table follow the rule.
-- **D49 A bounded catch-up window**, three days by default and set per source, over no automatic catch-up — `run-unattended`; a wider gap is reported and left for an explicit backfill.
-- **D50 `sqlfluff` for SQL from a project's first `.sql` file** over `sqruff` (17 times faster on 200 files but pre-1.0) and `sqlfmt` (packs columns onto one line) — `write-sql` names it, `setup-python` wires the hook.
-- **D51 Hive-partitioned Parquet stays the default; DuckLake is the table format where every reader goes through DuckDB, Delta Lake where Polars or another engine must write** — one writer's nightly output needs nothing a table format adds, and every format leaves files that read wrong without it until cleanup (DuckDB 2.0.0, DuckLake 1.1, deltalake 1.6.6, Polars 2.1.0); no format is ruled out for lacking a Polars reader, since DuckDB hands a frame over with `.pl()`; DuckLake with a MotherDuck catalog waits on D53 (Q9) — `store-data`, Pick a table format.
+**House picks** — each named, with its alternative and reason, in the skill shown.
 
-**Design and ambition** (2026-11-12, issues 70 and 72)
-
-- **D55 One house design system, defined once and independent of technology, in a `design-interface` skill in `manage-project`** — colour roles for light and dark, the chart palette (`dataviz`'s reference palette), type, spacing, radii, elevation, layout, number and date formats, four states and the defaults to avoid, mapped onto Tailwind with shadcn/ui, ECharts, Lightweight Charts, Plotly, Dash Mantine and Shiny in two references; the look is the trial's FastAPI and React prototype (neutral, dense, light and dark) — over installing Anthropic's `frontend-design` alongside, whose method (a design plan before code, review against generated defaults, screenshot critique, copy rules) it adopts but whose aim, a distinct identity per brief, would give every project a different look; and over a sixth plugin or `structure-app`, since the tokens are not Python and `build-project`'s evaluator needs the criteria in the same plugin; cost: about 4,500 words of skill and references, and a line in `manage-project`'s context file. Source: six prototypes of one dashboard (2026-11-12), github.com/anthropics/skills `frontend-design`.
-- **D56 A dashboard is a built web front end behind one data module** (Vite, React, TypeScript, Tailwind with shadcn/ui; ECharts for every chart, candles included since D69), served by the FastAPI API over Polars where Python is involved or as a static build reading small Parquet with `hyparquet` where not; **Dash with Mantine** where the code must stay Python; **Shiny** for an existing Shiny app or Python on each interaction — over Shiny as the default (D20), which looked primitive unstyled and was slowest restyled (2.2 s and 6.2 MB to ready, against 0.45 s and 340 KB); cost: Node as a development dependency (`nodejs-wheel`) and a second language in the repo — `write-entry-points`, `setup-python`, `deploy-project`. Answers Q11.
-- **D57 Every shipped surface aims at the best in class** — `plan-project` writes what a best-in-class version of each surface would be and scopes towards it, a default the user can lower; `design-interface` gives the bar per kind of surface — over building to the brief's letter; the ambition is in finish and completeness, never extra features or risk, and loosens no security, outward-action or build-only-what-is-needed rule; cost: longer plans and gates.
-- **D58 An evaluator pass in `build-project`'s gate** — a fresh Sonnet subagent runs the surface, screenshots it at two widths in both schemes or runs a realistic session, scores each criterion pass or fail with evidence; at most three rounds with each round's cost reported; a build ends with something the user can open — over the builder judging its own screens; cost: up to three evaluator and fix rounds per milestone that changes a surface.
-- **D59 The ladder holds when a prompt calls the work small** (`choose-model`, `plan-project`) — the size changes the stage's length, not its model; only a fix's short plan in the conversation stays in the session — over letting a time limit move a plan to Sonnet (issue 74); cost: an Opus hand-off for a tiny plan.
-- **D60 The install line looks up the newest release tag** with `git ls-remote` — over naming the tag, which went stale at every release; cost: a longer command that needs `git`.
-
-**Sweep 6** (2026-11-13)
-
-- **D61 The owning account is named only where an install needs it** (decided by the owner, 2026-11-13) — the install and clone lines, each `plugin.json`'s `repository` (the feedback rule finds the tracker there) and the licence holder keep it; `CLAUDE.md` finds the tracker through `repository` and the plan names no account — over removing every mention, which needs the repository moved to an organisation or a neutral account; cost: none. *(proposed)* `author.name` reads `claude contributors` rather than going, since `claude plugin validate --strict` fails a manifest with no author.
-- **D62 Keep the marketplace name until the repository moves** — renaming it changes every `@<marketplace>` install line and breaks each existing install, so do it only in the release that moves the repository to a neutral account, if that happens, to a name such as `house-skills`; over renaming now; cost: the account stays in the install line.
-- **D63 A description stays under 500 characters, never past 1,000** — Claude Code cuts each at 1,536 characters and, once all descriptions pass 1% of the context window, drops the least-used ones to their names; the five plugins spent about 9,800 tokens on 24 descriptions (`claude plugin details`), now about 10,800 characters in all; neighbours, references and house picks move to each skill's opening — over a limit in words, under which every description ran to about 1,500 characters (issue 80); cost: fewer trigger phrases per skill, checked by the suites (`write-skills`, `review-plugin`). Source: code.claude.com/docs/en/skills, settings-reference (`skillListingMaxDescChars`, `skillListingBudgetFraction`), 2026-11-13.
-- **D64 A should-not-trigger case only where a near neighbour could claim a skill's prompt** — three to start (`review-plugin` against `review-project`, `be-oop` against plain functions, `deploy-project` against a job on the user's machine), and no no-plugin arm, which cannot fire an uninstalled skill — over one per skill, a paid session each (issue 81); cost: an untested boundary elsewhere until feedback shows a misfire.
-- **D65 Beside another authoring plugin, `write-skills` sets what a skill says and theirs set how it is made** — the convention-skill side of D52, decided by rule; over a session test with each plugin installed, which this sweep did not run (issue 85); cost: their description and rule-style advice is ignored where it differs.
-- **D66 `use-git`'s no-footer rule calls itself the user's instruction** — a harness reminder yields to the user's own instructions, and two of three plugin-only builds read a skill as not one (issue 77); the user installed the skill to set the convention, so it says so, and the context line and `CLAUDE.md` repeat it — over moving the rule into the context file alone; cost: none measured, since no build has run on the new wording.
-
-**Sweep 7** (2026-11-18)
-
-- **D67 A `PreCompact` hook in `manage-project` tells the compaction what to keep** — its command prints `hooks/compact.md`, which Claude Code adds to the summary's instructions: the user's standing instructions, each decision or finding not yet in `PLAN.md`, a commit or memory, marked unrecorded, the branch, running tasks and the next step; `choose-model` adds the rule that a long stage writes its state at each milestone's or task's end — over the rule alone, which left the user asking for a save before every compaction, and over a hook that blocks compaction, which fails a compaction forced by a full context; cost: about 60 words per compaction, none with the symlink wiring, which has no plugin hooks, and the summary's use of them is unobserved. Source: issue 109; code.claude.com/docs/en/hooks (PreCompact output), 2026-11-18.
-- **D68 An API is earned by a second consumer or by a requirement a static build cannot meet, and a small read-only one over a hosted store runs on Cloudflare Workers Free** — 100,000 requests a day that fail rather than bill, no cold start, MotherDuck reached over its Postgres endpoint; Render stays for an API that runs the Python core, Cloud Run where that must answer in seconds; a host on an account the user already holds is preferred, and a card requirement is reported as a fact with its risk, not a disqualifier — over Render as the one free pick, whose minute-long wake broke a dashboard's speed budget, and over an API earned only by a second consumer, which left a stated live read no path (issues 106, 110, 115); cost: a TypeScript function beside the Python core; overrides `deploy-project`'s earlier API pick. Source: developers.cloudflare.com/workers/platform/limits, motherduck.com/docs/sql-reference/postgres-endpoint, render.com/docs/free, 2026-11-18.
-- **D69 Candles are ECharts' candlestick series**, replacing D56's Lightweight Charts — one chart library and one theme, and no on-page attribution, where Lightweight Charts' corner logo, its licence's attribution, read to the user as a promise of drawing tools and indicators it lacks (issue 112); KLineChart (Apache-2.0, indicators and drawing tools) once a requirement names those, Lightweight Charts for a series too long to pan smoothly with its credit in the footer, and TradingView's Advanced Charts never for a public repository, whose licence forbids it there; cost: the volume pane and the bar order (`[open, close, low, high]`) written by hand, type-checked against ECharts 6.1.0 — `design-interface`, web reference, Candles. Source: github.com/tradingview/lightweight-charts (README, NOTICE, 5.3.0), registry.npmjs.org/echarts (6.1.0), klinecharts.com, tradingview.com/charting-library-docs, 2026-11-18.
-- **D70 A build milestone that carries a visible surface stays on Sonnet** — D27's rung holds and D58's evaluator carries the polish, over moving such a milestone to Opus; in one comparison (2026-11-12) the same two-screen dashboard plan cost $5.45 with a Sonnet builder and $10.75 with an Opus one, each passing all ten criteria in the third evaluator round, the Opus screens somewhat more finished, and a four-milestone Sonnet build with a screen (2026-11-18) passed its gates; cost: some finish on a screen; a rerun on a larger brief is still owed and may reopen this (answers Q12).
-
-**Sweep 8** (2026-11-19)
-
-- **D71 A job whose output is events rations its pushes** — grade each event, push only the top grade under a per-run cap, digest the rest per run, send each once by a stable event id recorded after the send, push only inside the catch-up window, one priority per kind of message — over a push per event, which buries the strong ones and runs into ntfy.sh's 250 anonymous messages a day, and over the change-of-state rule, which fits a failure but not a stream of new events (issue 119); cost: a sent-events table and a cap to tune. Source: ntfy.sh `/v1/account` and docs.ntfy.sh, 2026-11-19 — `send-messages`, Alert on events the job finds.
-- **D72 The `PreCompact` instruction holds to 65 words** — advance approvals and their scope, verified against only-reported results, work in flight by identifier and path, what waits on the user and what failed, added; "drop tool output already acted on" cut as what a compaction does anyway — over the 95 words a clause per new item would take, since it prints on every compaction (issue 121); cost: terser clauses. A headless compaction of a seeded session (2.1.325) printed the hook's text and kept each seeded fact, the approval with its limit, the unrecorded decision marked and the subagent's claim marked unverified — the hook's first observed run. Its budget is 65 words, beside D54's.
-- **D73 A stage's subagent runs in the foreground, and no turn ends while one runs** — Claude Code starts a subagent in the background by default, and `claude -p` stops background work ten minutes after its last turn (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`), which cut a headless build's milestones off mid-work (issue 123); the variable set to `0` is the starter's backstop, set for every trial build — over the variable alone, which still leaves a session that ends its turn waiting on nothing; cost: none. Source: code.claude.com/docs/en/headless, env-vars, sub-agents, tools-reference, 2026-11-19 — `choose-model`, `build-project`, `review-plugin`.
-- **D74 A build ends with the review, then an acceptance run** — `review-project` always runs, and a report without it says why and calls the build unreviewed; then every Verification line, and a new Acceptance line the plan writes, re-runs on the finished project and the report lists each with its command and result — over the review as one step among others, which a headless build skipped with no reason (issues 122, 127); cost: a full re-run at the end of every build — `build-project`, Finish the build; `plan-project`, the Verification skeleton.
-- **D75 A project keeps three records at its root beside `PLAN.md` — `DEPENDENCIES.md`, `costs.csv` and `verification.csv` — named on the plan's Records line, each pointing at the others through the plan and the final report** — the dependency record lists accounts and services with their tier, what was created on each and how it is removed, credentials by name with store, rotation date and where each is revoked, tools, connectors and plugins, and packages by pointer to the lock file; `build-project`'s Keep the records owns all three, each entry lands in the commit that makes it true, `review-project` checks them, and the rotation date moves there from Runs on — over a section of `PLAN.md`, whose changes wait on sign-off while these record what exists and what happened, over the README, which serves a newcomer, and over a `records/` folder, which `store-data`'s data tree already uses for its partitions (issues 125, 126, 127, 129, taken as one design); cost: three files per project and their lines each milestone. Source: the owner's request — `build-project`, Keep the records.
-- **D76 Each stage's cost goes in the project's `costs.csv` (D75), totalled by `choose-model`'s `scripts/costs.py`** — one row per stage and model: tokens by kind, list-price dollars, effort, wall time, subagents, nested ones counted in their stage; the script counts each response once, where the transcript repeats its usage per content block, and reads restarted agents' files, so an interrupted build totals — over a prose report per build, which no two builds wrote alike and one could not total (issues 122, 126); cost: a script whose input format is internal to Claude Code. Source: four real sessions on Claude Code 2.1.325, within 6% of its own running total.
-- **D77 Coverage held to two levels: every branch of the pure core, and a package floor that only rises** — an unreachable branch is excluded by a pattern, the floor is raised to each milestone's figure, and the report names every uncovered branch — over a single set percentage (the owner's ask), which a test that runs code without asserting meets and which lets an untested rule in the core hide behind adapter code, and over no level at all (`write-tests` before), which left coverage unreported (issue 127); cost: a core test for every branch, and a floor edited each milestone; overrides `write-tests`' earlier "no percentage is targeted". Source: coverage 7.17 run on a throwaway project (`--include … --fail-under 100` exits 2).
-- **D78 A repository's commit identity is set before its first commit, and a schedule counts as deployed once it has fired** — the host's no-reply address unless the owner names another, in the repository's own config, and a `schedule`-event run listed by `gh run list` before the pipeline is called deployed — over the machine's global identity, which published a private address in a public history, and over a dispatched run as proof, which shows the job works and not the cron (issue 128; whether the unlinked identity stopped the schedule is unconfirmed); cost: one command per repository and a check owed until the first scheduled time — `use-git`, Commit; `deploy-project`, Run the pipeline.
-- **D79 Each check's result is appended to `verification.csv`**, one row per Verification line per run — `command`, `commit`, `date`, `line`, `printed`, `result`, `stage` — at every gate, the review and the acceptance run, never edited, so the last row per line is what the project shows — over results kept only in a session's report, which goes with the session, and over a results section in `PLAN.md`, rewritten at each gate (issue 129); cost: a row per check per gate. Its columns are alphabetical, as D48 keeps a stored table — `build-project`, Keep the records.
-- **D80 Teardown is its own skill, `retire-project`, in `manage-project`** — it reads the dependency record and the plan's Teardown line, stops what runs, takes down what serves, archives kept data and checks it, removes stores, revokes each credential at its issuer before deleting stored copies, archives the repository, confirms each removal by a command, and marks the record; every step is an outward action, the reversible ones under one go-ahead and each irreversible one confirmed when reached, never in autonomous mode — over sections in `build-project` or `deploy-project`, since "tear it down" would load neither, and a project on the owner's machine alone has no deploy to read (issue 129); cost: a tenth skill in `manage-project`, about 470 characters of description in every session's listing, a line in its context file and `CLAUDE.md`, and the map in six copies; a trial teardown has not run. Source: the owner's aim for the sweep — `retire-project`; `plan-project`, the Runs on skeleton.
-- **D81 Budgets raised for the tenth skill** — `CLAUDE.md` 915 words, `manage-project`'s context file 440, every other context file 330, the README 815 — over cutting existing lines to hold D54's figures, which the owner ruled out (2026-11-19); cost: about 30 words more in every session.
-
-**Sweep 9** (2026-11-20)
-
-- **D82 A skill names an effort in its frontmatter only to raise it, so `build-project` drops its `effort: medium`** — the frontmatter's effort outranks the Agent tool's for the rest of the turn, inside a subagent too: a review handed over at `high` loaded `build-project` to read one section and ran 157 of its 184 Opus responses at `medium` from that load to the turn's end (issue 135; the transcript's per-response `effort`, Claude Code 2.1.325, while 60 other subagents ran at the effort they were handed); `costs.py` now shows a mixed row's efforts with their counts — over keeping every effort line (D42) and over telling a stage to read a skill's file rather than load it, which no stage would remember; cost: a session coordinating a build keeps its own effort for a few messages; overrides D42 for that one line — `choose-model`, Set the model from inside Claude.
-- **D83 What a deployed project costs to run goes on each account's line in `DEPENDENCIES.md`** — the month's bill, the usage read against the tier's limit with its date, and the spend cap — read from the provider a day after it first runs and again at every review, with the plan's Runs on stating the expected figure — over rows in `costs.csv` with a `run` stage, whose columns are model tokens, and over a scheduled cost check, which no project has needed yet (issue 130); cost: a provider read per account at each review — `build-project`, Keep the records; `review-project`; `plan-project`, Runs on.
-- **D84 A project built before the records gets them at its first review**: `DEPENDENCIES.md` reconstructed and saying so in its opening line, `verification.csv` and `costs.csv` started at the review with no back-fill, the untotalled stages named in the report — over back-filling `verification.csv` from milestone notes, whose checks cannot be re-run as they were (issue 132, as the issue proposed); cost: the early evidence stays in the plan's notes — `build-project`, Keep the records.
-- **D85 Both coverage levels run as one `pre-push` hook** that `setup-python` wires, `pre-commit run coverage --hook-stage pre-push` by hand — over a `pytest` hook, which cannot see its own run's coverage until the process exits, a configuration file per level, still two commands to remember, and CI or a task runner, which `setup-python` declines (issue 133); cost: the suite runs before every push. Checked on a throwaway project (pre-commit 4.7.0, coverage 7.17.3): a missed core branch failed the hook with the package floor met, and covering it passed.
-- **D86 With an alert, stale is one period plus a margin, and the watch fires later than the job's slot by more than that margin plus the scheduler's worst lateness**; two missed periods stays the default only while a person alone reads `status` — over two missed nights for every job, under which a nightly watched seven hours after its slot first alerted about 55 hours after its last good run (issues 134, 137); cost: a margin and an offset to choose per job — `run-unattended`, Report the outcome.
-- **D87 A run that must start within minutes of its slot is triggered by a Cloudflare Worker's Cron Trigger calling the workflow's `workflow_dispatch`**, while an Actions `schedule` serves only a job whose stated freshness allows hours of lateness — over the `schedule` event everywhere, whose docs promise no start time and allow dropped runs, and which started a new public repository's runs eight to nine hours late; over cron-job.org, free but a third party holding a repository write token with no punctuality promise; and over EventBridge Scheduler or Cloud Scheduler, which document delivery but each need a new cloud account with a card (issue 137); cost: a small TypeScript Worker, a fine-grained token with Actions write to rotate, and Cloudflare's own lack of a firing promise, so the first day's start delays are measured; the Worker is type-checked, not yet run on a live account. Source: docs.github.com (Events that trigger workflows; REST permissions), developers.cloudflare.com (Workers limits, Cron Triggers), cron-job.org FAQ, aws.amazon.com/eventbridge/pricing, cloud.google.com/scheduler/pricing, github.com/orgs/community/discussions/201738, all read 2026-11-20 — `deploy-project`, Run the pipeline; `run-unattended`, Schedule it.
-- **D88 A sixth plugin, `design-project`, holds `design-interface` and a new `design-pipeline`** (the owner approved the plugin, 2026-11-20) — design settles what a project shows and holds before `manage-project` builds it or `run-project` stores and schedules it; over `design-interface` staying in `manage-project`, whose reason (D55: `build-project`'s evaluator needs the criteria in the same plugin) the evaluator meets by pasting the criteria into its brief and the missing-plugins rule covers, and over `design-pipeline` in `run-project`, the plugin an install is likeliest to leave out, whose skills it must precede; cost: a plugin to install, its suite and context file, and the map in seven copies; amends D30, D31 and D55's placement.
-- **D89 `design-interface` covers every surface between a person and the finished work, with a reference each for messages, the command line, the API, and the README and reports**, each ending in criteria the evaluator scores from a message's preview, a session's transcript, a docs page or a fresh clone, and each surface without a screen written into the plan's Interface as a sample before its code; `write-entry-points` and `send-messages` keep building and sending and point here for how it reads — over the depth living in those two, which own the mechanics, not the standard (issue 136); within it, RFC 9457 problem details for every API error over a framework's own shape, ISO dates in a command's table where a screen writes `12 Nov 2026`, cursor paging by `Link` header, a `--preview` for every kind of message, and one fixed emoji tag per kind as a push's only emoji; cost: about 3,700 words of references. Source: clig.dev, no-color.org, rfc-editor.org/rfc/rfc9457, docs.ntfy.sh (read 2026-11-20), `typer` 0.29.2 run.
-- **D90 `design-pipeline` decides each table's design in the plan before the store and the schedule**: a grain sentence and its key, one grain per table, raw, clean and derived layers, loads written by key from a watermark derived from the stored data less a lookback, the forming record held apart (its own small file in a tree, `is_final` in a database), `ingested_at` on every clean row and every version kept only where the plan asks what was known when, freshness stated per table and sizing the cadence, the scheduler and the stale threshold, a versioned rule rebuilt whole, a contract per table another reader relies on, the cost of a run times the runs in a month, and no data commit per run for an intraday job (issue 138) — over one table keyed by interval, where a reader who forgets the filter counts each day twice, a watermark kept in SQLite (`store-data`'s example now a source's cursor), and a formal contract format, earned by readers outside the project; cost: about 2,700 words, and a plan section per table. Source: kimballgroup.com (Grain), docs.databricks.com (Medallion), docs.getdbt.com (project structure, microbatch, freshness, model contracts), duckdb.org (Insert, 2.0), ducklake.select (time travel, merge adjacent files), docs.delta.io, docs.github.com (Actions billing), motherduck.com (pricing), bitol.io (ODCS 3.1), read 2026-11-20 by a research subagent, the dbt lookback and DuckDB insert claims re-read by the sweep.
-- **D91 Budgets for the sixth plugin** — `CLAUDE.md` 950 words, each context file 345 (`manage-project`'s stays 440), the README 845 — over cutting existing lines to hold D81's figures, which the owner ruled out; cost: about 30 words more in every session.
-
-**Sweep 10** (2026-11-21)
-
-- **D92 Every plugin prints its rules into each subagent too, from a `SubagentStart` hook**, as the JSON `additionalContext` that event adds (it takes no plain stdout), for every agent type but `Explore`, `Plan` and `fork` — a subagent loads `CLAUDE.md` but no `SessionStart` output, so on a plugin-only install every stage `choose-model` hands to a subagent ran with no skill list (issue 142: a headless probe, with the user's `CLAUDE.md` excluded, showed the six lists in the session and none in its subagent); Claude Code itself starts `Explore` and `Plan` without `CLAUDE.md` to keep them lean, and they write nothing, while a fork inherits the session's copy — over the brief alone, which `build-project` fills with skill names but never the map or the feedback rule, over `--append-subagent-system-prompt`, which only the starter of a headless run can pass, and over the rules in a custom agent's prompt, which reaches only that agent; cost: about 880 words of input per subagent with all six installed, a matcher naming the built-in agents to skip, and `review-plugin`'s check that a subagent sees the lists; amends D32. Source: code.claude.com/docs/en/hooks (SubagentStart, Add context for Claude) and /sub-agents (What loads at startup), read 2026-11-21; probes on Claude Code 2.1.330.
-- **D93 The rules every plugin carries print once per session or subagent**: the lists' preamble and the missing-plugins map sit in `hooks/shared.md`, identical in all six, and `hooks/session-start.sh`, identical too and kept under its old name so a session started before the change still finds it, prints it only from the hook that first claims that start — an atomic symlink in a folder only the user can write (`$XDG_RUNTIME_DIR` where set, else `~/.cache/claude-plugin-rules`, mode 700; a symlink or a file at that path, or a session or agent id outside `[A-Za-z0-9_-]`, makes every hook print), one generation per startup, compaction or subagent, a generation over ten seconds old taken as an earlier start's — while each plugin prints its own list; a resumed session or subagent reprints through the plugin that printed last, so Claude Code drops the identical copy; where no marker can be kept, a hook prints — over every plugin printing them, seven copies of the map in a full session (D88's cost), over one plugin owning them, which leaves a plugin installed alone without them, and over reading the installed set from settings, which misses `--plugin-dir` and project scopes; over a predictable folder name in a shared `/tmp`, which another user could create or link first (flagged by a security review during the sweep); cost: a 110-line POSIX script in six plugins kept byte-identical (`review-plugin` compares the copies), markers pruned after a week, a race or an unusable folder can only repeat the block, and a resume whose recorded plugin is disabled but still on disk reprints nothing, leaving the replayed copy. Checked under `sh` and `dash`: one printer in 100 concurrent starts of six, in 50 compactions over a stale marker and in a resumed subagent, and six of six printing with a symlink, a dangling symlink, a file or an unwritable folder at the marker path, with ids holding `/` or `..`, and with no usable home; and headless with one, three and six plugins, then through a resume, a compaction and a second resume, each list and the shared block once each time; amends D32 and D88's cost.
-- **D94 Two instruction files in `instructions/`: `installed.md`, the owner's own rules (Work and Answers) for a machine with the plugins, and `symlinked.md`, those rules plus everything the plugins print, for the symlink wiring** — the root `CLAUDE.md` becomes a link to `symlinked.md` so the owner's current link keeps working, and goes once the owner's `~/.claude/CLAUDE.md` points at `installed.md` — over keeping the full file at the root, which every session in this repo also loads as project instructions, a second copy of the plugins' rules once the owner's link moves, and over `@` imports to build the full file from the plugins' files, whose resolution through a symlink and approval prompt went untested; cost: a link to remove in a later sweep, and a new path for a machine already symlinked, of which A3 expects none; amends D1 (its symlink line) and D32 (`CLAUDE.md` carrying the lines becomes `symlinked.md`).
-- **D95 Budgets after the split** — `installed.md` 180 words, `symlinked.md` 990, `shared.md` 340, each context file 70 (`manage-project`'s 160), the README 860 — over D91's per-file figures, which priced the map into every context file; with all six installed a session now loads about 1,055 always-on words, down from 3,159 (the user's `CLAUDE.md` 946, six context files 2,053, the feedback rule 160), and a subagent the same 1,055, up from the 946 of `CLAUDE.md` alone and from none on a plugin-only install; a plugin alone prints 374 to 397 words, `manage-project` 491, `maintain-plugin` 519 with the feedback rule; amends D54 and D91.
-- **D96 The missing-plugins rule ends with a check before the report**: each decision made is held against the map, naming storage, a schedule, an alert, a chart, a Python layout and a commit as calls that fall under a skill whether or not the task named it — over the wording alone, under which six plugin-alone runs all named missing skills and recorded them as proposed (issue 140's run with none did not recur, on the old wording or the new) but five left out a skill whose call they made, most often `setup-python`, `design-interface` and `run-project`'s; rerun on the new wording, the three widest misses (`structure-app`, `run-project`, `manage-project` alone) each named a missing skill behind every call they listed, one run each; cost: 39 words in `shared.md` and `symlinked.md`.
-
-**Sweep 11** (2026-11-21)
-
-- **D97 A `write-typescript` skill in `write-code`, with React and Cloudflare Worker references, TypeScript references under `be-functional`, `write-tests` and `write-entry-points`, no `write-html` and no `setup-typescript`** — the in-code decisions a formatter cannot make, as `write-python` holds them for Python, while the scaffold and the toolchain's files stay in `write-entry-points`, which owns the front end, and markup's look stays `design-interface`'s — over a TypeScript reference inside `write-entry-points`, which loads for building a driver and not for editing a component, and over a `setup-typescript`, unearned while every TypeScript package sits beside Python (issue 145, the layout the owner agreed); cost: a 27th skill, about 490 characters in every session's listing, a line in `write-code`'s context file and the map in seven copies, and about 5,500 words of skill and references. Source: the trial front end and Worker read for what they converged on and got wrong (a front-end `tsconfig` without `strict`, casts on parsed JSON, a stale-response guard copied three times, no formatter, lint run in one package's CI only).
-- **D98 TypeScript 7 type-checks, oxlint lints with type information, Prettier formats** — over ESLint with `typescript-eslint`, whose 8.73 declares TypeScript below 6.1 and cannot read TypeScript 7, which ships no compiler API before 7.1, and over pinning TypeScript 6.0.3 to keep it, which runs two compilers; over `oxfmt`, still `0.x` with no stable release, and Biome, which departs from Prettier on purpose; cost: oxlint's `no-unnecessary-condition` is still nursery and two of `typescript-eslint`'s 62 type-aware rules are missing, and React Compiler's checks come from oxlint's own port rather than `eslint-plugin-react-hooks`. Each deliberate mistake in a canary file tripped its rule, from an `any` assigned out of `response.json()` to an index key. Source: typescript-eslint.io (dependency versions; issue 12518), devblogs.microsoft.com (TypeScript 6.0, 7.0, 7.1 beta), oxc.rs (type-aware linting, rules), prettier.io, biomejs.dev, read 2026-11-21; `npm view`; runs of TypeScript 7.0.2, oxlint 1.94.0 with `oxlint-tsgolint` 7.0.2007 and Prettier 3.10.1.
-- **D99 Every `tsconfig` sets `strict` and `noUncheckedIndexedAccess`, `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnused*`, `verbatimModuleSyntax` and `erasableSyntaxOnly`, targeting ES2024** — over the Vite template, which leaves `strict` to TypeScript 7's default and sets none of the others, over `noPropertyAccessFromIndexSignature`, a style rule, and over `exactOptionalPropertyTypes`, dropped after the independent review because a component forwarding an optional prop fails under it; ES2024 over the template's ES2023 for `Map.groupBy` and `Object.groupBy`; cost: an explicit `undefined` and an absent field stay indistinguishable to the compiler. Source: typescriptlang.org/tsconfig, Vite's `template-react-ts`, read 2026-11-21.
-- **D100 Every outside value is `unknown` until a Zod schema checks it, with no `as` but `as const` and no `!`, enforced by the linter with the `no-unsafe-*` rules named, since `response.json()` returns `any` and an assignment from it passes every assertion rule** — over hand-written guards, which the trial narrowed field by field and cast beside, and over Valibot, smaller, kept for a measured bundle budget; cost: about 5 kB of Zod and a schema per boundary. Source: zod.dev, valibot.dev, read 2026-11-21.
-- **D101 Server data through TanStack Query, React Compiler on and no hand-written memoisation** — react.dev points at a client cache rather than effects for fetching, and the trial rebuilt one by hand; the compiler, stable since React Compiler 1.0, replaces `useMemo` and `useCallback` placed with wrong dependencies; over effects with a guard and over manual memoisation; cost: TanStack Query in every front end's bundle (its size not measured here) and a Babel pass in the build through `@rolldown/plugin-babel`, since `@vitejs/plugin-react` 6 dropped its inline Babel option. A Vite 8.3.8 build with it on emitted the compiler's cache sentinel. Source: react.dev (Synchronizing with Effects, React Compiler installation and 1.0), tanstack.com (Query Cancellation), read 2026-11-21.
-- **D102 Named exports only, kebab-case file names, imports through `@/` with the file's extension, no barrel files** — a default export is renamed by each importer, `shadcn add` writes kebab-case files and the `@/` alias, macOS hides a case-only rename from git, and Vite fetches every file a barrel re-exports; over the trial's mix of default and named exports and extensionless relative imports; cost: `React.lazy` needs a `.then` mapping. Source: vite.dev (Performance), ui.shadcn.com, Google TypeScript Style Guide, read 2026-11-21.
-- **D103 A Worker's `Env` is generated by `wrangler types`, its configuration is `wrangler.jsonc`, and its runtime tests use `@cloudflare/vitest-plugin`** — over a hand-written `Env`, which Cloudflare's best practices reject and which `deploy-project`'s trigger example and the trial both had, and over `@cloudflare/vitest-pool-workers`, deprecated and capped at Vitest 4; amends `deploy-project`'s trigger example; cost: a generated declaration file to commit and regenerate. A runtime test passed under Vitest 5.1.1 and the plugin 1.9.0. Source: developers.cloudflare.com (TypeScript, Workers best practices, Vitest integration, Node.js compatibility), npm, read 2026-11-21.
-- **D104 Reasoning from the general case is a section of `make-decisions`, with a principle beside "earn it before building it", not a skill in `design-project`** — the method applies wherever a decision is made, which is when `make-decisions` loads, and `plan-project`'s Place the project now points at it; a design skill for architecture across components waits in Not yet, since no project has yet shown a seam decided badly that the method misses; over a new skill, whose description would compete in every session for a method with no surface of its own (issue 144); cost: about 450 words in `make-decisions`. A gap probe on two briefs that fix one axis — every amount in one currency, a nightly measurement of one variable — gave a narrow design in four of four runs on the old wording (an `amount_pence` column with "no currency column" decided, a `rainfall_daily` table keyed by day) and kept the axis open in four of four on the new (an amount beside its currency, a measurement keyed by variable and period), none building the second case, though two added a guard refusing mixed currencies and one held four axes open where the brief named one.
-- **D105 Skills and plugins beyond this family are looked for, vetted, proposed and recorded** — `plan-project`'s research checks what is installed and what the configured marketplaces offer for a language or domain no skill here covers, in the order official toolchain and style guide, language server, third-party skill; `secure-project` vets a candidate (who publishes it, what it runs, where it sends data, its licence, its pinned version); installing is the user's step, never Claude's, and in autonomous mode a step under Questions; a house skill wins over an outside one on what it covers unless the user names the outside one, as D52 lets a named method plugin lead; each one relied on goes in `DEPENDENCIES.md` and `review-project` checks it; the shared rules say a language no skill covers is not a missing skill (issue 143, as the issue proposed) — over installing what looks useful, since a plugin runs with the user's permissions, and over the missing-plugins map alone, which knows only this family; cost: a research step per project and 40 words in the shared rules. Source: `claude plugin --help`, `claude plugin list --json --available` (4,082 plugins listed on this machine), code.claude.com/docs/en/discover-plugins and /plugins/security, read 2026-11-21.
-- **D106 Budgets after the seventh `write-code` skill and the outside-plugin rule** — `shared.md` 380 words, `symlinked.md` 1,045, `write-code`'s context file 80, the README 910 — over cutting existing lines to hold D95's figures, which the owner ruled out; cost: about 40 words more in every session.
-
-**Sweep 12** (2026-11-21; issues 147, 149, 154, 155 and 157)
-
-- **D107 The plan's requirements are the owner's eight qualities, which plugin holds what moves to the Interface, and a coverage map under Verification sets a project's stages against the eight**, each cell naming the skill or hook that delivers it and the run that proved it, the issue tracking its gap, or why it is not wanted yet, with designed kept apart from proven, and a second table of the kinds of project built so far; `review-plugin` re-reads the map each sweep and a trial build fills in its evidence — over requirements that mixed qualities with plugin holdings, under which each review that asked what was missing found a new large gap (issue 157); cost: a table to keep true each sweep, and old requirement numbers cited in commits and issues before this sweep no longer match (R1 to R14 are mapped in this sweep's pull request). Source: the owner's eight qualities and words, 2026-11-21.
-- **D108 A `PreToolUse` guard hook in `manage-project`, on by default, that asks a person present and refuses when nobody is** before a force-push or a rewrite of pushed history and the commands `use-git` calls destructive; deleting a repository, bucket, hosted table or anything a connector's delete tool removes; printing a secret, the whole environment or a stored credential; committing a secret, untracked files included where the same command stages them; a push to a remote the grant does not name, or with its target overridden by `-c`, the environment or a config change; a secret-looking value sent to the web or a connector; and a change to the grant, to git's push, alias, filter or hook settings, or to the files Claude Code loads hooks from — over permission rules alone, which match a command's prefix, cannot read the grant or ask git whether a branch is pushed, and whose `if` filter the docs call best-effort; over a seventh plugin, a plugin to install and the map in eight copies for one hook; and over off by default, which leaves the rules advice again. It tokenises the command and follows operators, subshells, `$(…)`, backticks, reserved words, functions, `sh -c` in any flag form, strings piped or passed to a shell or an interpreter, here-documents and here-strings, line continuations, `$IFS` and brace expansion, inline, configured and environment aliases, wrappers, and `cd`, `git -C` and every dangerous tool named later in a command; runs git with list arguments, a budget of twenty seconds and thirty calls, and the repository's hooks, fsmonitor, pager, attributes and external diff out of reach, never reading a work tree whose configuration defines a content filter; guards a call it cannot parse or check in time; is wired with `onFailure: block`, which in 2.1.330 blocked a call whose hook timed out where without it the call ran; and where no `python3` runs refuses every call with nobody present and asks about risky words with a person present. It counts a session as unattended from `CLAUDE_CODE_SESSION_ATTENDED=0` (seen in 2.1.330, undocumented, A4), the launcher's `CLAUDE_GUARD=deny`, or a `dontAsk` or `bypassPermissions` mode, and a `claude -p` run turned the hook's `ask` into a refusal in all five permission modes tried. It runs under the machine's own `python3`, so it is written for Python 3.9 with named tuples rather than dataclasses, whose `inspect` import cost about 120 ms a call there; overrides `write-python`'s floor and record type for this one script. An independent Opus attack, about 340 hook calls, got about 170 of 205 bypass attempts past the first version and ran code through a repository's content filter inside the hook; replayed against this version, one got through with Python present — a file name built at run time in a script — plus the coarse fallback's quoting dodges where no `python3` runs, and no hook code ran. The commit security review then found four more, each fixed with a test that failed first: a remote parsed by regex, so `https://evil.example\@github.com/owner/repo` passed for a granted `github.com/owner/repo`; git's environment checked only on the same command, so `export GIT_CONFIG_COUNT=…; git p` passed; `guard=off` read before the input, so it switched the guard off in a `dontAsk` run; and the grant's name checked without glob expansion for some commands, so `cp x gran?.json` passed. A second review of those fixes found five more, fixed with tests that failed first and by simpler rules rather than more parser cases: the grant's name is now a finding in any word of any command but `cat`, `head`, `tail` and `wc`, option words and `sed` scripts included; git's environment is read by name from the dequoted words of assignments and of `export`, `declare`, `typeset`, `local`, `readonly` and `env`, and a name built at run time beside a push is a finding; and in D111, the approval gate. The boundary is the run profile's denies and the approved snapshot of the grant, and the guard's pattern checks are defence in depth, so a way past the guard is a defect to fix while a way past a deny or the approval is a breach. What is left, and why the run profile is the boundary: a Grep over the whole project with an ordinary pattern can print a `.env` line (the profile denies reading `.env` files, best-effort), a program can do anything once it runs, a shell alias in the owner's start-up files is invisible, and data can leave through any domain the network allows, a package registry included. Cost: about 0.1 s a tool call under Python 3.11 and 0.2 to 0.4 s under macOS's 3.9; a person is asked about rewriting a pushed feature branch, every destructive git command, reading a key file or the grant, a hosted-database drop, and the occasional ordinary command (`env | cut`, a read-only query naming `delete from` in a string). 228 tests feed it Claude Code's own hook input, 16 more test the grant's remote parsing, and a headless run under the launcher had it refuse a force-push, printing `.env`, staging `.env`, a push to an unnamed remote, deleting a repository and edits to `.git/config` and `.claude/settings.local.json`, while an allowed push went through. Source: code.claude.com/docs/en/hooks (decision fields, exit codes, `onFailure`, timeouts), /headless and /permissions (ask in `-p`), read 2026-11-21; runs on Claude Code 2.1.330.
-- **D109 An unattended run starts under a run profile**: `--restricted` with the built-in tools a build uses, the house plugins by `--plugin-dir`, `--strict-mcp-config` with only the servers named, claude.ai connectors off by both `disableClaudeAiConnectors` and `ENABLE_CLAUDEAI_MCP_SERVERS=false`, the sandbox on and required with unsandboxed retries refused, reads of the home folder denied but for the project, the toolchains, the plugins and the project's own transcripts, with the toolchains' credential files and `.env`, key and cloud-credential files denied again, writes confined to the project and a scratch folder outside every temp folder, network to PyPI and npm only, `WebFetch` to documentation sites only, `dontAsk` with allow rules, `--permission-prompts none`, and an environment of the basics plus the secrets the grant names, with Claude's own credentials hidden from commands — over the owner's own settings, under which a headless session listed ten claude.ai connectors, three of them on mail or accounts holding money; over `--bare`, which reads no OAuth login and runs no plugin hook, the guard included; over `--strict-mcp-config` alone, which the docs do not say drops claude.ai connectors; and over a container or virtual machine, stronger but a setup per machine (I5). Cost: the sandbox refuses writes to `.git/config` and `.git/hooks`, so the launcher makes the repository and sets its identity first, and a remote or `pre-commit install` is the owner's step; a fresh package cache per run; and four plugins Claude Code loads on its own still appeared. A headless run under it in an empty folder listed no MCP server, could not read or write the home folder or reach `example.com`, and could write the project and its scratch folder; a second had its Read tool refused outside the project and its scratch folder, and a `SessionStart` hook in the project's own `.claude/settings.json` did not run. After the commit security review, the file tools are allowed only as `Edit` rules on the project and the scratch folder, never as bare `Edit`, `Write` or `NotebookEdit`, and the profile denies them, and sandboxed commands through `denyWrite`, the loaded plugins, the grant, `~/.claude`, `~/.config` and the launcher's own files: a third probe, with no guard loaded, found `--restricted` already refusing writes outside the working folders (a stand-in settings folder, another repository, the run folder), while an edit to a plugin copy inside the project and to the project's `grant.json`, and a sandboxed `open("gr"+"ant.json")`, went through before the change and were refused after it. Source: code.claude.com/docs/en/settings, /settings-reference, /sandboxing, /cli-reference, /mcp, /env-vars, read 2026-11-21.
-- **D110 The launcher is a script in `build-project`, `scripts/launch.py`, run by `uv run --script`**: it starts a session from a prompt file under the run profile, resumes the same session after a drop with a doubling wait, resumes a final message that lacks its end marker, stops at the lower of its own and the grant's spend limit and at a turn limit, both measured while the run goes as the larger of the transcript and the stream the launcher captures, neither of which the run can write, refuses to start without a spend limit, sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, and reports `finished`, `blocked`, `limit` or `failed` on one line, in `status.json` and through a `--notify` command — over the hand-written starter each trial used, over `--max-budget-usd` alone, whose total starts again on every resume (docs), and over `--max-turns` alone, which also resets on a resume, while the result's `num_turns` counts tool calls (41 for one response making 40 parallel calls); cost: the transcript format is internal, as for D76, and the spend is polled, so a run can pass its limit by one poll's spend. 25 tests run it against a stand-in `claude`; on real runs with Haiku a session killed mid-task resumed and finished, a $0.005 limit stopped a forty-file task after four files, and a two-turn limit stopped another after two. Source: code.claude.com/docs/en/cli-reference, /headless, /agent-sdk/agent-loop (result subtypes), read 2026-11-21.
-- **D111 A standing grant is `grant.json` at the project's root, in a fixed JSON form** — who gave it, when, its expiry, run limits, accounts with tier, actions and spend limit, push remotes, secrets by name, extra network domains and a web setting — read by the launcher, which snapshots it outside the project for the run, by the guard, and by the plan's Records and Runs on lines; a grant, wherever it was found, is used only if the owner recorded its SHA-256 for that project's resolved path with `launch.py --approve-grant` in `~/.config/claude-grants/approved`, outside anything a run can write, re-approval replacing the project's earlier entry, a symlinked grant is refused outright, and the snapshot is written from the bytes checked; a remote is compared by host and path as git parses it (`urllib.parse.urlsplit`, or `user@host:path`), a look-alike with a backslash, query, fragment or `..` matching nothing; an expired or malformed grant counts as none, and no grant ever covers moving money, a deletion, a looser class or anything `secure-project` forbids a run — over prose approvals in the prompt, which nothing checked and each run read differently, over TOML, which the guard's Python 3.9 cannot parse without a package, and over a section of `PLAN.md`, which a script cannot read reliably; cost: a file per project, kept untracked in a public repository; amends D35, whose autonomous mode now takes the outward actions the grant names (issue 155, first half).
-- **D112 Asking the owner one question from afar is designed and not built**: a `send-messages` script would put one escalated question, with its numbered options and the recommended one, on the owner's channel, wait a stated time for a reply on a reply topic, and carry on with the answer or the recommended (safer) one, recording either under the plan's Assumptions with the time asked and answered; it would serve only what `make-decisions` escalates and a grant cannot settle, never an action that moves money — over building it now, since testing it means sending a message to someone or standing up a local server, and over carrying on silently, which leaves an answerable question to the end of the run; cost: issue 155 stays open for its second half.
-- **D113 Untrusted content is a section of `secure-project`**: text a project reads is data and never instructions, an input others can write into is marked untrusted on its Inputs line, untrusted text reaches only a model with no tools that act, it goes to commands as arguments and never through a shell string, and an unattended job addressed by its content carries on, records the line as a finding and does nothing outward — over a separate skill, whose trigger would compete in every session for a rule every project with an input needs; cost: about 330 words. Source: code.claude.com/docs/en/security (prompt injection), read 2026-11-21.
-- **D114 Two lines in `plan-project`'s Runs on skeleton, Threat model and Unattended runs**, and the grant on the Records line — over a new heading, which every plan would carry, mostly as "None"; cost: two lines per plan (issues 147, 149).
-- **D115 Budgets for the new lines** — `manage-project`'s context file 170 words, `symlinked.md` 1,055, the README 980 — over cutting existing lines to hold D95's and D106's figures, which the owner ruled out; cost: about 10 words more in every session.
+- **D7** `be-functional` the default style, `be-oop` opt-in.
+- **D15** `functools.partial`, closures and `match` — `be-functional`.
+- **D16** One error model — `write-python`.
+- **D17** One record type, the frozen keyword-only dataclass — `write-python`.
+- **D18** `uv_build` — `setup-python`.
+- **D19** pyright `strict` — `setup-python`.
+- **D20** Picks for datetime, money, storage, config, HTTP, logging, plotting and test doubles — their owning skills.
+- **D21** `store-data` and `run-unattended` exist to absorb the gaps a probe left open.
+- **D22** MotherDuck's token variable is `motherduck_token` — `store-data`.
+- **D29** ntfy for alerts, email for digests, Claude Code channels for chat — `send-messages`.
+- **D36** `write-sql` in `write-code`, a DuckDB reference first.
+- **D37** `coverage run -m pytest` over `pytest-cov`.
+- **D38** A run that finds the lock held writes no manifest row — `run-unattended`.
+- **D48** Stored columns alphabetical, timestamps UTC with their zone — `store-data`.
+- **D49** A three-day catch-up window by default — `run-unattended`.
+- **D50** `sqlfluff` from a project's first `.sql` file.
+- **D51** Hive-partitioned Parquet by default; DuckLake or Delta Lake where a table format is needed — `store-data`.
+- **D53** A MotherDuck project pins the client MotherDuck accepts, on Python 3.14; overrides `setup-python`'s floor.
+- **D55** One house design system — `design-interface`; in `design-project` since D88.
+- **D56** A dashboard is a built web front end behind one data module — `write-entry-points`.
+- **D67** A `PreCompact` hook says what a compaction keeps.
+- **D68** An API is earned; a small read-only one on Cloudflare Workers Free — `deploy-project`.
+- **D69** Candles are ECharts' candlestick series — `design-interface`.
+- **D71** An event job rations its pushes — `send-messages`.
+- **D72** The `PreCompact` text holds to 65 words.
+- **D81** Budgets raised for the tenth skill; in the table.
+- **D86** Stale is one period plus a margin when an alert watches — `run-unattended`.
+- **D87** A punctual run triggered by a Cloudflare Worker's Cron Trigger — `deploy-project`; not run live.
+- **D89** `design-interface` covers every surface a person meets.
+- **D90** `design-pipeline` settles each table's grain, key, layer, load and freshness before the store.
+- **D91** Budgets for the sixth plugin; in the table.
+- **D96** The missing-plugins rule ends with a check against the map.
+- **D97** `write-typescript` in `write-code`.
+- **D98** TypeScript 7, oxlint, Prettier — `write-typescript`.
+- **D99** Every `tsconfig` strict with named extra checks — `write-typescript`.
+- **D100** Outside values `unknown` until Zod checks them — `write-typescript`.
+- **D101** TanStack Query, React Compiler on — `write-typescript`.
+- **D102** Named exports, kebab-case files, no barrels — `write-typescript`.
+- **D103** A Worker's `Env` from `wrangler types`, tested with `@cloudflare/vitest-plugin` — `deploy-project`.
 
 **Superseded**
 
-- **D8 Evaluation briefs archived outside this repo** — superseded by D40.
+- **D8** Evaluation briefs archived outside this repo — by D40.
 
 ## Delivery
 
 ### Verification
 
-Each line names the run that shows it, then its status.
+Each line's dated results are in [`verification.csv`](verification.csv); the map below grades each stage from them and from the trial projects' own records.
 
-- **R1 Autonomous** — a trial build started by the launcher from one prompt file ends `finished` or `blocked` with nobody present, its plan unsigned, every answer an assumption, and no outward action its grant does not name. **Partly**: M18 planned, built and reviewed a dashboard from one prompt headless, started by a hand-written script; the launcher has run only throwaway tasks (an interrupted run resumed and finished; spend and turn limits each stopped a run, sweep 12); no full build has used it.
-- **R2 Impressive** — a trial build's plan writes a best-in-class version of each surface, its decisions with alternatives and sources, and ideas beyond the brief; its evaluator passes every surface; a project in a language no skill covers finds and proposes a vetted outside plugin. **Partly**: the first trial build's plan showed its decisions with sources and its ideas; three dashboard builds passed all ten evaluator criteria by the third round (sweep 5, D70); the outside-plugin path has not run in a build.
-- **R3 Secure** — a trial build over private data, run autonomously, plans every input and output private, keeps them off public hosts and GitHub, holds a read-only credential and prepares no order; the guard's tests and an independent attack leave no bypass a model is likely to write; a run under the profile shows no connector, no home folder and no open network; `review-project`'s secret check passes and no issue carries project data. **Partly**: a headless plan did the first four; the repo's secret check has passed each sweep; an independent attack got most attempts past the guard's first version, and the hardened one passed its 228 tests and let one replayed attempt through with Python present (D108); two profile probes showed what D109 records; no build has touched private data or a credential (M22, M20).
-- **R4 Modular** — `claude plugin validate --strict` and every trigger case pass; every `skills/` link resolves; each plugin alone completes a task and names what it lacked; a GitHub install works on a second machine; a project is built with only some of the plugins. **Met on this machine for naming, once per plugin**: each plugin alone, headless (`--setting-sources project,local`, one `--plugin-dir`), named each missing skill with its plugin and recorded its calls as proposed (M17, five of five; sweep 10, six plugins on Sonnet, five missed some calls, which D96 addressed, three reruns covering every call); with all loaded, none reported a plugin missing; sweep 9's `design-project` alone named none it lacked, sweep 10's did; D92's probe showed the lists reaching a subagent with one, three and six plugins; `maintain-plugin` alone, headless, reviewed another owner's plugin from a read-only clone into a report and, with `feedback` set to `file`, appended a dated entry (M17). Open: the second machine (A3), a build on a subset, and versions that move (issue 152).
-- **R5 Proven** — every trial build keeps `DEPENDENCIES.md`, `costs.csv` and `verification.csv` from its first milestone, its acceptance run re-runs every line, each derived figure a reader acts on is checked against an independent source, and the coverage map's evidence is filled from the build. **Partly**: verification by a real run per requirement held for M4 and M18, and the first trial build's review found no stated convention broken and filed as feedback what the build decided alone (issues 28, 30 to 33); the records were specified in sweep 8 and first filled at a review of a project built before them (D84); independent checks of derived figures are open (issue 153).
-- **R6 Complete** — every row of the coverage map has a cell proven by a run or deliberately left out. **Partly**: plan, design, build and verify are proven; deploy and operate are proven for one public scheduled pipeline with alerts (issues 128, 134, 137); undo has nothing (issue 156); retire is designed and never used (D80); operating after a failure is open (issue 151); a plan moving a pipeline to intraday data, drafted from `design-pipeline` and `design-interface`, declared each table's grain and key, held the forming period apart and sized its scheduler, stale threshold and monthly cost (a Sonnet gap probe, 2026-11-20).
-- **R7 Frugal** — each trial build's report totals its cost per stage and model with `costs.py`; a run stops at its spend limit; each deployed account's bill is read from the provider; each always-on file and the README are within budget and each description under 500 characters. **Partly**: `costs.py` came within 6% of Claude Code's own total on four sessions (D76), and a Sonnet build cost $5.45 against $10.75 on Opus (D70); a stage started on a default that is not its model showed its work on the ladder's model in the transcript's per-message counts, for plan and build from either default and in M18 for plan, review, build and cold reads; the launcher stopped a run at its limit (sweep 12); no account's bill has been read (D83); budgets and description limits are held each sweep, and a fresh cold read left no defect open in sweeps 1 to 3 (issues 35 to 65), 5 (70, 72, 74, behind three evaluated dashboard builds), 9 (130, 132 to 138) and 11 (143 to 145, with an independent expert review and a control build), while sweep 6 (76, 77, 80 to 86) ran without one.
-- **R8 Adaptive** — the hook files a seeded gap; a scheduled sweep opens a pull request; a sweep closes real issues, each fix run; each sweep re-checks claims and prices; a regression build before a release shows a change made whole builds no worse. **Partly**: capture and fix are met (issue 20; pull requests 19, 55, 63, 67; eleven sweeps); showing that a change improved things is open (issue 150).
+- **R1** — a trial build through the launcher from one prompt ends `finished` through the gate, or `blocked` on one step.
+- **R2** — a trial plan's best-in-class lines and ideas, and its evaluator passing every surface.
+- **R3** — the preflight on the current Claude Code, the guard's suite, an outside attack, a private-data trial, the secret scan.
+- **R4** — `validate --strict`, every trigger case, each plugin alone, a build on a subset.
+- **R5** — each graded cell against its last recorded result; the three records present.
+- **R6** — each map row above *designed*, or an issue or reason.
+- **R7** — each run within its limit, each sweep within budget (`costs.csv`), each file and description within its figure.
+- **R8** — each open issue in a cell; an improvement measured against the control (issue 150).
+- **R9** — the report's owner part on one screen; the backlog line current.
 
-**Coverage map.** Rows are a project's stages, columns the requirements.
-**P** is proven by the run named, **D** designed only (a skill's text, a unit test or a probe), **G** an open gap with its issue, and **—** not wanted yet, with the reason below the table.
-A cell's skill is the one that delivers it; where a cell holds two marks, each covers the part it names.
+**Coverage map.** Rows are a project's stages, so R6 is read from the rows; each cell names what delivers it and its grade.
+**S** seen once, **R** repeated on a second kind of project, **F** failing at its last recorded result, **D** designed only, **G** a gap and its issue, **—** not wanted yet (note below).
+Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6**, **T7** sweeps 12 and 13's launcher and guard runs (2026-11-21).
+T4's grades are read by script from the last row per line of its `verification.csv`; T1 and T2 predate the records, so theirs rest on the dated milestone notes until their next run (`review-plugin`, Check the coverage map).
 
-| Stage | R1 Autonomous | R2 Impressive | R3 Secure | R4 Modular | R5 Proven | R6 Complete | R7 Frugal | R8 Adaptive |
+| Stage | R1 | R2 | R3 | R4 | R5 | R7 | R8 | R9 |
 |---|---|---|---|---|---|---|---|---|
-| Frame and research | P `plan-project` autonomous mode (M18) | P frame wider, best in class (M4 plan, sweep 5 builds); D outside plugins (D105) | P class per input (headless plan for M20); D untrusted inputs marked (D113) | P missing-plugins rule (M17, sweep 10) | P sources per decision (M4); D general case (D104, probe only) | P `plan-project` (M4, M18) | P plan on Opus by subagent (M18 transcripts) | P current docs read per plan (M4) |
-| Plan | P unsigned plan, assumptions (M18) | P best-in-class line, Ideas (sweep 5 builds) | P classes (headless plan); D Threat model line, grant (D111, D114) | P `plan-project` alone (M17) | P Verification per requirement (M4, M18); D Acceptance line (D74) | D Runs on and Teardown lines (D80) | D build budget and running cost lines (D83, D114) | P Keep it current (M4 to M18) |
-| Design | D design skills in a headless probe (sweep 9) | P house design system and evaluator (sweep 5 builds); D non-screen surfaces (D89, probe only) | D loopback `Host` and `Origin` guard (probe of Shiny and uvicorn) | P `design-project` alone (sweep 10) | D grain, key and contract per table (D90, probe only) | P interfaces (M18); D pipelines (D90) | D cost of a run times runs a month (D90) | P house picks changed from feedback (D69) |
-| Build | P milestones by subagent (M18); D launcher on a full build (D110, throwaway runs only) | P evaluator rounds (sweep 5 builds, D70); D `write-typescript` (D97, no build) | D guard and run profile in a build (D108, D109, throwaway runs only); D gate's security review on a credential (no build has one) | P `write-code` and `structure-app` alone (M17); G a build on a subset (152) | P gate runs the real thing (M18); D records from M1 (D75); G derived figures (153) | P `build-project` (M4, M18) | P Sonnet builds, `costs.py` (D70, D76); D spend limit on a build (D110) | P feedback filed mid-build (issues 28 to 33, 122 to 129) |
-| Verify | P review in a headless build (M18); D acceptance run (D74) | P cold read and evaluator (sweeps 5, 9, 11) | P `review-project`'s secret check (every sweep); D dependency audit in a project review | P `review-project` alone (M17) | P `verification.csv` at a review (D84); G independent check (153); G debugging a failure (148) | P `review-project` (M4, M18) | P `costs.py` on four real sessions (D76) | D a house pick challenged in a review (`review-project`) |
-| Deploy | D grant lets a run push to named remotes (D111, local remote only); G asking the owner from afar (155) | D static dashboard on Pages (D56, M21 open) | P host from the class, public data (M21's pipeline); D private path (M22) | P `deploy-project` alone (sweep 10) | P schedule fired before called deployed (D78); D on-time trigger Worker (D87, never run live) | P one public pipeline (M21's); G rollback (156) | P free tier (M21's pipeline on Actions); D bill read per account (D83) | P free tiers re-checked per sweep (sweeps 6 to 11) |
-| Operate | P lock, catch-up, exit codes, `status` (M4); G a fix proposed unattended after a failure (151) | P alert sent on a stale run (D86); D rationed event pushes and message previews (D71, D89) | D rotation dates recorded (D75); G acted on (151) | P `run-unattended` alone (sweep 10) | P stale threshold set from a real late run (D86) | G failed runs, upgrades, rotation (151) | D tier usage read at each review (D83) | G dependency update cadence (151) |
-| Undo | G (156) | — (1) | D guard refuses deleting and rewriting (D108, throwaway runs only); G backup and restore (156) | G (156) | G a restore that has been run (156) | G rollback, backup, restore (156) | — (1) | — (1) |
-| Retire | — (2) | — (2) | D revoke at the issuer before deleting copies (D80, never used) | D `retire-project` alone (D80) | D each removal confirmed by a command (D80, never used) | D `retire-project` (D80, never used on a real project) | D what bills is stopped first (D80) | — (2) |
-| Improve the plugins | P weekly cloud sweep (pull requests 19, 55, 63, 67) | D outside skills weighed, not copied (D65, D105) | P sweep with no connectors (D28); P feedback with no project data (every sweep) | P shared rules identical, plugin-alone runs (D93, sweep 10); G versions that move (152) | P trigger suites; D coverage map (D107); G regression build (150) | — (3) | P inventory and budgets per sweep | P `Stop` hook, issues, sweeps (issue 20, sweeps 1 to 11); G shown to improve (150) |
+| Frame | S autonomous plan T2 | R frame wider T1 T2; D outside plugins | R classes T1 T4 | S alone T5 | R sources T1 T2 | S Opus plan T2 | R docs read T1 T2 | D |
+| Plan | S unsigned T2 | S best in class T3; G top model for plans 168 | S classes T4; D threat model | S alone T5 | R Verification lines T1 T2 | D budget line | S kept current T4 | D size rule |
+| Design | D | S design system T3; G medium's conventions 159 | D loopback guard | S alone T5 | D grain, key | D run cost | S pick changed (D69) | — (1) |
+| Build | S gate refuses a false finish T7; D full launcher build | S evaluator T3 | S profile, guard T6 T7 | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
+| Verify | S review T2 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
+| Deploy | D grant remotes T6; G from afar 155 | F dashboard slick and fast T4 (R4) | S deployed at no cost T4 (R6) | S alone T5 | F scheduled slot did not fire T4 (R2) | S free tier T4 (R6); D bill read | S tiers re-checked | — (1) |
+| Operate | F nightly fetch with no machine on T4 (R1, R2); G after failure 151 | D stale alert (T4's R12 not run) | D rotation; G 151 | S alone T5 | D stale threshold (D86) | D usage read | G update cadence 151 | — (1) |
+| Undo | G 156 | — (2) | D guard refuses deletes T6 T7; G 156 | G 156 | G 156 | — (2) | — (2) | — (2) |
+| Retire | — (3) | — (3) | D revoke first | D alone | D removal confirmed | D billing stopped first | — (3) | — (3) |
+| Improve the plugins | S weekly sweep | D outside skills | R no connectors, no project data, sweeps | S shared rules T5; G versions 152 | S records (sweep 13); G control 150 | S budgets per sweep | S issues closed by run; G improvement 150 | D; G output styles 160 |
 
-1. Earned once a project can be rolled back or restored at all (issue 156).
-2. Every step of a teardown is outward and irreversible, so it runs with a person confirming each one, never autonomously; nothing to adapt until a teardown has run (D80).
-3. The plugins have no deployed life of their own: nothing is deployed, and a release is a tag the owner cuts (D41).
+1. No decision for the owner arises here beyond the plan's.
+2. Earned once a project can be rolled back or restored (issue 156).
+3. Every teardown step is outward and confirmed one by one (D80).
 
-Issue 71, a trading or investing project, waits for the first such project (Not yet, a plugin per domain).
+Issue 71, trading, waits for its first project (Not yet).
+
+
 
 **Kinds of project built so far.**
 
 | Kind | Status | Evidence |
 |---|---|---|
-| Nightly Python pipeline over licensed data, local store | built and reviewed, local only | M4 |
-| Dashboard over that store, FastAPI and React | built and reviewed, local only | M18, sweep 5 |
-| Public scheduled pipeline on GitHub Actions, with alerts | deployed; dashboard and final review owed | M21 (open), issues 128, 134, 137 |
-| Static dashboard on GitHub Pages | not yet | M21 |
-| Private data on the owner's machine, reached over Tailscale | not yet | M22 |
-| Over a real account with a read-only credential | planned headless, not built | M20 |
-| TypeScript front end or Cloudflare Worker | designed, type-checked only | D97, D87 |
-| Intraday pipeline | designed, probed | D90 |
-| A language no skill covers | designed | D105 |
-| Trading or investing | not wanted yet | issue 71 |
+| Nightly Python pipeline over licensed data, local store | built and reviewed, local | T1 |
+| Dashboard over that store, FastAPI and React | built and reviewed, local | T2, T3 |
+| Public scheduled pipeline with alerts | deployed; acceptance failed R1, R2, R4 and Acceptance | T4 |
+| Static dashboard; private data over Tailscale; a read-only real account | not yet | M21, M22, M20 |
+| TypeScript front end or Worker; intraday; an uncovered language | designed | D97, D87, D90, D105 |
 
 ### Milestones
 
-M1 to M18 are done (2026-11-08 to 12; git history has them): M4 and M18 were the first two trial builds, a pipeline and a dashboard over its store, neither deployed, since the pipeline's data is licensed for personal use (D47); M16 tagged `v0.1`; M17 proved each plugin alone, bar the second machine (A3).
-The first trial build's project folder is kept, unpushed, until every trial build is done.
-Sweeps are not milestones.
+M1 to M18 are done (2026-11-08 to 12; git history has them); M16 tagged `v0.1`.
+Sweeps are not milestones; their order is the `Next` list.
 
-- [ ] **M21 Third trial build, public and deployed** — R1, R6, R7; done when a project over public market data runs from one prompt with a scheduled pipeline, a store and a hosted dashboard, each deployed publicly; each outward step waits on the user's go-ahead; the dashboard is D56's default, a static build on GitHub Pages, gated by D58's evaluator.
-- [ ] **M22 Fourth trial build, private path** — R3, R6; done when a project over private data runs on the owner's machine and is reached over Tailscale, with nothing on a public host; after M21.
-- [ ] **M20 Fifth trial build, over a real account** — R3, R1; done when a project over the user's own account data runs from one prompt in autonomous mode, holds only a read-only credential, and its review finds nothing `secure-project` forbids; after M22.
-- [ ] **M19 Grow the scope as earned** — R6, R2; standing: a Not yet item is built when a trial build or a project earns it.
+- [ ] **M21 Third trial build, public and deployed** — R1, R6, R7; done when a public-data project runs from one prompt with a scheduled pipeline, a store and a hosted dashboard, its acceptance run passing every line.
+- [ ] **M22 Fourth trial build, private path** — R3, R6; private data on the owner's machine, reached over Tailscale, nothing public; after M21.
+- [ ] **M20 Fifth trial build, over a real account** — R3, R1; a read-only credential, autonomous, nothing `secure-project` forbids; after M22.
+- [ ] **M19 Grow the scope as earned** — R6, R2; standing.
+
+**Next**, in order:
+
+1. This sweep (13): the launcher's preflight and gate, the connector guard, this plan, the outside review step, the records.
+2. A launcher shakedown on the third trial's project with no deploy rights in its grant, expected to end `blocked`, then an attended acceptance step for the lines only the owner can check: a scheduled slot firing, a browser and the evaluator, a keychain-held token, the host's dashboard.
+3. The control build (issue 150), with issue 152's subset arm.
+4. The intraday trial (D90).
+5. Issues 153, 159 and 160.
+6. Then 148, 151, 155, 156 and the rest, in the order the map's gaps rank them.
 
 ## Open
 
 ### Assumptions
 
-- **A1** The repository and marketplace keep their names — only the plugins were renamed; a neutral marketplace name waits on D62.
-- **A2** The cloud sweep's `gh` is authenticated for REST and blocked for GraphQL, and vendor pages outside its proxy's allowlist are unreachable there, so the free-tier re-check runs in a local sweep.
-- **A3** Every machine these will be installed on allows a third-party marketplace, so none needs the symlink route — the owner's belief on 2026-11-19, not checked machine by machine; if one refuses, that machine takes the symlink route and R4's second-machine check runs there (was Q7).
-- **A4** `claude -p` keeps marking a session unattended for its hooks (`CLAUDE_CODE_SESSION_ATTENDED=0`, seen in 2.1.330 and undocumented) — if it stops, a `-p` run still turns the guard's `ask` into a refusal (code.claude.com/docs/en/headless), and the launcher's `CLAUDE_GUARD=deny` still holds for its runs; only a headless run started without the launcher would then rely on that conversion.
+- **A1** The repository and marketplace keep their names (D62).
+- **A2** The cloud sweep cannot use GraphQL or reach most vendor pages, so the free-tier re-check runs locally.
+- **A3** Every machine these go on allows a third-party marketplace; unchecked machine by machine.
+- **A4** `claude -p` keeps marking a session unattended for hooks (undocumented); if not, the launcher's `CLAUDE_GUARD=deny` still holds.
 
 ### Questions
 
-- **Q9** Once MotherDuck accepts the current DuckDB client, should a project on MotherDuck replace its two stores (the Parquet tree and the MotherDuck tables beside it) with one DuckLake whose catalog MotherDuck holds and whose files sit in the project's own bucket? — recommended: yes, as a trial in the next project that needs MotherDuck, the tree staying the default elsewhere; costs a bucket and its credential on every writer, and the files read true only through the catalog (D51, D53).
-- **Q11** Which technology makes slick, fast dashboards in 2026, Python or not? — recommended: D56, from six prototypes of one dashboard built and measured on 2026-11-12; the skills already follow it, so a no reverts `write-entry-points`, `setup-python` and `deploy-project`; blocks M21's dashboard.
+- **Q9** Once MotherDuck takes the current DuckDB client, replace a project's two stores with one DuckLake? — recommended: yes, trialled in the next such project.
+- **Q11** Which technology makes slick, fast dashboards? — recommended: D56; blocks M21's dashboard.
+- **Q13** Accept R9 Legible and the sign-off by exception it implies? — recommended: yes; the alternative keeps every decision waiting for a full read.
+
+**Unsigned backlog** (R9): 56 proposed decisions (D54 to D60, D82 to D130), D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
 
 ### Ideas
 
-- **I1** A `doctor` check in `maintain-plugin`: one command that validates manifests, runs the hooks, resolves the links and reports which sibling plugins are missing — would let a new install check itself on day one; costs a script to maintain; not built, and partly met by the built-ins `review-plugin` now runs (`claude plugin validate --strict`, `/skill-doctor`, `/doctor prompt-audit`).
-- **I2** `build-project` writes a short run log (model per stage, wall time, real runs and their size) into the project — the first trial build's model and backfill problems were found only by reading transcripts; costs a section in one skill; partly built in sweep 7, whose `build-project` reports cost per stage and model from the transcript (`choose-model`), in sweep 8, whose `costs.csv` ledger records each stage's model, effort, tokens and wall time (D76), and in sweep 12, whose launcher keeps every invocation's stream in its run folder (D110); real runs and their size not logged.
-- **I3** A budget line in `plan-project`'s Runs on for the build itself (expected stage cost at the ladder's prices) — the user asked about cost twice during the first trial; costs an estimate that will often be wrong; partly built in sweep 12, whose Unattended runs line states the launcher's spend limit (D114), the expected cost per stage still not estimated.
-- **I4** More rules enforced by hooks (issue 53) — partly built in sweep 12 as the guard hook (D108); a further rule earns a hook when a trial build breaks one a hook could have caught.
-- **I5** A container or virtual machine around a whole unattended run — the strongest boundary the docs name for untrusted work, where the run profile is only as strong as the sandbox's rules; costs a setup per machine and an image to keep current; not built.
+- **I1** A `doctor` command that validates, runs the hooks and names missing siblings; partly met by the built-ins.
+- **I2** A run log per build; mostly met by `costs.csv` and the run folder.
+- **I3** An expected cost per stage in a plan's Runs on.
+- **I4** More rules in hooks, each earned by a slip one could catch (issue 53).
+- **I5** A container or virtual machine around a whole unattended run.

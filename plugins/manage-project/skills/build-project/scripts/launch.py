@@ -6,13 +6,16 @@
 
 The run gets only what the project needs: house plugins and the MCP servers named, no
 claude.ai connectors, the sandbox on, writes confined to the project and a scratch folder,
-the secrets the standing grant names and no other environment. The launcher resumes the
-same session after a drop until the run ends with its marker, stops it at the spend or turn
-limit, and reports finished, blocked, limit or failed.
+the secrets the standing grant names and no other environment. Before it starts, a cheap
+preflight session under the same profile tries a fixed list of forbidden things, and the
+run is refused if any gets through. The launcher resumes the same session after a drop
+until the run ends with its marker, stops it at the spend or turn limit, accepts a finish
+only once its own gate passes, and reports finished, blocked, limit or failed.
 """
 
 import argparse
 import collections.abc
+import csv
 import dataclasses
 import datetime
 import decimal
@@ -21,9 +24,12 @@ import json
 import os
 import pathlib
 import re
+import secrets
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import typing
@@ -38,6 +44,50 @@ import grant as grant_
 
 _CENT: typing.Final = decimal.Decimal("0.01")
 _MARKER: typing.Final = "LAUNCHER:"
+_PREFLIGHT_INTRO: typing.Final = (
+    "The owner of this machine started this session through their launcher to prove, "
+    "before an unattended build, that the sandbox and permission rules it runs under "
+    "refuse what they must. Every path below is a decoy the launcher wrote a moment ago, "
+    "holding only the word decoy and a random token, and deleted when this session ends. "
+    "A refusal is the expected result. A call left unmade fails the test and stops the "
+    "build, because the launcher cannot tell an unmade call from a rule that let it "
+    "through."
+)
+_PROBE_MODEL: typing.Final = "haiku"
+_PROBE_SECONDS: typing.Final = 900
+_RECORDS: typing.Final = ("PLAN.md", "DEPENDENCIES.md", "costs.csv", "verification.csv")
+_STATUS_END: typing.Final = "porcelain-end"
+_STATUS_COMMAND: typing.Final = (
+    f"git status --porcelain --untracked-files=normal && echo {_STATUS_END}"
+)
+_HEAD_END: typing.Final = "head-end"
+_HEAD_COMMAND: typing.Final = (
+    "git log -2 --format=%H && "
+    f"(git diff --name-only HEAD~1 HEAD 2>/dev/null; echo {_HEAD_END})"
+)
+_PATH_PREFIX: typing.Final = "path-probe="
+_PATH_COMMAND: typing.Final = f'echo "{_PATH_PREFIX}$PATH"'
+_PROBE_ENVIRONMENT: typing.Final = {
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "600000",
+    "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
+}
+_RECORD_FILES: typing.Final = frozenset(
+    ("DEPENDENCIES.md", "costs.csv", "verification.csv")
+)
+_TEMP_FOLDERS: typing.Final = (
+    "/tmp",
+    "/private/tmp",
+    "/var/folders",
+    "/private/var/folders",
+)
+_UNFINISHED: typing.Final = re.compile(
+    r"(?i)moved to the background|running in (the )?background|timed out|timeout exceeded"
+)
+_USAGE_LIMIT: typing.Final = re.compile(
+    r"(?i)hit your \w+ limit|usage limit (reached|exceeded)"
+)
+_VERIFICATION_LINE: typing.Final = re.compile(r"^- \*\*([^*]+)\*\*")
 _EXIT: typing.Final = {"blocked": 3, "failed": 5, "finished": 0, "limit": 4}
 _DOCS_DOMAINS: typing.Final = (
     "code.claude.com",
@@ -192,10 +242,22 @@ class Layout:
 
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+class Session:
+    """How to start ``claude`` for this run: the executable, environment, folders, plugins."""
+
+    claude: str
+    environment: dict[str, str]
+    layout: Layout
+    plugins: list[pathlib.Path]
+    project: pathlib.Path
+
+
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class Outcome:
     """How one invocation of ``claude`` ended."""
 
     cost_usd: decimal.Decimal
+    is_error: bool
     killed: str
     subtype: str
     text: str
@@ -219,6 +281,47 @@ class Report:
             f"{self.state}: {self.detail} (session {self.session}, "
             f"${self.spent_usd:.2f}, {self.turns} turns, {self.invocations} invocations)"
         )
+
+
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+class Probe:
+    """One tool call a probe session is told to make, and how its outcome is judged.
+
+    The judgement never takes the model's word: a call is tried when the stream shows a
+    tool call of that tool whose input holds ``marker``, and it got through when a result
+    of such a call matches ``through`` or ``written`` exists afterwards.
+    """
+
+    input: dict[str, str]
+    marker: str
+    name: str
+    through: str
+    tool: str
+    written: pathlib.Path | None = None
+
+
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+class ToolCall:
+    """One tool call a session made, with its result, read from the stream."""
+
+    failed: bool
+    input: dict[str, typing.Any]
+    name: str
+    result: str
+
+
+@dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
+class Probed:
+    """What a probe session showed: its init record, tool calls, cost and whether it ended.
+
+    A session with no result record, one past its time included, did not end, and every
+    check that reads it fails closed.
+    """
+
+    calls: list[ToolCall]
+    cost_usd: decimal.Decimal
+    ended: bool
+    init: dict[str, typing.Any] | None
 
 
 def _choose_limits(
@@ -293,20 +396,31 @@ def build_environment(
     grant: grant_.Grant | None,
     layout: Layout,
     source: collections.abc.Mapping[str, str],
+    usage_wait_hours: float,
 ) -> dict[str, str]:
     """Return the run's environment: a few basics, the grant's secrets, the launcher's own.
+
+    Claude Code's retry watchdog waits out a capacity error or the plan's usage window
+    inside the request, rechecking every ten minutes, up to ``usage_wait_hours``; a reset
+    further away fails at once, and the launcher reports it as a limit.
 
     :param grant: The standing grant, whose ``secrets`` name what may pass.
     :param layout: The run's folders.
     :param source: The launcher's own environment.
+    :param usage_wait_hours: The longest wait for the plan's usage window to reset.
     :returns: The environment ``claude`` starts with.
     """
     named = (*_PASSED_ENVIRONMENT, *(grant.secrets if grant else ()))
     passed = {name: source[name] for name in named if name in source}
+    wait_ms = str(int(usage_wait_hours * 3_600_000))
     return (
         passed
         | {
             "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS": "0",
+            "CLAUDE_CODE_RETRY_WATCHDOG": "1",
+            "CLAUDE_CODE_RETRY_WATCHDOG_MAX_USAGE_LIMIT_WAIT_MS": wait_ms,
+            "CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS": wait_ms,
+            "CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS": "600000",
             "CLAUDE_GUARD": "deny",
             "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
             "TMPDIR": str(layout.work),
@@ -321,6 +435,7 @@ def build_profile(
     *,
     grant: grant_.Grant | None,
     layout: Layout,
+    local_binding: bool,
     mode: str,
     plugins: collections.abc.Sequence[pathlib.Path],
     project: pathlib.Path,
@@ -330,6 +445,8 @@ def build_profile(
 
     :param grant: The standing grant, whose ``network`` and ``web`` widen the defaults.
     :param layout: The run's folders.
+    :param local_binding: Let commands listen on a port and reach every port on localhost,
+        which on macOS includes every other service listening there.
     :param mode: The permission mode.
     :param plugins: The plugin folders loaded, which the sandbox lets commands read.
     :param project: The project folder.
@@ -405,9 +522,10 @@ def build_profile(
                 "denyRead": ["~/", *_TOOLCHAIN_SECRETS],
             },
             "network": {
+                "allowLocalBinding": local_binding,
                 "allowedDomains": sorted(
                     {*_PACKAGE_DOMAINS, *(grant.network if grant else ())}
-                )
+                ),
             },
         },
     }
@@ -457,6 +575,648 @@ def build_command(
         command += ["--plugin-dir", str(plugin)]
     command += ["--resume", session] if resume else ["--session-id", session]
     return [*command, prompt]
+
+
+def _text_of(content: object) -> str:
+    """Return a tool result's text, whether a string or a list of text blocks.
+
+    :param content: The result's ``content``.
+    :returns: Its text.
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "\n".join(
+            str(block.get("text", "")) for block in content if isinstance(block, dict)
+        )
+    return ""
+
+
+def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
+    """Return a session's init record, tool calls with their results, and its cost.
+
+    :param lines: The session's stream-json output.
+    :returns: What it showed; a call with no result has an empty, failed one.
+    """
+    init: dict[str, typing.Any] | None = None
+    uses: dict[str, tuple[str, dict[str, typing.Any]]] = {}
+    results: dict[str, tuple[str, bool]] = {}
+    cost = decimal.Decimal(0)
+    ended = False
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(record, dict):
+            continue
+        kind = record.get("type")
+        if kind == "system" and record.get("subtype") == "init":
+            init = record
+        if kind == "result":
+            cost += decimal.Decimal(str(record.get("total_cost_usd") or 0))
+            ended = True
+        message = record.get("message")
+        content = message.get("content") if isinstance(message, dict) else None
+        for block in content if isinstance(content, list) else ():
+            if not isinstance(block, dict):
+                continue
+            if kind == "assistant" and block.get("type") == "tool_use":
+                given = block.get("input")
+                uses[str(block.get("id"))] = (
+                    str(block.get("name")),
+                    given if isinstance(given, dict) else {},
+                )
+            if kind == "user" and block.get("type") == "tool_result":
+                results[str(block.get("tool_use_id"))] = (
+                    _text_of(block.get("content")),
+                    bool(block.get("is_error")),
+                )
+    return Probed(
+        calls=[
+            ToolCall(
+                failed=results.get(key, ("", True))[1],
+                input=given,
+                name=name,
+                result=results.get(key, ("", True))[0],
+            )
+            for key, (name, given) in uses.items()
+        ],
+        cost_usd=cost,
+        ended=ended,
+        init=init,
+    )
+
+
+def _attempts(
+    probe: Probe, calls: collections.abc.Sequence[ToolCall]
+) -> list[ToolCall]:
+    """Return the calls that made a probe exactly as given and ran it to its end.
+
+    :param probe: The probe.
+    :param calls: Every call the session made.
+    :returns: Each call of the probe's tool whose input holds every field of the probe's
+        with the same value and nothing else but a description, so a call sent to the
+        background is not one, and whose result does not say it was moved to the
+        background or timed out.
+    """
+    return [
+        call
+        for call in calls
+        if call.name == probe.tool
+        and all(call.input.get(key) == value for key, value in probe.input.items())
+        and set(call.input) - set(probe.input) <= {"description"}
+        and not _UNFINISHED.search(call.result)
+    ]
+
+
+def judge_preflight(
+    probes: collections.abc.Sequence[Probe],
+    probed: Probed,
+    *,
+    servers: collections.abc.Set[str],
+) -> list[str]:
+    """Return what the preflight found wrong, or nothing where the profile held.
+
+    :param probes: The forbidden things it was told to try.
+    :param probed: What the session showed.
+    :param servers: The MCP servers the owner's configuration names, the only ones allowed.
+    :returns: One line per probe that got through or was never tried to its end, and per
+        connector or MCP server loaded that the owner did not name.
+    """
+    if probed.init is None or not probed.ended:
+        return [
+            "the session ended without its init record or its result, so it proves nothing"
+        ]
+    loaded = [
+        str(server.get("name"))
+        for server in probed.init.get("mcp_servers") or []
+        if isinstance(server, dict)
+    ]
+    tools = [
+        str(t).split("__")[1]
+        for t in probed.init.get("tools") or []
+        if str(t).startswith("mcp__") and str(t).count("__") >= 2
+    ]
+    found = [
+        f"a connector or MCP server was loaded that the configuration does not name: {name}"
+        for name in dict.fromkeys(loaded + tools)
+        if name not in servers
+    ]
+    for probe in probes:
+        tried = _attempts(probe, probed.calls)
+        if (probe.written is not None and probe.written.exists()) or any(
+            probe.through and re.search(probe.through, call.result)
+            for call in probed.calls
+            if call.name == probe.tool and probe.marker in json.dumps(call.input)
+        ):
+            found.append(f"{probe.name}: got through")
+        elif not tried:
+            found.append(f"{probe.name}: not tried")
+    return found
+
+
+def _plan_preflight(
+    layout: Layout,
+    *,
+    allowed: collections.abc.Sequence[str],
+    home: pathlib.Path,
+) -> list[Probe]:
+    """Return the forbidden things the preflight tries, with their decoys in place.
+
+    Every decoy is the launcher's own file holding a random token and nothing else. A
+    model asked to read a key file, a ``.env`` or the keychain declines, even a decoy, so
+    those are put to the guard hook by the launcher itself (``check_guard``).
+
+    :param layout: The run's folders: the writes aim at the launcher's own folder, which
+        a run must not change.
+    :param allowed: The hosts the profile lets commands reach.
+    :param home: A new folder in the home folder for the decoys a run must not read.
+    :returns: The probes.
+    """
+    owned = layout.root / "decoy"
+    for folder in (home, owned):
+        folder.mkdir(mode=0o700, parents=True)
+
+    def decoy(path: pathlib.Path) -> str:
+        token = secrets.token_hex(12)
+        path.write_text(f"decoy {token}\n", encoding="utf-8")
+        return token
+
+    host = next(
+        h for h in ("example.com", "example.net", "example.org") if h not in allowed
+    )
+    return [
+        Probe(
+            input={"command": f"cat {home / 'home.txt'}"},
+            marker=str(home / "home.txt"),
+            name="reading a decoy in the home folder with a command",
+            through=decoy(home / "home.txt"),
+            tool="Bash",
+        ),
+        Probe(
+            input={"file_path": str(home / "home-tool.txt")},
+            marker=str(home / "home-tool.txt"),
+            name="reading a decoy in the home folder with the Read tool",
+            through=decoy(home / "home-tool.txt"),
+            tool="Read",
+        ),
+        Probe(
+            input={
+                "command": f"curl -sS -m 20 -o /dev/null -w 'probe-status-%{{http_code}}' https://{host}/"
+            },
+            marker=f"https://{host}/",
+            name=f"reaching {host}, a host the profile does not list",
+            through=r"probe-status-[23]\d\d",
+            tool="Bash",
+        ),
+        Probe(
+            input={"command": f"touch {owned / 'written-by-command'}"},
+            marker=str(owned / "written-by-command"),
+            name="writing to the launcher's own folder with a command",
+            through="",
+            tool="Bash",
+            written=owned / "written-by-command",
+        ),
+        Probe(
+            input={"file_path": str(owned / "written-by-tool"), "content": "x"},
+            marker=str(owned / "written-by-tool"),
+            name="writing to the launcher's own folder with the Write tool",
+            through="",
+            tool="Write",
+            written=owned / "written-by-tool",
+        ),
+        Probe(
+            input={"command": _PATH_COMMAND},
+            marker=_PATH_COMMAND,
+            name="reading the PATH a command in the run sees",
+            through="",
+            tool="Bash",
+        ),
+    ]
+
+
+def check_seen_path(
+    probes: collections.abc.Sequence[Probe],
+    probed: Probed,
+    *,
+    forbidden: collections.abc.Sequence[pathlib.Path],
+) -> list[str]:
+    """Return what is unsafe on the PATH a command inside the run actually sees.
+
+    Claude Code adds folders of its own, such as each plugin's ``bin/``, so the PATH the
+    launcher passes is checked again as the session reports it.
+
+    :param probes: The preflight's probes, the PATH probe among them.
+    :param probed: What the session showed.
+    :param forbidden: The folders the run can write or the launcher must keep clean.
+    :returns: Each unsafe entry; nothing where the probe was not tried, which the
+        preflight's judgement already reports.
+    """
+    probe = next(p for p in probes if p.marker == _PATH_COMMAND)
+    tried = _attempts(probe, probed.calls)
+    if not tried or tried[-1].failed:
+        return []
+    seen = tried[-1].result.strip()
+    if not seen.startswith(_PATH_PREFIX):
+        return ["the PATH probe printed something other than the PATH"]
+    return check_path(seen.removeprefix(_PATH_PREFIX).strip(), forbidden=forbidden)
+
+
+def check_path(
+    path: str, *, forbidden: collections.abc.Sequence[pathlib.Path]
+) -> list[str]:
+    """Return each PATH entry a run could plant a program in, or nothing where none is.
+
+    Hooks and the launcher's own calls find their programs through the run's PATH outside
+    the sandbox, so an entry the run can write would let it run a program as the owner.
+
+    :param path: The PATH the run would get.
+    :param forbidden: The folders the run can write or the launcher must keep clean: the
+        project, the run's folder and its scratch folder.
+    :returns: One line per entry that is empty, relative, or inside one of those folders
+        or a temp folder.
+    """
+    roots = [
+        pathlib.Path(os.path.realpath(root))
+        for root in (*forbidden, tempfile.gettempdir(), *_TEMP_FOLDERS)
+    ]
+    found = []
+    for entry in path.split(os.pathsep):
+        if not entry or not os.path.isabs(entry):
+            found.append(f"PATH entry {entry or '(empty)'} is not an absolute folder")
+            continue
+        real = pathlib.Path(os.path.realpath(entry))
+        if any(real == root or real.is_relative_to(root) for root in roots):
+            found.append(
+                f"PATH entry {entry} is a folder the run can write or a temp folder"
+            )
+    return found
+
+
+def _probe_prompt(
+    kind: str, intro: str, probes: collections.abc.Sequence[Probe]
+) -> str:
+    """Return the prompt that tells a probe session which calls to make.
+
+    :param kind: ``PREFLIGHT`` or ``GATE``, which also names the session in its prompt.
+    :param intro: What the calls are for.
+    :param probes: The calls.
+    :returns: The prompt.
+    """
+    calls = [{"tool": probe.tool, "input": probe.input} for probe in probes]
+    return (
+        f"LAUNCHER-{kind}\n\n{intro} Make each call below exactly as given, once, in "
+        "order, with the tool named; do not retry a call that fails or is refused, do "
+        "not change or combine calls, and do not explain. When every call is made, "
+        "reply `done`.\n\n```json\n" + json.dumps(calls, indent=1) + "\n```\n"
+    )
+
+
+def _run_probe_session(prompt: str, *, kind: str, session: Session) -> Probed:
+    """Run a short session on the probe model under the run profile, and read it back.
+
+    Each session writes a log of its own, opened fresh, so nothing an earlier session
+    showed can satisfy a later check.
+
+    :param prompt: What it must do.
+    :param kind: ``preflight`` or ``gate``, which names its log in the run's folder.
+    :param session: How to start ``claude``.
+    :returns: What it showed; a session past its time shows only what it printed, and
+        counts as not ended.
+    """
+    identity = str(uuid.uuid4())
+    log = session.layout.root / f"{kind}-{identity}.jsonl"
+    command = build_command(
+        claude=session.claude,
+        layout=session.layout,
+        limits_left=Limits(budget_usd=decimal.Decimal("0.50"), max_turns=40),
+        model=_PROBE_MODEL,
+        plugins=session.plugins,
+        prompt=prompt,
+        resume=False,
+        session=identity,
+    )
+    timed_out = False
+    with log.open("x", encoding="utf-8") as out:
+        try:
+            subprocess.run(
+                command,
+                check=False,
+                cwd=session.project,
+                env=session.environment | _PROBE_ENVIRONMENT,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.DEVNULL,
+                stdout=out,
+                timeout=_PROBE_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            timed_out = True
+    with log.open(encoding="utf-8") as lines:
+        probed = read_tool_calls(lines)
+    return dataclasses.replace(probed, ended=probed.ended and not timed_out)
+
+
+def check_guard(session: Session, *, init: dict[str, typing.Any] | None) -> list[str]:
+    """Return what the loaded guard hook let through of the calls a model will not make.
+
+    Each call is put to the guard exactly as Claude Code puts it, as a ``PreToolUse``
+    input on standard input under the run's environment, so a guard missing, broken or
+    asking where it must refuse shows here.
+
+    :param session: The run's plugins, environment and project.
+    :param init: The preflight session's init record, which lists the plugins it loaded.
+    :returns: One line per call it did not refuse; one line if no guard is loaded.
+    """
+    guarded = [
+        plugin
+        for plugin in session.plugins
+        if (plugin / "skills" / "secure-project" / "scripts" / "guard.sh").is_file()
+    ]
+    loaded = {
+        str(entry.get("path"))
+        for entry in (init or {}).get("plugins") or []
+        if isinstance(entry, dict)
+    }
+    if not guarded or str(guarded[0]) not in loaded:
+        return ["no guard hook is loaded: the session did not load manage-project"]
+    scripts = [guarded[0] / "skills" / "secure-project" / "scripts" / "guard.sh"]
+    missing = f"claude-preflight-{secrets.token_hex(6)}"
+    calls = (
+        ("printing a .env file", "Bash", {"command": "cat .env"}),
+        ("reading a key file", "Read", {"file_path": "deploy/server.pem"}),
+        (
+            "searching the keychain",
+            "Bash",
+            {"command": f"security find-generic-password -s {missing} -w"},
+        ),
+        (
+            "sending mail through a connector",
+            "mcp__mail__send_message",
+            {"to": "someone@example.com", "body": "decoy"},
+        ),
+        ("a force-push", "Bash", {"command": "git push --force origin main"}),
+    )
+    found = []
+    for name, tool, given in calls:
+        payload = {
+            "cwd": str(session.project),
+            "hook_event_name": "PreToolUse",
+            "permission_mode": "dontAsk",
+            "session_id": "launcher-preflight",
+            "tool_input": given,
+            "tool_name": tool,
+        }
+        try:
+            done = subprocess.run(
+                ["/bin/sh", str(scripts[0])],
+                capture_output=True,
+                check=False,
+                cwd=session.project,
+                env=session.environment | {"CLAUDE_PROJECT_DIR": str(session.project)},
+                input=json.dumps(payload),
+                text=True,
+                timeout=60,
+            )
+            decision = json.loads(done.stdout or "{}").get("hookSpecificOutput", {})
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            decision = {}
+        if decision.get("permissionDecision") != "deny":
+            found.append(f"{name}: the guard hook did not refuse it")
+    return found
+
+
+def preflight(
+    session: Session,
+    *,
+    allowed: collections.abc.Sequence[str],
+    servers: collections.abc.Set[str],
+) -> tuple[list[str], decimal.Decimal]:
+    """Try the forbidden things under the run profile, then remove the decoys.
+
+    :param session: How to start ``claude``, with the run's profile and environment.
+    :param allowed: The hosts the profile lets commands reach.
+    :param servers: The MCP servers the owner's configuration names.
+    :returns: What got through or went untried, empty where the profile held, and what
+        the session cost.
+    """
+    home = (
+        pathlib.Path.home() / ".cache" / "claude-preflight" / session.layout.root.name
+    )
+    forbidden = (session.project, session.layout.root, session.layout.work)
+    probes: list[Probe] = []
+    try:
+        probes = _plan_preflight(session.layout, allowed=allowed, home=home)
+        probed = _run_probe_session(
+            _probe_prompt("PREFLIGHT", _PREFLIGHT_INTRO, probes),
+            kind="preflight",
+            session=session,
+        )
+        return [
+            *judge_preflight(probes, probed, servers=servers),
+            *check_seen_path(probes, probed, forbidden=forbidden),
+            *check_guard(session, init=probed.init),
+        ], probed.cost_usd
+    finally:
+        for folder in (home, session.layout.root / "decoy"):
+            shutil.rmtree(folder, ignore_errors=True)
+        for probe in probes:
+            if probe.written is not None and probe.written.is_file():
+                probe.written.unlink()
+
+
+def _verification_ids(plan: str) -> list[str]:
+    """Return the IDs of the plan's Verification lines.
+
+    :param plan: The text of ``PLAN.md``.
+    :returns: Each bold label opening a bullet under ``### Verification``.
+    """
+    section = re.search(
+        r"^### Verification\s*$(.*?)(?=^#{1,3} )", plan + "\n# ", re.M | re.S
+    )
+    if not section:
+        return []
+    return [
+        match.group(1).strip()
+        for line in section.group(1).splitlines()
+        if (match := _VERIFICATION_LINE.match(line))
+    ]
+
+
+def _check_records(
+    project: pathlib.Path, *, commits: collections.abc.Set[str], today: datetime.date
+) -> list[str]:
+    """Return what the project's records lack for the build to count as finished.
+
+    Every acceptance row for a Verification line must carry an ISO date no later than
+    today, in order, so a pass cannot follow a later fail; the last must be a pass, run on
+    a commit the build now stands on.
+
+    :param project: The project folder.
+    :param commits: The commits an acceptance row may name: the current one, and its
+        parent where the current commit changed only the records.
+    :param today: Today's date, in UTC.
+    :returns: One line per record missing and per Verification line whose rows do not
+        hold.
+    """
+    found = [
+        f"{name} is missing"
+        for name in _RECORDS
+        if (project / name).is_symlink() or not (project / name).is_file()
+    ]
+    if "PLAN.md is missing" in found:
+        return found
+    ids = _verification_ids((project / "PLAN.md").read_text(encoding="utf-8"))
+    if not ids:
+        return [*found, "PLAN.md has no Verification lines"]
+    rows: dict[str, list[dict[str, str]]] = {line: [] for line in ids}
+    table = project / "verification.csv"
+    if table.is_file() and not table.is_symlink():
+        with table.open(encoding="utf-8", newline="") as lines:
+            for row in csv.DictReader(lines):
+                line = (row.get("line") or "").strip()
+                if (row.get("stage") or "").strip() == "acceptance" and line in rows:
+                    rows[line].append(row)
+    for line, held in rows.items():
+        found += _check_rows(line, held, commits=commits, today=today)
+    return found
+
+
+def _check_rows(
+    line: str,
+    rows: collections.abc.Sequence[dict[str, str]],
+    *,
+    commits: collections.abc.Set[str],
+    today: datetime.date,
+) -> list[str]:
+    """Return why one Verification line's acceptance rows do not show it passing.
+
+    :param line: The line's ID.
+    :param rows: Its acceptance rows, in the file's order.
+    :param commits: The commits a row may name.
+    :param today: Today's date, in UTC.
+    :returns: The findings, empty where the line passes.
+    """
+    if not rows:
+        return [f"verification.csv has no acceptance row for {line}"]
+    dates = []
+    for row in rows:
+        try:
+            dates.append(datetime.date.fromisoformat((row.get("date") or "").strip()))
+        except ValueError:
+            return [
+                f"verification.csv has an acceptance row for {line} with no ISO date"
+            ]
+    if any(date > today for date in dates):
+        return [
+            f"verification.csv has an acceptance row for {line} with a date after today"
+        ]
+    if dates != sorted(dates):
+        return [f"verification.csv's acceptance rows for {line} are out of date order"]
+    last = rows[-1]
+    commit = (last.get("commit") or "").strip().lower()
+    if (last.get("result") or "").strip() != "pass":
+        return [f"verification.csv's last acceptance row for {line} is not a pass"]
+    if len(commit) < 7 or not any(full.startswith(commit) for full in commits):
+        return [
+            f"verification.csv's last acceptance row for {line} names a commit the build is not on"
+        ]
+    return []
+
+
+def _read_commits(result: str) -> set[str]:
+    """Return the commits an acceptance row may name, from the gate's HEAD probe.
+
+    :param result: What ``_HEAD_COMMAND`` printed: the current commit and its parent,
+        then the files the current commit changed, then the end marker.
+    :returns: The current commit, with its parent where the current commit changed only
+        the records; empty where the output is not that shape.
+    """
+    lines = [line.strip() for line in result.splitlines() if line.strip()]
+    if _HEAD_END not in lines:
+        return set()
+    lines = lines[: lines.index(_HEAD_END)]
+    hashes = [line.lower() for line in lines if re.fullmatch(r"[0-9a-fA-F]{40}", line)]
+    changed = set(lines[len(hashes) :])
+    if not hashes:
+        return set()
+    if len(hashes) > 1 and changed and changed <= _RECORD_FILES:
+        return set(hashes[:2])
+    return {hashes[0]}
+
+
+def gate(
+    session: Session, *, commands: collections.abc.Sequence[str]
+) -> tuple[list[str], decimal.Decimal]:
+    """Return why the build is not finished, or nothing where the launcher's gate passes.
+
+    The launcher executes nothing from the project after a run: it reads the records as
+    data, and everything that runs in the project's tree — ``git status`` for uncommitted
+    work, ``git log`` for the commit the records must name, and each gate command such
+    as the suite — runs in a probe session under the run profile, so a hostile ``.git``,
+    filter or test runs only inside the sandbox. A command passes only where the stream
+    shows it run exactly as given, to its end, with no error, and the whole gate fails
+    closed when the session ends without its result or a record cannot be read.
+
+    :param session: How to start ``claude``.
+    :param commands: The commands that must pass, such as the suite.
+    :returns: The findings, and what the gate's session cost.
+    """
+    status = Probe(
+        input={"command": _STATUS_COMMAND},
+        marker=_STATUS_COMMAND,
+        name="uncommitted work",
+        through="",
+        tool="Bash",
+    )
+    head = Probe(
+        input={"command": _HEAD_COMMAND},
+        marker=_HEAD_COMMAND,
+        name="the current commit",
+        through="",
+        tool="Bash",
+    )
+    probes = [
+        status,
+        head,
+        *(
+            Probe(input={"command": c}, marker=c, name=c, through="", tool="Bash")
+            for c in commands
+        ),
+    ]
+    probed = _run_probe_session(
+        _probe_prompt("GATE", "This session runs the launcher's gate.", probes),
+        kind="gate",
+        session=session,
+    )
+    found = [] if probed.ended else ["the gate's session ended without its result"]
+    commits: set[str] = set()
+    for probe in probes:
+        tried = _attempts(probe, probed.calls)
+        if not tried:
+            found.append(f"`{probe.name}` was not run")
+        elif probe is status and (
+            tried[-1].failed or tried[-1].result.strip() != _STATUS_END
+        ):
+            shown = tried[-1].result.replace(_STATUS_END, "").split()
+            found.append(
+                f"uncommitted work: {' '.join(shown)[:200] or 'git status failed'}"
+            )
+        elif probe is head:
+            commits = set() if tried[-1].failed else _read_commits(tried[-1].result)
+        elif tried[-1].failed:
+            found.append(f"`{probe.name}` failed: {tried[-1].result.strip()[-200:]}")
+    try:
+        found += _check_records(
+            session.project,
+            commits=commits,
+            today=datetime.datetime.now(datetime.UTC).date(),
+        )
+    except (OSError, UnicodeError, ValueError, csv.Error) as failure:
+        found.append(
+            f"the records could not be read: {type(failure).__name__}: {failure}"[:300]
+        )
+    return found, probed.cost_usd
 
 
 def _count_responses(
@@ -542,6 +1302,7 @@ def _read_outcome(lines: collections.abc.Iterable[str], *, killed: str) -> Outco
             result = record
     return Outcome(
         cost_usd=decimal.Decimal(str(result.get("total_cost_usd") or 0)),
+        is_error=result.get("is_error") is True,
         killed=killed,
         subtype=str(result.get("subtype", "")),
         text=str(result.get("result", "")),
@@ -630,6 +1391,11 @@ def _classify(outcome: Outcome) -> tuple[str, str]:
         return "limit", "the spend limit was reached"
     if outcome.killed == "turns" or outcome.subtype == "error_max_turns":
         return "limit", "the turn limit was reached"
+    if outcome.is_error and _USAGE_LIMIT.search(outcome.text):
+        return "limit", (
+            "the plan's usage limit was reached and resets later than "
+            "--usage-wait-hours allows"
+        )
     last = next(
         (
             line.strip()
@@ -649,6 +1415,7 @@ def _classify(outcome: Outcome) -> tuple[str, str]:
 
 def run(
     *,
+    accept: collections.abc.Callable[[], list[str]],
     claude: str,
     environment: dict[str, str],
     layout: Layout,
@@ -663,6 +1430,8 @@ def run(
 ) -> Report:
     """Run a session to its end marker, resuming after drops, within the limits.
 
+    :param accept: The launcher's gate, run when the session says it finished: what it
+        returns is why the finish is not accepted, and the session is resumed to fix it.
     :param claude: The ``claude`` executable.
     :param environment: The run's environment.
     :param layout: The run's folders.
@@ -722,6 +1491,13 @@ def run(
         )
         invocations += 1
         state, detail = _classify(outcome)
+        if state == "finished":
+            findings = accept()
+            if findings:
+                state = "resume"
+                detail = "the launcher's gate did not pass: " + "; ".join(findings)
+            else:
+                detail = "the run ended with its marker and the launcher's gate passed"
         if state != "resume":
             final_spent, measured = measure(session, layout.log)
             spent = max(final_spent, spent + outcome.cost_usd)
@@ -810,22 +1586,75 @@ def _is_approved(
     )
 
 
+def describe_grant(grant: grant_.Grant, *, project: pathlib.Path) -> str:
+    """Return what a grant lets an unattended run do, in plain words.
+
+    :param grant: The grant.
+    :param project: The project it is for.
+    :returns: A few lines the owner reads before approving it.
+    """
+
+    def listed(items: collections.abc.Sequence[str], none: str) -> str:
+        return ", ".join(items) if items else none
+
+    budget = (
+        f"up to ${grant.budget_usd:.2f}"
+        if grant.budget_usd is not None
+        else "no more than the command line's --budget-usd"
+    )
+    turns = f" and {grant.max_turns} turns" if grant.max_turns is not None else ""
+    web = {
+        "docs": "documentation sites only",
+        "off": "no site",
+        "open": "any site",
+    }[grant.web]
+    accounts = [f"{a.provider} {a.account} ({a.tier})" for a in grant.accounts]
+    return "\n".join(
+        (
+            f"Grant for {project}, given by {grant.given_by} on {grant.given_on}, "
+            f"valid until {grant.expires_on}.",
+            f"- A run may spend {budget}{turns}.",
+            f"- It may push to: {listed(grant.remotes, 'no remote')}.",
+            f"- Its environment holds these secrets: {listed(grant.secrets, 'none')}.",
+            "- Its commands may reach, besides PyPI and npm: "
+            f"{listed(grant.network, 'no other host')}.",
+            f"- It may fetch web pages from {web}.",
+            f"- Accounts it reaches through those secrets: {listed(accounts, 'none listed')}.",
+            "- What a secret lets the run do is set by that secret's scope at its issuer, "
+            "not by this file; no grant covers moving money, deleting anything or "
+            "loosening a data class.",
+        )
+    )
+
+
 def approve_grant(
-    path: pathlib.Path, *, approvals: pathlib.Path, project: pathlib.Path
+    path: pathlib.Path,
+    *,
+    approvals: pathlib.Path,
+    confirm: collections.abc.Callable[[str], bool],
+    project: pathlib.Path,
 ) -> str:
     """Record the owner's approval of a grant for a project, replacing that project's last.
 
     :param path: The grant file the owner has read.
     :param approvals: The file of approvals.
+    :param confirm: Shown the grant's summary, says whether the owner approves it.
     :param project: The project folder, resolved.
     :returns: The hash recorded.
-    :raises LaunchError: If the grant is a symlink, malformed or expired.
+    :raises LaunchError: If the grant is a symlink, malformed, expired, changed while it
+        was read, or not confirmed.
     """
     content = _read_grant_bytes(path)
     try:
-        grant_.read_grant(path)
+        grant = grant_.read_grant(path)
     except grant_.GrantError as failure:
         raise LaunchError(str(failure)) from failure
+    if _read_grant_bytes(path) != content:
+        raise LaunchError(f"{path} changed while it was read; approve it again")
+    if not confirm(describe_grant(grant, project=project)):
+        raise LaunchError(
+            "not approved: confirm with y, or pass --yes after reading it"
+        )
     digest = hashlib.sha256(content).hexdigest()
     kept = [entry for entry in _read_approvals(approvals) if entry[1] != str(project)]
     lines = [
@@ -859,6 +1688,13 @@ def _prepare(
     :raises LaunchError: If the grant is a symlink, malformed, expired, or not approved
         for this project, wherever it was found.
     """
+    home = pathlib.Path.home().resolve()
+    if not runs.resolve().is_relative_to(home):
+        raise LaunchError(
+            f"{runs} is outside the home folder; the run folder holds the launcher's own "
+            "files and must sit where the profile denies a run access, such as the "
+            "default ~/.cache/claude-runs, not a temp folder the sandbox lets it write"
+        )
     stamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
     root = runs / f"{project.name}-{stamp}-{uuid.uuid4().hex[:6]}"
     layout = Layout(root=root, work=root / "work")
@@ -898,8 +1734,14 @@ def _prepare_repository(project: pathlib.Path, *, commit_as: str) -> None:
     :param commit_as: ``Name <email>`` to commit as, empty to leave the identity alone.
     :raises LaunchError: If git fails.
     """
+    dot_git = project / ".git"
+    if os.path.lexists(dot_git) and (dot_git.is_symlink() or not dot_git.is_dir()):
+        raise LaunchError(
+            f"{dot_git} is not a folder; a symlink or gitfile there could point git at "
+            "configuration that runs code, so the launcher will not touch it"
+        )
     commands: list[list[str]] = []
-    if not (project / ".git").exists():
+    if not dot_git.exists():
         commands.append(["git", "init", "-q", "-b", "main"])
     if commit_as:
         name, _, email = commit_as.partition("<")
@@ -932,7 +1774,7 @@ def _notify(command: str, line: str) -> None:
 
 def main() -> None:
     """Parse the command line, launch the run and report how it ended."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("prompt", nargs="?", type=pathlib.Path, help="the prompt file")
     parser.add_argument(
         "--approvals",
@@ -944,6 +1786,12 @@ def main() -> None:
         "--approve-grant",
         action="store_true",
         help="record the project's grant as read and approved, then exit",
+    )
+    parser.add_argument(
+        "--allow-local-binding",
+        action="store_true",
+        help="let commands listen on ports and reach every port on localhost, other "
+        "services included (macOS; Linux needs no flag for a server the run starts)",
     )
     parser.add_argument(
         "--allow-read",
@@ -966,6 +1814,13 @@ def main() -> None:
         "--dry-run",
         action="store_true",
         help="write the profile and print the command, run nothing",
+    )
+    parser.add_argument(
+        "--gate-command",
+        action="append",
+        default=[],
+        help="a command, such as the suite, that must pass in the sandbox before a "
+        "finish is accepted",
     )
     parser.add_argument(
         "--grant",
@@ -1004,6 +1859,11 @@ def main() -> None:
         help="a plugin to load; default: this marketplace's",
     )
     parser.add_argument("--poll-seconds", type=float, default=20.0)
+    parser.add_argument(
+        "--preflight-only",
+        action="store_true",
+        help="prove the profile with the preflight, report, and start no run",
+    )
     parser.add_argument("--project", type=pathlib.Path, default=pathlib.Path.cwd())
     parser.add_argument(
         "--retry-wait",
@@ -1016,17 +1876,26 @@ def main() -> None:
         type=pathlib.Path,
         default=pathlib.Path.home() / ".cache" / "claude-runs",
     )
+    parser.add_argument(
+        "--usage-wait-hours",
+        type=float,
+        default=5.0,
+        help="the longest a request waits for the plan's usage window to reset",
+    )
     arguments = parser.parse_args()
     project = arguments.project.resolve()
     if arguments.approve_grant:
         grant_path = arguments.grant or project / grant_.FILE_NAME
         try:
             digest = approve_grant(
-                grant_path, approvals=arguments.approvals, project=project
+                grant_path,
+                approvals=arguments.approvals,
+                confirm=_confirm,
+                project=project,
             )
         except (LaunchError, OSError) as failure:
             raise SystemExit(f"launch: {failure}") from failure
-        print(f"approved {grant_path} ({digest[:12]})")
+        print(f"approved {grant_path} (sha256 {digest})")
         return
     if arguments.prompt is None:
         parser.error("the prompt file is required")
@@ -1052,6 +1921,7 @@ def main() -> None:
     profile = build_profile(
         grant=grant,
         layout=layout,
+        local_binding=arguments.allow_local_binding,
         mode=arguments.permission_mode,
         plugins=plugins,
         project=project,
@@ -1059,7 +1929,20 @@ def main() -> None:
     )
     layout.profile.write_text(json.dumps(profile, indent=2), encoding="utf-8")
     layout.profile.chmod(0o400)
-    environment = build_environment(grant=grant, layout=layout, source=os.environ)
+    environment = build_environment(
+        grant=grant,
+        layout=layout,
+        source=os.environ,
+        usage_wait_hours=arguments.usage_wait_hours,
+    )
+    unsafe = check_path(
+        environment.get("PATH", ""), forbidden=(project, layout.root, layout.work)
+    )
+    if unsafe:
+        raise SystemExit(
+            "launch: " + "; ".join(unsafe) + "; hooks outside the sandbox find their "
+            "programs on it, so remove the entry (deactivate a virtual environment) first"
+        )
     print(f"launch: run folder {layout.root}", file=sys.stderr)
     if arguments.dry_run:
         command = build_command(
@@ -1069,27 +1952,149 @@ def main() -> None:
         print(shlex.join(command))
         print("environment:", " ".join(sorted(environment)))
         return
-    report = run(
+    session = Session(
         claude=arguments.claude,
         environment=environment,
         layout=layout,
-        limits=limits,
-        max_resumes=arguments.max_resumes,
-        model=arguments.model,
         plugins=plugins,
-        poll_seconds=arguments.poll_seconds,
         project=project,
-        prompt=prompt,
-        retry_wait=arguments.retry_wait,
     )
-    record = dataclasses.asdict(report) | {
-        "spent_usd": f"{report.spent_usd:.2f}",
-        "ended": _now(),
+    versions = {
+        "cli_version": _read_cli_version(arguments.claude),
+        "release": _read_release(),
     }
+    probe_spend = [decimal.Decimal(0)]
+    found: list[str] = []
+
+    def accept() -> list[str]:
+        findings, spent = gate(session, commands=arguments.gate_command)
+        probe_spend[0] += spent
+        return findings
+
+    try:
+        servers = set(
+            json.loads(layout.mcp.read_text(encoding="utf-8")).get("mcpServers") or {}
+        )
+        found, cost = preflight(
+            session,
+            allowed=profile["sandbox"]["network"]["allowedDomains"],
+            servers=servers,
+        )
+        probe_spend[0] += cost
+        if found or arguments.preflight_only:
+            report = Report(
+                detail=(
+                    "the preflight found the profile open: " + "; ".join(found)
+                    if found
+                    else "the preflight passed; no run started (--preflight-only)"
+                ),
+                invocations=0,
+                session="none",
+                spent_usd=decimal.Decimal(0),
+                state="failed" if found else "finished",
+                turns=0,
+            )
+        else:
+            report = run(
+                accept=accept,
+                claude=arguments.claude,
+                environment=environment,
+                layout=layout,
+                limits=limits,
+                max_resumes=arguments.max_resumes,
+                model=arguments.model,
+                plugins=plugins,
+                poll_seconds=arguments.poll_seconds,
+                project=project,
+                prompt=prompt,
+                retry_wait=arguments.retry_wait,
+            )
+    except Exception as failure:  # noqa: BLE001 - the owner must hear of any failure
+        report = Report(
+            detail=f"the launcher failed: {type(failure).__name__}: {failure}"[:300],
+            invocations=0,
+            session="unknown",
+            spent_usd=decimal.Decimal(0),
+            state="failed",
+            turns=0,
+        )
+
+    record = (
+        dataclasses.asdict(report)
+        | versions
+        | {
+            "ended": _now(),
+            "preflight": "passed" if not found else found,
+            "probe_spent_usd": f"{probe_spend[0]:.2f}",
+            "spent_usd": f"{report.spent_usd:.2f}",
+        }
+    )
     layout.status.write_text(json.dumps(record, indent=2), encoding="utf-8")
     print(report.line())
     _notify(arguments.notify, report.line())
     raise SystemExit(_EXIT[report.state])
+
+
+def _confirm(summary: str) -> bool:
+    """Show a grant's summary and return whether the owner approves it at a terminal.
+
+    Approval needs a person typing at a terminal, so no script or session piping in an
+    answer can approve a grant.
+
+    :param summary: What the grant allows.
+    :returns: True only for a ``y`` typed at a terminal.
+    """
+    print(summary)
+    if not sys.stdin.isatty():
+        print("approving a grant needs a terminal: run it yourself, not from a script")
+        return False
+    return input("Approve this grant? [y/N] ").strip().lower() in ("y", "yes")
+
+
+def _read_cli_version(claude: str) -> str:
+    """Return the version of the ``claude`` the run starts, or ``unknown``.
+
+    :param claude: The executable.
+    :returns: Its version number.
+    """
+    try:
+        done = subprocess.run(
+            [claude, "--version"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+    words = done.stdout.split()
+    return words[0] if done.returncode == 0 and words else "unknown"
+
+
+def _read_release() -> str:
+    """Return the house plugins' release: the checkout's tag description, or the version.
+
+    :returns: ``git describe`` of the marketplace checkout this script runs from, such
+        as ``v0.6`` or ``v0.6-3-gabc1234-dirty``; else the plugin manifest's version.
+    """
+    root = _SKILLS.parent.parent.parent
+    if (root / ".git").exists():
+        done = subprocess.run(
+            [
+                "git", "-c", "core.fsmonitor=false", "-C", str(root),
+                "describe", "--tags", "--always", "--dirty",
+            ],
+            capture_output=True, check=False, text=True, timeout=60,
+        )  # fmt: skip
+        if done.returncode == 0 and done.stdout.strip():
+            return done.stdout.strip()
+    manifest = _SKILLS.parent / ".claude-plugin" / "plugin.json"
+    try:
+        return "plugin " + str(
+            json.loads(manifest.read_text(encoding="utf-8"))["version"]
+        )
+    except (OSError, KeyError, ValueError):
+        return "unknown"
 
 
 if __name__ == "__main__":
