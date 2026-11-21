@@ -55,6 +55,10 @@ _PREFLIGHT_INTRO: typing.Final = (
 _PROBE_MODEL: typing.Final = "haiku"
 _PROBE_SECONDS: typing.Final = 900
 _RECORDS: typing.Final = ("PLAN.md", "DEPENDENCIES.md", "costs.csv", "verification.csv")
+_STATUS_END: typing.Final = "porcelain-end"
+_STATUS_COMMAND: typing.Final = (
+    f"git status --porcelain --untracked-files=normal && echo {_STATUS_END}"
+)
 _USAGE_LIMIT: typing.Final = re.compile(
     r"(?i)hit your \w+ limit|usage limit (reached|exceeded)"
 )
@@ -282,10 +286,15 @@ class ToolCall:
 
 @dataclasses.dataclass(frozen=True, slots=True, kw_only=True)
 class Probed:
-    """What a probe session showed: its init record, its tool calls and its cost."""
+    """What a probe session showed: its init record, tool calls, cost and whether it ended.
+
+    A session with no result record, one past its time included, did not end, and every
+    check that reads it fails closed.
+    """
 
     calls: list[ToolCall]
     cost_usd: decimal.Decimal
+    ended: bool
     init: dict[str, typing.Any] | None
 
 
@@ -567,6 +576,7 @@ def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
     uses: dict[str, tuple[str, dict[str, typing.Any]]] = {}
     results: dict[str, tuple[str, bool]] = {}
     cost = decimal.Decimal(0)
+    ended = False
     for line in lines:
         try:
             record = json.loads(line)
@@ -579,6 +589,7 @@ def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
             init = record
         if kind == "result":
             cost += decimal.Decimal(str(record.get("total_cost_usd") or 0))
+            ended = True
         message = record.get("message")
         content = message.get("content") if isinstance(message, dict) else None
         for block in content if isinstance(content, list) else ():
@@ -606,6 +617,7 @@ def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
             for key, (name, given) in uses.items()
         ],
         cost_usd=cost,
+        ended=ended,
         init=init,
     )
 
@@ -613,16 +625,18 @@ def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
 def _attempts(
     probe: Probe, calls: collections.abc.Sequence[ToolCall]
 ) -> list[ToolCall]:
-    """Return the calls that tried a probe.
+    """Return the calls that made a probe exactly as given.
 
     :param probe: The probe.
     :param calls: Every call the session made.
-    :returns: Each call of the probe's tool whose input holds its marker.
+    :returns: Each call of the probe's tool whose input holds every field of the probe's
+        with the same value; a field the model adds, such as a description, is allowed.
     """
     return [
         call
         for call in calls
-        if call.name == probe.tool and probe.marker in json.dumps(call.input)
+        if call.name == probe.tool
+        and all(call.input.get(key) == value for key, value in probe.input.items())
     ]
 
 
@@ -636,8 +650,10 @@ def judge_preflight(
     :returns: One line per probe that got through or was never tried, and per connector
         or MCP server the session was given.
     """
-    if probed.init is None:
-        return ["the session printed no init record, so its tools are unknown"]
+    if probed.init is None or not probed.ended:
+        return [
+            "the session ended without its init record or its result, so it proves nothing"
+        ]
     servers = [
         str(server.get("name"))
         for server in probed.init.get("mcp_servers") or []
@@ -749,14 +765,20 @@ def _probe_prompt(
     )
 
 
-def _run_probe_session(prompt: str, *, log: pathlib.Path, session: Session) -> Probed:
+def _run_probe_session(prompt: str, *, kind: str, session: Session) -> Probed:
     """Run a short session on the probe model under the run profile, and read it back.
 
+    Each session writes a log of its own, opened fresh, so nothing an earlier session
+    showed can satisfy a later check.
+
     :param prompt: What it must do.
-    :param log: Where its stream goes, in the run's folder.
+    :param kind: ``preflight`` or ``gate``, which names its log in the run's folder.
     :param session: How to start ``claude``.
-    :returns: What it showed; a session past its time shows only what it printed.
+    :returns: What it showed; a session past its time shows only what it printed, and
+        counts as not ended.
     """
+    identity = str(uuid.uuid4())
+    log = session.layout.root / f"{kind}-{identity}.jsonl"
     command = build_command(
         claude=session.claude,
         layout=session.layout,
@@ -765,9 +787,10 @@ def _run_probe_session(prompt: str, *, log: pathlib.Path, session: Session) -> P
         plugins=session.plugins,
         prompt=prompt,
         resume=False,
-        session=str(uuid.uuid4()),
+        session=identity,
     )
-    with log.open("a", encoding="utf-8") as out:
+    timed_out = False
+    with log.open("x", encoding="utf-8") as out:
         try:
             subprocess.run(
                 command,
@@ -780,9 +803,10 @@ def _run_probe_session(prompt: str, *, log: pathlib.Path, session: Session) -> P
                 timeout=_PROBE_SECONDS,
             )
         except subprocess.TimeoutExpired:
-            pass
+            timed_out = True
     with log.open(encoding="utf-8") as lines:
-        return read_tool_calls(lines)
+        probed = read_tool_calls(lines)
+    return dataclasses.replace(probed, ended=probed.ended and not timed_out)
 
 
 def check_guard(session: Session, *, init: dict[str, typing.Any] | None) -> list[str]:
@@ -871,7 +895,7 @@ def preflight(
         probes = _plan_preflight(session.layout, allowed=allowed, home=home)
         probed = _run_probe_session(
             _probe_prompt("PREFLIGHT", _PREFLIGHT_INTRO, probes),
-            log=session.layout.root / "preflight.jsonl",
+            kind="preflight",
             session=session,
         )
         return [
@@ -938,60 +962,55 @@ def _check_records(project: pathlib.Path) -> list[str]:
     ]
 
 
-def _check_committed(project: pathlib.Path) -> list[str]:
-    """Return a line naming uncommitted work, or nothing where the tree is clean.
-
-    Git runs with the repository's hooks and fsmonitor out of reach; the run cannot write
-    ``.git/config``, so no content filter it defined runs either.
-
-    :param project: The project folder.
-    :returns: The finding, if any.
-    """
-    done = subprocess.run(
-        [
-            "git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
-            "status", "--porcelain", "--untracked-files=normal",
-        ],
-        capture_output=True, check=False, cwd=project, text=True, timeout=60,
-    )  # fmt: skip
-    if done.returncode != 0:
-        return [f"git status failed: {done.stderr.strip()[:200]}"]
-    changed = [line[3:] for line in done.stdout.splitlines()]
-    if not changed:
-        return []
-    shown = ", ".join(changed[:5]) + (" and more" if len(changed) > 5 else "")
-    return [f"uncommitted work: {shown}"]
-
-
 def gate(
     session: Session, *, commands: collections.abc.Sequence[str]
 ) -> tuple[list[str], decimal.Decimal]:
     """Return why the build is not finished, or nothing where the launcher's gate passes.
 
-    The records and the tree are read by the launcher; each gate command runs in a probe
-    session under the run profile, so code the run wrote never runs outside the sandbox,
-    and passes only where the stream shows it run with no error.
+    The launcher executes nothing from the project after a run: it reads the records as
+    data, and everything that runs in the project's tree — ``git status`` for uncommitted
+    work, and each gate command such as the suite — runs in a probe session under the run
+    profile, so a hostile ``.git``, filter or test runs only inside the sandbox. A command
+    passes only where the stream shows it run exactly as given with no error, and the
+    whole gate fails closed when the session ends without its result.
 
     :param session: How to start ``claude``.
     :param commands: The commands that must pass, such as the suite.
     :returns: The findings, and what the gate's session cost.
     """
-    found = [*_check_records(session.project), *_check_committed(session.project)]
-    if not commands:
-        return found, decimal.Decimal(0)
+    found = _check_records(session.project)
+    status = Probe(
+        input={"command": _STATUS_COMMAND},
+        marker=_STATUS_COMMAND,
+        name="uncommitted work",
+        through="",
+        tool="Bash",
+    )
     probes = [
-        Probe(input={"command": c}, marker=c, name=c, through="", tool="Bash")
-        for c in commands
+        status,
+        *(
+            Probe(input={"command": c}, marker=c, name=c, through="", tool="Bash")
+            for c in commands
+        ),
     ]
     probed = _run_probe_session(
         _probe_prompt("GATE", "This session runs the launcher's gate.", probes),
-        log=session.layout.root / "gate.jsonl",
+        kind="gate",
         session=session,
     )
+    if not probed.ended:
+        found.append("the gate's session ended without its result")
     for probe in probes:
         tried = _attempts(probe, probed.calls)
         if not tried:
             found.append(f"`{probe.name}` was not run")
+        elif probe is status and (
+            tried[-1].failed or tried[-1].result.strip() != _STATUS_END
+        ):
+            shown = tried[-1].result.replace(_STATUS_END, "").split()
+            found.append(
+                f"uncommitted work: {' '.join(shown)[:200] or 'git status failed'}"
+            )
         elif tried[-1].failed:
             found.append(f"`{probe.name}` failed: {tried[-1].result.strip()[-200:]}")
     return found, probed.cost_usd
@@ -1511,8 +1530,14 @@ def _prepare_repository(project: pathlib.Path, *, commit_as: str) -> None:
     :param commit_as: ``Name <email>`` to commit as, empty to leave the identity alone.
     :raises LaunchError: If git fails.
     """
+    dot_git = project / ".git"
+    if os.path.lexists(dot_git) and (dot_git.is_symlink() or not dot_git.is_dir()):
+        raise LaunchError(
+            f"{dot_git} is not a folder; a symlink or gitfile there could point git at "
+            "configuration that runs code, so the launcher will not touch it"
+        )
     commands: list[list[str]] = []
-    if not (project / ".git").exists():
+    if not dot_git.exists():
         commands.append(["git", "init", "-q", "-b", "main"])
     if commit_as:
         name, _, email = commit_as.partition("<")

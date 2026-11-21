@@ -35,7 +35,12 @@ _FAKE = textwrap.dedent(
 
     def mode(name, default):
         path = home / name
-        return path.read_text().strip() if path.exists() else default
+        tokens = path.read_text().split() if path.exists() else []
+        if not tokens:
+            return default
+        if len(tokens) > 1:
+            path.write_text(" ".join(tokens[1:]))
+        return tokens[0]
 
     def emit(record):
         print(json.dumps(record), flush=True)
@@ -53,13 +58,19 @@ _FAKE = textwrap.dedent(
         plugins = [{"name": "p", "path": argv[n + 1]} for n, a in enumerate(argv) if a == "--plugin-dir"]
         emit({"type": "system", "subtype": "init", "tools": ["Bash", "Read"], "mcp_servers": servers,
               "plugins": plugins})
+        status = mode("status.txt", "clean") if kind == "gate" else ""
         for n, probe in enumerate(json.loads(prompt.split("```json")[1].split("```")[0])):
             if behaviour == "skip":
                 continue
+            given = dict(probe["input"])
+            if behaviour == "near":
+                given = {k: v + " " for k, v in given.items()}
             emit({"type": "assistant", "message": {"id": f"m{n}", "content": [
-                {"type": "tool_use", "id": f"t{n}", "name": probe["tool"], "input": probe["input"]}]}})
+                {"type": "tool_use", "id": f"t{n}", "name": probe["tool"], "input": given}]}})
             text, failed = "Permission denied by the sandbox", True
-            if kind == "gate":
+            if kind == "gate" and probe["input"]["command"].startswith("git status"):
+                text, failed = ("?? loose.py\\nporcelain-end" if status == "dirty" else "porcelain-end"), False
+            elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
             elif behaviour == "leak" and probe["tool"] in ("Read", "Bash"):
                 path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
@@ -67,8 +78,9 @@ _FAKE = textwrap.dedent(
                     text, failed = pathlib.Path(path).read_text(), False
             emit({"type": "user", "message": {"content": [
                 {"type": "tool_result", "tool_use_id": f"t{n}", "content": text, "is_error": failed}]}})
-        emit({"type": "result", "subtype": "success", "result": "done", "num_turns": 2,
-              "total_cost_usd": 0.01, "session_id": "probe"})
+        if behaviour != "noresult":
+            emit({"type": "result", "subtype": "success", "result": "done", "num_turns": 2,
+                  "total_cost_usd": 0.01, "session_id": "probe"})
         sys.exit(0)
     log("run")
     scenario = home / "scenario.txt"
@@ -112,6 +124,26 @@ _FAKE = textwrap.dedent(
         result("success", "I will carry on later.", turns=5)
     elif outcome == "usage":
         result("success", "You've hit your session limit · resets 3pm")
+    elif outcome == "finishedrec":
+        pathlib.Path("DEPENDENCIES.md").write_text("# Dependencies\\n")
+        pathlib.Path("costs.csv").write_text("stage,model,dollars\\n")
+        pathlib.Path("verification.csv").write_text(
+            "command,commit,date,line,printed,result,stage\\n"
+            "t,abc,2026-11-21,R1,ok,pass,acceptance\\n"
+            "t,abc,2026-11-21,Acceptance,ok,pass,acceptance\\n"
+        )
+        result("success", "All done.\\nLAUNCHER: finished")
+    elif outcome == "hostile":
+        evil = pathlib.Path.cwd().parent / "evil.git"
+        os.rename(".git", evil)
+        pathlib.Path(".git").write_text(f"gitdir: {evil}\\n")
+        with (evil / "config").open("a") as config:
+            config.write(f'[filter "evil"]\\n\\tclean = touch {home / "marker"}\\n')
+            config.write(f"[core]\\n\\tfsmonitor = touch {home / 'marker'}\\n")
+        pathlib.Path(".gitattributes").write_text("* filter=evil\\n")
+        time.sleep(1.1)
+        pathlib.Path("prompt.md").write_text("changed\\n")
+        result("success", "All done.\\nLAUNCHER: finished")
     else:
         result(outcome)
     """
@@ -238,6 +270,10 @@ def _launch(
 def _calls(home: pathlib.Path, kind: str = "run") -> list[dict[str, list[str]]]:
     lines = (home / "calls.jsonl").read_text().splitlines()
     return [call for call in map(json.loads, lines) if call["kind"] == kind]
+
+
+def _calls_or_none(home: pathlib.Path) -> list[dict[str, list[str]]]:
+    return _calls(home) if (home / "calls.jsonl").exists() else []
 
 
 def _status(home: pathlib.Path) -> dict[str, object]:
@@ -489,7 +525,7 @@ def test_when_acceptance_row_failed_then_finish_not_accepted(
 def test_when_work_left_uncommitted_then_finish_not_accepted(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
-    (project / "loose.py").write_text("x = 1\n")
+    (home / "status.txt").write_text("dirty")
     done = _launch(
         home,
         fake_claude,
@@ -501,6 +537,67 @@ def test_when_work_left_uncommitted_then_finish_not_accepted(
         "0",
     )
     assert (done.returncode, "uncommitted" in done.stdout) == (5, True)
+
+
+def test_when_run_plants_hostile_git_then_launcher_runs_none_of_it(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(
+        home, fake_claude, project, "hostile", "--budget-usd", "5", "--max-resumes", "0"
+    )
+    assert not (home / "marker").exists()
+
+
+def test_when_project_git_is_not_a_folder_then_refused(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    (project / ".git").rename(tmp_path / "moved.git")
+    (project / ".git").write_text(f"gitdir: {tmp_path / 'moved.git'}\n")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, ".git" in done.stderr, _calls_or_none(home)) == (
+        1,
+        True,
+        [],
+    )
+
+
+def test_when_gate_session_ends_without_result_then_finish_not_accepted(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "gate.txt").write_text("noresult")
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, "gate" in done.stdout) == (5, True)
+
+
+def test_when_later_gate_session_tries_nothing_then_earlier_one_does_not_count(
+    home: pathlib.Path, fake_claude: pathlib.Path, unrecorded: pathlib.Path
+) -> None:
+    (home / "gate.txt").write_text("pass skip")
+    done = _launch(
+        home, fake_claude, unrecorded, "finished finishedrec", "--budget-usd", "5",
+        "--max-resumes", "1", "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, "was not run" in done.stdout) == (5, True)
+
+
+def test_when_preflight_call_differs_from_probe_then_not_tried(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "preflight.txt").write_text("near")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not tried" in done.stdout) == (5, True)
 
 
 def test_when_gate_command_fails_then_finish_not_accepted(
