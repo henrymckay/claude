@@ -53,9 +53,12 @@ Started headless, it runs with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the bac
 Work on one branch and open one pull request carrying the report as its body, whether the sweep runs as a scheduled task or in a session, so the user reviews every skill change in one place before it reaches an install.
 Who merges is the plan's decision; without one, the user does.
 
+**Name in the report and the pull request every step the merge leaves the user**, since each changes their configuration and is theirs to run: a plugin the sweep adds, or one a skill moves into, owes `claude plugin install <plugin>@<marketplace>`, because a marketplace entry is not an installation and the moved skill otherwise vanishes from every session while the skill list still calls it mandatory; a changed hook or instruction file owes a restart, and a renamed instruction file a new link.
+After the merge, compare the plugins in `marketplace.json` with `claude plugin list` and name any not installed.
+
 ## Take an inventory
 
-Count the words in every `SKILL.md` and reference, skipping folders synced in by other tools, and in the README, `CLAUDE.md`, `PLAN.md` and each context file.
+Count the words in every `SKILL.md` and reference, skipping folders synced in by other tools, and in the README, each instruction file, `PLAN.md` and each context file.
 Measure each description in characters against `write-skills`' limit, and each plugin's always-on cost with `claude plugin details <plugin>@<marketplace>`; the total across the marketplace is what competes for the listing's budget, so a sweep that lets it grow says why.
 Compare each against its neighbours and against the counts the last sweep recorded in its commit messages and report.
 A skill that grew while its neighbours held steady is where to look first; a top-level file that grew is a finding in itself, since each fix adds a sentence and nobody restructures the whole.
@@ -77,12 +80,13 @@ Two claiming one prompt need a sharper boundary; none claiming it needs a wider 
 
 ## Check the instruction files
 
-- **The always-on skill list matches the skills both ways**, and each entry agrees with that skill's description: the list is each plugin's `hooks/context.md`, printed at session start, and the owner's `CLAUDE.md` where the skills are symlinked instead of installed; where both exist they carry the same line for a skill.
-Where they also map each plugin of a marketplace to its skills, so a plugin installed alone can name what it lacks, the map is identical in every copy and matches the plugin folders.
-- **Judge the README, `CLAUDE.md`, `PLAN.md` and each context file whole against `write-markdown`**, for length and organisation as well as truth, never only the lines a fix touched.
+- **The always-on skill list matches the skills both ways**, and each entry agrees with that skill's description: the list is each plugin's `hooks/context.md`, printed into every session and subagent, and the owner's instruction file where the skills are symlinked instead of installed; where both exist they carry the same line for a skill.
+Where every plugin of a marketplace carries the same rules, such as a map of each plugin to its skills so a plugin installed alone can name what it lacks, they sit in one file copied byte for byte into each plugin and printed once however many are installed: `cmp` the copies, and check the map against the plugin folders and the symlink wiring's instruction file.
+- **Each instruction file holds what its wiring needs and no more**: one for a machine with the plugins installed carries only the owner's own rules, since anything the plugins print it would add a second copy of; one for the symlink wiring carries the owner's rules and everything the plugins print, and the two agree on the owner's rules.
+- **Judge the README, each instruction file, `PLAN.md` and each context file whole against `write-markdown`**, for length and organisation as well as truth, never only the lines a fix touched.
 A file patched sweep after sweep reads as drip-fed even when every line is true; rewrite it whole from what the repo is today rather than adding to it.
 - **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there, kept as `write-markdown` says; a file over budget is a finding.
-`CLAUDE.md` and the context files carry no defaults (see `write-markdown`).
+The instruction files and the context files carry no defaults (see `write-markdown`).
 - **The README is true**: it lists every skill as its skill describes itself, and its setup, configuration and feedback sections hold against the repo and the plan; a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
 
@@ -91,7 +95,8 @@ A file patched sweep after sweep reads as drip-fed even when every line is true;
 - **Every manifest validates**: `claude plugin validate --strict` on the marketplace and on each plugin, which fails on warnings the runtime tolerates (a missing author, an unknown field), with every plugin folder listed in `marketplace.json` and every skill in exactly one plugin.
 - **The built-in audits, read as leads**: `/doctor prompt-audit <plugin folder>`, in a session, for outdated or conflicting instructions across skills and instruction files, and, on a machine that has used the plugins, `/skill-doctor` (`claude -p "/skill-doctor"` prints it), whose never-invoked skills are a description that does not fire or a skill nobody needs.
 Verify each finding against the files before acting, as for the cold read.
-- **Each hook runs**: execute the session-start script and read what it prints; a prompt hook is checked by the case that should trip it.
+- **Each hook runs**: pipe the session-start script a `SessionStart` and a `SubagentStart` input (`{"session_id":"x","hook_event_name":"SubagentStart","agent_id":"a"}`) and read what it prints, the second as valid JSON whose `additionalContext` stays under the 10,000 characters past which Claude Code hands over a file path instead; a prompt hook is checked by the case that should trip it.
+- **The rules reach a subagent**, since a subagent loads `CLAUDE.md` but no session-start output, and every stage runs in one: in an empty folder, run `claude -p` with only the plugins (`--setting-sources project,local` and a `--plugin-dir` each, so neither the user's `CLAUDE.md` nor an installed copy masks the result), have it spawn a general-purpose subagent in the foreground that lists the headings it can see, and confirm each count in both transcripts' hook records: every plugin's list and the shared rules once in the session and once in the subagent, with one plugin and with all.
 - **Every symlink resolves**, into `~/.claude` and from a top-level `skills/` folder into the plugins, or is dangling on purpose.
 - **`.gitignore` covers what should never be committed**: editor folders, caches, OS files, folders synced in by other tools.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
@@ -116,4 +121,4 @@ Read every free-tier limit and price a skill quotes against the vendor's plan pa
 - **Commit each skill's fixes separately, with its word count before and after**, taken from `wc` at commit time, not from memory, on every commit that touches a skill; the next inventory reads it, and one skill's fixes are read together, which is why this overrides review-project's commit per fix.
 - **Flag in the report every rule cut by the default test, generalised, or left for the user**, so the user can restore or settle one.
 - **State the net words across skills and references, and each top-level file's count before and after**; justify any growth, since a sweep that only adds leaves the next reader more to read.
-- **List every check in the report as done, with what it found, or skipped, with why** — one line each for the README, `CLAUDE.md` and each context file — so a check left out shows as a gap rather than passing unseen.
+- **List every check in the report as done, with what it found, or skipped, with why** — one line each for the README, each instruction file and each context file — so a check left out shows as a gap rather than passing unseen.
