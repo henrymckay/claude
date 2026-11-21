@@ -657,6 +657,14 @@ def test_when_path_leads_with_planted_programs_then_guard_still_denies_and_runs_
         ("Bash", {"command": "echo abc >> ~/.config/claude-grants/approved"}),
         ("Bash", {"command": "cp list ~/.config/claude-grants/approved"}),
         ("Write", {"file_path": "/home/u/.config/claude-grants/approved", "content": "x"}),
+        ("Bash", {"command": "python3 launch.py --approve-g"}),
+        ("Bash", {"command": "uv run --script launch.py --appro"}),
+        ("Bash", {"command": "python3 launch.py p.md --approval=/tmp/approved"}),
+        ("Bash", {"command": "python3 launch.py p.md '--app''rovals=/tmp/x'"}),
+        ("Bash", {"command": "echo x >> ~/.config/claude-gr*/approved"}),
+        ("Bash", {"command": "cp list $HOME/.config/cl?ude-grants/approved"}),
+        ("Bash", {"command": "x=claude-gr; echo y >> ~/.config/${x}ants/approved"}),
+        ("Bash", {"command": "d=$HOME/.config; echo y >> \"$d\"/cla[u]de-grants/approved"}),
     ],
 )
 def test_when_grant_approval_touched_then_asked(

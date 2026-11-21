@@ -1774,7 +1774,7 @@ def _notify(command: str, line: str) -> None:
 
 def main() -> None:
     """Parse the command line, launch the run and report how it ended."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("prompt", nargs="?", type=pathlib.Path, help="the prompt file")
     parser.add_argument(
         "--approvals",

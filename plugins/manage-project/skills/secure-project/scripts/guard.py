@@ -37,9 +37,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import grant as grant_
 
-_GRANT_APPROVAL: typing.Final = re.compile(
-    r"claude-grants|--approve-grant|--approvals\b", re.IGNORECASE
-)
+_GRANT_APPROVAL: typing.Final = re.compile(r"claude-grants|--appr", re.IGNORECASE)
+_EXPANDS: typing.Final = re.compile(r"[$*?\[]")
 _SAFE_PATH: typing.Final = "/usr/bin:/bin:/usr/sbin:/sbin"
 _OWNER_CONFIG_READS: typing.Final = frozenset(("config", "remote", "rev-parse"))
 _ALIAS_DEPTH: typing.Final = 5
@@ -1292,7 +1291,43 @@ def _check_words(
         _mentions_grant(word, cwd) for word in arguments
     ):
         findings.append("changing the standing grant")
+    if any(_touches_approvals(word, cwd) for word in (*assignments, *words)):
+        findings.append("approving a standing grant or touching the owner's approvals")
     return findings
+
+
+def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
+    """Return whether a word could approve a grant or reach the owner's approvals.
+
+    One strict rule rather than a parser: any option starting ``--appr``, which the
+    launcher's own options and their abbreviations all do; the approvals folder's name
+    anywhere in the word; a word under a ``.config`` folder that still holds an expansion
+    or a glob, or a variable set to a path there, since what it reaches is known only when
+    the shell runs it; or a word that,
+    as a glob or with ``~`` and ``$HOME`` expanded, matches the approvals folder.
+
+    :param word: One word of a command, dequoted.
+    :param cwd: The folder the command runs in.
+    :returns: True where the word may approve a grant or reach the approvals.
+    """
+    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    if _GRANT_APPROVAL.search(word):
+        return True
+    home = os.path.expanduser("~")
+    expanded = os.path.expanduser(
+        word.replace("${HOME}", home).replace("$HOME", home)
+    )
+    if ".config" in expanded and (
+        _EXPANDS.search(expanded) or re.match(r"^\w+=", word)
+    ):
+        return True
+    protected = os.path.join(home, ".config", "claude-grants")
+    return any(
+        fnmatch.fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
+        for candidate in (expanded, *_glob(cwd, expanded))
+        for target in (protected, os.path.join(protected, "approved"))
+    )
 
 
 def _mentions_grant(word: str, cwd: pathlib.Path) -> bool:
@@ -1404,6 +1439,8 @@ def _check_shell(
             if re.search(r"\s", word.strip()) and depth < _NEST_DEPTH:
                 findings += _check_shell(word, cwd, context, depth + 1)
         assignments, plain = _unwrap(words)
+        if any(_touches_approvals(word, cwd) for word in assignments):
+            findings.append("approving a standing grant or touching the owner's approvals")
         if not plain:
             continue
         if plain[0] in ("cd", "pushd") and len(plain) > 1:

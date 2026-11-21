@@ -805,6 +805,61 @@ def test_when_approval_not_confirmed_at_a_terminal_then_grant_not_approved(
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
 
 
+@pytest.mark.parametrize("option", ["--approve-g", "--appro"])
+def test_when_approval_option_abbreviated_then_grant_not_approved(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    unapproved: pathlib.Path,
+    option: str,
+) -> None:
+    controller, terminal = os.openpty()
+    os.write(controller, b"y\n")
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                str(_HERE / "launch.py"),
+                option,
+                "--project",
+                str(project),
+            ],
+            capture_output=True,
+            check=False,
+            env={"HOME": str(home), "PATH": os.environ["PATH"]},
+            stdin=terminal,
+            text=True,
+            timeout=60,
+        )
+    finally:
+        os.close(controller)
+        os.close(terminal)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_profile_built_then_approvals_folder_unwritable_by_tools_and_commands(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    profile = _profile(home)
+    approvals = home / ".config" / "claude-grants" / "approved"
+    writable = [
+        pathlib.Path(os.path.expanduser(p))
+        for p in profile["sandbox"]["filesystem"]["allowWrite"]
+    ]
+    edits = [
+        rule[len("Edit(/") : -len("/**)")]
+        for rule in profile["permissions"]["allow"]
+        if rule.startswith("Edit(/")
+    ]
+    assert (
+        "Edit(~/.config/**)" in profile["permissions"]["deny"],
+        any(approvals.is_relative_to(p) for p in writable),
+        any(approvals.is_relative_to(p) for p in map(pathlib.Path, edits)),
+    ) == (True, False, False)
+
+
 def test_when_path_starts_inside_project_then_refused(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
