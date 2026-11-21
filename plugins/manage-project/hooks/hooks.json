@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/skills/secure-project/scripts/guard.sh\"",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/skills/secure-project/scripts/guard.sh\"",
             "timeout": 30,
             "onFailure": "block"
           }

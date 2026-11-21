@@ -37,6 +37,11 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 import grant as grant_
 
+_GRANT_APPROVAL: typing.Final = re.compile(
+    r"claude-grants|--approve-grant|--approvals\b", re.IGNORECASE
+)
+_SAFE_PATH: typing.Final = "/usr/bin:/bin:/usr/sbin:/sbin"
+_OWNER_CONFIG_READS: typing.Final = frozenset(("config", "remote", "rev-parse"))
 _ALIAS_DEPTH: typing.Final = 5
 _DIFF_LIMIT: typing.Final = 4 * 1024 * 1024
 _FILE_LIMIT: typing.Final = 512 * 1024
@@ -330,7 +335,11 @@ def _git(
 
     Command-line settings outrank every config file, so the repository's hooks, pager,
     fsmonitor and attributes file cannot run anything; content filters are refused by
-    the callers that would read the work tree (``_worktree_safe``).
+    the callers that would read the work tree (``_worktree_safe``). Git runs from a fixed
+    ``PATH``, never the session's, with every transport refused and lazy fetching off, so
+    a repository missing an object cannot make it run an ``ssh`` command, an
+    ``uploadpack`` or an ``ext::`` address to fetch one; the owner's global config is read
+    only by the calls that read settings and touch no object (aliases, remote URLs).
 
     :param context: The shared budget.
     :param cwd: The repository folder.
@@ -359,13 +368,17 @@ def _git(
         *arguments,
     ]  # fmt: skip
     environment = {
+        "GIT_ALLOW_PROTOCOL": "",
         "GIT_ATTR_NOSYSTEM": "1",
         "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_LAZY_FETCH": "1",
         "GIT_OPTIONAL_LOCKS": "0",
         "GIT_TERMINAL_PROMPT": "0",
         "HOME": os.environ.get("HOME", "/nonexistent"),
-        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "PATH": _SAFE_PATH,
     }
+    if arguments[0] not in _OWNER_CONFIG_READS:
+        environment["GIT_CONFIG_GLOBAL"] = "/dev/null"
     remaining = max(0.5, min(_GIT_TIMEOUT, context.deadline - time.monotonic()))
     try:
         done = subprocess.run(
@@ -1370,6 +1383,8 @@ def _check_shell(
         findings.append(
             "setting git's configuration, repository or commands through the environment"
         )
+    if _GRANT_APPROVAL.search(re.sub(r"[\"'\\]", "", _normalise(text))):
+        findings.append("approving a standing grant or touching the owner's approvals")
     try:
         line = _split(text)
     except ValueError:
@@ -1559,6 +1574,8 @@ def check(call: Call, context: Context) -> list[str]:
         findings = []
         if _names_grant(path) or _names_grant(os.path.realpath(path)):
             findings.append("changing the standing grant")
+        if _GRANT_APPROVAL.search(path) or _GRANT_APPROVAL.search(os.path.realpath(path)):
+            findings.append("approving a standing grant or touching the owner's approvals")
         if _CONFIG_FILE.search(path) or _CONFIG_FILE.search(os.path.realpath(path)):
             findings.append("changing configuration that runs code outside the sandbox")
         if _SECRET_VALUE.search(text) and not _is_secret_path(path):

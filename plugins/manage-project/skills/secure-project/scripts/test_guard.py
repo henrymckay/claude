@@ -107,6 +107,7 @@ def run(tmp_path: pathlib.Path) -> Run:
         base = {
             "HOME": str(tmp_path / "home"),
             "PATH": os.pathsep.join([str(folder), str(git_folder), "/usr/bin", "/bin"]),
+            "CLAUDE_GUARD_PYTHON": str(folder / "python3"),
         }
         done = subprocess.run(
             ["sh", str(_HERE / "guard.sh")],
@@ -474,7 +475,10 @@ def no_python(tmp_path: pathlib.Path) -> dict[str, str]:
     folder.mkdir()
     (folder / "python3").write_text("#!/bin/sh\nexit 127\n")
     (folder / "python3").chmod(0o755)
-    return {"PATH": os.pathsep.join([str(folder), "/usr/bin", "/bin"])}
+    return {
+        "PATH": os.pathsep.join([str(folder), "/usr/bin", "/bin"]),
+        "CLAUDE_GUARD_PYTHON": str(folder / "python3"),
+    }
 
 
 def test_when_python_missing_and_risky_then_asked(
@@ -622,6 +626,70 @@ def test_when_repository_filter_configured_then_hook_runs_none(
     (repo / ".gitattributes").write_text("*.md filter=x\n")
     (repo / "README.md").write_text("changed\n")
     run(repo, {"command": "git commit -am x"})
+    assert not marker.exists()
+
+
+def test_when_path_leads_with_planted_programs_then_guard_still_denies_and_runs_none(
+    run: Run, repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    planted = tmp_path / "planted"
+    planted.mkdir()
+    marker = tmp_path / "planted-ran"
+    for name in ("python3", "head", "tr", "grep", "dirname", "cat", "git", "printf"):
+        (planted / name).write_text(f"#!/bin/sh\ntouch {marker}\nexit 0\n")
+        (planted / name).chmod(0o755)
+    answer = run(
+        repo,
+        {"command": "git push --force origin main"},
+        environment={
+            "CLAUDE_GUARD": "deny",
+            "PATH": os.pathsep.join([str(planted), "/usr/bin", "/bin"]),
+        },
+    )
+    assert (answer.get("permissionDecision"), marker.exists()) == ("deny", False)
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("Bash", {"command": "uv run --script ~/claude/launch.py --approve-grant"}),
+        ("Bash", {"command": "python3 launch.py prompt.md --approvals /tmp/approved"}),
+        ("Bash", {"command": "echo abc >> ~/.config/claude-grants/approved"}),
+        ("Bash", {"command": "cp list ~/.config/claude-grants/approved"}),
+        ("Write", {"file_path": "/home/u/.config/claude-grants/approved", "content": "x"}),
+    ],
+)
+def test_when_grant_approval_touched_then_asked(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize("route", ["ssh", "uploadpack"])
+def test_when_repository_lacks_an_object_then_guard_fetches_nothing(
+    run: Run, repo: pathlib.Path, tmp_path: pathlib.Path, route: str
+) -> None:
+    marker = tmp_path / "fetched"
+    (repo / "notes.txt").write_text("a staged blob the guard will want to read\n")
+    _git(repo, "add", "notes.txt")
+    blob = subprocess.run(
+        ["git", "rev-parse", ":notes.txt"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    (repo / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+    _git(repo, "config", "core.repositoryformatversion", "1")
+    _git(repo, "config", "extensions.partialClone", "origin")
+    _git(repo, "config", "remote.origin.promisor", "true")
+    if route == "ssh":
+        _git(repo, "config", "remote.origin.url", "ssh://example.invalid/r")
+        _git(repo, "config", "core.sshCommand", f"touch {marker}; false")
+    else:
+        _git(repo, "config", "remote.origin.uploadpack", f"touch {marker}; false")
+    run(repo, {"command": "git commit -m x"})
     assert not marker.exists()
 
 
