@@ -4,10 +4,10 @@ description: >-
   How a project keeps private data and credentials safe — a class for every
   input and output (public, licensed, private, personal) deciding where each
   may go, read-only credentials for an account with money in it, secrets kept
-  out of git, and a guarded served surface. Use whenever a project reads data
-  that is not public, holds a credential, serves something or decides where
-  its data goes — even if the user just says "connect it to my broker" or "is
-  this safe to push".
+  out of git, a guarded surface and outside plugins vetted. Use
+  whenever a project reads data that is not public, holds a credential, serves
+  something or decides where its data goes — even if the user just says
+  "connect it to my broker" or "is this plugin safe".
 ---
 
 # Secure the project
@@ -98,12 +98,26 @@ Binding to `127.0.0.1` keeps other machines out but not the owner's browser: a p
 Shiny 1.9 under uvicorn 0.54 answered both, and Starlette's `TrustedHostMiddleware` stops only the first; `write-entry-points`' Python reference has a guard that stops both.
 - **A static site or a browser-side app ships everything it shows to every viewer**, so it holds public data only and no token at all.
 
+## Vet a plugin
+
+A Claude Code plugin runs with the user's own permissions: its hooks run as shell commands, its MCP and language servers as processes Claude Code starts outside the sandbox, the files in its `bin/` on the shell's path, and its skills enter the context as instructions; whatever the session reads, a hook or server can read too (code.claude.com/docs/en/plugins/security, read 2026-11-21).
+So before a plan names one, vet it, and say what was found beside the proposal:
+
+- **Who publishes it.** `claude plugin marketplace list` prints each marketplace's source; the official names, such as `claude-plugins-official`, are accepted only from `github.com/anthropics/`, the community names pin nearly every entry to a commit, and every other marketplace is third-party, whatever its name suggests.
+Anthropic's own install warning says it does not control or verify what a plugin includes, so a listing is not a review.
+- **What it runs.** Clone its source at the version the listing names, read `hooks/hooks.json`, `.mcp.json`, any language-server configuration and every file in `bin/`, and run `claude --plugin-dir <clone> plugin details <name>`, which reads the files without starting a session, for its component inventory; a skill-only plugin runs nothing, while a hook, monitor or server runs on every session it is enabled in.
+- **Where it sends data.** A server or hook that calls an outside service is an outside service in the class table above, so a project holding private data names it in a signed-off decision or does without it.
+- **Its licence and upkeep** — a licence that allows the use, and a source maintained recently enough to follow the tool it covers.
+- **Its version, pinned.** Record the version or commit installed; auto-update is on by default for the official marketplaces and off for the rest, so a reviewed plugin can change on disk after it was vetted, and a review reads the installed version again (`claude plugin list`).
+
+A plugin whose source cannot be read, that runs something its purpose does not explain, or that would send private data out with no signed-off decision is not proposed; one that passes is still installed by the user, never by Claude (`plan-project`, step 3).
+
 ## Review it
 
-- **Audit the locked dependencies for known vulnerabilities** in every milestone's gate that changes the dependency lock file and in every review: under `setup-python`'s toolchain, `uv export --format requirements-txt --no-emit-project > requirements.txt`, then `uvx pip-audit -r requirements.txt --disable-pip`.
+- **Audit the locked dependencies for known vulnerabilities** in every milestone's gate that changes a dependency lock file and in every review: under `setup-python`'s toolchain, `uv export --format requirements-txt --no-emit-project > requirements.txt`, then `uvx pip-audit -r requirements.txt --disable-pip`; for a front end's `package-lock.json`, `npm audit` (`write-entry-points`).
 - **Run a security review** on a milestone's branch in `build-project`'s gate whenever the milestone touches a credential, an outside call, a served surface or a class boundary, and on the whole project in `review-project`: the `claude-security` plugin where it is installed, since independent agents try to disprove each finding and it falls back to the local `main` without a remote, else the built-in `/security-review`.
 The built-in diffs against `origin/HEAD` and stops in a repository with no remote; there, read the surface by hand instead — each input that reaches a path, a query or a shell, the bind address, the `Host` and `Origin` check, every write and every outside call — and say in the report that the built-in could not run.
 - **Scan the whole history for secrets in every review** with `gitleaks git`, which the commit hook cannot do for what was committed before it was added.
-- **Check the plan against this skill**: every input and output classed, every destination allowed for its class, every credential read-only or covered by a decision.
+- **Check the plan against this skill**: every input and output classed, every destination allowed for its class, every credential read-only or covered by a decision, every outside plugin vetted as above.
 
 A finding here is a defect when it breaks the class table or a decision, and a question for the user when it needs a class or a decision the plan lacks.

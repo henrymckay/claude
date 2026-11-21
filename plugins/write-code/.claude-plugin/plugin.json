@@ -1,6 +1,6 @@
 {
   "name": "write-code",
-  "description": "House conventions for the code itself: functional by default, object-oriented where it fits, Python, SQL, tests and Polars.",
+  "description": "House conventions for the code itself: functional by default, object-oriented where it fits, Python, TypeScript, SQL, tests and Polars.",
   "version": "0.1.0",
   "author": {
     "name": "claude contributors"

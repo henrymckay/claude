@@ -12,10 +12,10 @@ description: >-
 # Be functional
 
 Functional techniques are the means to code that's **expressive, composable and easy to use**, not a purity contest.
-It builds on `write-python`'s in-code conventions, and `be-oop` is its object-oriented counterpart.
+It builds on the in-code conventions of `write-python` and `write-typescript`, and `be-oop` is its object-oriented counterpart.
 Three mistakes account for most of what goes wrong: reaching for ambient state instead of an argument, mutating a value rather than returning a new one, and letting a function's boundaries accrete instead of deriving them from the data flow.
 
-**Language-agnostic here.** The Python specifics live in `references/python.md`.
+**Language-agnostic here.** The Python specifics live in `references/python.md`, the TypeScript ones in `references/typescript.md`.
 
 **In an existing project, ask first.** Where a repo already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -120,5 +120,6 @@ A **functor** is a wrapper you can `map` over; an **applicative** also combines 
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (frozen dataclasses, sum types with `match`, partial application and composition, dependency injection, where `toolz` and `plum` earn their place).
+- **TypeScript** → `references/typescript.md` (readonly records and the copying array methods, grouping, lookups over a union, generic functions and their named variants, injecting the clock, why no `fp-ts`, Effect or `lodash`).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

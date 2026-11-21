@@ -4,19 +4,20 @@ description: >-
   How to build an application's entry points — a CLI, an HTTP API, a dashboard
   or web front end, and the command a scheduler calls — as thin drivers over
   the core: output forms, exit codes, settings read once, a guarded loopback
-  server. Load it before adding or changing a CLI, API, dashboard or scheduled
-  command. Use whenever building or structuring one — even if the user just
-  says "add a CLI", "expose an API" or "build a dashboard".
+  server, and the TypeScript toolchain. Load it before adding or changing a
+  CLI, API, dashboard or scheduled command. Use whenever building,
+  structuring or tooling one — even if the user just says "add a CLI",
+  "expose an API" or "set up linting for the front end".
 ---
 
 # Write entry points
 
 An **entry point** is a **driver**: a thin shell over the core, and the composition root that wires a concrete adapter into an operation.
 Everything that reaches the app — a person at a terminal, an HTTP client, a browser, a scheduler — arrives through one.
-It layers on `structure-python` (the `drive` layer) and `be-functional` (the functional core and imperative shell); how a surface looks and reads — a screen, but also a command's help, progress and errors and an API's names, error bodies and docs — is `design-interface`'s, what a scheduled command does when nobody is watching is `run-unattended`'s, the data it writes is `store-data`'s, and what a served surface must guard is `secure-project`'s.
+It layers on `structure-python` (the `drive` layer), `be-functional` (the functional core and imperative shell) and, for a front end or a Worker, `write-typescript` (the code inside it); how a surface looks and reads — a screen, but also a command's help, progress and errors and an API's names, error bodies and docs — is `design-interface`'s, what a scheduled command does when nobody is watching is `run-unattended`'s, the data it writes is `store-data`'s, and what a served surface must guard is `secure-project`'s.
 Three mistakes account for most of what goes wrong: logic that settles in the shell instead of the core, output shaped for a person while something is piping it, and a capability reachable only as a side effect of asking for something else.
 
-**Language-agnostic here.** The Python specifics live in `references/python.md`.
+**Language-agnostic here.** The Python specifics live in `references/python.md`, the TypeScript ones — the front end's and a Worker's toolchain — in `references/typescript.md`.
 
 **In an existing project, ask first.** Where a repo already has an established way of wiring its entry points, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -123,7 +124,7 @@ The cost is a second toolchain, Node, carried as a development dependency (the P
 **Re-judge the last run's age on a slow clock** — a minute to an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
 **Give the browser two signals**: each screen's navigation control carries `data-view="<screen>"`, and the root element's `data-ready` is `1` once the screen on show has drawn its data and `0` while another loads, so a smoke test and the build's evaluator wait for data, never a guessed delay, and never shoot a skeleton.
 
-**Test it as `write-tests` tests a dashboard**, each screen through the framework's in-process client and one browser smoke test per screen that waits for `data-ready`; the Python reference has each build-out.
+**Test it as `write-tests` tests a dashboard**, each screen through the framework's in-process client and one browser smoke test per screen that waits for `data-ready`; the Python reference has each build-out, and the TypeScript reference the front end's own toolchain: its compiler settings, linter, formatter, test runner and the one `check` script that gates them.
 
 ## Composition root
 
@@ -158,5 +159,6 @@ Give each entry point a **launch command namespaced to the project** (`myapp-cli
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (the role and framework packages, the `typer` and `fastapi` build-outs, the dashboard as a web front end, with Dash and with Shiny, and testing each, the loopback guard, the scheduled command, `pydantic-settings` and the `.env`, the log handler, and launch).
+- **TypeScript** → `references/typescript.md` (Node and the lock file, the front end's `tsconfig`, Vite with React Compiler, oxlint and Prettier, Vitest's coverage levels, the shared scripts, and a Worker's `wrangler.jsonc`, generated types and runtime tests).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.

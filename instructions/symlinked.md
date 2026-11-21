@@ -55,6 +55,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`write-skills`** when authoring or editing a skill.
 - **`write-sql`** when writing SQL or deciding where it belongs.
 - **`write-tests`** for writing or editing tests, in any language.
+- **`write-typescript`** when writing or editing TypeScript, React or a Cloudflare Worker.
 
 ## Missing plugins
 
@@ -62,10 +63,11 @@ The six plugins ship separately.
 Before a task, pick out from the map below every skill the task or a loaded skill calls for — a commit touches `use-git`, any Markdown `write-markdown`, a new Python project `setup-python` — and look for each among this session's available skills, under any plugin prefix.
 A skill not there is missing: don't try to load it; decide yourself what it would have settled, and record each such call as a proposed decision that names the skill and the plugin the map puts it in (`setup-python`, in `structure-app`, not installed: …), listed with your report's other decisions.
 Before the report, hold each decision you made against the map, since a call on storage, a schedule, an alert, a chart, a Python layout or a commit falls under a skill whether or not the task named it.
+A language or domain a project uses that no skill in the map covers is not a missing skill: find an outside plugin with `claude plugin list --json --available`, vet it as `secure-project` says, and propose it for the user to install.
 
 - `design-project`, how a project's surfaces and data are designed before they are built: `design-interface`, `design-pipeline`
 - `maintain-plugin`, authoring and reviewing skills and plugins: `review-plugin`, `write-skills`
 - `manage-project`, a project's plan, build, review and retirement, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `make-decisions`, `plan-project`, `retire-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
 - `run-project`, stored data, scheduled jobs, hosting, messages: `deploy-project`, `run-unattended`, `send-messages`, `store-data`
 - `structure-app`, a Python project's set-up, layers and entry points: `setup-python`, `structure-python`, `write-entry-points`
-- `write-code`, how code is written, in any language: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`
+- `write-code`, how code is written, in any language: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`, `write-typescript`

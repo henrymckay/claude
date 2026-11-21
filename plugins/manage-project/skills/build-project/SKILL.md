@@ -127,9 +127,9 @@ The plan is [`PLAN.md`](PLAN.md).
 
 - **<tool> <version>** — needed by <the build, the run or a hook>; installed with <command>.
 
-## Connectors and plugins
+## Connectors, plugins and skills
 
-- **<name>** — what <the build or the run> used it for.
+- **<name>@<marketplace> <version or commit>** — <a plugin, skill, language server or connector>; from <its source repository>; runs <its hooks and servers, or nothing>; relied on by <the plan, the build or the run> for <what>; installed by the user at <scope> on <date>, or proposed and not installed.
 
 ## Packages
 
@@ -137,6 +137,7 @@ The lock file lists them.
 ```
 
 - **Name, never value**: a credential by its variable name and where it is kept, an account by provider and purpose, so the record is safe in a public repository; the code host's own account counts, since the project dies with it.
+- **Every plugin or skill outside the house family that the work relied on gets a line**, with the version `claude plugin list` shows, since the next session on another machine has only this file to tell it what the build had loaded; the house plugins themselves go on one line with their release tag.
 - **Runs on says what the design chose; this file says what exists.** Where they disagree, one of them is wrong, and `review-project` checks one against the other.
 - **Read each account's running cost from the provider once the artefact has run for a day**, from its usage or billing page or command, never estimated from the plan, and again at every review, so a service drifting toward the edge of its tier shows before it bills or stops.
 

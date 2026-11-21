@@ -12,7 +12,7 @@ description: >-
 # Write Python
 
 The judgement calls that make Python readable — the decisions a formatter or linter can't make.
-It is the baseline that `be-functional`, `be-oop` and `write-tests` layer on; project structure lives in `structure-python`, packaging and tooling in `setup-python`.
+It is the baseline that `be-functional`, `be-oop` and `write-tests` layer on, as `write-typescript` is in TypeScript; project structure lives in `structure-python`, packaging and tooling in `setup-python`.
 Three habits account for most of what goes wrong: importing names instead of modules, leaving a function unannotated or undocumented, and reaching for a class or abstraction before a second case calls for one.
 
 **In an existing project, ask first.** Where a codebase already has an established style, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.

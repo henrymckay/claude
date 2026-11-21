@@ -43,7 +43,7 @@ Skip this section without a `PLAN.md`.
 
 - **Every requirement is built and cited by a check** in Verification; a requirement nothing cites is unbuilt until shown otherwise.
 - **Every ticked milestone is true** — run its check, and untick one that fails.
-- **Nothing in Not yet has been built**, and every decision is honoured; structure ahead of its requirement is a finding, however diligent it looks.
+- **Nothing in Not yet has been built**, and every decision is honoured; structure ahead of its requirement is a finding, however diligent it looks, though a name, key or parameter a decision records as an axis held open is not structure (`make-decisions`, Decide from the general case).
 - **Open holds nothing stale** — an assumption the code already settled, a question already answered.
 
 ## Check correctness
@@ -61,13 +61,13 @@ A high percentage over tests that assert nothing is a finding, not a pass.
 
 ## Check against the skills
 
-Read the code against each skill invoked above: the layout against `setup-python`, the layers against `structure-python`, the drivers against `write-entry-points`, and the code against `write-python`, `be-functional`, for frames `use-polars` and for queries `write-sql`.
+Read the code against each skill invoked above: the layout against `setup-python`, the layers against `structure-python`, the drivers against `write-entry-points`, and the code against `write-python` or `write-typescript`, `be-functional`, for frames `use-polars` and for queries `write-sql`.
 Quote the rule a finding breaks.
 A rule the project breaks under a `PLAN.md` decision naming the skill is not a defect; it can still be challenged.
 
 ## Check modernity
 
-- **Dependencies at their current releases** — under `setup-python`'s toolchain, `uv tree --outdated --depth 1`.
+- **Dependencies at their current releases** — under `setup-python`'s toolchain, `uv tree --outdated --depth 1`; in each TypeScript package, `npm outdated` (`write-entry-points`' TypeScript reference).
 Read the changelog before recommending a major upgrade.
 - **No deprecated APIs** — run the suite with deprecations as errors (for `pytest`, `uv run pytest -W error::DeprecationWarning`).
 - **The latest stable language** — `requires-python` and the syntax it allows.
@@ -78,7 +78,7 @@ Read the changelog before recommending a major upgrade.
 
 - **The README matches the code and the plan** — run its commands as written, check each claim about an outside tool against that tool's current docs, and read it against Decisions: a section describing something a decision, proposed or signed off, removes is a finding even while the thing still exists.
 - **The project's `CLAUDE.md` is current** — no stale path or command, no default Claude follows anyway, nothing a skill contradicts; it and the README are judged whole against `write-markdown` for length and organisation, not only for truth.
-- **The records are true** (`build-project`, Keep the records) — `DEPENDENCIES.md` lists every secret the code, its workflows and its settings read, every host in Runs on, every tool the README's setup installs and every connector or plugin the build used, and nothing that has gone; each account's running cost and usage are read again from the provider and still inside the tier the plan relied on, a service near or past its limit being a finding; `verification.csv`'s last row for each Verification line agrees with the review's own run of it, and the review's runs are appended with the stage `review`.
+- **The records are true** (`build-project`, Keep the records) — `DEPENDENCIES.md` lists every secret the code, its workflows and its settings read, every host in Runs on, every tool the README's setup installs and every connector, plugin, skill and language server the plan or build relied on, each at the version `claude plugin list` now shows and vetted as `secure-project`'s Vet a plugin says, and nothing that has gone; each account's running cost and usage are read again from the provider and still inside the tier the plan relied on, a service near or past its limit being a finding; `verification.csv`'s last row for each Verification line agrees with the review's own run of it, and the review's runs are appended with the stage `review`.
 Where the records are missing because the project predates them, create them as `build-project`'s Keep the records says for that case, rather than reporting their absence alone.
 - **The project keeps `secure-project`** — every input and output classed and nowhere its class forbids, no secret in the tree or its history, and the dependency audit and the security review clean, run as its Review it says.
 

@@ -163,7 +163,7 @@ Look at every screenshot yourself as you build and fix what reads wrong; `build-
 
 Read the file for the technology you're building in:
 
-- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts themed from the tokens, candles and a forming bar, the formatting module).
+- **Web** → `references/web.md` (the tokens as CSS variables, Tailwind and shadcn/ui, the scheme toggle, ECharts themed from the tokens, candles and a forming bar, the formatting module); the code around them is `write-typescript`'s.
 - **Python** → `references/python.md` (one tokens module, the Plotly templates, Dash with Mantine and AG Grid, Shiny's theme and dark mode, a digest's chart image).
 
 Add a new `references/<technology>.md` when you build in another rather than adding its specifics to this file.
