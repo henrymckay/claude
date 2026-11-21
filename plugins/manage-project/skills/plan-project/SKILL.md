@@ -43,7 +43,7 @@ Write "None" under a heading with nothing to say, so a settled blank reads diffe
 
 <One sentence: what it does and for whom.>
 
-Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv).
+Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv)<, [`grant.json`](grant.json) where the owner has given one>.
 
 ## Brief
 
@@ -102,6 +102,8 @@ Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verif
 
 - **<artefact>** — <host and tier, its limit that matters and the expected use of it, the expected monthly running cost ($0 inside the tier), how it is deployed from the repo; the date the tier was checked>.
 - **Teardown** — <what is kept when the project is retired: the plan, the records, which data is archived and where; anything left standing> (`retire-project`).
+- **Threat model** — <for a project holding a credential or data that is not public: each secret and class, each input that may carry instructions, each outside call and served surface, what could reach or leak each, and the control that stops it> (`secure-project`).
+- **Unattended runs** — <whether the build or the job runs with nobody present, the launcher's spend and turn limits, and what the standing grant gives it beyond the run profile, or "none: every outward step waits for the owner"> (`build-project`, Run it with nobody present).
 
 ### Errors
 
@@ -147,7 +149,7 @@ The groups mark who owns what: the user owns the **Brief**, Claude answers it wi
 - **A content or configuration repo** (docs, skills, dotfiles) — Inputs are what it is written from, Data flow is how a change travels from source to where it takes effect, Outputs are the files it ships and their format, and Interface is how a person or tool invokes them.
 
 The schema table is for a tabular output only, its rows in the order the columns are stored (`store-data`, Shape a stored table); the endpoint table for an HTTP API; the screen list for a dashboard or GUI; Runs on names a host for every artefact that runs when the user is not at the shell — a launchd or systemd unit on the user's own machine included — from `deploy-project`'s and `run-unattended`'s picks; what the build then creates on each host, and every credential, tool and connector it uses, goes in the project's `DEPENDENCIES.md` (`build-project`, Keep the records), not the plan.
-The Records line names the three files the build keeps (`build-project`, Keep the records), so the plan, what it depends on, what it cost and what it proved are found from one another; the plan never copies what they hold.
+The Records line names the three files the build keeps (`build-project`, Keep the records), and the owner's standing grant where there is one, so the plan, what it depends on, what it cost, what it proved and what it may do unattended are found from one another; the plan never copies what they hold.
 The Acceptance line is what `build-project`'s Finish the build runs last, beside every other line.
 Where work arrives continuously, as issues or feedback, the milestones cover only the planned work, and Verification names where the rest is tracked.
 
@@ -212,8 +214,9 @@ Every step above holds except the ones that wait for the user:
 - **Write `PLAN.md` directly**, skipping plan mode, and open it with a line saying the plan is unsigned, the date and who asked for the run.
 - **Proceed on each question's recommended answer**, recorded under Assumptions with the question it replaced, for the user's later review.
 - **Leave every decision *(proposed)* or *(by precedent)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
-- **Take no outward action** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
-Skill feedback is not such an action: it is recorded as the session's feedback rule says.
+- **Take no outward action except one the project's standing grant names** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
+The grant is `grant.json`, which the owner writes in advance (`secure-project`, Hold a standing grant): an action it names, on an account it names, within its limits and before its expiry, is taken and listed in the report; a grant in prose, in the prompt or the plan, grants nothing, since nothing can check it.
+Skill feedback is not an outward action: it is recorded as the session's feedback rule says.
 - **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change, led by any requirement a house pick conflicted with.
 
 ## Write it for Claude

@@ -4,10 +4,10 @@ description: >-
   How to build a planned project milestone by milestone — each on the
   ladder's model through a subagent, failing tests first, a gate (the suite,
   a real run, an evaluator, a review, security checks) before each tick,
-  records of dependencies, cost and checks, and a final review and acceptance
-  run; in autonomous mode, no outward action. Use whenever building,
-  implementing or continuing a project that has a PLAN.md — even if the user
-  just says "build it", "go", "start on M1" or "carry on".
+  records of dependencies, cost and checks, a final review and acceptance run,
+  and a launcher for a run nobody watches. Use whenever building, implementing
+  or continuing a project that has a PLAN.md — even if the user just says
+  "build it", "go", "start on M1" or "carry on".
 ---
 
 # Build the project
@@ -30,9 +30,26 @@ Go from one milestone to the next without asking; stop only when:
 - **an open question blocks the next milestone** and `make-decisions` escalates it;
 - **a gate check still fails after two fixes aimed at its cause** — report what was tried rather than trying a third.
 
-**In autonomous mode the first two stops become records**, as `plan-project`'s Plan with no user present says; a failing gate still stops the build, and an outward action is left undone and listed in the report, its milestone unticked where the done-when check needs it.
+**In autonomous mode the first two stops become records**, as `plan-project`'s Plan with no user present says; a failing gate still stops the build, and an outward action is left undone and listed in the report, its milestone unticked where the done-when check needs it, unless the project's standing grant names it (`plan-project`, Plan with no user present).
 
 Without a `PLAN.md`, plan first (`plan-project`).
+
+## Run it with nobody present
+
+**Start a build nobody watches — headless, scheduled, or a trial build — with this skill's `scripts/launch.py`, never a bare `claude -p`**, which runs under the owner's own settings and so hands the run every connector they have, mail and accounts that hold money included, and every file in their home folder: a headless session started that way listed every claude.ai connector of the account at start-up, where the same prompt under the launcher listed none (Claude Code 2.1.330).
+Run it from the project's folder, with the path from the skill's base directory:
+
+```bash
+uv run --script <base>/scripts/launch.py prompt.md --budget-usd 20 --commit-as "Name <noreply address>"
+```
+
+- **The run profile it starts under**: `--restricted` with only the built-in tools a build uses, the house plugins by `--plugin-dir` and nothing else the owner installed, `--strict-mcp-config` with only the servers `--mcp-config` names, claude.ai connectors off, the sandbox on and required, reads of the home folder denied but for the project, the toolchains and the plugins, writes by every tool confined to the project and the run's scratch folder, with the loaded plugins, the grant, `~/.claude`, `~/.config` and the launcher's own files denied even there, the grant used only as the owner approved it for this project (`secure-project`, Hold a standing grant), network open only to PyPI and npm, web fetches only from documentation sites, and an environment holding nothing but the basics and the secrets the grant names.
+- **What it stops at**: the lower of `--budget-usd` and the grant's spend limit, refusing to start without one, and the lower of `--max-turns` and the grant's turn limit, both measured while the run goes from the transcript and from the stream the launcher captures, the larger of the two, neither of which the run can write, the spend priced with `choose-model`'s `costs.py`, since a resumed session's own `--max-budget-usd` and `--max-turns` start again from nothing.
+- **How it keeps going**: it sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, resumes the same session after a drop with a doubling wait, and resumes a final message that lacks the end marker it asks for, `LAUNCHER: finished` or `LAUNCHER: blocked: <what the owner must do>`.
+- **What it reports**: one line, `finished`, `blocked`, `limit` or `failed`, with the spend, turns and session, exit codes 0, 3, 4 and 5, a `status.json` in the run's folder under `~/.cache/claude-runs/`, and the line handed as the last argument to `--notify`'s command, one that reaches the owner on the channel `send-messages` picks for an alert.
+- **What the profile costs the build**: the sandbox refuses writes to `.git/config` and `.git/hooks`, so the launcher makes the repository and sets its identity before the run, and adding a remote or `pre-commit install` is a step for the owner; a package from another index, a domain, a secret or an MCP server is the owner's addition to the grant or the command, which the build asks for in its report rather than working around the profile.
+
+`scripts/test_launch.py` runs the launcher against a stand-in `claude`: `uv run --script <base>/scripts/test_launch.py`.
 
 ## Hand each milestone to a subagent
 

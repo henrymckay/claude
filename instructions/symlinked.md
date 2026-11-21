@@ -31,7 +31,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 
 - **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
 - **`be-oop`** for object-oriented design: classes, inheritance, patterns.
-- **`build-project`** when building a project from its `PLAN.md`, milestone by milestone.
+- **`build-project`** when building a project from its `PLAN.md`, milestone by milestone, or starting a build nobody watches.
 - **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
 - **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud.
 - **`design-interface`** before building, styling or wording a screen, chart, page, message, help text or any output a person reads.
@@ -42,7 +42,7 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`retire-project`** when retiring a project or removing what it created.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`run-unattended`** when a job runs on a schedule with nobody watching.
-- **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, or serves something.
+- **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, reads content others write, or serves something.
 - **`send-messages`** when a job or assistant must reach the user.
 - **`setup-python`** when scaffolding, packaging or configuring a Python project.
 - **`store-data`** when deciding where a project's data lives and how it is written and read.
