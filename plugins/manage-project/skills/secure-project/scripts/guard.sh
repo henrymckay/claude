@@ -23,7 +23,7 @@ if [ "${CLAUDE_PLUGIN_OPTION_GUARD:-on}" = off ]; then
   exit 0
 fi
 plain=$(printf '%s' "$input" | tr -d "\\\\\"'")
-if printf '%s' "$plain" | grep -E -i -q 'push|rebase|reset|filter-|update-ref|amend|clean|send-pack|delete|destroy|drop|truncate|purge|trash|[^a-z]rb[^a-z]|rm |printenv|(^|[^a-z_.])env([^a-z_]|$)|secret|token|password|credential|grant[.]json|[.]ssh|id_|[.]pem|[.]key|auth|keyring|security|config'; then
+if printf '%s' "$plain" | grep -E -i -q 'push|rebase|reset|filter-|update-ref|amend|clean|send-pack|delete|destroy|drop|truncate|purge|trash|[^a-z]rb[^a-z]|rm |printenv|(^|[^a-z_.])env([^a-z_]|$)|secret|token|password|credential|grant[.]json|[.]ssh|id_|[.]pem|[.]key|auth|keyring|security|config|mcp__[a-z0-9_-]*(order|trade|transfer|withdraw|pay|x402|swap|send|reply|forward|share|publish|invite|grant)'; then
   printf '%s' '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"Guard hook (secure-project): python3 could not run, so this call was not checked. Approve only if you meant it."}}'
 fi
 exit 0

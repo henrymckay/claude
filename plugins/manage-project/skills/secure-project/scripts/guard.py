@@ -7,7 +7,8 @@ repository's hooks, filters, attributes, pager, fsmonitor and external diff out 
 and treats a call it cannot check in time as one it must guard.
 
 It guards a force-push or a rewrite of pushed history and the destructive git commands,
-deleting a repository or a hosted store, printing a secret, committing a secret, a push to
+deleting a repository or a hosted store, a connector call that trades, moves money, sends
+or shares, printing a secret, committing a secret, a push to
 a remote the standing grant does not name, a change to the grant, and a change to the
 configuration that would run code outside the sandbox. It answers ``ask`` when a person
 may be present and ``deny`` when nobody is. It is a guard against slips, not a boundary:
@@ -206,6 +207,19 @@ _MCP_DESTRUCTIVE: typing.Final = re.compile(
     r"(^|_)(delete|drop|trash|destroy|purge|revoke|wipe|clear|erase|remove)(?!_(labels?|tags?))"
     r"(_|$)"
 )
+_MCP_OUTWARD: typing.Final = re.compile(
+    r"(^|_)(buy|sell|trade|transfer|withdraw|withdrawal|deposit|pay|payment|payout|x402"
+    r"|swap|send|reply|forward|share|publish|invite|grant)(_|$)"
+    r"|(^|_)post_(message|comment|reply)(_|$)"
+    r"|(^|_)orders?_(create|edit|modify|replace|cancel|close|place|submit)(_|$)"
+    r"|(^|_)(create|edit|modify|replace|cancel|close|place|submit)_(\w+_)?orders?(_|$)"
+    r"|(^|_)(convert|order|trade)_(execute|commit|confirm)(_|$)"
+    r"|(^|_)close_position(_|$)"
+)
+_MCP_OUTWARD_ARGUMENT: typing.Final = re.compile(
+    r"\"side\"\s*:\s*\"(?i:buy|sell)\"|\"(recipients?|cc|bcc)\"\s*:"
+)
+_MCP_DRY_RUN: typing.Final = re.compile(r"(^|_)(preview|quote|estimate)(_|$)")
 _MCP_HIDDEN_DELETE: typing.Final = re.compile(
     r"\"(?i:trashed)\"\s*:\s*true|\"(delete|remove|clear)[A-Z]\w*\"\s*:"
 )
@@ -1480,6 +1494,12 @@ def check(call: Call, context: Context) -> list[str]:
         findings = []
         if _MCP_DESTRUCTIVE.search(action):
             findings.append(f"a connector call that deletes or revokes ({tool})")
+        if not _MCP_DRY_RUN.search(action) and (
+            _MCP_OUTWARD.search(action) or _MCP_OUTWARD_ARGUMENT.search(text)
+        ):
+            findings.append(
+                f"a connector call that trades, moves money, sends or shares ({tool})"
+            )
         if _MCP_HIDDEN_DELETE.search(text):
             findings.append(f"a connector call that deletes inside an update ({tool})")
         cleaned = re.sub(r"/\*.*?\*/", " ", text.replace("\\u00a0", " "))

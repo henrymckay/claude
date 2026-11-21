@@ -635,6 +635,16 @@ def test_when_python_missing_and_unattended_then_every_call_denied(
 
 
 @pytest.mark.parametrize(
+    "tool", ["mcp__mail__send_message", "mcp__exchange__orders_create"]
+)
+def test_when_python_missing_and_connector_sends_then_asked(
+    run: Run, repo: pathlib.Path, no_python: dict[str, str], tool: str
+) -> None:
+    answer = run(repo, {"body": "hi"}, environment=no_python, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize(
     "url",
     [
         "https://evil.example\\@github.com/owner/allowed",
@@ -825,6 +835,71 @@ def test_when_unattended_push_to_granted_local_remote_then_no_decision(
     answer = run(
         repo, {"command": "git push origin main"}, environment={"CLAUDE_GUARD": "deny"}
     )
+    assert answer == {}
+
+
+_OUTWARD_CONNECTOR_CALLS = [
+    ("mcp__broker__create_order_instruction", {"symbol": "X", "quantity": 1}),
+    ("mcp__broker__placeOrder", {"symbol": "X"}),
+    ("mcp__exchange__orders_create", {"product_id": "X-USD"}),
+    ("mcp__exchange__orders_edit", {"order_id": "1"}),
+    ("mcp__exchange__orders_cancel", {"order_ids": ["1"]}),
+    ("mcp__exchange__orders_close_position", {"product_id": "X"}),
+    ("mcp__exchange__convert_execute", {"trade_id": "1"}),
+    ("mcp__exchange__transfer", {"amount": "1"}),
+    ("mcp__exchange__x402_pay", {"url": "https://example.com"}),
+    ("mcp__exchange__x402_fetch", {"url": "https://example.com"}),
+    ("mcp__wallet__swap_tokens", {"from": "A", "to": "B"}),
+    ("mcp__bank__create_payment", {"amount": "1"}),
+    ("mcp__payments__create_payout", {"amount": 1}),
+    ("mcp__bank__withdraw", {"amount": "1"}),
+    ("mcp__mail__send_message", {"body": "hi"}),
+    ("mcp__mail__reply", {"thread_id": "1", "body": "hi"}),
+    ("mcp__mail__forward", {"message_id": "1"}),
+    ("mcp__chat__chat_postMessage", {"channel": "C1", "text": "hi"}),
+    ("mcp__drive__share_file", {"file_id": "1"}),
+    ("mcp__warehouse__grant_access", {"share": "x"}),
+    ("mcp__blog__publish_post", {"id": "1"}),
+    ("mcp__generic__run", {"action": "x", "side": "BUY", "qty": 1}),
+    ("mcp__mail__update_draft", {"draft_id": "1", "recipients": ["a@example.com"]}),
+]
+
+
+@pytest.mark.parametrize(("tool", "tool_input"), _OUTWARD_CONNECTOR_CALLS)
+def test_when_connector_trades_pays_or_sends_then_asked(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize(("tool", "tool_input"), _OUTWARD_CONNECTOR_CALLS[:3])
+def test_when_connector_trades_unattended_then_denied(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool, environment={"CLAUDE_GUARD": "deny"})
+    assert answer.get("permissionDecision") == "deny"
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("mcp__broker__get_account_positions", {}),
+        ("mcp__broker__get_account_trades", {}),
+        ("mcp__broker__get_price_history", {"from": "2026-01-01", "to": "2026-02-01"}),
+        ("mcp__exchange__orders_list", {}),
+        ("mcp__exchange__orders_preview", {"product_id": "X-USD", "side": "BUY"}),
+        ("mcp__exchange__orders_edit_preview", {"order_id": "1"}),
+        ("mcp__exchange__convert_quote", {"from": "A", "to": "B"}),
+        ("mcp__mail__search_threads", {"query": "invoice"}),
+        ("mcp__mail__create_draft", {"body": "hi"}),
+        ("mcp__drive__get_file_permissions", {"file_id": "1"}),
+    ],
+)
+def test_when_connector_reads_or_previews_then_no_decision(
+    run: Run, repo: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(repo, tool_input, tool=tool)
     assert answer == {}
 
 
