@@ -3,10 +3,10 @@ name: review-plugin
 effort: high
 description: >-
   How to review a Claude Code plugin, marketplace or skills repo for drift —
-  skill feedback first, then every drift check (counts, descriptions,
-  duplicates, claims re-run, instruction files, hooks, trigger suites, records,
-  memory), how the sweep is run and checked, and an outside review on the top
-  model, in one pull request. Use whenever the user asks to review, audit, tidy or
+  skill feedback, every check (counts, descriptions, duplicates, claims,
+  instruction files, manifests, hooks, trigger suites, records, memory), the
+  coverage map, trial builds, how a sweep runs, an outside review on the top
+  model, one pull request. Use whenever the user asks to review, audit, tidy or
   sweep skills or a plugin — even if they just say "check the skills for
   drift" or "work through the skill feedback".
 ---
@@ -19,7 +19,7 @@ Where the user can push, it fixes and commits; where they cannot, it stops at th
 It runs `review-project` with the skills as the code under review and adds the checks below, judging against `write-skills` and `write-markdown` rather than restating them.
 Anthropic's `plugin-dev` plugin, if installed, checks hooks, manifests, agents and commands more deeply than Check the wiring; without it, `claude plugin validate --strict` and running each hook are the floor.
 Three mistakes account for most drift: a description no longer matching the body it introduces, a rule stated in two skills that then contradict, and a rule or example overfitted to the project that prompted it.
-**Run every check below in every sweep, whatever the brief names.** A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
+**Run every check in the Check sections below in every sweep, whatever the brief names**; a trial build is a separate, paid event the owner starts. A sweep briefed as "settle these issues" that settles them and stops leaves the drift no issue reported, such as a README still describing a folder the plan has removed.
 
 - **Wrong** — the issue says a skill steered a build wrong; the sweep rewords the rule, reads it back, and closes the issue.
 - **Right** — the sweep reruns the build step the issue describes against the new wording, and closes the issue only when that run comes out right.
@@ -55,7 +55,7 @@ Where the plan of the marketplace under review keeps a coverage map — a projec
 
 - **Each cell still true**: the skill or hook it names exists and still does what the cell says, and an issue it cites is still open, or the cell moves to what closed it.
 - **Three grades, each citing a dated run**: *seen once* — one real run exercised it and passed; *repeated* — runs on two kinds of project passed; *failing* — its last recorded result failed.
-A cell keeps a passing grade only while the last recorded result for it, in the cited project's own `verification.csv` or this repo's, is a pass, so check the map against those records, never against the plan's own text; a cell whose evidence is only a skill's text, a unit test or a probe is *designed*, not graded, and the map's table of project kinds calls a kind built only once a build has completed it.
+A cell keeps a passing grade only while the last recorded result for it, in the cited project's own `verification.csv` or this repo's, is a pass — for a project built before the records, the dated milestone note, until its next run replaces it — so check the map against those records, never against the plan's own text; a cell whose evidence is only a skill's text, a unit test or a probe is *designed*, not graded, and the map's table of project kinds calls a kind built only once a build has completed it.
 - **A default resting on one kind of project is provisional**: a skill default or decision drawn from a single project says so until a second kind of project confirms it, so the next project tests it rather than inherits it.
 - **Every open skill-feedback issue sits in a cell**, and every empty cell has an issue or a reason it is not wanted yet; a sweep that closes an issue moves its cell to the fix and the run that showed it.
 
@@ -68,11 +68,12 @@ How a sweep is carried out, so another session or another user of the plugin run
 - **Findings from an automated review** (a commit security review on push, say) go back to the builder one by one, each fixed with a test that fails first or rebutted with a test showing the case already refused, weighed by layer: a way past the boundary (the run profile, the approved grant) blocks the merge, and a way past a second layer (the guard's patterns) is fixed in the sweep with a simpler, stricter rule where that is cheap, and filed where it is not, since each added parser case is one more to get wrong.
 - **The outside review** (below) runs once the builder has finished and before the merge.
 - **The cost is recorded**: the sweep's rows in the repo's `costs.csv`, per model, totalled with `choose-model`'s script from the transcripts and held against the plan's per-sweep budget; a sweep over budget says why.
-- **The owner is asked only for what is theirs**: the steps the merge leaves them (Land it as one pull request), each decision left proposed with its recommended answer, and the release tag.
+- **The owner is asked only for what is theirs, on one screen at the top of the report**: the steps the merge leaves them (Land it as one pull request), each decision left proposed with its recommended answer, and the release tag, with the plan's count of what is still unsigned brought up to date; the detail follows below it, for whoever wants it.
 
 ## Review it from outside
 
 **End every sweep with one targeted review by a fresh agent on the best available model at its highest effort (`choose-model`), read-only, given the diff and the plan but none of the builder's reasoning or report**, since a builder checked by its own model and effort finds what it already looked for: twelve sweeps passed their own checks while an outside review found unproven claims graded proven, a boundary tested less than its second layer and a plan too long to act on.
+Brief it with the questions below rather than having it load this skill, whose frontmatter effort would hold it at `high` for the rest of its turn (`choose-model`, Set the model from inside Claude).
 It has two parts:
 
 1. **The plan and the trajectory, always**, by the same questions every sweep, so one sweep's answers can be compared with the last:
