@@ -762,48 +762,81 @@ def _reporter(
     return build
 
 
-def _is_within(path: pathlib.Path, folder: pathlib.Path) -> bool:
-    """Return whether a path resolves inside a folder.
+def _read_grant_bytes(path: pathlib.Path) -> bytes:
+    """Return a grant file's bytes, refusing a symlink.
 
-    :param path: The path.
-    :param folder: The folder.
-    :returns: True where the run, which may write the folder, could change the path.
+    A symlink is refused wherever it points, since what counts is where the grant was
+    found, and a link in the project can point anywhere the run chooses.
+
+    :param path: The grant file.
+    :returns: Its content.
+    :raises LaunchError: If it is a symlink or not a regular file.
     """
-    return path.resolve().is_relative_to(folder.resolve())
+    if path.is_symlink():
+        raise LaunchError(f"{path} is a symlink; a grant must be a regular file")
+    if not path.is_file():
+        raise LaunchError(f"{path} is not a regular file")
+    return path.read_bytes()
 
 
-def _is_approved(content: bytes, approvals: pathlib.Path) -> bool:
-    """Return whether the owner approved a grant with exactly this content.
+def _read_approvals(approvals: pathlib.Path) -> list[tuple[str, str, str]]:
+    """Return the owner's approvals: each grant's hash, its project and when.
 
-    :param content: The grant file's bytes.
-    :param approvals: The file of approved hashes, outside anything a run can write.
-    :returns: True where its SHA-256 is listed.
+    :param approvals: The file of approvals, outside anything a run can write.
+    :returns: One entry per line; none where the file is absent.
+    """
+    if not approvals.exists():
+        return []
+    entries = (
+        line.split("\t") for line in approvals.read_text(encoding="utf-8").splitlines()
+    )
+    return [(fields[0], fields[1], fields[2]) for fields in entries if len(fields) == 3]
+
+
+def _is_approved(
+    content: bytes, *, approvals: pathlib.Path, project: pathlib.Path
+) -> bool:
+    """Return whether the owner approved exactly this grant for exactly this project.
+
+    :param content: The grant's bytes.
+    :param approvals: The file of approvals.
+    :param project: The project folder, resolved.
+    :returns: True where the hash is the one recorded for this project.
     """
     digest = hashlib.sha256(content).hexdigest()
-    if not approvals.exists():
-        return False
     return any(
-        line.split()[:1] == [digest] for line in approvals.read_text().splitlines()
+        entry[0] == digest and entry[1] == str(project)
+        for entry in _read_approvals(approvals)
     )
 
 
-def approve_grant(path: pathlib.Path, approvals: pathlib.Path) -> str:
-    """Record that the owner approved a grant, by the hash of its content.
+def approve_grant(
+    path: pathlib.Path, *, approvals: pathlib.Path, project: pathlib.Path
+) -> str:
+    """Record the owner's approval of a grant for a project, replacing that project's last.
 
     :param path: The grant file the owner has read.
-    :param approvals: The file of approved hashes.
+    :param approvals: The file of approvals.
+    :param project: The project folder, resolved.
     :returns: The hash recorded.
-    :raises LaunchError: If the grant is malformed or expired.
+    :raises LaunchError: If the grant is a symlink, malformed or expired.
     """
+    content = _read_grant_bytes(path)
     try:
         grant_.read_grant(path)
     except grant_.GrantError as failure:
         raise LaunchError(str(failure)) from failure
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    digest = hashlib.sha256(content).hexdigest()
+    kept = [entry for entry in _read_approvals(approvals) if entry[1] != str(project)]
+    lines = [
+        *("\t".join(entry) for entry in kept),
+        "\t".join((digest, str(project), _now())),
+    ]
     approvals.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with approvals.open("a", encoding="utf-8") as lines:
-        lines.write(f"{digest}  {path.resolve()}  {_now()}\n")
-    approvals.chmod(0o600)
+    staged = approvals.with_suffix(".tmp")
+    staged.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    staged.chmod(0o600)
+    staged.replace(approvals)
     return digest
 
 
@@ -823,8 +856,8 @@ def _prepare(
     :param project: The project folder.
     :param runs: The folder that holds every run's own folder, outside any temp folder.
     :returns: The layout and the grant read from the snapshot.
-    :raises LaunchError: If the grant is malformed, expired, or inside the project and
-        not approved.
+    :raises LaunchError: If the grant is a symlink, malformed, expired, or not approved
+        for this project, wherever it was found.
     """
     stamp = datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
     root = runs / f"{project.name}-{stamp}-{uuid.uuid4().hex[:6]}"
@@ -833,10 +866,11 @@ def _prepare(
     root.chmod(0o700)
     grant = None
     if grant_path is not None:
-        content = grant_path.read_bytes()
-        if _is_within(grant_path, project) and not _is_approved(content, approvals):
+        content = _read_grant_bytes(grant_path)
+        if not _is_approved(content, approvals=approvals, project=project):
             raise LaunchError(
-                f"{grant_path} is not approved: read it, then run launch.py --approve-grant"
+                f"{grant_path} is not approved for {project}: read it, then run "
+                "launch.py --approve-grant"
             )
         layout.grant.write_bytes(content)
         layout.grant.chmod(0o400)
@@ -987,7 +1021,9 @@ def main() -> None:
     if arguments.approve_grant:
         grant_path = arguments.grant or project / grant_.FILE_NAME
         try:
-            digest = approve_grant(grant_path, arguments.approvals)
+            digest = approve_grant(
+                grant_path, approvals=arguments.approvals, project=project
+            )
         except (LaunchError, OSError) as failure:
             raise SystemExit(f"launch: {failure}") from failure
         print(f"approved {grant_path} ({digest[:12]})")
@@ -996,7 +1032,8 @@ def main() -> None:
         parser.error("the prompt file is required")
     try:
         prompt = arguments.prompt.read_text(encoding="utf-8")
-        grant_path = arguments.grant or grant_.find_grant(project)
+        found = project / grant_.FILE_NAME
+        grant_path = arguments.grant or (found if os.path.lexists(found) else None)
         layout, grant = _prepare(
             approvals=arguments.approvals,
             grant_path=grant_path,

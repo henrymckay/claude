@@ -329,6 +329,41 @@ def test_when_project_grant_changed_after_approval_then_refused(
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
 
 
+def test_when_project_grant_is_symlink_to_outside_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    real = _write_grant(outside)
+    (project / "grant.json").symlink_to(real)
+    _approve(home, outside)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert done.returncode == 1
+
+
+def test_when_same_grant_approved_for_other_project_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    other = tmp_path / "other"
+    other.mkdir()
+    _write_grant(other)
+    _approve(home, other)
+    _write_grant(project)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_grant_reapproved_then_earlier_version_no_longer_approved(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
+) -> None:
+    first = grant.read_text()
+    grant.write_text(first.replace('"secrets"', '"network": ["pypi.org"], "secrets"'))
+    _approve(home, project)
+    grant.write_text(first)
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
 def test_when_run_starts_then_file_tools_scoped_and_grant_and_plugins_denied(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, grant: pathlib.Path
 ) -> None:
