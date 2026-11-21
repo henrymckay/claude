@@ -27,13 +27,14 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`be-functional`](plugins/write-code/skills/be-functional) is the default style.
   - [`be-oop`](plugins/write-code/skills/be-oop) is object-oriented design where it fits.
   - [`write-python`](plugins/write-code/skills/write-python) covers typing, naming and the error model.
+  - [`write-typescript`](plugins/write-code/skills/write-typescript) does the same for TypeScript, React and Cloudflare Workers.
   - [`write-sql`](plugins/write-code/skills/write-sql) decides where SQL belongs, with a [DuckDB](https://duckdb.org) reference.
-  - [`write-tests`](plugins/write-code/skills/write-tests) covers tests in any language, with `pytest` for Python.
+  - [`write-tests`](plugins/write-code/skills/write-tests) covers tests in any language, with `pytest` for Python and Vitest for TypeScript.
   - [`use-polars`](plugins/write-code/skills/use-polars) covers idiomatic [`polars`](https://pola.rs).
 - **`structure-app`** — a Python application's set-up and shape.
   - [`setup-python`](plugins/structure-app/skills/setup-python) scaffolds with [`uv`](https://docs.astral.sh/uv), `ruff`, `pyright` and `pytest`.
   - [`structure-python`](plugins/structure-app/skills/structure-python) lays out a pure core behind ports and adapters.
-  - [`write-entry-points`](plugins/structure-app/skills/write-entry-points) builds the CLI, API, dashboard or scheduled job.
+  - [`write-entry-points`](plugins/structure-app/skills/write-entry-points) builds the CLI, API, dashboard or scheduled job, with the toolchain for a TypeScript front end or Worker.
 - **`run-project`** — a project in the real world.
   - [`store-data`](plugins/run-project/skills/store-data) decides where data lives: Parquet, DuckDB, MotherDuck or SQLite.
   - [`run-unattended`](plugins/run-project/skills/run-unattended) runs a job nobody watches.
@@ -82,7 +83,9 @@ From Anthropic's [official marketplace](https://github.com/anthropics/claude-plu
 - **`skill-creator`** tests a skill with and without it and tunes its description, for `write-skills`.
 - **`plugin-dev`** checks hooks, manifests, agents and commands, for `review-plugin`.
 - **`commit-commands`** runs the commit and pull request flows `use-git` sets conventions for.
-- **`pyright-lsp`** and **`claude-security`** for type errors and security.
+- **`pyright-lsp`**, **`typescript-lsp`** and **`claude-security`** for type errors and security.
+
+Beyond these, `plan-project` looks for an outside plugin where no skill here covers a project's language or domain, and proposes it for you to install.
 
 ## 🔁 Feedback and sweeps
 

@@ -25,7 +25,7 @@
     {
       "name": "write-code",
       "source": "./plugins/write-code",
-      "description": "Functional and object-oriented style, Python, SQL, tests, Polars."
+      "description": "Functional and object-oriented style, Python, TypeScript, SQL, tests, Polars."
     },
     {
       "name": "structure-app",

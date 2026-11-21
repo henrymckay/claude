@@ -6,3 +6,4 @@
 - **`write-python`** when writing or editing Python.
 - **`write-sql`** when writing SQL or deciding where it belongs.
 - **`write-tests`** for writing or editing tests, in any language.
+- **`write-typescript`** when writing or editing TypeScript, React or a Cloudflare Worker.
