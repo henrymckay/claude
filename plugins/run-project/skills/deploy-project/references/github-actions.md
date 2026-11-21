@@ -186,17 +186,14 @@ It lives in `trigger/` beside the package, with its own `package.json`, deployed
   "name": "myapp-trigger",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
-  "triggers": { "crons": ["4 * * * *", "34 * * * *"] }
+  "triggers": { "crons": ["4 * * * *", "34 * * * *"] },
+  "secrets": { "required": ["GITHUB_TOKEN"] },
 }
 ```
 
-`trigger/src/index.ts`:
+`trigger/src/index.ts`, whose `Env` is the one `wrangler types` generates from that configuration (`write-entry-points`' TypeScript reference):
 
 ```typescript
-interface Env {
-  readonly GITHUB_TOKEN: string;
-}
-
 const REPOSITORY = "owner/myapp";
 const WORKFLOWS: Readonly<Record<string, string>> = {
   "4 * * * *": "pipeline.yml",
@@ -222,7 +219,9 @@ export default {
       },
     );
     if (!response.ok) {
-      throw new Error(`${workflow}: ${response.status} ${await response.text()}`);
+      throw new Error(
+        `${workflow}: ${response.status} ${await response.text()}`,
+      );
     }
   },
 } satisfies ExportedHandler<Env>;
@@ -232,4 +231,4 @@ export default {
 - Each workflow keeps `workflow_dispatch:` under `on:` and drops its `schedule:`, or keeps it at a later minute as a backstop where a doubled run is a no-op (the lock, `concurrency`).
 - `controller.cron` is the expression that fired, so one Worker serves both workflows within Workers Free's five Cron Triggers an account; a thrown error marks the invocation failed in the Worker's logs, and the next watch reports the run that never started.
 - After deploying, `gh run list --workflow pipeline.yml --event workflow_dispatch --json createdAt --limit 24` shows each run's start against its slot; record the worst delay under Verification.
-- Type-checked with TypeScript 7.0.2 against `@cloudflare/workers-types` 5.20261120.1, `strict` and `noUncheckedIndexedAccess` on (2026-11-20); not yet run against a live account.
+- Type-checked with TypeScript 7.0.2 against the types wrangler 4.166.0 generates, under `write-typescript`'s compiler settings, and linted and formatted as its toolchain says (2026-11-21); not yet run against a live account.
