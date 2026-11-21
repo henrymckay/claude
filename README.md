@@ -17,7 +17,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`retire-project`](plugins/manage-project/skills/retire-project) tears a project down from its records, confirming each removal.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and records its cost.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
-  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows.
+  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows, with a hook that asks before a force-push, a deletion or a leaked secret.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).
   - [`write-markdown`](plugins/manage-project/skills/write-markdown) writes Markdown for humans and for models.
 - **`design-project`** — what a project shows and holds, settled before it is built.
@@ -68,12 +68,14 @@ ln -s "$PWD/claude/instructions/symlinked.md" ~/.claude/CLAUDE.md
 > Never link `skills/` on a machine with the plugins installed.
 > Both together load every skill twice.
 
-With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/hooks/hooks.json) into `~/.claude/settings.json`.
+With symlinks, merge the `Stop` entry of `maintain-plugin`'s [`hooks.json`](plugins/maintain-plugin/hooks/hooks.json) and the `PreToolUse` entry of `manage-project`'s [`hooks.json`](plugins/manage-project/hooks/hooks.json) into `~/.claude/settings.json`.
 
 ## 🎛️ Configure
 
 - **Feedback** — `claude plugin configure maintain-plugin` sets `feedback` to `issues` (the default), `file` or `off`.
   Use `file` on a machine whose work must not reach a public tracker.
+- **Guard** — `claude plugin configure manage-project` sets `guard` to `on` (the default) or `off` for sessions you attend.
+  A run nobody watches stays guarded.
 - **`CLAUDE.md`** — only your own rules with the plugins installed, like the owner's [`installed.md`](instructions/installed.md); with symlinks, [`symlinked.md`](instructions/symlinked.md) adds the skill list, plugin map and feedback rule.
 
 ## 🧩 Companions
@@ -106,7 +108,7 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-A fresh headless session (`claude -p --permission-mode auto`) plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action; a sweep then works through its feedback and transcript.
+A fresh headless session, started by [`build-project`](plugins/manage-project/skills/build-project)'s launcher with only the house plugins, no connectors, the sandbox on and a spend limit, plans, builds and reviews a project from one prompt in autonomous mode, taking no outward action the project's standing grant does not name; a sweep then works through its feedback and transcript.
 [`PLAN.md`](PLAN.md)'s milestones list the builds.
 
 ## 📄 Licence
