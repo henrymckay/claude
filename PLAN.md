@@ -51,7 +51,7 @@ Each states the result that would show it failing, and what it costs.
   - Fails when a cell graded as passing has a last recorded result that is not a pass, or a build or this repo lacks a record.
   - Cost: a run per requirement, three records per project, the map kept true.
 - **R6 Complete** — plan, build, verify, deploy, operate, undo and retire.
-  - Fails when a row of the map has nothing above *designed* and no issue or reason; today undo and retire.
+  - Fails when a row of the map has nothing above *designed*: today undo and retire, each with its issue or reason.
   - Cost: every other requirement; scope held to Python data, command-line, API and dashboard projects, with a TypeScript front end or Worker beside them.
 - **R7 Frugal** — build and running cost bounded and known; each skill worth its load.
   - Fails when a run passes its limit by more than one poll, a sweep passes its budget unexplained, or a file or description passes its budget.
@@ -157,7 +157,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | Every other context file | 70 | 59 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
 | `README.md` | 980 | 977 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,470 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,499 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |
@@ -246,7 +246,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D42** No skill names a model in its frontmatter; amended by D82.
 - **D70** A build milestone with a visible surface stays on Sonnet: $5.45 against $10.75 on Opus for one plan, both passing.
 - **D73** A stage's subagent runs in the foreground, with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` as backstop.
-- **D82** A skill names an effort only to raise it; overrides D42 for `build-project`.
+- **D82** A skill names an effort only to raise it, so `build-project` dropped its `effort: medium`; overrides D42 for that line.
 - **D126** *(proposed)* Every sweep ends with a read-only outside review on the best model at its highest effort, seven fixed questions then the riskiest change, over the builder checking itself; `review-plugin`; issue 162.
 
 **The feedback loop**
@@ -331,7 +331,7 @@ Each line's dated results are in [`verification.csv`](verification.csv); the map
 **Coverage map.** Rows are a project's stages, so R6 is read from the rows; each cell names what delivers it and its grade.
 **S** seen once, **R** repeated on a second kind of project, **F** failing at its last recorded result, **D** designed only, **G** a gap and its issue, **—** not wanted yet (note below).
 Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 (R2 and coverage failed, four lines not run); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6**, **T7** sweeps 12 and 13's launcher and guard runs (2026-11-21).
-T1 and T2 predate the records, so their grades rest on the milestone notes and are re-graded at their next run.
+T1 and T2 predate the records, so their grades rest on the dated milestone notes until their next run (`review-plugin`, Check the coverage map).
 
 | Stage | R1 | R2 | R3 | R4 | R5 | R7 | R8 | R9 |
 |---|---|---|---|---|---|---|---|---|

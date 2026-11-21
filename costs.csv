@@ -23,3 +23,6 @@ agents,cache_read,cache_write,dollars,effort,input,model,output,session,source,s
 ,,,1.62,,,claude-sonnet,,,PR 161,sweep 12: docs research and cold read,2026-11-21,
 ,,,2.32,,,,,,PR 161,sweep 12: trigger cases,2026-11-21,
 ,,,0.15,,,claude-haiku,,,PR 161 (about),sweep 12: launcher test runs,2026-11-21,
+0,,,25.25,high,,claude-opus-5-5,,,costs.py on the sweep's transcript (before its last commits),sweep 13: the sweep,2026-11-21,60
+0,,,0.63,high,,claude-sonnet-5-5,,,costs.py,sweep 13: cold read,2026-11-21,2.5
+,,,0.08,,,claude-haiku-5-5,,,costs.py on the throwaway runs,sweep 13: launcher runs (preflight; gate; shakedown),2026-11-21,
