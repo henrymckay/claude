@@ -11,10 +11,10 @@ description: >-
 
 # Write tests
 
-A test is production code that happens to assert, so it follows the conventions of the code it covers — in Python, `write-python` — with the testing judgement below on top.
+A test is production code that happens to assert, so it follows the conventions of the code it covers — in Python, `write-python`, in TypeScript, `write-typescript` — with the testing judgement below on top.
 Three mistakes account for most weak suites: asserting on internals instead of the public contract, building the *given* inline instead of injecting it, and reaching an expected value with the very code under test.
 
-**Language-agnostic here.** The Python specifics live in `references/python.md`.
+**Language-agnostic here.** The Python specifics live in `references/python.md`, the TypeScript ones in `references/typescript.md`.
 
 **In an existing project, ask first.** Where a repo already has an established test style or layout, check with the user whether to match it or apply this skill, and prefer this skill unless they choose to match.
 
@@ -123,5 +123,6 @@ Tag slow or external tests so the default run leaves them out.
 Read the file for the language you're working in:
 
 - **Python** → `references/python.md` (`pytest`: the `pytest_` package, fixtures, `parametrize`, `hypothesis` and its health check, assert rewriting, `monkeypatch` and `time-machine`, `httpx.MockTransport` and the recording script, the coverage levels, running).
+- **TypeScript** → `references/typescript.md` (Vitest: tests beside the code, the `jsdom` opt-in, `test.extend` givens, `test.for` tables, `fast-check`, Testing Library and `userEvent`, a faked `fetch`, a Worker's handler and runtime tests, the coverage levels, running).
 
 Add a new `references/<language>.md` when you work in another language rather than adding its specifics to this file.
