@@ -1,0 +1,7 @@
+command,commit,date,line,printed,result,stage
+"launch.py on a throwaway project, Haiku, --allow-local-binding --gate-command 'python3 -m unittest -q'",994195c,2026-11-21,R1,"model ended finished over a failed acceptance row; the gate refused it; the session resumed and ended blocked; no trial build has run through the launcher yet",not run,sweep 13
+none,4fef78b,2026-11-21,R2,no trial build this sweep,not run,sweep 13
+"launch.py --preflight-only (Haiku); test_guard.py and test_grant.py; test_launch.py",3d06be4,2026-11-21,R3,"preflight passed: 5 sandbox probes and 5 guard probes refused, no connector; guard and grant 306 passed; launcher 51 passed; no outside attack or private-data trial this sweep",not run,sweep 13
+"claude plugin validate --strict on the marketplace and each plugin",4fef78b,2026-11-21,R4,"7 of 7 passed; review-plugin's trigger cases not run in this session",not run,sweep 13
+"records present; coverage map graded against the third trial's verification.csv",4fef78b,2026-11-21,R5,"three records created; cells the trial's 2026-11-19 acceptance failed graded F",pass,sweep 13
+read the coverage map's rows,4fef78b,2026-11-21,R6,undo and retire have nothing above designed,fail,sweep 13
