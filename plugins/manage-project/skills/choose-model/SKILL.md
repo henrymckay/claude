@@ -23,7 +23,7 @@ Three mistakes account for most wasted spend: running every stage on the largest
 | Stage | Model | Effort | Why |
 |---|---|---|---|
 | Planning, reviewing, editing skills, ruling on a challenge | `opus` (`fable` for the hardest design) | high | One wrong call here is rebuilt across every milestone; the cost is paid once |
-| A sweep's independent review (`review-plugin`, Review it from outside) | the best available, `fable` today | the highest it offers | Read-only and run once a sweep; a reviewer on the builder's own model and effort missed what twelve sweeps built |
+| A sweep's independent review (`review-plugin`, Review it from outside) | the best available, `fable` today | the highest it offers | Read-only and run once a sweep; a reviewer on the builder's own model and effort finds what the builder already looked for |
 | Build milestones | `sonnet` | medium | The plan has made the decisions; the gate catches what the model misses |
 | Cold reads, evaluators, gap probes, stand-alone web research | `sonnet` | medium | Many of them run; each returns conclusions, not files; a plan's own research stays with the planning subagent, since it shapes the draft |
 | Graders, hooks, trigger evals | `haiku` | low | A yes/no over a short text, run on every turn or every case |
