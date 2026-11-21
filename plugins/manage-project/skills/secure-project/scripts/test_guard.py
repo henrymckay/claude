@@ -875,6 +875,18 @@ _OUTWARD_CONNECTOR_CALLS = [
     ("mcp__generic__run", {"payee": "acct-1", "amount": "5"}),
     ("mcp__generic__run", {"destination": "0xabc", "amount": "5"}),
     ("mcp__generic__run", {"To": "someone@example.com", "body": "hi"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01 someone@example.com"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01,someone@example.com"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01;acct-1"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": "2026-01-01 acct-1"}),
+    ("mcp__generic__run", {"from": "2026-01-01", "to": ["2026-01-01", "a@example.com"]}),
+    ("mcp__generic__run", {"to": "2026-01-01"}),
+    ("mcp__generic__run", {"order side": "buy"}),
+    ("mcp__generic__run", {"ORDER.SIDE": "SELL"}),
+    ("mcp__generic__run", {"to__address": "acct-1"}),
+    ("mcp__generic__run", {"Re-Cipients": "a@example.com"}),
+    ("mcp__generic__run", {"ｓｉｄｅ": "buy"}),
+    ("mcp__generic__run", {"sіde": "buy"}),
 ]
 
 
@@ -900,6 +912,10 @@ def test_when_connector_trades_unattended_then_denied(
         ("mcp__broker__get_account_positions", {}),
         ("mcp__broker__get_account_trades", {}),
         ("mcp__broker__get_price_history", {"from": "2026-01-01", "to": "2026-02-01"}),
+        (
+            "mcp__broker__get_price_history",
+            {"start": "2026-01-01T00:00:00Z", "to": "2026-02-01T00:00:00Z"},
+        ),
         ("mcp__exchange__orders_list", {}),
         ("mcp__exchange__orders_preview", {"product_id": "X-USD"}),
         ("mcp__mail__search_threads", {"query": "invoice to:someone"}),
