@@ -44,9 +44,18 @@ Several reports against one skill mean its structure is wrong; rework the skill 
 A trial build tests the plugins on a real project, so its planning is under test as much as its code.
 
 - **The session under test plans and builds it; the coordinating session does neither**, even when "new project" fires `plan-project`: it writes a brief in the user's words that names no technology the skills should choose, starts a fresh session with only the plugins, and relays the user's own answers, never its own.
-Started headless, it runs with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the backstop `choose-model`'s Hold a stage on its model names.
+Started headless, it runs through `build-project`'s launcher (Run it with nobody present), which gives it the run profile and a spend limit; where `manage-project` is not installed, it runs with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the backstop `choose-model`'s Hold a stage on its model names, and says in its report that it ran with the owner's whole toolset.
 - **Total its cost with `choose-model`'s script** from its transcripts, whether or not the build kept `costs.csv`, so every trial build is priced the same way.
 - **Sweep what it leaves**: its skill feedback, and its transcripts where they are on the machine, read for a skill that should have loaded and never did and a stage served by the wrong model; cite each finding's file and line and file it as feedback, since a session that skipped a skill never reports the gap itself.
+- **Fill in the coverage map's evidence** where the marketplace's plan keeps one (Check the coverage map): each cell the build exercised gets the build as its evidence, and each it found wanting the issue it filed.
+
+## Check the coverage map
+
+Where the plan of the marketplace under review keeps a coverage map — a project's stages against the qualities its requirements name, each cell naming what delivers it and what proved it — re-read it whole in every sweep, since gaps otherwise surface only when someone asks again what is missing:
+
+- **Each cell still true**: the skill or hook it names exists and still does what the cell says, and an issue it cites is still open, or the cell moves to what closed it.
+- **Designed is not proven**: a cell whose evidence is only a skill's text, a unit test or a probe stays marked unproven until a trial build or a real run exercised it, and the map's table of project kinds calls a kind built only once a build has completed it.
+- **Every open skill-feedback issue sits in a cell**, and every empty cell has an issue or a reason it is not wanted yet; a sweep that closes an issue moves its cell to the fix and the run that showed it.
 
 ## Land it as one pull request
 
