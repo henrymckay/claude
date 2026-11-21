@@ -75,6 +75,10 @@ _GIT_VALUE_OPTIONS: typing.Final = frozenset(
 _INTERPRETERS: typing.Final = frozenset(
     "bun deno node osascript perl php python python3 ruby uvx".split()
 )
+_PURE_READERS: typing.Final = frozenset(
+    "awk base64 bat cat column cut diff file grep head jq less ls md5 more nl od rg "
+    "sed sha256sum shasum sort stat strings tail uniq view wc xxd".split()
+)
 _PRINTERS: typing.Final = frozenset("echo logger print printf say tee".split())
 _READERS: typing.Final = frozenset(
     "awk base64 bat cat column cp cut dd diff grep head hexdump jq less more nl od open "
@@ -177,6 +181,11 @@ _REMOTE_SQL: typing.Final = re.compile(
     r"md:|motherduck|(postgres(ql)?|mysql)://(?!localhost|127\.0\.0\.1)|\bbq\b|snowsql"
     r"|\bpsql\b(?!.*(localhost|127\.0\.0\.1))",
     re.IGNORECASE,
+)
+_GIT_ENVIRONMENT: typing.Final = re.compile(
+    r"(?<![A-Za-z0-9_$])GIT_(CONFIG|DIR|WORK_TREE|EXEC_PATH|SSH|ALTERNATE|INDEX_FILE|OBJECT_DIRECTORY"
+    r"|TEMPLATE_DIR|ASKPASS|PROXY_COMMAND|EXTERNAL_DIFF|PAGER|EDITOR|SEQUENCE_EDITOR)\w*"
+    r"(?=\s*=|\s*$|\s*[;&|)\s])"
 )
 _PUSH_CONFIG: typing.Final = re.compile(
     r"^(remote\.[^.]+\.(push|pushurl|url|mirror)|url\..+\.(pushinsteadof|insteadof)"
@@ -716,9 +725,10 @@ def _check_push(
     allowed = context.grant.remotes if context.grant else ()
     where = f"grant {context.grant.path}" if context.grant else "no standing grant"
     for url in urls or ["(none)"]:
-        if grant_.normalise_remote(url) not in allowed:
+        key = grant_.remote_key(url, bare_is_host=False)
+        if key is None or key not in allowed:
             findings.append(
-                f"a push to {grant_.normalise_remote(url)}, which the {where} does not name"
+                f"a push to {key or url!r}, which the {where} does not name"
             )
     return findings
 
@@ -1239,8 +1249,15 @@ def _check_words(
             str(_resolve(cwd, target))
         ):
             findings.append("changing configuration that runs code outside the sandbox")
-    if name not in (_READERS - {"cp", "sed", "tee"}) | {"git"} and any(
-        grant_.FILE_NAME in word.lower() for word in arguments
+    in_place = name in ("sed", "perl") and any(
+        re.match(r"^-\w*i", w) for w in arguments
+    )
+    if (name not in _PURE_READERS or in_place) and any(
+        grant_.FILE_NAME in word.lower()
+        or _names_grant(word)
+        or any(_names_grant(match) for match in _glob(cwd, word))
+        for word in arguments
+        if not word.startswith("-") or "=" in word
     ):
         findings.append("changing the standing grant")
     return findings
@@ -1267,6 +1284,10 @@ def _check_shell(
     findings: list[str] = []
     if _SECRET_VALUE.search(text):
         findings.append("a command carrying a secret-looking value")
+    if _GIT_ENVIRONMENT.search(text):
+        findings.append(
+            "setting git's configuration, repository or commands through the environment"
+        )
     try:
         line = _split(text)
     except ValueError:
@@ -1475,8 +1496,7 @@ def main() -> None:
     started = time.monotonic()
     raw = sys.stdin.buffer.read(_INPUT_LIMIT + 1)
     unattended = _is_unattended("")
-    if os.environ.get("CLAUDE_PLUGIN_OPTION_GUARD", "on") == "off" and not unattended:
-        return
+    switched_off = os.environ.get("CLAUDE_PLUGIN_OPTION_GUARD", "on") == "off"
     try:
         if len(raw) > _INPUT_LIMIT:
             raise ValueError("input too large")
@@ -1489,6 +1509,8 @@ def main() -> None:
             tool_name=str(data.get("tool_name", "")),
         )
         unattended = _is_unattended(call.permission_mode)
+        if switched_off and not unattended:
+            return
         findings = check(call, _context(call, started=started))
     except OutOfTime:
         findings = ["a call too large to check in the guard's time"]

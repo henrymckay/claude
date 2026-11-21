@@ -13,12 +13,13 @@ import os
 import pathlib
 import re
 import typing
+import urllib.parse
 
 FILE_NAME: typing.Final = "grant.json"
 _ENV_FILE: typing.Final = "CLAUDE_GRANT_FILE"
 _MAX_BYTES: typing.Final = 64 * 1024
 _REQUIRED: typing.Final = ("expires_on", "given_by", "given_on")
-_SCP: typing.Final = re.compile(r"^(?:[^@/]+@)?([^:/]+):(?!//)(.+)$")
+_SCP: typing.Final = re.compile(r"^(?:[^@/:]+@)?([^@/:]+):(?!//)(.+)$")
 
 
 class GrantError(Exception):
@@ -111,24 +112,81 @@ def find_grant(project: pathlib.Path) -> pathlib.Path | None:
     return candidate if candidate.is_file() else None
 
 
-def normalise_remote(url: str) -> str:
-    """Return a remote's host and path in one comparable form.
+def remote_key(url: str, *, bare_is_host: bool) -> str | None:
+    """Return a remote's host and path in one comparable form, or None for a doubtful one.
 
-    ``git@github.com:Owner/Repo.git``, ``https://github.com/owner/repo`` and
-    ``ssh://git@github.com/owner/repo.git/`` all become ``github.com/owner/repo``.
+    The URL is parsed as git does, by its scheme or as ``user@host:path``, so a look-alike
+    such as ``https://evil.example\\@github.com/owner/repo`` cannot borrow a trusted host:
+    a backslash, a control character, a query, a fragment or a ``..`` segment makes the
+    remote doubtful, and a doubtful remote matches nothing. ``git@github.com:Owner/Repo.git``,
+    ``https://github.com/owner/repo/`` and ``ssh://git@github.com:22/owner/repo.git`` all
+    give ``github.com/owner/repo``; a local path gives ``file:`` and the path.
 
     :param url: A remote URL in any form git accepts, or a grant's entry.
-    :returns: The host and path, lower case, with no scheme, user or ``.git``.
+    :param bare_is_host: Read ``host/path`` with no scheme as a host and path, as a grant
+        writes it, rather than as a relative local path, as git would.
+    :returns: The key, lower case, with no scheme, user, port or ``.git``; or None.
     """
-    text = url.strip()
-    scp = _SCP.match(text)
-    if scp and "://" not in text:
-        text = f"{scp.group(1)}/{scp.group(2)}"
-    text = re.sub(r"^[a-z][a-z0-9+.-]*://", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"^[^@/]+@", "", text)
-    text = text.rstrip("/")
-    text = re.sub(r"\.git$", "", text)
-    return text.lower()
+    text = url.strip(" ")
+    if not text or "\\" in text or any(ord(c) < 32 or ord(c) == 127 for c in text):
+        return None
+    if "://" in text:
+        try:
+            parts = urllib.parse.urlsplit(text)
+            port = parts.port
+        except ValueError:
+            return None
+        del port
+        if parts.query or parts.fragment or "?" in text or "#" in text:
+            return None
+        if parts.scheme.lower() == "file":
+            return _path_key(parts.path)
+        host, path = (parts.hostname or "").lower(), parts.path
+    elif text.startswith("/"):
+        return _path_key(text)
+    elif (scp := _SCP.match(text)) and "/" not in scp.group(1):
+        host, path = scp.group(1).lower(), scp.group(2)
+    elif bare_is_host and "/" in text:
+        host, _, path = text.partition("/")
+        host = host.lower()
+    else:
+        return None
+    if not re.fullmatch(r"[a-z0-9.-]+", host) or "?" in path or "#" in path:
+        return None
+    segments = [segment for segment in path.split("/") if segment]
+    if not segments or any(segment in (".", "..") for segment in segments):
+        return None
+    joined = re.sub(r"\.git$", "", "/".join(segments))
+    return f"{host}/{joined}".lower()
+
+
+def _path_key(path: str) -> str | None:
+    """Return the key of a local repository path.
+
+    :param path: An absolute path.
+    :returns: ``file:`` and the normalised path without ``.git``, or None if relative.
+    """
+    if not path.startswith("/"):
+        return None
+    return "file:" + re.sub(r"\.git/?$", "", os.path.normpath(path)).lower()
+
+
+def _read_remotes(value: object) -> tuple[str, ...]:
+    """Return the grant's push remotes as keys.
+
+    :param value: The ``remotes`` field.
+    :returns: Each remote's key.
+    :raises GrantError: If one cannot be read as a remote, so the grant counts as none.
+    """
+    keys = tuple(
+        remote_key(remote, bare_is_host=True)
+        for remote in _read_strings(value, field="remotes")
+    )
+    if None in keys:
+        raise GrantError(
+            "remotes holds an entry that is not a plain host and path or URL"
+        )
+    return typing.cast("tuple[str, ...]", keys)
 
 
 def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Grant:
@@ -189,10 +247,7 @@ def read_grant(path: pathlib.Path, *, today: datetime.date | None = None) -> Gra
         max_turns=None if turns is None else int(turns),
         network=_read_strings(data.get("network"), field="network"),
         path=path,
-        remotes=tuple(
-            normalise_remote(remote)
-            for remote in _read_strings(data.get("remotes"), field="remotes")
-        ),
+        remotes=_read_remotes(data.get("remotes")),
         secrets=_read_strings(data.get("secrets"), field="secrets"),
         web=web,
     )

