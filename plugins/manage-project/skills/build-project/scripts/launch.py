@@ -29,6 +29,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import typing
@@ -58,6 +59,30 @@ _RECORDS: typing.Final = ("PLAN.md", "DEPENDENCIES.md", "costs.csv", "verificati
 _STATUS_END: typing.Final = "porcelain-end"
 _STATUS_COMMAND: typing.Final = (
     f"git status --porcelain --untracked-files=normal && echo {_STATUS_END}"
+)
+_HEAD_END: typing.Final = "head-end"
+_HEAD_COMMAND: typing.Final = (
+    "git log -2 --format=%H && "
+    f"(git diff --name-only HEAD~1 HEAD 2>/dev/null; echo {_HEAD_END})"
+)
+_PATH_PREFIX: typing.Final = "path-probe="
+_PATH_COMMAND: typing.Final = f'echo "{_PATH_PREFIX}$PATH"'
+_PROBE_ENVIRONMENT: typing.Final = {
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "600000",
+    "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
+}
+_RECORD_FILES: typing.Final = frozenset(
+    ("DEPENDENCIES.md", "costs.csv", "verification.csv")
+)
+_TEMP_FOLDERS: typing.Final = (
+    "/tmp",
+    "/private/tmp",
+    "/var/folders",
+    "/private/var/folders",
+)
+_UNFINISHED: typing.Final = re.compile(
+    r"(?i)moved to the background|running in (the )?background|timed out|timeout exceeded"
 )
 _USAGE_LIMIT: typing.Final = re.compile(
     r"(?i)hit your \w+ limit|usage limit (reached|exceeded)"
@@ -232,6 +257,7 @@ class Outcome:
     """How one invocation of ``claude`` ended."""
 
     cost_usd: decimal.Decimal
+    is_error: bool
     killed: str
     subtype: str
     text: str
@@ -625,59 +651,76 @@ def read_tool_calls(lines: collections.abc.Iterable[str]) -> Probed:
 def _attempts(
     probe: Probe, calls: collections.abc.Sequence[ToolCall]
 ) -> list[ToolCall]:
-    """Return the calls that made a probe exactly as given.
+    """Return the calls that made a probe exactly as given and ran it to its end.
 
     :param probe: The probe.
     :param calls: Every call the session made.
     :returns: Each call of the probe's tool whose input holds every field of the probe's
-        with the same value; a field the model adds, such as a description, is allowed.
+        with the same value and nothing else but a description, so a call sent to the
+        background is not one, and whose result does not say it was moved to the
+        background or timed out.
     """
     return [
         call
         for call in calls
         if call.name == probe.tool
         and all(call.input.get(key) == value for key, value in probe.input.items())
+        and set(call.input) - set(probe.input) <= {"description"}
+        and not _UNFINISHED.search(call.result)
     ]
 
 
 def judge_preflight(
-    probes: collections.abc.Sequence[Probe], probed: Probed
+    probes: collections.abc.Sequence[Probe],
+    probed: Probed,
+    *,
+    servers: collections.abc.Set[str],
 ) -> list[str]:
     """Return what the preflight found wrong, or nothing where the profile held.
 
     :param probes: The forbidden things it was told to try.
     :param probed: What the session showed.
-    :returns: One line per probe that got through or was never tried, and per connector
-        or MCP server the session was given.
+    :param servers: The MCP servers the owner's configuration names, the only ones allowed.
+    :returns: One line per probe that got through or was never tried to its end, and per
+        connector or MCP server loaded that the owner did not name.
     """
     if probed.init is None or not probed.ended:
         return [
             "the session ended without its init record or its result, so it proves nothing"
         ]
-    servers = [
+    loaded = [
         str(server.get("name"))
         for server in probed.init.get("mcp_servers") or []
         if isinstance(server, dict)
     ]
     tools = [
-        str(t) for t in probed.init.get("tools") or [] if str(t).startswith("mcp__")
+        str(t).split("__")[1]
+        for t in probed.init.get("tools") or []
+        if str(t).startswith("mcp__") and str(t).count("__") >= 2
     ]
     found = [
-        f"a connector or MCP server was loaded: {name}" for name in servers + tools
+        f"a connector or MCP server was loaded that the configuration does not name: {name}"
+        for name in dict.fromkeys(loaded + tools)
+        if name not in servers
     ]
     for probe in probes:
         tried = _attempts(probe, probed.calls)
-        if not tried:
-            found.append(f"{probe.name}: not tried")
-        elif any(
-            probe.through and re.search(probe.through, call.result) for call in tried
-        ) or (probe.written is not None and probe.written.exists()):
+        if (probe.written is not None and probe.written.exists()) or any(
+            probe.through and re.search(probe.through, call.result)
+            for call in probed.calls
+            if call.name == probe.tool and probe.marker in json.dumps(call.input)
+        ):
             found.append(f"{probe.name}: got through")
+        elif not tried:
+            found.append(f"{probe.name}: not tried")
     return found
 
 
 def _plan_preflight(
-    layout: Layout, *, allowed: collections.abc.Sequence[str], home: pathlib.Path
+    layout: Layout,
+    *,
+    allowed: collections.abc.Sequence[str],
+    home: pathlib.Path,
 ) -> list[Probe]:
     """Return the forbidden things the preflight tries, with their decoys in place.
 
@@ -743,7 +786,72 @@ def _plan_preflight(
             tool="Write",
             written=owned / "written-by-tool",
         ),
+        Probe(
+            input={"command": _PATH_COMMAND},
+            marker=_PATH_COMMAND,
+            name="reading the PATH a command in the run sees",
+            through="",
+            tool="Bash",
+        ),
     ]
+
+
+def check_seen_path(
+    probes: collections.abc.Sequence[Probe],
+    probed: Probed,
+    *,
+    forbidden: collections.abc.Sequence[pathlib.Path],
+) -> list[str]:
+    """Return what is unsafe on the PATH a command inside the run actually sees.
+
+    Claude Code adds folders of its own, such as each plugin's ``bin/``, so the PATH the
+    launcher passes is checked again as the session reports it.
+
+    :param probes: The preflight's probes, the PATH probe among them.
+    :param probed: What the session showed.
+    :param forbidden: The folders the run can write or the launcher must keep clean.
+    :returns: Each unsafe entry; nothing where the probe was not tried, which the
+        preflight's judgement already reports.
+    """
+    probe = next(p for p in probes if p.marker == _PATH_COMMAND)
+    tried = _attempts(probe, probed.calls)
+    if not tried or tried[-1].failed:
+        return []
+    seen = tried[-1].result.strip()
+    if not seen.startswith(_PATH_PREFIX):
+        return ["the PATH probe printed something other than the PATH"]
+    return check_path(seen.removeprefix(_PATH_PREFIX).strip(), forbidden=forbidden)
+
+
+def check_path(
+    path: str, *, forbidden: collections.abc.Sequence[pathlib.Path]
+) -> list[str]:
+    """Return each PATH entry a run could plant a program in, or nothing where none is.
+
+    Hooks and the launcher's own calls find their programs through the run's PATH outside
+    the sandbox, so an entry the run can write would let it run a program as the owner.
+
+    :param path: The PATH the run would get.
+    :param forbidden: The folders the run can write or the launcher must keep clean: the
+        project, the run's folder and its scratch folder.
+    :returns: One line per entry that is empty, relative, or inside one of those folders
+        or a temp folder.
+    """
+    roots = [
+        pathlib.Path(os.path.realpath(root))
+        for root in (*forbidden, tempfile.gettempdir(), *_TEMP_FOLDERS)
+    ]
+    found = []
+    for entry in path.split(os.pathsep):
+        if not entry or not os.path.isabs(entry):
+            found.append(f"PATH entry {entry or '(empty)'} is not an absolute folder")
+            continue
+        real = pathlib.Path(os.path.realpath(entry))
+        if any(real == root or real.is_relative_to(root) for root in roots):
+            found.append(
+                f"PATH entry {entry} is a folder the run can write or a temp folder"
+            )
+    return found
 
 
 def _probe_prompt(
@@ -796,7 +904,7 @@ def _run_probe_session(prompt: str, *, kind: str, session: Session) -> Probed:
                 command,
                 check=False,
                 cwd=session.project,
-                env=session.environment,
+                env=session.environment | _PROBE_ENVIRONMENT,
                 stderr=subprocess.STDOUT,
                 stdin=subprocess.DEVNULL,
                 stdout=out,
@@ -861,7 +969,7 @@ def check_guard(session: Session, *, init: dict[str, typing.Any] | None) -> list
         }
         try:
             done = subprocess.run(
-                ["sh", str(scripts[0])],
+                ["/bin/sh", str(scripts[0])],
                 capture_output=True,
                 check=False,
                 cwd=session.project,
@@ -879,18 +987,24 @@ def check_guard(session: Session, *, init: dict[str, typing.Any] | None) -> list
 
 
 def preflight(
-    session: Session, *, allowed: collections.abc.Sequence[str]
+    session: Session,
+    *,
+    allowed: collections.abc.Sequence[str],
+    servers: collections.abc.Set[str],
 ) -> tuple[list[str], decimal.Decimal]:
     """Try the forbidden things under the run profile, then remove the decoys.
 
     :param session: How to start ``claude``, with the run's profile and environment.
     :param allowed: The hosts the profile lets commands reach.
+    :param servers: The MCP servers the owner's configuration names.
     :returns: What got through or went untried, empty where the profile held, and what
         the session cost.
     """
     home = (
         pathlib.Path.home() / ".cache" / "claude-preflight" / session.layout.root.name
     )
+    forbidden = (session.project, session.layout.root, session.layout.work)
+    probes: list[Probe] = []
     try:
         probes = _plan_preflight(session.layout, allowed=allowed, home=home)
         probed = _run_probe_session(
@@ -899,12 +1013,16 @@ def preflight(
             session=session,
         )
         return [
-            *judge_preflight(probes, probed),
+            *judge_preflight(probes, probed, servers=servers),
+            *check_seen_path(probes, probed, forbidden=forbidden),
             *check_guard(session, init=probed.init),
         ], probed.cost_usd
     finally:
         for folder in (home, session.layout.root / "decoy"):
             shutil.rmtree(folder, ignore_errors=True)
+        for probe in probes:
+            if probe.written is not None and probe.written.is_file():
+                probe.written.unlink()
 
 
 def _verification_ids(plan: str) -> list[str]:
@@ -925,41 +1043,106 @@ def _verification_ids(plan: str) -> list[str]:
     ]
 
 
-def _check_records(project: pathlib.Path) -> list[str]:
+def _check_records(
+    project: pathlib.Path, *, commits: collections.abc.Set[str], today: datetime.date
+) -> list[str]:
     """Return what the project's records lack for the build to count as finished.
 
+    Every acceptance row for a Verification line must carry an ISO date no later than
+    today, in order, so a pass cannot follow a later fail; the last must be a pass, run on
+    a commit the build now stands on.
+
     :param project: The project folder.
-    :returns: One line per record missing and per Verification line whose last acceptance
-        row is not a pass.
+    :param commits: The commits an acceptance row may name: the current one, and its
+        parent where the current commit changed only the records.
+    :param today: Today's date, in UTC.
+    :returns: One line per record missing and per Verification line whose rows do not
+        hold.
     """
     found = [
         f"{name} is missing"
         for name in _RECORDS
         if (project / name).is_symlink() or not (project / name).is_file()
     ]
-    plan = project / "PLAN.md"
-    rows = project / "verification.csv"
     if "PLAN.md is missing" in found:
         return found
-    ids = _verification_ids(plan.read_text(encoding="utf-8"))
+    ids = _verification_ids((project / "PLAN.md").read_text(encoding="utf-8"))
     if not ids:
         return [*found, "PLAN.md has no Verification lines"]
-    last: dict[str, str] = {}
-    if rows.is_file() and not rows.is_symlink():
-        with rows.open(encoding="utf-8", newline="") as table:
-            for row in csv.DictReader(table):
-                if (row.get("stage") or "").strip() == "acceptance":
-                    last[(row.get("line") or "").strip()] = (
-                        row.get("result") or ""
-                    ).strip()
-    return [
-        *found,
-        *(
-            f"verification.csv's last acceptance row for {line} is not a pass"
-            for line in ids
-            if last.get(line) != "pass"
-        ),
-    ]
+    rows: dict[str, list[dict[str, str]]] = {line: [] for line in ids}
+    table = project / "verification.csv"
+    if table.is_file() and not table.is_symlink():
+        with table.open(encoding="utf-8", newline="") as lines:
+            for row in csv.DictReader(lines):
+                line = (row.get("line") or "").strip()
+                if (row.get("stage") or "").strip() == "acceptance" and line in rows:
+                    rows[line].append(row)
+    for line, held in rows.items():
+        found += _check_rows(line, held, commits=commits, today=today)
+    return found
+
+
+def _check_rows(
+    line: str,
+    rows: collections.abc.Sequence[dict[str, str]],
+    *,
+    commits: collections.abc.Set[str],
+    today: datetime.date,
+) -> list[str]:
+    """Return why one Verification line's acceptance rows do not show it passing.
+
+    :param line: The line's ID.
+    :param rows: Its acceptance rows, in the file's order.
+    :param commits: The commits a row may name.
+    :param today: Today's date, in UTC.
+    :returns: The findings, empty where the line passes.
+    """
+    if not rows:
+        return [f"verification.csv has no acceptance row for {line}"]
+    dates = []
+    for row in rows:
+        try:
+            dates.append(datetime.date.fromisoformat((row.get("date") or "").strip()))
+        except ValueError:
+            return [
+                f"verification.csv has an acceptance row for {line} with no ISO date"
+            ]
+    if any(date > today for date in dates):
+        return [
+            f"verification.csv has an acceptance row for {line} with a date after today"
+        ]
+    if dates != sorted(dates):
+        return [f"verification.csv's acceptance rows for {line} are out of date order"]
+    last = rows[-1]
+    commit = (last.get("commit") or "").strip().lower()
+    if (last.get("result") or "").strip() != "pass":
+        return [f"verification.csv's last acceptance row for {line} is not a pass"]
+    if len(commit) < 7 or not any(full.startswith(commit) for full in commits):
+        return [
+            f"verification.csv's last acceptance row for {line} names a commit the build is not on"
+        ]
+    return []
+
+
+def _read_commits(result: str) -> set[str]:
+    """Return the commits an acceptance row may name, from the gate's HEAD probe.
+
+    :param result: What ``_HEAD_COMMAND`` printed: the current commit and its parent,
+        then the files the current commit changed, then the end marker.
+    :returns: The current commit, with its parent where the current commit changed only
+        the records; empty where the output is not that shape.
+    """
+    lines = [line.strip() for line in result.splitlines() if line.strip()]
+    if _HEAD_END not in lines:
+        return set()
+    lines = lines[: lines.index(_HEAD_END)]
+    hashes = [line.lower() for line in lines if re.fullmatch(r"[0-9a-fA-F]{40}", line)]
+    changed = set(lines[len(hashes) :])
+    if not hashes:
+        return set()
+    if len(hashes) > 1 and changed and changed <= _RECORD_FILES:
+        return set(hashes[:2])
+    return {hashes[0]}
 
 
 def gate(
@@ -969,16 +1152,16 @@ def gate(
 
     The launcher executes nothing from the project after a run: it reads the records as
     data, and everything that runs in the project's tree — ``git status`` for uncommitted
-    work, and each gate command such as the suite — runs in a probe session under the run
-    profile, so a hostile ``.git``, filter or test runs only inside the sandbox. A command
-    passes only where the stream shows it run exactly as given with no error, and the
-    whole gate fails closed when the session ends without its result.
+    work, ``git log`` for the commit the records must name, and each gate command such
+    as the suite — runs in a probe session under the run profile, so a hostile ``.git``,
+    filter or test runs only inside the sandbox. A command passes only where the stream
+    shows it run exactly as given, to its end, with no error, and the whole gate fails
+    closed when the session ends without its result or a record cannot be read.
 
     :param session: How to start ``claude``.
     :param commands: The commands that must pass, such as the suite.
     :returns: The findings, and what the gate's session cost.
     """
-    found = _check_records(session.project)
     status = Probe(
         input={"command": _STATUS_COMMAND},
         marker=_STATUS_COMMAND,
@@ -986,8 +1169,16 @@ def gate(
         through="",
         tool="Bash",
     )
+    head = Probe(
+        input={"command": _HEAD_COMMAND},
+        marker=_HEAD_COMMAND,
+        name="the current commit",
+        through="",
+        tool="Bash",
+    )
     probes = [
         status,
+        head,
         *(
             Probe(input={"command": c}, marker=c, name=c, through="", tool="Bash")
             for c in commands
@@ -998,8 +1189,8 @@ def gate(
         kind="gate",
         session=session,
     )
-    if not probed.ended:
-        found.append("the gate's session ended without its result")
+    found = [] if probed.ended else ["the gate's session ended without its result"]
+    commits: set[str] = set()
     for probe in probes:
         tried = _attempts(probe, probed.calls)
         if not tried:
@@ -1011,8 +1202,20 @@ def gate(
             found.append(
                 f"uncommitted work: {' '.join(shown)[:200] or 'git status failed'}"
             )
+        elif probe is head:
+            commits = set() if tried[-1].failed else _read_commits(tried[-1].result)
         elif tried[-1].failed:
             found.append(f"`{probe.name}` failed: {tried[-1].result.strip()[-200:]}")
+    try:
+        found += _check_records(
+            session.project,
+            commits=commits,
+            today=datetime.datetime.now(datetime.UTC).date(),
+        )
+    except (OSError, UnicodeError, ValueError, csv.Error) as failure:
+        found.append(
+            f"the records could not be read: {type(failure).__name__}: {failure}"[:300]
+        )
     return found, probed.cost_usd
 
 
@@ -1099,6 +1302,7 @@ def _read_outcome(lines: collections.abc.Iterable[str], *, killed: str) -> Outco
             result = record
     return Outcome(
         cost_usd=decimal.Decimal(str(result.get("total_cost_usd") or 0)),
+        is_error=result.get("is_error") is True,
         killed=killed,
         subtype=str(result.get("subtype", "")),
         text=str(result.get("result", "")),
@@ -1187,7 +1391,7 @@ def _classify(outcome: Outcome) -> tuple[str, str]:
         return "limit", "the spend limit was reached"
     if outcome.killed == "turns" or outcome.subtype == "error_max_turns":
         return "limit", "the turn limit was reached"
-    if _USAGE_LIMIT.search(outcome.text):
+    if outcome.is_error and _USAGE_LIMIT.search(outcome.text):
         return "limit", (
             "the plan's usage limit was reached and resets later than "
             "--usage-wait-hours allows"
@@ -1678,11 +1882,6 @@ def main() -> None:
         default=5.0,
         help="the longest a request waits for the plan's usage window to reset",
     )
-    parser.add_argument(
-        "--yes",
-        action="store_true",
-        help="with --approve-grant: approve after reading the summary, without a prompt",
-    )
     arguments = parser.parse_args()
     project = arguments.project.resolve()
     if arguments.approve_grant:
@@ -1691,7 +1890,7 @@ def main() -> None:
             digest = approve_grant(
                 grant_path,
                 approvals=arguments.approvals,
-                confirm=lambda summary: _confirm(summary, yes=arguments.yes),
+                confirm=_confirm,
                 project=project,
             )
         except (LaunchError, OSError) as failure:
@@ -1736,6 +1935,14 @@ def main() -> None:
         source=os.environ,
         usage_wait_hours=arguments.usage_wait_hours,
     )
+    unsafe = check_path(
+        environment.get("PATH", ""), forbidden=(project, layout.root, layout.work)
+    )
+    if unsafe:
+        raise SystemExit(
+            "launch: " + "; ".join(unsafe) + "; hooks outside the sandbox find their "
+            "programs on it, so remove the entry (deactivate a virtual environment) first"
+        )
     print(f"launch: run folder {layout.root}", file=sys.stderr)
     if arguments.dry_run:
         command = build_command(
@@ -1757,44 +1964,61 @@ def main() -> None:
         "release": _read_release(),
     }
     probe_spend = [decimal.Decimal(0)]
-    found, cost = preflight(
-        session, allowed=profile["sandbox"]["network"]["allowedDomains"]
-    )
-    probe_spend[0] += cost
-    if found or arguments.preflight_only:
+    found: list[str] = []
+
+    def accept() -> list[str]:
+        findings, spent = gate(session, commands=arguments.gate_command)
+        probe_spend[0] += spent
+        return findings
+
+    try:
+        servers = set(
+            json.loads(layout.mcp.read_text(encoding="utf-8")).get("mcpServers") or {}
+        )
+        found, cost = preflight(
+            session,
+            allowed=profile["sandbox"]["network"]["allowedDomains"],
+            servers=servers,
+        )
+        probe_spend[0] += cost
+        if found or arguments.preflight_only:
+            report = Report(
+                detail=(
+                    "the preflight found the profile open: " + "; ".join(found)
+                    if found
+                    else "the preflight passed; no run started (--preflight-only)"
+                ),
+                invocations=0,
+                session="none",
+                spent_usd=decimal.Decimal(0),
+                state="failed" if found else "finished",
+                turns=0,
+            )
+        else:
+            report = run(
+                accept=accept,
+                claude=arguments.claude,
+                environment=environment,
+                layout=layout,
+                limits=limits,
+                max_resumes=arguments.max_resumes,
+                model=arguments.model,
+                plugins=plugins,
+                poll_seconds=arguments.poll_seconds,
+                project=project,
+                prompt=prompt,
+                retry_wait=arguments.retry_wait,
+            )
+    except Exception as failure:  # noqa: BLE001 - the owner must hear of any failure
         report = Report(
-            detail=(
-                "the preflight found the profile open: " + "; ".join(found)
-                if found
-                else "the preflight passed; no run started (--preflight-only)"
-            ),
+            detail=f"the launcher failed: {type(failure).__name__}: {failure}"[:300],
             invocations=0,
-            session="none",
+            session="unknown",
             spent_usd=decimal.Decimal(0),
-            state="failed" if found else "finished",
+            state="failed",
             turns=0,
         )
-    else:
 
-        def accept() -> list[str]:
-            findings, spent = gate(session, commands=arguments.gate_command)
-            probe_spend[0] += spent
-            return findings
-
-        report = run(
-            accept=accept,
-            claude=arguments.claude,
-            environment=environment,
-            layout=layout,
-            limits=limits,
-            max_resumes=arguments.max_resumes,
-            model=arguments.model,
-            plugins=plugins,
-            poll_seconds=arguments.poll_seconds,
-            project=project,
-            prompt=prompt,
-            retry_wait=arguments.retry_wait,
-        )
     record = (
         dataclasses.asdict(report)
         | versions
@@ -1811,17 +2035,18 @@ def main() -> None:
     raise SystemExit(_EXIT[report.state])
 
 
-def _confirm(summary: str, *, yes: bool) -> bool:
-    """Show a grant's summary and return whether the owner approves it.
+def _confirm(summary: str) -> bool:
+    """Show a grant's summary and return whether the owner approves it at a terminal.
+
+    Approval needs a person typing at a terminal, so no script or session piping in an
+    answer can approve a grant.
 
     :param summary: What the grant allows.
-    :param yes: Whether the owner passed ``--yes``, having read the grant.
-    :returns: True on ``--yes`` or a ``y`` typed at a terminal; False otherwise.
+    :returns: True only for a ``y`` typed at a terminal.
     """
     print(summary)
-    if yes:
-        return True
     if not sys.stdin.isatty():
+        print("approving a grant needs a terminal: run it yourself, not from a script")
         return False
     return input("Approve this grant? [y/N] ").strip().lower() in ("y", "yes")
 

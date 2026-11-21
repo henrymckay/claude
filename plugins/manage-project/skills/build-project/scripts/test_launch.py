@@ -25,7 +25,7 @@ _PLUGIN = _HERE.parents[2]
 
 _FAKE = textwrap.dedent(
     """\
-    import json, os, pathlib, shlex, sys, time
+    import json, os, pathlib, shlex, subprocess, sys, time
     home = pathlib.Path(os.environ["HOME"])
     argv = sys.argv[1:]
 
@@ -54,7 +54,8 @@ _FAKE = textwrap.dedent(
         kind = "preflight" if "LAUNCHER-PREFLIGHT" in prompt else "gate"
         log(kind)
         behaviour = mode(f"{kind}.txt", "refuse" if kind == "preflight" else "pass")
-        servers = [{"name": "mail", "status": "connected"}] if behaviour == "connector" else []
+        servers = {"connector": [{"name": "mail", "status": "connected"}],
+                   "docsserver": [{"name": "docs", "status": "connected"}]}.get(behaviour, [])
         plugins = [{"name": "p", "path": argv[n + 1]} for n, a in enumerate(argv) if a == "--plugin-dir"]
         emit({"type": "system", "subtype": "init", "tools": ["Bash", "Read"], "mcp_servers": servers,
               "plugins": plugins})
@@ -65,11 +66,24 @@ _FAKE = textwrap.dedent(
             given = dict(probe["input"])
             if behaviour == "near":
                 given = {k: v + " " for k, v in given.items()}
+            if behaviour == "background":
+                given["run_in_background"] = True
             emit({"type": "assistant", "message": {"id": f"m{n}", "content": [
                 {"type": "tool_use", "id": f"t{n}", "name": probe["tool"], "input": given}]}})
             text, failed = "Permission denied by the sandbox", True
-            if kind == "gate" and probe["input"]["command"].startswith("git status"):
-                text, failed = ("?? loose.py\\nporcelain-end" if status == "dirty" else "porcelain-end"), False
+            command = probe["input"].get("command", "")
+            if kind == "gate" and command.startswith("git status") and status == "dirty":
+                text, failed = "?? loose.py\\nporcelain-end", False
+            elif kind == "gate" and command.startswith("git ") and pathlib.Path(".git").is_file():
+                text, failed = "fatal: the stand-in sandbox runs no planted git", True
+            elif kind == "gate" and command.startswith("git "):
+                done = subprocess.run(command, shell=True, capture_output=True, text=True)
+                text, failed = done.stdout + done.stderr, done.returncode != 0
+            elif command.startswith('echo "path-probe='):
+                seen = f"{os.getcwd()}/.venv/bin:/usr/bin" if behaviour == "badpath" else "/usr/bin:/bin"
+                text, failed = f"path-probe={seen}", False
+            elif kind == "gate" and behaviour == "moved":
+                text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
             elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
             elif behaviour == "leak" and probe["tool"] in ("Read", "Bash"):
@@ -123,7 +137,11 @@ _FAKE = textwrap.dedent(
     elif outcome == "nomarker":
         result("success", "I will carry on later.", turns=5)
     elif outcome == "usage":
-        result("success", "You've hit your session limit · resets 3pm")
+        emit({"type": "result", "subtype": "success", "is_error": True,
+              "result": "You've hit your session limit · resets 3pm", "num_turns": 1,
+              "total_cost_usd": 0.10, "session_id": session})
+    elif outcome == "usagetext":
+        result("success", "Noted: You've hit your session limit is a message I handle.\\nLAUNCHER: finished")
     elif outcome == "finishedrec":
         pathlib.Path("DEPENDENCIES.md").write_text("# Dependencies\\n")
         pathlib.Path("costs.csv").write_text("stage,model,dollars\\n")
@@ -168,10 +186,20 @@ _RECORDS = {
     "costs.csv": "stage,model,dollars\nM1,sonnet,1.00\n",
     "verification.csv": (
         "command,commit,date,line,printed,result,stage\n"
-        "uv run pytest,abc1234,2026-11-21,R1,3 passed,pass,acceptance\n"
-        "uv run thing,abc1234,2026-11-21,Acceptance,ok,pass,acceptance\n"
+        "uv run pytest,{commit},2026-11-21,R1,3 passed,pass,acceptance\n"
+        "uv run thing,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n"
     ),
 }
+
+
+def _head(folder: pathlib.Path) -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "--short", "HEAD"],
+        cwd=folder,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
 
 
 def _commit_all(folder: pathlib.Path) -> None:
@@ -198,8 +226,13 @@ def _make_project(folder: pathlib.Path, records: dict[str, str]) -> pathlib.Path
     (folder / "prompt.md").write_text("Build the thing.\n")
     (folder / "PLAN.md").write_text(_PLAN)
     for name, text in records.items():
-        (folder / name).write_text(text)
+        if name != "verification.csv":
+            (folder / name).write_text(text)
     _commit_all(folder)
+    if "verification.csv" in records:
+        rows = records["verification.csv"].replace("{commit}", _head(folder))
+        (folder / "verification.csv").write_text(rows)
+        _commit_all(folder)
     return folder
 
 
@@ -684,24 +717,36 @@ def test_when_preflight_ends_then_decoys_removed(
 
 
 def _approve(
-    home: pathlib.Path, project: pathlib.Path, *extra: str
+    home: pathlib.Path,
+    project: pathlib.Path,
+    *extra: str,
+    answer: str | None = "y",
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [
-            sys.executable,
-            str(_HERE / "launch.py"),
-            "--approve-grant",
-            "--project",
-            str(project),
-            *extra,
-        ],
-        capture_output=True,
-        check=False,
-        env={"HOME": str(home), "PATH": os.environ["PATH"]},
-        stdin=subprocess.DEVNULL,
-        text=True,
-        timeout=60,
-    )
+    """Approve at a terminal answering ``answer``, or with no terminal where it is None."""
+    controller, terminal = os.openpty() if answer is not None else (-1, -1)
+    if answer is not None:
+        os.write(controller, f"{answer}\n".encode())
+    try:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(_HERE / "launch.py"),
+                "--approve-grant",
+                "--project",
+                str(project),
+                *extra,
+            ],
+            capture_output=True,
+            check=False,
+            env={"HOME": str(home), "PATH": os.environ["PATH"]},
+            stdin=terminal if answer is not None else subprocess.DEVNULL,
+            text=True,
+            timeout=60,
+        )
+    finally:
+        if answer is not None:
+            os.close(controller)
+            os.close(terminal)
 
 
 def _write_grant(project: pathlib.Path, **extra: object) -> pathlib.Path:
@@ -730,29 +775,214 @@ def unapproved(project: pathlib.Path) -> pathlib.Path:
 @pytest.fixture
 def grant(home: pathlib.Path, project: pathlib.Path) -> pathlib.Path:
     path = _write_grant(project)
-    _approve(home, project, "--yes")
+    _approve(home, project)
     return path
 
 
 def test_when_grant_approved_then_summary_says_what_it_allows(
     home: pathlib.Path, project: pathlib.Path, unapproved: pathlib.Path
 ) -> None:
-    done = _approve(home, project, "--yes")
+    done = _approve(home, project)
     assert all(
         phrase in done.stdout
         for phrase in ("github.com/owner/thing", "PROJECT_TOKEN", "$1.50", "2999-01-01")
     )
 
 
-def test_when_approval_not_confirmed_then_grant_not_approved(
+@pytest.mark.parametrize(
+    ("extra", "answer"), [((), "n"), ((), None), (("--yes",), None)]
+)
+def test_when_approval_not_confirmed_at_a_terminal_then_grant_not_approved(
     home: pathlib.Path,
     fake_claude: pathlib.Path,
     project: pathlib.Path,
     unapproved: pathlib.Path,
+    extra: tuple[str, ...],
+    answer: str | None,
 ) -> None:
-    _approve(home, project)
+    _approve(home, project, *extra, answer=answer)
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
+
+
+def test_when_path_starts_inside_project_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    planted = f"{project}/.venv/bin"
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        environment={"PATH": f"{planted}:{os.environ['PATH']}"},
+    )  # fmt: skip
+    assert (done.returncode, planted in done.stderr, _calls_or_none(home)) == (
+        1,
+        True,
+        [],
+    )
+
+
+def test_when_path_holds_relative_entry_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        environment={"PATH": f"node_modules/.bin:{os.environ['PATH']}"},
+    )  # fmt: skip
+    assert (done.returncode, "node_modules/.bin" in done.stderr) == (1, True)
+
+
+def test_when_session_sees_a_writable_path_entry_then_run_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "preflight.txt").write_text("badpath")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (
+        done.returncode,
+        f"{project}/.venv/bin" in done.stdout,
+        len(_calls(home)),
+    ) == (
+        5,
+        True,
+        0,
+    )
+
+
+@pytest.mark.parametrize("behaviour", ["background", "moved"])
+def test_when_gate_command_not_finished_in_the_foreground_then_refused(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, behaviour: str
+) -> None:
+    (home / "gate.txt").write_text(behaviour)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0", "--gate-command", "uv run pytest -q",
+    )  # fmt: skip
+    assert (done.returncode, "uv run pytest -q" in done.stdout) == (5, True)
+
+
+def test_when_gate_runs_then_background_off_and_bash_timeout_set(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    names = set(_calls(home, "gate")[0]["env"])
+    assert {
+        "BASH_DEFAULT_TIMEOUT_MS",
+        "BASH_MAX_TIMEOUT_MS",
+        "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS",
+    } <= names
+
+
+@pytest.mark.parametrize(
+    ("rows", "said"),
+    [
+        (
+            "t,{commit},2026-11-21,R1,ok,pass,acceptance\nt,0000000,2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "commit",
+        ),
+        (
+            "t,{commit},2026-11-20,R1,x,fail,acceptance\nt,{commit},2026-11-19,R1,ok,pass,acceptance\nt,{commit},2026-11-20,Acceptance,ok,pass,acceptance\n",
+            "order",
+        ),
+        (
+            "t,{commit},2999-01-01,R1,ok,pass,acceptance\nt,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "date",
+        ),
+        (
+            "t,{commit},someday,R1,ok,pass,acceptance\nt,{commit},2026-11-21,Acceptance,ok,pass,acceptance\n",
+            "date",
+        ),
+    ],
+)
+def test_when_acceptance_rows_do_not_hold_then_finish_not_accepted(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    tmp_path: pathlib.Path,
+    rows: str,
+    said: str,
+) -> None:
+    header = "command,commit,date,line,printed,result,stage\n"
+    project = _make_project(
+        tmp_path / "rows", _RECORDS | {"verification.csv": header + rows}
+    )
+    done = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--max-resumes",
+        "0",
+    )
+    assert (done.returncode, said in done.stdout) == (5, True)
+
+
+def test_when_mcp_config_names_a_server_then_only_it_may_load(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    config = tmp_path / "mcp.json"
+    config.write_text(json.dumps({"mcpServers": {"docs": {"command": "true"}}}))
+    (home / "preflight.txt").write_text("docsserver")
+    allowed = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--mcp-config",
+        str(config),
+    )
+    (home / "preflight.txt").write_text("connector")
+    other = _launch(
+        home,
+        fake_claude,
+        project,
+        "finished",
+        "--budget-usd",
+        "5",
+        "--mcp-config",
+        str(config),
+    )
+    assert (allowed.returncode, other.returncode) == (0, 5)
+
+
+def test_when_final_message_only_mentions_usage_limit_then_finished(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    done = _launch(home, fake_claude, project, "usagetext", "--budget-usd", "5")
+    assert (done.returncode, done.stdout.split(":")[0]) == (0, "finished")
+
+
+@pytest.mark.parametrize("damage", ["byte", "field"])
+def test_when_records_unreadable_then_failed_with_status_and_notice(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path, damage: str
+) -> None:
+    if damage == "byte":
+        (project / "PLAN.md").write_bytes(_PLAN.encode() + b"\xff\xfe\n")
+    else:
+        rows = project / "verification.csv"
+        rows.write_text(
+            rows.read_text()
+            + 'x,y,2026-11-21,R9,"'
+            + "z" * 200_000
+            + '",pass,acceptance\n'
+        )
+    _commit_all(project)
+    sink = home / "notified.txt"
+    notifier = home / "notify.sh"
+    notifier.write_text(f'#!/bin/sh\nprintf "%s" "$1" > "{sink}"\n')
+    notifier.chmod(0o755)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5", "--max-resumes", "0",
+        "--notify", str(notifier),
+    )  # fmt: skip
+    assert (done.returncode, _status(home)["state"], sink.exists()) == (
+        5,
+        "failed",
+        True,
+    )
 
 
 def test_when_grant_lists_account_actions_then_refused(
@@ -769,7 +999,7 @@ def test_when_grant_lists_account_actions_then_refused(
             }
         ],
     )
-    done = _approve(home, project, "--yes")
+    done = _approve(home, project)
     assert (done.returncode != 0, "actions" in done.stderr) == (True, True)
 
 
@@ -806,7 +1036,7 @@ def test_when_project_grant_is_symlink_to_outside_then_refused(
     outside.mkdir()
     real = _write_grant(outside)
     (project / "grant.json").symlink_to(real)
-    _approve(home, outside, "--yes")
+    _approve(home, outside)
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert done.returncode == 1
 
@@ -820,7 +1050,7 @@ def test_when_same_grant_approved_for_other_project_then_refused(
     other = tmp_path / "other"
     other.mkdir()
     _write_grant(other)
-    _approve(home, other, "--yes")
+    _approve(home, other)
     _write_grant(project)
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
@@ -834,7 +1064,7 @@ def test_when_grant_reapproved_then_earlier_version_no_longer_approved(
 ) -> None:
     first = grant.read_text()
     grant.write_text(first.replace('"secrets"', '"network": ["pypi.org"], "secrets"'))
-    _approve(home, project, "--yes")
+    _approve(home, project)
     grant.write_text(first)
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, "not approved" in done.stderr) == (1, True)
