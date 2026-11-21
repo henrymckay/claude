@@ -213,13 +213,17 @@ _MCP_OUTWARD: typing.Final = re.compile(
     r"|(^|_)post_(message|comment|reply)(_|$)"
     r"|(^|_)orders?_(create|edit|modify|replace|cancel|close|place|submit)(_|$)"
     r"|(^|_)(create|edit|modify|replace|cancel|close|place|submit)_(\w+_)?orders?(_|$)"
-    r"|(^|_)(convert|order|trade)_(execute|commit|confirm)(_|$)"
+    r"|(^|_)(convert|order|quote|swap|trade)_(accept|commit|confirm|execute)(_|$)"
     r"|(^|_)close_position(_|$)"
 )
-_MCP_OUTWARD_ARGUMENT: typing.Final = re.compile(
-    r"\"side\"\s*:\s*\"(?i:buy|sell)\"|\"(recipients?|cc|bcc)\"\s*:"
+_MCP_SIDE_KEYS: typing.Final = frozenset(("action", "direction", "order_side", "side"))
+_MCP_SIDE_VALUE: typing.Final = re.compile(r"(?i)^\s*(buy|sell|short)")
+_MCP_DESTINATION_KEYS: typing.Final = frozenset(
+    "address bcc cc destination destination_address payee recipient recipients to "
+    "to_address".split()
 )
-_MCP_DRY_RUN: typing.Final = re.compile(r"(^|_)(preview|quote|estimate)(_|$)")
+_DATE_LIKE: typing.Final = re.compile(r"^\s*\d{4}-\d{2}-\d{2}")
+_WALK_DEPTH: typing.Final = 12
 _MCP_HIDDEN_DELETE: typing.Final = re.compile(
     r"\"(?i:trashed)\"\s*:\s*true|\"(delete|remove|clear)[A-Z]\w*\"\s*:"
 )
@@ -1419,6 +1423,55 @@ def _names_grant(word: str) -> bool:
     return name == grant_.FILE_NAME or fnmatch.fnmatch(grant_.FILE_NAME, name)
 
 
+def _snake(name: str) -> str:
+    """Return a name in lower snake case, as the connector rules compare names.
+
+    :param name: A tool's action or an argument's key, in any case or separator.
+    :returns: ``placeOrder`` and ``Place-Order`` both as ``place_order``.
+    """
+    return re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name).lower().replace("-", "_")
+
+
+def _carries_order_or_recipient(value: object, *, depth: int) -> bool:
+    """Return whether a connector call's arguments name an order side or a destination.
+
+    The arguments are walked as data, every nested object and list included, and a string
+    that parses as JSON is walked too, so neither a key's case nor its nesting nor its
+    encoding hides it; a call too deep to walk counts as carrying one.
+
+    :param value: The arguments, or a part of them.
+    :param depth: How deep the walk is.
+    :returns: True where a side key holds buy or sell, or a destination key holds anything
+        but an ISO date under ``to``.
+    """
+    if depth > _WALK_DEPTH:
+        return True
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped.startswith(("{", "[")):
+            return False
+        try:
+            decoded = json.loads(stripped)
+        except ValueError:
+            return False
+        return _carries_order_or_recipient(decoded, depth=depth + 1)
+    if isinstance(value, list):
+        return any(_carries_order_or_recipient(v, depth=depth + 1) for v in value)
+    if not isinstance(value, dict):
+        return False
+    for key, item in value.items():
+        name = _snake(str(key))
+        if name in _MCP_SIDE_KEYS and isinstance(item, str):
+            if _MCP_SIDE_VALUE.match(item):
+                return True
+        if name in _MCP_DESTINATION_KEYS and item not in ("", None, [], {}):
+            if not (name == "to" and isinstance(item, str) and _DATE_LIKE.match(item)):
+                return True
+        if _carries_order_or_recipient(item, depth=depth + 1):
+            return True
+    return False
+
+
 def check(call: Call, context: Context) -> list[str]:
     """Return why a tool call must be guarded, or nothing where it may run.
 
@@ -1487,16 +1540,11 @@ def check(call: Call, context: Context) -> list[str]:
             else []
         )
     if tool.startswith("mcp__"):
-        action = tool.split("__", 2)[-1]
-        action = (
-            re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", action).lower().replace("-", "_")
-        )
+        action = _snake(tool.split("__", 2)[-1])
         findings = []
         if _MCP_DESTRUCTIVE.search(action):
             findings.append(f"a connector call that deletes or revokes ({tool})")
-        if not _MCP_DRY_RUN.search(action) and (
-            _MCP_OUTWARD.search(action) or _MCP_OUTWARD_ARGUMENT.search(text)
-        ):
+        if _MCP_OUTWARD.search(action) or _carries_order_or_recipient(data, depth=0):
             findings.append(
                 f"a connector call that trades, moves money, sends or shares ({tool})"
             )
