@@ -779,6 +779,31 @@ def test_when_git_environment_spelled_with_quotes_or_expansion_then_asked(
     assert answer.get("permissionDecision") == "ask"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        "nice env GIT_\"DIR\"=../remote.git git push origin main",
+        "command env G'I'T_SSH_COMMAND='sh -c id' git push origin main",
+        "time GIT_\"CONFIG_COUNT\"=1 git push origin main",
+        "sudo -E env GIT_'DIR'=../remote.git git push origin main",
+        "echo origin | xargs env GIT_\"DIR\"=../remote.git git push",
+    ],
+)
+def test_when_git_environment_set_behind_a_wrapper_then_asked(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize("command", ["less grant.json", "less -o x grant.json"])
+def test_when_less_names_grant_then_asked(
+    run: Run, granted: pathlib.Path, command: str
+) -> None:
+    answer = run(granted, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
 def test_when_bare_repository_deleted_then_asked(run: Run, repo: pathlib.Path) -> None:
     answer = run(repo, {"command": "rm -rf ../remote.git"})
     assert answer.get("permissionDecision") == "ask"

@@ -75,7 +75,7 @@ _GIT_VALUE_OPTIONS: typing.Final = frozenset(
 _INTERPRETERS: typing.Final = frozenset(
     "bun deno node osascript perl php python python3 ruby uvx".split()
 )
-_GRANT_READERS: typing.Final = frozenset(("cat", "head", "tail", "wc", "less"))
+_GRANT_READERS: typing.Final = frozenset(("cat", "head", "tail", "wc"))
 _PRINTERS: typing.Final = frozenset("echo logger print printf say tee".split())
 _READERS: typing.Final = frozenset(
     "awk base64 bat cat column cp cut dd diff grep head hexdump jq less more nl od open "
@@ -461,7 +461,8 @@ def _split(text: str) -> Line:
 def _unwrap(words: list[str]) -> tuple[list[str], list[str]]:
     """Return a command's leading assignments, and its words from the real command name on.
 
-    ``FOO=1 env -i /usr/bin/git push`` gives ``FOO=1`` and ``git push``; reserved words
+    ``FOO=1 env -i BAR=2 /usr/bin/git push`` gives ``FOO=1``, ``BAR=2`` and ``git push``,
+    every assignment it steps over, behind a wrapper too; reserved words
     such as ``then``, ``do``, ``{`` and ``!`` are dropped, so ``if x; then git push`` is
     read as ``git push``.
 
@@ -487,6 +488,8 @@ def _unwrap(words: list[str]) -> tuple[list[str], list[str]]:
                 or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", rest[0])
                 or re.match(r"^\d+(\.\d+)?[smhd]?$", rest[0])
             ):
+                if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", rest[0]):
+                    assignments.append(rest[0])
                 takes_value = rest[0] in (
                     "-u",
                     "-n",
@@ -1249,10 +1252,9 @@ def _check_words(
             str(_resolve(cwd, target))
         ):
             findings.append("changing configuration that runs code outside the sandbox")
-    reads_only = name in _GRANT_READERS and not any(
-        word.startswith("-") and name == "less" for word in arguments
-    )
-    if not reads_only and any(_mentions_grant(word, cwd) for word in arguments):
+    if name not in _GRANT_READERS and any(
+        _mentions_grant(word, cwd) for word in arguments
+    ):
         findings.append("changing the standing grant")
     return findings
 
@@ -1309,6 +1311,7 @@ def _check_environment_words(words: list[str], *, pushes: bool) -> list[str]:
         names += [
             w.split("=", 1)[0] for w in words[index + 1 :] if not w.startswith("-")
         ]
+    names += [assignment.split("=", 1)[0] for assignment in _unwrap(words)[0]]
     for name in names:
         if re.fullmatch(r"GIT_(" + _GIT_VARIABLES + r")\w*", name):
             return [
