@@ -19,14 +19,14 @@ field() {
 # is claimed afresh.
 shared_here() {
   session=$(field session_id)
-  [ -n "$session" ] || return 0
-  base="${TMPDIR:-/tmp}/claude-plugin-rules-$(id -u)"
-  mkdir -p "$base" 2>/dev/null
-  [ -d "$base" ] && [ -O "$base" ] || return 0
-  chmod 700 "$base" 2>/dev/null
+  agent=$(field agent_id)
   event=$(field hook_event_name)
   how=$(field source)
-  id=$(printf '%s' "$session$(field agent_id)" | tr -cd 'A-Za-z0-9._-')
+  # The input is untrusted in a path: any id or name outside [A-Za-z0-9_-] prints everything.
+  case "$session" in '' | *[!A-Za-z0-9_-]*) return 0 ;; esac
+  case "$agent$event$how" in *[!A-Za-z0-9_-]*) return 0 ;; esac
+  markers || return 0
+  id=$session$agent
   printer="$base/$id.printer"
   if [ "$event.$how" = SessionStart.resume ] || [ "$event" = SubagentStart ]; then
     last=$(readlink "$printer" 2>/dev/null) && [ -d "$last" ] && { [ "$last" = "$dir" ]; return; }
@@ -36,10 +36,32 @@ shared_here() {
   return 0
 }
 
+# Sets base to a marker folder only this user can write, or fails: under $XDG_RUNTIME_DIR
+# where set, else ~/.cache, never a predictable name in a shared /tmp. A symlink at the
+# folder's path, or a folder another user owns or can write, is refused.
+markers() {
+  if [ -n "${XDG_RUNTIME_DIR:-}" ] && [ -d "$XDG_RUNTIME_DIR" ] && [ -O "$XDG_RUNTIME_DIR" ]; then
+    parent=$XDG_RUNTIME_DIR
+  elif [ -n "${HOME:-}" ] && [ -O "$HOME" ]; then
+    parent=$HOME/.cache
+    mkdir -p "$parent" 2>/dev/null
+  else
+    return 1
+  fi
+  base=$parent/claude-plugin-rules
+  [ -L "$base" ] && return 1
+  [ -e "$base" ] || (umask 077 && mkdir "$base") 2>/dev/null
+  [ ! -L "$base" ] && [ -d "$base" ] && [ -O "$base" ] || return 1
+  case "$(ls -ld "$base")" in d???------*) return 0 ;; esac
+  chmod 700 "$base" 2>/dev/null
+  case "$(ls -ld "$base")" in d???------*) return 0 ;; *) return 1 ;; esac
+}
+
 # Succeeds for the first hook of this start to run, and wherever no marker can be kept.
 # Each start claims the next generation of its key, a symlink <key>.<n> whose target is the
 # time it was made: creating one is atomic, so one hook wins it, and a generation more than
 # ten seconds old belongs to an earlier start of the same key, such as an earlier compaction.
+# `ln -s` only ever adds a new name and fails on any existing one, so it writes through nothing.
 first() {
   now=$(date +%s)
   for try in 1 2 3; do
