@@ -53,14 +53,14 @@ claude plugin install manage-project@henrymckay
 claude plugin install write-code@henrymckay
 ```
 
-Each plugin prints its skill list at session start, so no `CLAUDE.md` is needed.
+Each plugin prints its skill list into every session and subagent, so `CLAUDE.md` needs only your own rules.
 
 Where plugins cannot be installed, symlink them instead.
 
 ```bash
 git clone https://github.com/henrymckay/claude.git
 ln -s "$PWD/claude/skills" ~/.claude/skills
-ln -s "$PWD/claude/CLAUDE.md" ~/.claude/CLAUDE.md
+ln -s "$PWD/claude/instructions/symlinked.md" ~/.claude/CLAUDE.md
 ```
 
 > [!WARNING]
@@ -73,7 +73,7 @@ With symlinks, merge the `Stop` entry of [`hooks.json`](plugins/maintain-plugin/
 
 - **Feedback** — `claude plugin configure maintain-plugin` sets `feedback` to `issues` (the default), `file` or `off`.
   Use `file` on a machine whose work must not reach a public tracker.
-- **`CLAUDE.md`** — the always-on file with symlinks: working rules, skill list, feedback rule.
+- **`CLAUDE.md`** — only your own rules with the plugins installed, like the owner's [`installed.md`](instructions/installed.md); with symlinks, [`symlinked.md`](instructions/symlinked.md) adds the skill list, plugin map and feedback rule.
 
 ## 🧩 Companions
 

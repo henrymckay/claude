@@ -1,4 +1,3 @@
-
 # Skill feedback
 
 When a skill from any plugin steered you wrong, said nothing where it should have or contradicted another, or the user corrected you on something a skill should cover, file an issue and carry on: `gh issue create -R <owner>/<repo> --label skill-feedback`.

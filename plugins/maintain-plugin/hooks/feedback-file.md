@@ -1,4 +1,3 @@
-
 # Skill feedback
 
 When a skill from any plugin steered you wrong, said nothing where it should have or contradicted another, or the user corrected you on something a skill should cover, append a dated entry to `~/.claude/skill-feedback.md` and carry on; file no issue.

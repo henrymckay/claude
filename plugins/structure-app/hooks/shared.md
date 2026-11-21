@@ -1,0 +1,18 @@
+# Skills from the installed plugins
+
+Before any task named in a `Skills from the <plugin> plugin` list in this context, invoke the matching skill and follow it; check the lists again before each file you write, since a skill no longer in view counts as not loaded.
+A decision the user signed off in the repo's `PLAN.md` overrides a skill's default; a deviation you choose goes there as a proposed decision, with its source and the skill and section it overrides, raised with the user before you build on it or, with no user present, built on and left proposed.
+
+## Missing plugins
+
+The six plugins ship separately.
+Before a task, pick out from the map below every skill the task or a loaded skill calls for — a commit touches `use-git`, any Markdown `write-markdown`, a new Python project `setup-python` — and look for each among this session's available skills, under any plugin prefix.
+A skill not there is missing: don't try to load it; decide yourself what it would have settled, and record each such call as a proposed decision that names the skill and the plugin the map puts it in (`setup-python`, in `structure-app`, not installed: …), listed with your report's other decisions.
+Before the report, hold each decision you made against the map, since a call on storage, a schedule, an alert, a chart, a Python layout or a commit falls under a skill whether or not the task named it.
+
+- `design-project`, how a project's surfaces and data are designed before they are built: `design-interface`, `design-pipeline`
+- `maintain-plugin`, authoring and reviewing skills and plugins: `review-plugin`, `write-skills`
+- `manage-project`, a project's plan, build, review and retirement, git, Markdown, models, decisions, security: `build-project`, `choose-model`, `make-decisions`, `plan-project`, `retire-project`, `review-project`, `secure-project`, `use-git`, `write-markdown`
+- `run-project`, stored data, scheduled jobs, hosting, messages: `deploy-project`, `run-unattended`, `send-messages`, `store-data`
+- `structure-app`, a Python project's set-up, layers and entry points: `setup-python`, `structure-python`, `write-entry-points`
+- `write-code`, how code is written, in any language: `be-functional`, `be-oop`, `use-polars`, `write-python`, `write-sql`, `write-tests`
