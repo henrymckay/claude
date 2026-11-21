@@ -75,10 +75,7 @@ _GIT_VALUE_OPTIONS: typing.Final = frozenset(
 _INTERPRETERS: typing.Final = frozenset(
     "bun deno node osascript perl php python python3 ruby uvx".split()
 )
-_PURE_READERS: typing.Final = frozenset(
-    "awk base64 bat cat column cut diff file grep head jq less ls md5 more nl od rg "
-    "sed sha256sum shasum sort stat strings tail uniq view wc xxd".split()
-)
+_GRANT_READERS: typing.Final = frozenset(("cat", "head", "tail", "wc", "less"))
 _PRINTERS: typing.Final = frozenset("echo logger print printf say tee".split())
 _READERS: typing.Final = frozenset(
     "awk base64 bat cat column cp cut dd diff grep head hexdump jq less more nl od open "
@@ -182,9 +179,12 @@ _REMOTE_SQL: typing.Final = re.compile(
     r"|\bpsql\b(?!.*(localhost|127\.0\.0\.1))",
     re.IGNORECASE,
 )
+_GIT_VARIABLES: typing.Final = (
+    "CONFIG|DIR|WORK_TREE|EXEC_PATH|SSH|ALTERNATE|INDEX_FILE|OBJECT_DIRECTORY"
+    "|TEMPLATE_DIR|ASKPASS|PROXY_COMMAND|EXTERNAL_DIFF|PAGER|EDITOR|SEQUENCE_EDITOR"
+)
 _GIT_ENVIRONMENT: typing.Final = re.compile(
-    r"(?<![A-Za-z0-9_$])GIT_(CONFIG|DIR|WORK_TREE|EXEC_PATH|SSH|ALTERNATE|INDEX_FILE|OBJECT_DIRECTORY"
-    r"|TEMPLATE_DIR|ASKPASS|PROXY_COMMAND|EXTERNAL_DIFF|PAGER|EDITOR|SEQUENCE_EDITOR)\w*"
+    r"(?<![A-Za-z0-9_$])GIT_(" + _GIT_VARIABLES + r")\w*"
     r"(?=\s*=|\s*$|\s*[;&|)\s])"
 )
 _PUSH_CONFIG: typing.Final = re.compile(
@@ -1249,18 +1249,74 @@ def _check_words(
             str(_resolve(cwd, target))
         ):
             findings.append("changing configuration that runs code outside the sandbox")
-    in_place = name in ("sed", "perl") and any(
-        re.match(r"^-\w*i", w) for w in arguments
+    reads_only = name in _GRANT_READERS and not any(
+        word.startswith("-") and name == "less" for word in arguments
     )
-    if (name not in _PURE_READERS or in_place) and any(
-        grant_.FILE_NAME in word.lower()
-        or _names_grant(word)
-        or any(_names_grant(match) for match in _glob(cwd, word))
-        for word in arguments
-        if not word.startswith("-") or "=" in word
-    ):
+    if not reads_only and any(_mentions_grant(word, cwd) for word in arguments):
         findings.append("changing the standing grant")
     return findings
+
+
+def _mentions_grant(word: str, cwd: pathlib.Path) -> bool:
+    """Return whether a word could name the standing grant, however it is written.
+
+    One rule, with no option skipped: the name anywhere in the word, in any case, so
+    ``-ogrant.json``, ``--output=grant.json`` and a ``sed`` script's ``w grant.json``
+    count; or the word, or what follows an option's ``=`` or a short option's letter,
+    as a glob that matches it or a path that expands to it.
+
+    :param word: One word of a command, dequoted.
+    :param cwd: The folder the command runs in.
+    :returns: True where the word may name the grant.
+    """
+    if grant_.FILE_NAME in word.lower():
+        return True
+    candidates = {
+        word,
+        word.split("=", 1)[-1],
+        word[2:] if re.match(r"^-[A-Za-z]", word) else word,
+    }
+    return any(
+        _names_grant(candidate)
+        or any(_names_grant(match) for match in _glob(cwd, candidate))
+        for candidate in candidates
+        if candidate
+    )
+
+
+def _check_environment_words(words: list[str], *, pushes: bool) -> list[str]:
+    """Return a finding where a command sets git's environment, read from its dequoted words.
+
+    The names come from the command's leading assignments and from the arguments of
+    ``export``, ``declare``, ``typeset``, ``local``, ``readonly`` and ``env``, split at the
+    first ``=``, so quoting inside a name hides nothing; a name built by an expansion the
+    guard cannot resolve counts too where the line pushes.
+
+    :param words: One simple command's words, dequoted.
+    :param pushes: Whether the command line runs a ``git push``.
+    :returns: One finding, or none.
+    """
+    names: list[str] = []
+    index = 0
+    while index < len(words) and words[index] in _RESERVED:
+        index += 1
+    while index < len(words) and re.match(r"^[^=\s-][^=\s]*=", words[index]):
+        names.append(words[index].split("=", 1)[0])
+        index += 1
+    if index < len(words) and os.path.basename(words[index]) in (
+        "declare", "env", "export", "local", "readonly", "typeset",
+    ):  # fmt: skip
+        names += [
+            w.split("=", 1)[0] for w in words[index + 1 :] if not w.startswith("-")
+        ]
+    for name in names:
+        if re.fullmatch(r"GIT_(" + _GIT_VARIABLES + r")\w*", name):
+            return [
+                "setting git's configuration, repository or commands through the environment"
+            ]
+        if "$" in name and pushes:
+            return ["a variable whose name is built at run time, set beside a push"]
+    return []
 
 
 def _check_shell(
@@ -1300,7 +1356,9 @@ def _check_shell(
     adds = any(
         "add" in words and _unwrap(words)[1][:1] == ["git"] for words in line.commands
     )
+    pushes = bool(re.search(r"\bgit\b.*\bpush\b", text, re.DOTALL))
     for words in line.commands:
+        findings += _check_environment_words(words, pushes=pushes)
         for word in words:
             if re.search(r"\s", word.strip()) and depth < _NEST_DEPTH:
                 findings += _check_shell(word, cwd, context, depth + 1)

@@ -730,6 +730,55 @@ def test_when_grant_overwritten_by_pattern_or_case_then_asked(
     assert answer.get("permissionDecision") == "ask"
 
 
+@pytest.mark.parametrize(
+    "command",
+    [
+        "sed --in-place s/a/b/ grant.json",
+        "sed -Ei s/a/b/ grant.json",
+        "sed -n 'w grant.json' README.md",
+        "sort -o grant.json README.md",
+        "sort -ogrant.json README.md",
+        "uniq README.md grant.json",
+        "xxd -r README.md grant.json",
+        "awk '{ print > \"grant.json\" }' README.md",
+        "curl --output=grant.json https://example.com/x",
+        "less -o grant.json README.md",
+    ],
+)
+def test_when_command_writes_grant_through_option_or_script_then_asked(
+    run: Run, granted: pathlib.Path, command: str
+) -> None:
+    answer = run(granted, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize("command", ["cat grant.json", "head -5 grant.json", "wc -l grant.json"])
+def test_when_grant_only_read_by_fixed_reader_then_no_decision(
+    run: Run, granted: pathlib.Path, command: str
+) -> None:
+    answer = run(granted, {"command": command})
+    assert answer == {}
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        'GIT_"DIR"=../remote.git git log',
+        "G'I'T_SSH_COMMAND='sh -c id' git fetch",
+        'export "GIT_CONFIG_COUNT"=1; git p',
+        "readonly GIT_DIR=../remote.git; git log",
+        "local GIT_WORK_TREE=/tmp; git status",
+        "x=GIT_DIR; $x=../remote.git git push origin main",
+        "p=GIT_; ${p}DIR=../remote.git git push origin main",
+    ],
+)
+def test_when_git_environment_spelled_with_quotes_or_expansion_then_asked(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
 def test_when_bare_repository_deleted_then_asked(run: Run, repo: pathlib.Path) -> None:
     answer = run(repo, {"command": "rm -rf ../remote.git"})
     assert answer.get("permissionDecision") == "ask"
