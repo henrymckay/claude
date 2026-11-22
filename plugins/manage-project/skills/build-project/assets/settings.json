@@ -10,5 +10,13 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "design-project@<marketplace>": true,
+    "maintain-plugin@<marketplace>": true,
+    "manage-project@<marketplace>": true,
+    "run-project@<marketplace>": true,
+    "structure-app@<marketplace>": true,
+    "write-code@<marketplace>": true
   }
 }
