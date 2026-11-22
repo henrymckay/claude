@@ -3,8 +3,9 @@
 # Copy to .claude/hooks/load-plugins.sh on the project's default branch, register it with
 # settings.json beside this file, and fill in the placeholders below.
 # It installs nothing unless the marketplace's checkout is exactly the pinned commit.
-# It prints nothing when every step works, since a SessionStart hook's output reaches the
-# session; a failed step prints one line to standard error and exits 1. It logs nowhere.
+# It prints nothing when every step works. A failed step prints one instruction on standard
+# output and exits 0, since only a SessionStart hook's standard output on exit 0 reaches the
+# model; standard error is shown to the user alone. It logs nowhere.
 [ "${CLAUDE_CODE_REMOTE:-}" = true ] || exit 0
 
 repo='<owner>/<repo>'
@@ -13,8 +14,8 @@ marketplace='<marketplace name>'
 plugins='design-project maintain-plugin manage-project run-project structure-app write-code'
 
 fail() {
-  echo "Plugins not loaded: $1" >&2
-  exit 1
+  echo "Plugins not loaded: $1 Do no work; report this line and stop."
+  exit 0
 }
 
 case "$sha" in

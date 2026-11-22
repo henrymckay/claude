@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__*"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "failIfUnavailable": true,
+    "filesystem": {
+      "denyRead": [
+        "~/"
+      ],
+      "allowRead": [
+        "<absolute path of the project>"
+      ],
+      "denyWrite": [
+        "/private/tmp/claude-<uid>/-*"
+      ]
+    },
+    "network": {
+      "allowedDomains": []
+    }
+  }
+}
