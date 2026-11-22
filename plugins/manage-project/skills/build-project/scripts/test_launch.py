@@ -79,19 +79,27 @@ _FAKE = textwrap.dedent(
             elif kind == "gate" and command.startswith("git "):
                 done = subprocess.run(command, shell=True, capture_output=True, text=True)
                 text, failed = done.stdout + done.stderr, done.returncode != 0
-            elif command.startswith('echo "path-probe='):
+            elif command.startswith("sh ") and command.endswith("preflight.sh"):
+                script = pathlib.Path(shlex.split(command)[1])
+                keys = [line.split("'check ")[1].split()[0] for line in script.read_text().splitlines()
+                        if "then echo 'check " in line]
+                opened = {"leak": set(keys), "leaktemp": {k for k in keys if k.startswith("temp-")}}.get(
+                    behaviour, {behaviour[5:]} if behaviour.startswith("open:") else set())
+                if behaviour == "tamper":
+                    script.write_text(script.read_text() + "echo tampered\\n")
                 seen = f"{os.getcwd()}/.venv/bin:/usr/bin" if behaviour == "badpath" else "/usr/bin:/bin"
-                text, failed = f"path-probe={seen}", False
+                lines = [f"check {k} {'open' if k in opened else 'closed'}" for k in keys]
+                text, failed = "\\n".join([*lines, f"path-probe={seen}"]), False
+                if behaviour == "nomarkers":
+                    text, failed = "Permission denied by the sandbox", True
             elif kind == "gate" and behaviour == "moved":
                 text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
             elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
-            elif behaviour.startswith("echo:") and command.endswith(f"echo {behaviour[5:]}"):
-                text, failed = behaviour[5:], False
-            elif (behaviour == "leak" or (behaviour == "leaktemp" and "-launcher-decoy" in command)) and probe["tool"] in ("Read", "Bash"):
-                path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
-                if pathlib.Path(path).exists():
-                    text, failed = pathlib.Path(path).read_text(), False
+            elif behaviour == "leak" and probe["tool"] == "Read":
+                path = pathlib.Path(probe["input"]["file_path"])
+                if path.exists():
+                    text, failed = path.read_text(), False
             emit({"type": "user", "message": {"content": [
                 {"type": "tool_result", "tool_use_id": f"t{n}", "content": text, "is_error": failed}]}})
         if behaviour != "noresult":
@@ -670,10 +678,16 @@ def test_when_preflight_refuses_every_probe_then_run_starts(
         ("leak", "got through"),
         ("leaktemp", "another session's temp folder: got through"),
         (
-            "echo:credential-visible",
+            "open:credential",
             "the Claude credential, in its environment or a process's: got through",
         ),
-        ("echo:root-reached", "gaining root with sudo: got through"),
+        ("open:sudo", "gaining root with sudo: got through"),
+        ("open:network", "a host the profile does not list: got through"),
+        (
+            "nomarkers",
+            "reading a decoy in the home folder with a command: not finished",
+        ),
+        ("tamper", "the preflight's script was changed before it ran"),
         ("connector", "connector"),
         ("skip", "not tried"),
     ],
@@ -688,6 +702,75 @@ def test_when_preflight_not_clean_then_run_refused(
     (home / "preflight.txt").write_text(behaviour)
     done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
     assert (done.returncode, said in done.stdout, len(_calls(home))) == (5, True, 0)
+
+
+def test_when_preflight_asks_the_model_then_no_call_reads_like_reaching_for_secrets(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    prompt = _calls(home, "preflight")[0]["argv"][-1]
+    named = [
+        word
+        for word in ("sudo", "environ", "keychain", "security", "OAUTH", "API_KEY")
+        if word in prompt
+    ]
+    assert named == []
+
+
+@pytest.mark.parametrize(("system", "keychain"), [("darwin", True), ("linux", False)])
+def test_when_preflight_planned_then_checks_fit_the_platform(
+    tmp_path: pathlib.Path, system: str, keychain: bool
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path / "run", work=tmp_path / "run" / "work")
+    layout.work.mkdir(parents=True)
+    plan = launch._plan_preflight(
+        layout,
+        allowed=[],
+        home=tmp_path / "home",
+        other=tmp_path / "other",
+        system=system,
+    )
+    assert ("keychain" in {check.key for check in plan.checks}) == keychain
+
+
+@pytest.mark.parametrize("system", ["darwin", "linux"])
+def test_when_preflight_runs_its_script_then_the_guard_lets_it(
+    tmp_path: pathlib.Path, system: str
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path / "run", work=tmp_path / "run" / "work")
+    layout.work.mkdir(parents=True)
+    plan = launch._plan_preflight(
+        layout,
+        allowed=[],
+        home=tmp_path / "home",
+        other=tmp_path / "other",
+        system=system,
+    )
+    payload = {
+        "cwd": str(tmp_path),
+        "hook_event_name": "PreToolUse",
+        "permission_mode": "dontAsk",
+        "tool_input": plan.run.input,
+        "tool_name": plan.run.tool,
+    }
+    done = subprocess.run(
+        [
+            "/bin/sh",
+            str(_PLUGIN / "skills" / "secure-project" / "scripts" / "guard.sh"),
+        ],
+        capture_output=True,
+        check=False,
+        env={"CLAUDE_GUARD": "deny", "PATH": "/usr/bin:/bin"},
+        input=json.dumps(payload),
+        text=True,
+    )
+    assert done.stdout == ""
 
 
 def test_when_guard_not_loaded_then_run_refused(
