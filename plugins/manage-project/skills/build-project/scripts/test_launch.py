@@ -14,6 +14,7 @@ for each probe it was asked to make, refused, passed or leaked as the test sets.
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 import textwrap
@@ -76,9 +77,9 @@ _FAKE = textwrap.dedent(
                 text, failed = "?? loose.py\\nporcelain-end", False
             elif kind == "gate" and command.startswith("git status") and status == "placeholders":
                 text, failed = "?? .bashrc\\n?? .claude/\\n?? .mcp.json\\n?? grant.json\\nporcelain-end", False
-            elif kind == "gate" and command.startswith("git ") and pathlib.Path(".git").is_file():
+            elif kind == "gate" and command.startswith(("git ", "for c in $(git ")) and pathlib.Path(".git").is_file():
                 text, failed = "fatal: the stand-in sandbox runs no planted git", True
-            elif kind == "gate" and command.startswith("git "):
+            elif kind == "gate" and command.startswith(("git ", "for c in $(git ")):
                 done = subprocess.run(command, shell=True, capture_output=True, text=True)
                 text, failed = done.stdout + done.stderr, done.returncode != 0
             elif command.startswith("sh ") and command.endswith("preflight.sh"):
@@ -590,6 +591,43 @@ def test_when_records_fixed_in_a_second_records_commit_then_rows_may_name_the_wo
         "--max-resumes", "0",
     )  # fmt: skip
     assert done.returncode == 0
+
+
+def test_when_a_file_is_named_like_a_commit_then_the_gate_is_not_fooled(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    forged = "abcdef1" + "0" * 33
+    table = project / "verification.csv"
+    table.write_text(re.sub(r",[0-9a-f]{7,},", ",abcdef1,", table.read_text()))
+    record = project / "DEPENDENCIES.md"
+    record.write_text(record.read_text() + "\nNothing else.\n")
+    (project / f"commit:{forged}").write_text("x\n")
+    _commit_all(project)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0",
+    )  # fmt: skip
+    assert (done.returncode, "names a commit the build is not on" in done.stdout) == (
+        5,
+        True,
+    )
+
+
+def test_when_work_hides_behind_an_odd_file_name_then_rows_must_name_it(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    costs = project / "costs.csv"
+    costs.write_text(costs.read_text() + "M1,haiku,0.01\n")
+    (project / 'odd"name\nverification.csv').write_text("x\n")
+    _commit_all(project)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0",
+    )  # fmt: skip
+    assert (done.returncode, "names a commit the build is not on" in done.stdout) == (
+        5,
+        True,
+    )
 
 
 def test_when_only_the_linux_sandbox_placeholders_are_untracked_then_finished(

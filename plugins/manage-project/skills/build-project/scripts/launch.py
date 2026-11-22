@@ -80,7 +80,14 @@ _STATUS_COMMAND: typing.Final = (
 )
 _HEAD_END: typing.Final = "head-end"
 _HEAD_COMMAND: typing.Final = (
-    f"git log -20 --format=commit:%H --name-only && echo {_HEAD_END}"
+    "for c in $(git rev-list -20 HEAD); do if git diff-tree --quiet -r --root "
+    '--no-commit-id "$c"; then r=empty; elif git diff-tree --quiet -r --root '
+    '--no-commit-id "$c" -- . '
+    + " ".join(
+        f"':(exclude){name}'"
+        for name in ("DEPENDENCIES.md", "costs.csv", "verification.csv")
+    )
+    + f'; then r=records; else r=work; fi; echo "$c $r"; done; echo {_HEAD_END}'
 )
 _PATH_PREFIX: typing.Final = "path-probe="
 _PROBE_ENVIRONMENT: typing.Final = {
@@ -1363,8 +1370,12 @@ def _check_rows(
 def _read_commits(result: str) -> set[str]:
     """Return the commits an acceptance row may name, from the gate's history probe.
 
-    :param result: What ``_HEAD_COMMAND`` printed: each recent commit as ``commit:<hash>``
-        followed by the files it changed, newest first, then the end marker.
+    The probe prints, for each of the last commits ``git rev-list`` names, its hash and
+    whether it changed nothing, only the records, or other work, and never a file's
+    name, so no file a run commits can pose as a commit or hide what one changed.
+
+    :param result: What ``_HEAD_COMMAND`` printed: ``<hash> empty|records|work`` per
+        commit, newest first, then the end marker.
     :returns: The current commit, and each one before it reached through commits that
         changed only the records, so a run that fixes its records in a second commit
         still finishes; empty where the output is not that shape.
@@ -1372,16 +1383,15 @@ def _read_commits(result: str) -> set[str]:
     lines = [line.strip() for line in result.splitlines() if line.strip()]
     if _HEAD_END not in lines:
         return set()
-    history: list[tuple[str, set[str]]] = []
-    for line in lines[: lines.index(_HEAD_END)]:
-        if line.startswith("commit:") and re.fullmatch(r"[0-9a-fA-F]{40}", line[7:]):
-            history.append((line[7:].lower(), set()))
-        elif history:
-            history[-1][1].add(line)
+    history = [
+        match.groups()
+        for line in lines[: lines.index(_HEAD_END)]
+        if (match := re.fullmatch(r"([0-9a-f]{40}) (empty|records|work)", line))
+    ]
     allowed = set()
     for commit, changed in history:
         allowed.add(commit)
-        if not changed or not changed <= _RECORD_FILES:
+        if changed != "records":
             break
     return allowed
 
