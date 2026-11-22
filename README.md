@@ -85,7 +85,7 @@ From Anthropic's [official marketplace](https://github.com/anthropics/claude-plu
 - **`commit-commands`** runs the commit and pull request flows `use-git` sets conventions for.
 - **`pyright-lsp`**, **`typescript-lsp`** and **`claude-security`** for type errors and security.
 
-Beyond these, `plan-project` looks for an outside plugin where no skill here covers a project's language or domain, and proposes it for you to install.
+Where no skill here covers a project's language or domain, `plan-project` proposes an outside plugin.
 
 ## 🔁 Feedback and sweeps
 
@@ -108,6 +108,7 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 The trigger suites show a skill loads; a trial build shows it steers well.
 A fresh headless session, started by [`build-project`](plugins/manage-project/skills/build-project)'s launcher with only the house plugins, no connectors, the sandbox on and a spend limit, plans, builds and reviews a project from one prompt, taking no outward action its standing grant does not allow.
 The launcher proves the sandbox first and accepts a finish only through its own gate; a sweep then works through the build's feedback.
+A public project's build runs on a GitHub-hosted Linux runner instead.
 [`PLAN.md`](PLAN.md)'s `Next` list orders them.
 
 ## 📄 Licence
