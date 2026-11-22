@@ -86,7 +86,7 @@ _FAKE = textwrap.dedent(
                 text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
             elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
-            elif behaviour == "leak" and probe["tool"] in ("Read", "Bash"):
+            elif (behaviour == "leak" or (behaviour == "leaktemp" and "-launcher-decoy" in command)) and probe["tool"] in ("Read", "Bash"):
                 path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
                 if pathlib.Path(path).exists():
                     text, failed = pathlib.Path(path).read_text(), False
@@ -664,7 +664,12 @@ def test_when_preflight_refuses_every_probe_then_run_starts(
 
 @pytest.mark.parametrize(
     ("behaviour", "said"),
-    [("leak", "got through"), ("connector", "connector"), ("skip", "not tried")],
+    [
+        ("leak", "got through"),
+        ("leaktemp", "another session's temp folder: got through"),
+        ("connector", "connector"),
+        ("skip", "not tried"),
+    ],
 )
 def test_when_preflight_not_clean_then_run_refused(
     home: pathlib.Path,
@@ -1236,6 +1241,113 @@ def test_when_notify_given_then_report_line_handed_to_it(
         str(notifier),
     )
     assert sink.read_text().startswith("finished:")
+
+
+def test_when_environment_built_then_tool_homes_sit_in_scratch_folder(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path, work=tmp_path / "work")
+    environment = launch.build_environment(
+        grant=None, layout=layout, source={}, usage_wait_hours=1.0
+    )
+    homes = (
+        "GH_CONFIG_DIR",
+        "PIP_CACHE_DIR",
+        "PRE_COMMIT_HOME",
+        "VIRTUALENV_OVERRIDE_APP_DATA",
+    )
+    assert all(
+        pathlib.Path(environment[name]).is_relative_to(layout.work) for name in homes
+    )
+
+
+def test_when_profile_built_then_other_sessions_temp_folders_and_volumes_denied(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    filesystem = _profile(home)["sandbox"]["filesystem"]
+    sessions = {f"/private/tmp/claude-{os.getuid()}/-*", f"/tmp/claude-{os.getuid()}/-*"}
+    assert (
+        sessions <= set(filesystem["denyRead"]),
+        sessions <= set(filesystem["denyWrite"]),
+        "/Volumes" in filesystem["denyRead"],
+    ) == (True, True, True)
+
+
+def test_when_environment_built_then_pip_trusts_its_own_bundle(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path, work=tmp_path / "work")
+    environment = launch.build_environment(
+        grant=None, layout=layout, source={}, usage_wait_hours=1.0
+    )
+    assert environment["PIP_USE_DEPRECATED"] == "legacy-certs"
+
+
+_HOOKS_CONFIG = """\
+repos:
+  - repo: local
+    hooks:
+      - id: say
+        name: say
+        entry: "true"
+        language: system
+  - repo: {remote}
+    rev: {rev}
+    hooks:
+      - id: say
+"""
+
+
+def _hook_repository(folder: pathlib.Path) -> str:
+    folder.mkdir()
+    (folder / ".pre-commit-hooks.yaml").write_text(
+        "- id: say\n  name: say\n  entry: 'true'\n  language: system\n"
+    )
+    _commit_all(folder)
+    return _head(folder)
+
+
+@pytest.mark.parametrize("remote", ["local-path", "https://hooks.example.invalid/hooks"])
+def test_when_project_names_hook_repositories_then_launcher_fetches_and_builds_nothing(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    grant: pathlib.Path,
+    tmp_path: pathlib.Path,
+    remote: str,
+) -> None:
+    hooks = tmp_path / "hooks"
+    rev = _hook_repository(hooks)
+    where = str(hooks) if remote == "local-path" else remote
+    (project / ".pre-commit-config.yaml").write_text(
+        _HOOKS_CONFIG.format(remote=where, rev=rev)
+    )
+    _commit_all(project)
+    _approve(home, project)
+    done = _launch(home, fake_claude, project, "blocked")
+    stores = list((home / "runs").glob("*/work/pre-commit"))
+    assert (stores, where in done.stderr) == ([], False)
+
+
+def test_when_grant_names_code_host_then_run_may_reach_it(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    grant: pathlib.Path,
+) -> None:
+    grant.write_text(
+        grant.read_text().replace('"secrets"', '"network": ["github.com"], "secrets"')
+    )
+    _approve(home, project)
+    _launch(home, fake_claude, project, "finished")
+    assert "github.com" in _profile(home)["sandbox"]["network"]["allowedDomains"]
 
 
 if __name__ == "__main__":

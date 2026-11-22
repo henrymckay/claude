@@ -5,9 +5,9 @@ A marketplace of Claude Code plugins that let Claude do impressive projects enti
 Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv).
 
 Signed off by the owner: R1 to R8 (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), D62 to D70 (under the owner's delegation, 2026-11-19) and D71 to D81 (2026-11-20).
-Everything else is proposed: R9, the Fails-when lines under R1 to R8, D54 to D60, D82 onwards, the amendments dated 2026-11-21, the coverage map, the Design's text and the Not yet list.
+Everything else is proposed: R9, the Fails-when lines under R1 to R8, D54 to D60, D82 onwards bar D133 (decided under delegation), the amendments dated 2026-11-21, the coverage map, the Design's text and the Not yet list.
 The unsigned backlog is counted under Open.
-This file keeps one line per decision; the full text of every signed decision is at commit `7aa0625` (`main` before this cut), and test logs and long rationale live in the pull request or skill each line points at.
+One line per decision; each signed decision's full text is at commit `7aa0625`, and test logs and rationale live in the pull request or skill each line cites.
 
 ## Brief
 
@@ -70,10 +70,8 @@ Each states the result that would show it failing, and what it costs.
 - **A listing in the plugin directory, icons; `agents/`, `commands/`, `rules/`; Slack; an `advisor` step** — none earned yet.
 - **Toolchain skills beyond `uv`, languages beyond Python and TypeScript, more SQL dialects, architecture across components** — each earned by the first project that needs it, which looks first for an outside plugin (D97, D104, D105).
 - **A debugging skill** — issue 148.
-- **CI, snapshot or mutation tests, a task runner, Docker, docs generation** — each earned by the first project that needs it; a container around a run is I5.
+- **CI, snapshot or mutation tests, a task runner, Docker, docs generation** — each earned by the first project that needs it; a container around a run is D133.
 - **A plugin per domain** — a domain skill starts in its project and is promoted once a second repository needs it; issue 71 holds trading.
-- **Asking the owner one question from afar mid-run** — designed (D112), issue 155.
-- **A browser inside an unattended run on macOS** — earned once one starts inside the sandbox (D117).
 
 ## Design
 
@@ -86,12 +84,7 @@ Each states the result that would show it failing, and what it costs.
 
 ### Data flow
 
-1. **Skill source** — edited in a sweep or by the owner. (IO)
-2. **Wiring** — installed plugins with `installed.md`, or the symlink route with `symlinked.md`, never both. (IO)
-3. **Loading** — descriptions and always-on files in every session and subagent; the guard before every tool call.
-4. **Applying** — real work elsewhere; unattended runs through the launcher.
-5. **Feedback** — a skill that steers wrong becomes an issue. (IO)
-6. **Sweep** — issues, checks and the outside review in one pull request, whose merge loops to stage 1.
+Skill source, wiring, loading, applying, feedback, sweep, looping back to source; the README's Feedback and sweeps has the loop.
 
 ### Outputs
 
@@ -155,7 +148,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | Every other context file | 70 | 59 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
 | `README.md` | 980 | 977 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,492 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,500 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |
@@ -165,7 +158,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 
 - **D1** Symlinks into `~/.claude` stay a supported wiring beside installed plugins.
 - **D2** Commit as the owner's no-reply identity; a sweep lands by pull request, and only an edit the owner makes or asks for outside a sweep goes straight to `main`; overrides `use-git`, Branches.
-- **D9** No performance budget. *Amended 2026-11-21 (proposed): hooks and the launcher now run; their time and cost are in the budget table.*
+- **D9** No performance budget. *Amended 2026-11-21 (proposed): hook and launcher time and cost are in the budget table.*
 - **D10** Not yet lives in this plan, over `enhancement` issues.
 - **D11** The README is for humans and points here.
 - **D12** Memory holds only what this plan doesn't. *Amended 2026-11-21 (proposed): next steps live in `Next`, never in memory.*
@@ -188,7 +181,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D92** Each plugin prints its rules into every subagent from a `SubagentStart` hook; PR 146.
 - **D93** The shared rules print once per start through an atomic marker; PR 146.
 - **D94** Two instruction files, `installed.md` and `symlinked.md`; completed by D129.
-- **D95, D106, D115** Budgets after the instruction-file split and later additions; figures in the table.
+- **D81, D91, D95, D106, D115** Budgets raised as skills, plugins and files grew; figures in the table.
 - **D129** *(proposed)* The root `CLAUDE.md` link is removed: the owner's link points at `installed.md`, and the link loaded the skill list twice here; completes D94.
 
 **How a project runs**
@@ -224,25 +217,28 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 **Running unattended**
 
 - **D108** A guard hook in `manage-project`, on by default, asking a person present and refusing when nobody is, over permission rules alone; Python 3.9 and named tuples for that script, overriding `write-python`; `secure-project`, PR 161.
-- **D109** An unattended run starts under the run profile, over the owner's settings, `--bare` or a container; `build-project`, PR 161.
+- **D109** An unattended run starts under the run profile, over the owner's settings, `--bare` or a container; `build-project`, PR 161; amended by D133.
 - **D110** The launcher starts, resumes and bounds a run by spend and turns read from records the run cannot write; PR 161.
 - **D111** A standing grant is `grant.json`, used only as the owner approved its SHA-256 for that project; amends D35; amended by D123.
 - **D112** Asking the owner one question from afar is designed and not built (issue 155).
-- **D116** *(proposed)* Local binding opt-in per run (`--allow-local-binding`): on macOS it opens every localhost service and nothing narrower exists (code.claude.com/docs/en/sandboxing, 2026-11-21).
+- **D116** *(proposed)* Local binding opt-in per run (`--allow-local-binding`): on macOS it opens every localhost service and nothing narrower exists (code.claude.com/docs/en/sandboxing, 2026-11-21); a server started, called and stopped by pid under it; provisional, T9 throwaways.
 - **D117** *(proposed)* No browser in an unattended run, over opening `~/Library` to writes: Chrome fails inside the macOS sandbox, so screenshots wait for an attended session.
 - **D118** *(proposed)* A preflight before every run on Haiku, plus guard probes the launcher runs, refusing to start on anything through, untried or unfinished, an unnamed MCP server or a writable PATH folder; about $0.01; the keychain's sandbox refusal untested.
-- **D119** *(proposed)* The run folder sits inside the home folder, since the sandbox lets commands write to temp folders; the preflight found it.
+- **D119** *(proposed)* The run folder sits inside the home folder, since the sandbox lets commands write to temp folders, other sessions' excepted (outside review, 2026-11-22).
 - **D120** *(proposed)* `finished` is the launcher's gate, not the model's line: records read as data, rows dated, in order and on the current commit, `git status`, `git log` and the gate commands run in the foreground of a sandboxed Haiku session; what still runs outside the sandbox is the guard's own git, hardened, and the launcher's `git init` and `git config` before the run.
 - **D121** *(proposed)* The usage window is waited out by Claude Code's retry watchdog up to `--usage-wait-hours`, over fixed retries (code.claude.com/docs/en/errors, 2026-11-21); not met live.
 - **D122** *(proposed)* `status.json` records the Claude Code version, the release, the preflight and the probe cost.
 - **D123** *(proposed)* Grant approval shows a plain summary and needs a `y` typed at a terminal; the guard asks about any approval or change to the approvals; a field no script enforces is refused, so account `actions` and limits leave the format; amends D111.
 - **D124** *(proposed)* The guard asks before, or unattended refuses, a connector call that trades, moves money, sends or shares, from its name and its arguments read as data; issue 164.
+- **D131** *(proposed)* A run's `pre-commit` store and `gh` configuration sit in its scratch folder, hooks cloned in the sandbox from the grant's hosts, over the owner's store or a launcher fetch; provisional, T9 throwaways.
+- **D132** *(proposed)* A guard refusal a false positive can cause names the way round (a file for a lone quote, named files for a wildcard); provisional, T9 throwaways.
+- **D133** *(decided by the coordinator under the owner's delegation, 2026-11-22)* Unattended runs get isolation that reads no commands, a container or equivalent (issue 172, next sweep); the guard then asks only about a fixed list — a message, money or a trade, a push, a delete outside the project and scratch folders, a grant or approval change — within a measured prompt budget (issue 173); until then it stays as is.
 
 **Models**
 
 - **D27** The model ladder, each stage handed to a subagent with its model set — `choose-model`.
 - **D42** No skill names a model in its frontmatter; amended by D82.
-- **D70** A build milestone with a visible surface stays on Sonnet: $5.45 against $10.75 on Opus for one plan, both passing.
+- **D70** A build milestone with a visible surface stays on Sonnet: $5.45 against $10.75 on Opus for one plan, both passing; provisional, one project.
 - **D73** A stage's subagent runs in the foreground, with `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` as backstop.
 - **D82** A skill names an effort only to raise it, so `build-project` dropped its `effort: medium`; overrides D42 for that line.
 - **D126** *(proposed)* Every sweep ends with a read-only outside review on the best model at its highest effort, seven fixed questions then the riskiest change, over the builder checking itself; `review-plugin`; issue 162.
@@ -291,12 +287,10 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D69** Candles are ECharts' candlestick series — `design-interface`.
 - **D71** An event job rations its pushes — `send-messages`.
 - **D72** The `PreCompact` text holds to 65 words.
-- **D81** Budgets raised for the tenth skill; in the table.
-- **D86** Stale is one period plus a margin when an alert watches — `run-unattended`.
-- **D87** A punctual run triggered by a Cloudflare Worker's Cron Trigger — `deploy-project`; not run live.
+- **D86** Stale is one period plus a margin when an alert watches — `run-unattended`; provisional, one project.
+- **D87** A punctual run triggered by a Cloudflare Worker's Cron Trigger — `deploy-project`; not run live; provisional, one project.
 - **D89** `design-interface` covers every surface a person meets.
 - **D90** `design-pipeline` settles each table's grain, key, layer, load and freshness before the store.
-- **D91** Budgets for the sixth plugin; in the table.
 - **D96** The missing-plugins rule ends with a check against the map.
 - **D97** `write-typescript` in `write-code`.
 - **D98** TypeScript 7, oxlint, Prettier — `write-typescript`.
@@ -305,10 +299,6 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D101** TanStack Query, React Compiler on — `write-typescript`.
 - **D102** Named exports, kebab-case files, no barrels — `write-typescript`.
 - **D103** A Worker's `Env` from `wrangler types`, tested with `@cloudflare/vitest-plugin` — `deploy-project`.
-
-**Superseded**
-
-- **D8** Evaluation briefs archived outside this repo — by D40.
 
 ## Delivery
 
@@ -328,7 +318,7 @@ Each line's dated results are in [`verification.csv`](verification.csv); the map
 
 **Coverage map.** Rows are a project's stages, so R6 is read from the rows; each cell names what delivers it and its grade.
 **S** seen once, **R** repeated on a second kind of project, **F** failing at its last recorded result, **D** designed only, **G** a gap and its issue, **—** not wanted yet (note below).
-Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6**, **T7** sweeps 12 and 13's launcher and guard runs (2026-11-21).
+Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6**, **T7** sweeps 12 and 13's launcher and guard runs (2026-11-21); **T8** the launcher shakedown on T4's project, **T9** sweep 14's throwaway launcher runs (2026-11-22).
 T4's grades are read by script from the last row per line of its `verification.csv`; T1 and T2 predate the records, so theirs rest on the dated milestone notes until their next run (`review-plugin`, Check the coverage map).
 
 | Stage | R1 | R2 | R3 | R4 | R5 | R7 | R8 | R9 |
@@ -336,7 +326,7 @@ T4's grades are read by script from the last row per line of its `verification.c
 | Frame | S autonomous plan T2 | R frame wider T1 T2; D outside plugins | R classes T1 T4 | S alone T5 | R sources T1 T2 | S Opus plan T2 | R docs read T1 T2 | D |
 | Plan | S unsigned T2 | S best in class T3; G top model for plans 168 | S classes T4; D threat model | S alone T5 | R Verification lines T1 T2 | D budget line | S kept current T4 | D size rule |
 | Design | D | S design system T3; G medium's conventions 159 | D loopback guard | S alone T5 | D grain, key | D run cost | S pick changed (D69) | — (1) |
-| Build | S gate refuses a false finish T7; D full launcher build | S evaluator T3 | S profile, guard T6 T7 | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
+| Build | S gate refuses a false finish T7; F shakedown T8, G 163; S commits through hooks, pre-installed, T9; D full launcher build | S evaluator T3 | S profile T9 (session temp folders closed after review), guard T6 T7 T9; D isolation 172, short guard list 173; G 170 171 | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
 | Verify | S review T2 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
 | Deploy | D grant remotes T6; G from afar 155 | F dashboard slick and fast T4 (R4) | S deployed at no cost T4 (R6) | S alone T5 | F scheduled slot did not fire T4 (R2) | S free tier T4 (R6); D bill read | S tiers re-checked | — (1) |
 | Operate | F nightly fetch with no machine on T4 (R1, R2); G after failure 151 | D stale alert (T4's R12 not run) | D rotation; G 151 | S alone T5 | D stale threshold (D86) | D usage read | G update cadence 151 | — (1) |
@@ -374,8 +364,8 @@ Sweeps are not milestones; their order is the `Next` list.
 
 **Next**, in order:
 
-1. This sweep (13): the launcher's preflight and gate, the connector guard, this plan, the outside review step, the records.
-2. A launcher shakedown on the third trial's project with no deploy rights in its grant, expected to end `blocked`, then an attended acceptance step for the lines only the owner can check: a scheduled slot firing, a browser and the evaluator, a keychain-held token, the host's dashboard.
+1. Isolation around unattended runs and the guard's short list (D133, issues 172, 173).
+2. A second shakedown on the third trial's project (T8 was the first), with a grant naming its data hosts, then an attended acceptance step for what only the owner can check: a scheduled slot firing, a browser and the evaluator, a keychain-held token, the host's dashboard.
 3. The control build (issue 150), with issue 152's subset arm.
 4. The intraday trial (D90).
 5. Issues 153, 159 and 160.
@@ -385,7 +375,6 @@ Sweeps are not milestones; their order is the `Next` list.
 
 ### Assumptions
 
-- **A1** The repository and marketplace keep their names (D62).
 - **A2** The cloud sweep cannot use GraphQL or reach most vendor pages, so the free-tier re-check runs locally.
 - **A3** Every machine these go on allows a third-party marketplace; unchecked machine by machine.
 - **A4** `claude -p` keeps marking a session unattended for hooks (undocumented); if not, the launcher's `CLAUDE_GUARD=deny` still holds.
@@ -396,12 +385,11 @@ Sweeps are not milestones; their order is the `Next` list.
 - **Q11** Which technology makes slick, fast dashboards? — recommended: D56; blocks M21's dashboard.
 - **Q13** Accept R9 Legible and the sign-off by exception it implies? — recommended: yes; the alternative keeps every decision waiting for a full read.
 
-**Unsigned backlog** (R9): 56 proposed decisions (D54 to D60, D82 to D130), D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
+**Unsigned backlog** (R9): 58 proposed decisions (D54 to D60, D82 to D132) and D133, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
 
 ### Ideas
 
-- **I1** A `doctor` command that validates, runs the hooks and names missing siblings; partly met by the built-ins.
-- **I2** A run log per build; mostly met by `costs.csv` and the run folder.
+I1, I2, I4 cut 2026-11-22.
+
 - **I3** An expected cost per stage in a plan's Runs on.
-- **I4** More rules in hooks, each earned by a slip one could catch (issue 53).
-- **I5** A container or virtual machine around a whole unattended run.
+- **I5** A container or virtual machine around a whole unattended run; now D133.

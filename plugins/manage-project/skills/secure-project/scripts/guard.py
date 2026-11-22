@@ -146,7 +146,35 @@ _SECRET_NAME: typing.Final = (
     r"|CREDENTIALS?|_PAT|_KEY)(?![A-Za-z0-9_])"
 )
 _SECRET_VARIABLE: typing.Final = re.compile(
-    r"\$\{?!|\$\{?" + _SECRET_NAME, re.IGNORECASE
+    r"\$\{!|\$\{?" + _SECRET_NAME, re.IGNORECASE
+)
+_ALTERNATIVES: typing.Final = (
+    (
+        "a command the guard could not parse",
+        "If a lone quote caused it, such as an apostrophe in a here-document or a "
+        "message, write the script or message to a file with the Write tool and run "
+        "that file, or commit with git commit -F.",
+    ),
+    (
+        "a word with a backwards bracket range",
+        "Write the code or path without a range such as [z-a], or put a script that "
+        "needs one in a file with the Write tool and run that file.",
+    ),
+    (
+        "changing the standing grant",
+        "If a wildcard caused it, such as src/* whose * could match grant.json, name "
+        "the files, or move the pattern into the tool's configuration file.",
+    ),
+    (
+        "printing a secret file",
+        "If a wildcard caused it, list the files with the Glob tool and read each "
+        "with the Read tool.",
+    ),
+    (
+        "searching a secret file's contents",
+        "If a wildcard caused it, give a glob naming the file types, such as "
+        "**/*.py, never one a secret file's name could match.",
+    ),
 )
 _SECRET_VALUE: typing.Final = re.compile(
     r"AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}"
@@ -290,6 +318,10 @@ _CREDENTIAL_PRINTS: typing.Final = (
 
 class OutOfTime(Exception):
     """The guard ran out of its time or git budget before it finished checking."""
+
+
+class UnreadablePattern(Exception):
+    """A word holds a bracket range the guard cannot match the way the shell would."""
 
 
 class Call(typing.NamedTuple):
@@ -579,6 +611,39 @@ def _resolve(cwd: pathlib.Path, path: str) -> pathlib.Path:
     )
 
 
+def _has_descending_range(pattern: str) -> bool:
+    """Return whether a shell pattern holds a bracket range that runs backwards.
+
+    :param pattern: A word from a command.
+    :returns: True for a range such as ``[z-a]`` in any bracket expression, which Python
+        3.9 cannot compile and the shell expands by rules of its own.
+    """
+    return any(
+        start > end
+        for match in re.finditer(r"\[!?\]?[^\]]*\]", pattern)
+        for start, end in re.findall(r"(.)-(.)", match.group(0)[1:-1].lstrip("!"))
+    )
+
+
+def _fnmatch(name: str, pattern: str) -> bool:
+    """Return whether a name matches a shell pattern.
+
+    :param name: The name.
+    :param pattern: The pattern, from untrusted input.
+    :returns: True where it matches.
+    :raises UnreadablePattern: For a pattern with a backwards bracket range, under every
+        Python, so such a word is guarded rather than read one way or another.
+    """
+    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    if _has_descending_range(pattern):
+        raise UnreadablePattern
+    try:
+        return fnmatch.fnmatch(name, pattern)
+    except re.error as failure:
+        raise UnreadablePattern from failure
+
+
 def _glob(cwd: pathlib.Path, word: str) -> list[str]:
     """Return what a word names after glob expansion, bounded.
 
@@ -591,7 +656,13 @@ def _glob(cwd: pathlib.Path, word: str) -> list[str]:
     pattern = str(_resolve(cwd, word))
     if not re.search(r"[*?\[]", word):
         return [pattern]
-    return list(itertools.islice(glob.iglob(pattern), _GLOB_LIMIT)) or [pattern]
+    if _has_descending_range(word):
+        raise UnreadablePattern
+    try:
+        found = list(itertools.islice(glob.iglob(pattern), _GLOB_LIMIT))
+    except re.error as failure:
+        raise UnreadablePattern from failure
+    return found or [pattern]
 
 
 def _read_small(path: pathlib.Path) -> str:
@@ -619,14 +690,12 @@ def _is_secret_path(path: str) -> bool:
     :returns: True for ``.env`` files, keys, credential stores and the like, and for a
         pattern such as ``.env*`` or ``.en?`` one of them would match.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     path = path.replace("\\", "/")
     if _SECRET_FILE.search(path):
         return True
     name = path.rsplit("/", 1)[-1]
     return bool(re.search(r"[*?\[]", name)) and any(
-        fnmatch.fnmatch(candidate, name) for candidate in _SECRET_NAMES
+        _fnmatch(candidate, name) for candidate in _SECRET_NAMES
     )
 
 
@@ -1310,8 +1379,6 @@ def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
     :param cwd: The folder the command runs in.
     :returns: True where the word may approve a grant or reach the approvals.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     if _GRANT_APPROVAL.search(word):
         return True
     home = os.path.expanduser("~")
@@ -1324,7 +1391,7 @@ def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
         return True
     protected = os.path.join(home, ".config", "claude-grants")
     return any(
-        fnmatch.fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
+        _fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
         for candidate in (expanded, *_glob(cwd, expanded))
         for target in (protected, os.path.join(protected, "approved"))
     )
@@ -1400,7 +1467,10 @@ def _check_shell(
 
     Every simple command is checked, from the real command name and from each dangerous
     tool named later in it; every here-document body and every word holding a space, the
-    usual shape of a command passed as a string, is checked as a command line too.
+    usual shape of a command passed as a string, is checked as a command line too. Text
+    that will not tokenise, a lone apostrophe in a commit message or in a script's
+    here-document included, is refused rather than split some other way, since any other
+    split can join words differently from the shell; the refusal names the alternative.
 
     :param text: The command line as the Bash tool would run it.
     :param cwd: The folder it starts in.
@@ -1444,6 +1514,10 @@ def _check_shell(
         if not plain:
             continue
         if plain[0] in ("cd", "pushd") and len(plain) > 1:
+            if _touches_approvals(plain[1], cwd):
+                findings.append(
+                    "approving a standing grant or touching the owner's approvals"
+                )
             cwd = _resolve(cwd, plain[1])
             continue
         findings += _check_words(plain, assignments, cwd, context, depth, adds=adds)
@@ -1474,10 +1548,8 @@ def _names_grant(word: str) -> bool:
     :param word: A path from a command.
     :returns: True for ``grant.json`` in any case, or a glob that matches it.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     name = os.path.basename(os.path.normpath(word)).lower()
-    return name == grant_.FILE_NAME or fnmatch.fnmatch(grant_.FILE_NAME, name)
+    return name == grant_.FILE_NAME or _fnmatch(grant_.FILE_NAME, name)
 
 
 def _snake(name: str) -> str:
@@ -1590,7 +1662,11 @@ def check(call: Call, context: Context) -> list[str]:
             return [f"reading a secret file ({path})"]
         return []
     if tool in ("Grep", "Glob"):
-        where = f"{data.get('path', '')} {data.get('glob', '')}".split()
+        where = [
+            part
+            for word in f"{data.get('path', '')} {data.get('glob', '')}".split()
+            for part in _expand_braces(word)
+        ]
         pattern = str(data.get("pattern", ""))
         findings = []
         if tool == "Grep" and any(_is_secret_path(w) for w in where):
@@ -1689,12 +1765,28 @@ def _answer(findings: list[str], *, unattended: bool) -> dict[str, typing.Any]:
     :param unattended: Whether nobody is present to answer a prompt.
     :returns: The ``hookSpecificOutput`` object.
     """
-    said = "; ".join(dict.fromkeys(findings))
+    distinct = list(dict.fromkeys(findings))
+    said = "; ".join(distinct)
+    covered = all(
+        any(finding.startswith(prefix) for prefix, _ in _ALTERNATIVES)
+        for finding in distinct
+    )
+    alternatives = [
+        text
+        for prefix, text in _ALTERNATIVES
+        if covered and any(finding.startswith(prefix) for finding in distinct)
+    ]
     if unattended:
-        reason = (
-            f"Refused by the guard hook (secure-project): {said}. Nobody is present to "
-            "approve it. Do not retry it or reach the same end another way; list it in "
-            "the report as a step for the owner."
+        reason = " ".join(
+            (
+                f"Refused by the guard hook (secure-project): {said}. Nobody is "
+                "present to approve it.",
+                *alternatives,
+                "Otherwise do not retry it" if alternatives else "Do not retry it",
+            )
+        ) + (
+            " or reach the same end another way; list it in the report as a step for "
+            "the owner."
         )
     else:
         reason = f"Guard hook (secure-project): {said}. Approve only if you meant it."
@@ -1730,6 +1822,8 @@ def main() -> None:
         findings = check(call, _context(call, started=started))
     except OutOfTime:
         findings = ["a call too large to check in the guard's time"]
+    except UnreadablePattern:
+        findings = ["a word with a backwards bracket range the guard cannot read"]
     except Exception as failure:  # noqa: BLE001 - any failure must guard, never let the call through
         findings = [f"a call the guard could not check ({type(failure).__name__})"]
     if findings:

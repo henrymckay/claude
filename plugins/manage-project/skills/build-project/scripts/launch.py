@@ -400,7 +400,14 @@ def build_environment(
 ) -> dict[str, str]:
     """Return the run's environment: a few basics, the grant's secrets, the launcher's own.
 
-    Claude Code's retry watchdog waits out a capacity error or the plan's usage window
+    Every tool that keeps a cache or reads its configuration under the home folder,
+    which the profile denies, is pointed at the scratch folder instead: ``gh`` then reads
+    an empty configuration and a token only from a variable the grant names, and
+    ``pre-commit`` clones and builds its hooks inside the sandbox into a store of the
+    run's own, never the owner's, whose hooks run outside the sandbox on the owner's own
+    commits; the launcher fetches nothing a project file names. ``pip`` checks certificates
+    against its own bundle, since the system trust store it asks by default fails inside
+    the macOS sandbox (``OSStatus -26276``, pip 26.3). Claude Code's retry watchdog waits out a capacity error or the plan's usage window
     inside the request, rechecking every ten minutes, up to ``usage_wait_hours``; a reset
     further away fails at once, and the launcher reports it as a limit.
 
@@ -423,12 +430,31 @@ def build_environment(
             "CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS": "600000",
             "CLAUDE_GUARD": "deny",
             "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+            "GH_CONFIG_DIR": str(layout.work / "gh"),
+            "PIP_CACHE_DIR": str(layout.work / "pip-cache"),
+            "PIP_USE_DEPRECATED": "legacy-certs",
+            "PRE_COMMIT_HOME": str(layout.work / "pre-commit"),
             "TMPDIR": str(layout.work),
             "UV_CACHE_DIR": str(layout.work / "uv-cache"),
+            "VIRTUALENV_OVERRIDE_APP_DATA": str(layout.work / "virtualenv"),
             "npm_config_cache": str(layout.work / "npm-cache"),
         }
         | ({"CLAUDE_GRANT_FILE": str(layout.grant)} if grant else {})
     )
+
+
+def _session_temp_folders() -> tuple[str, ...]:
+    """Return the patterns for every Claude session's own temp folder on this machine.
+
+    Claude Code keeps each session's scripts and task output in a folder named for its
+    working folder under ``/tmp/claude-<uid>/``, and an attended session may later run
+    what is there outside any sandbox, so a run must neither read nor write them; the
+    parent folder itself stays open, since the Bash tool needs it.
+
+    :returns: The patterns, under both spellings of the temp folder on macOS.
+    """
+    uid = os.getuid()
+    return (f"/private/tmp/claude-{uid}/-*", f"/tmp/claude-{uid}/-*")
 
 
 def build_profile(
@@ -518,8 +544,14 @@ def build_profile(
                 "denyWrite": [
                     *(str(path) for path in protected),
                     *(str(p) for p in plugins),
+                    *_session_temp_folders(),
                 ],
-                "denyRead": ["~/", *_TOOLCHAIN_SECRETS],
+                "denyRead": [
+                    "~/",
+                    "/Volumes",
+                    *_TOOLCHAIN_SECRETS,
+                    *_session_temp_folders(),
+                ],
             },
             "network": {
                 "allowLocalBinding": local_binding,
@@ -721,6 +753,7 @@ def _plan_preflight(
     *,
     allowed: collections.abc.Sequence[str],
     home: pathlib.Path,
+    other: pathlib.Path,
 ) -> list[Probe]:
     """Return the forbidden things the preflight tries, with their decoys in place.
 
@@ -732,10 +765,11 @@ def _plan_preflight(
         a run must not change.
     :param allowed: The hosts the profile lets commands reach.
     :param home: A new folder in the home folder for the decoys a run must not read.
+    :param other: A new folder shaped like another session's temp folder.
     :returns: The probes.
     """
     owned = layout.root / "decoy"
-    for folder in (home, owned):
+    for folder in (home, owned, other):
         folder.mkdir(mode=0o700, parents=True)
 
     def decoy(path: pathlib.Path) -> str:
@@ -785,6 +819,37 @@ def _plan_preflight(
             through="",
             tool="Write",
             written=owned / "written-by-tool",
+        ),
+        Probe(
+            input={"command": f"cat {other / 'session.txt'}"},
+            marker=str(other / "session.txt"),
+            name="reading a decoy in another session's temp folder",
+            through=decoy(other / "session.txt"),
+            tool="Bash",
+        ),
+        Probe(
+            input={
+                "command": f"echo x >> {other / 'append.txt'} && echo appended-ok"
+            },
+            marker=str(other / "append.txt"),
+            name="appending to a file in another session's temp folder",
+            through="appended-ok",
+            tool="Bash",
+        ),
+        Probe(
+            input={"command": f"touch {other / 'created'} && echo created-ok"},
+            marker=str(other / "created"),
+            name="creating a file in another session's temp folder",
+            through="created-ok",
+            tool="Bash",
+            written=other / "created",
+        ),
+        Probe(
+            input={"command": "security show-keychain-info && echo keychain-open"},
+            marker="security show-keychain-info",
+            name="reaching the login keychain with a command",
+            through="keychain-open",
+            tool="Bash",
         ),
         Probe(
             input={"command": _PATH_COMMAND},
@@ -1004,9 +1069,16 @@ def preflight(
         pathlib.Path.home() / ".cache" / "claude-preflight" / session.layout.root.name
     )
     forbidden = (session.project, session.layout.root, session.layout.work)
+    other = (
+        pathlib.Path("/tmp")
+        / f"claude-{os.getuid()}"
+        / f"-launcher-decoy-{secrets.token_hex(6)}"
+    )
     probes: list[Probe] = []
     try:
-        probes = _plan_preflight(session.layout, allowed=allowed, home=home)
+        probes = _plan_preflight(
+            session.layout, allowed=allowed, home=home, other=other
+        )
         probed = _run_probe_session(
             _probe_prompt("PREFLIGHT", _PREFLIGHT_INTRO, probes),
             kind="preflight",
@@ -1018,7 +1090,7 @@ def preflight(
             *check_guard(session, init=probed.init),
         ], probed.cost_usd
     finally:
-        for folder in (home, session.layout.root / "decoy"):
+        for folder in (home, session.layout.root / "decoy", other):
             shutil.rmtree(folder, ignore_errors=True)
         for probe in probes:
             if probe.written is not None and probe.written.is_file():

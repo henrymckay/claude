@@ -1006,5 +1006,133 @@ def test_when_connector_reads_or_previews_then_no_decision(
     assert answer == {}
 
 
+def test_when_server_started_and_stopped_by_pid_then_no_decision(
+    run: Run, repo: pathlib.Path
+) -> None:
+    command = (
+        "(npm run preview > $TMPDIR/web.log 2>&1 & echo $! > $TMPDIR/web.pid); "
+        "sleep 5; tail $TMPDIR/web.log; curl -sS -m 10 http://127.0.0.1:4173/; "
+        "kill $(cat $TMPDIR/web.pid)"
+    )
+    answer = run(repo, {"command": command})
+    assert answer == {}
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        (
+            "Bash",
+            {
+                "command": "uv run coverage report "
+                "--include 'src/app/core/*,src/app/port/*' --fail-under 100"
+            },
+        ),
+        ("Bash", {"command": "cat sub/*"}),
+        (
+            "Grep",
+            {
+                "pattern": "alpha|beta",
+                "path": ".",
+                "glob": "{src,api/src,pyproject.toml,api/package.json}/**",
+            },
+        ),
+    ],
+)
+def test_when_wildcard_refused_unattended_then_reason_names_the_alternative(
+    run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(granted, tool_input, tool=tool, environment={"CLAUDE_GUARD": "deny"})
+    assert "If a wildcard caused it" in str(answer.get("permissionDecisionReason"))
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("Bash", {"command": "(sleep 1 & echo $!); echo $API_TOKEN"}),
+        ("Bash", {"command": "echo ${!prefix*}"}),
+        ("Bash", {"command": "cat $DIR/*"}),
+        ("Bash", {"command": "sed -i s/a/b/ *"}),
+        ("Bash", {"command": "sed -i s/a/b/ $DIR/*"}),
+        ("Bash", {"command": "cp README.md $DIR/*.json"}),
+        ("Bash", {"command": "bash <<'EOF'\ngit push --force origin main\necho it's\nEOF"}),
+        ("Bash", {"command": "sh -c \"rm -rf ~; echo it's\""}),
+        ("Bash", {"command": "bash -c \"gi\\\"t\\\" pu's'h -f; echo it's\""}),
+        ("Bash", {"command": "cat .e\"nv\""}),
+        ("Bash", {"command": "base64 < *"}),
+        ("Bash", {"command": "git show HEAD:*"}),
+        (
+            "Bash",
+            {"command": "python3 - <<'EOF'\nimport os  # it's\nos.system(\"rm -rf ~\")\nEOF"},
+        ),
+        ("Bash", {"command": "x=claude-gr; cd ~/.config/${x}ants && echo y >> approved"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "{src,.env}"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "**/.env*"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "secrets/**"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "*.pem"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "*"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "{sub,.env}/**"}),
+        ("Grep", {"pattern": "x", "glob": "**"}),
+    ],
+)
+def test_when_narrowed_rule_meets_its_dangerous_shape_then_asked(
+    run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    (granted / ".env").write_text("NAME=value\n")
+    answer = run(granted, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3 - <<'EOF'\nimport csv\nrows = [(\"R1\", \"the suite's result\")]\n"
+        "with open(\"verification.csv\", \"a\", newline=\"\") as f:\n"
+        "    csv.writer(f).writerows(rows)\nEOF",
+        "git commit -q --allow-empty -m \"fix: don't crash\"",
+    ],
+)
+def test_when_lone_quote_refused_unattended_then_reason_names_the_alternative(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command}, environment={"CLAUDE_GUARD": "deny"})
+    assert "Write tool" in str(answer.get("permissionDecisionReason"))
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cat .en[z-av]",
+        "cp README.md gran[z-at].json",
+        "ls test_b[x-a]",
+        "python3 -c 'print(rows[:-1])'",
+    ],
+)
+def test_when_word_holds_backwards_bracket_range_then_asked(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command})
+    assert answer.get("permissionDecision") == "ask"
+
+
+def test_when_backwards_bracket_range_refused_unattended_then_reason_names_the_way_round(
+    run: Run, repo: pathlib.Path
+) -> None:
+    answer = run(
+        repo, {"command": "cat .en[z-av]"}, environment={"CLAUDE_GUARD": "deny"}
+    )
+    reason = str(answer.get("permissionDecisionReason"))
+    assert ("backwards bracket range" in reason, "Write tool" in reason) == (True, True)
+
+
+def test_when_one_finding_has_no_way_round_then_reason_names_none(
+    run: Run, repo: pathlib.Path
+) -> None:
+    command = "python3 - <<'EOF'\nprint(open('.env').read())  # it's here\nEOF"
+    answer = run(repo, {"command": command}, environment={"CLAUDE_GUARD": "deny"})
+    reason = str(answer.get("permissionDecisionReason"))
+    assert ("Write tool" in reason, "Do not retry" in reason) == (False, True)
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
