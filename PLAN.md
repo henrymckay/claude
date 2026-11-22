@@ -140,7 +140,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | Every other context file | 70 | 59 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
 | `README.md` | 980 | 940 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,496 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,500 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |
@@ -317,7 +317,7 @@ Each line's dated results are in [`verification.csv`](verification.csv); the map
 
 **Coverage map.** Rows are a project's stages, so R6 is read from the rows; each cell names what delivers it and its grade.
 **S** seen once, **R** repeated on a second kind of project, **F** failing at its last recorded result, **D** designed only, **G** a gap and its issue, **—** not wanted yet (note below).
-Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6** to **T9** launcher and guard runs, uncited since D138; **T10** throwaway cloud sessions in the owner's public sandbox repository (2026-11-22).
+Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6** to **T9** launcher and guard runs, uncited since D138; **T10**, **T11** throwaway cloud sessions in the owner's public sandbox repository, T11 with the shipped hook.
 T4's grades are read by script from the last row per line of its `verification.csv`; T1 and T2 predate the records, so theirs rest on the dated milestone notes until their next run (`review-plugin`, Check the coverage map).
 
 | Stage | R1 | R2 | R3 | R4 | R5 | R7 | R8 | R9 |
@@ -325,7 +325,7 @@ T4's grades are read by script from the last row per line of its `verification.c
 | Frame | S autonomous plan T2 | R frame wider T1 T2; D outside plugins | R classes T1 T4 | S alone T5 | R sources T1 T2 | S Opus plan T2 | R docs read T1 T2 | D |
 | Plan | S unsigned T2 | S best in class T3; G top model for plans 168 | S classes T4; D threat model | S alone T5 | R Verification lines T1 T2 | D budget line | S kept current T4 | D size rule |
 | Design | D | S design system T3; G medium's conventions 159 | D loopback guard | S alone T5 | D grain, key | D run cost | S pick changed (D69) | — (1) |
-| Build | F plugins loaded, push refused by the old guard T10; D finish by the owner's diff | S evaluator T3 | D cloud VM refused an off-list host T10, another repository's API refused, git push untested; D binding branch rule; D permission rules | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
+| Build | D pinned plugins loaded, branch back T11, a probe; D finish by the owner's diff | S evaluator T3 | D cloud VM refused an off-list host T10, another repository's API refused, git push untested; D binding branch rule; D permission rules | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
 | Verify | S review T2 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
 | Deploy | D deploy after the owner's merge; G from afar 155 | F dashboard slick and fast T4 (R4) | S deployed at no cost T4 (R6) | S alone T5 | F scheduled slot did not fire T4 (R2) | S free tier T4 (R6); D bill read | S tiers re-checked | — (1) |
 | Operate | F nightly fetch with no machine on T4 (R1, R2); G after failure 151 | D stale alert (T4's R12 not run) | D rotation; G 151 | S alone T5 | D stale threshold (D86) | D usage read | G update cadence 151 | — (1) |
