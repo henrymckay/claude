@@ -89,6 +89,12 @@ _FAKE = textwrap.dedent(
                     script.chmod(0o600)
                     script.write_text(script.read_text() + "echo tampered\\n")
                 seen = f"{os.getcwd()}/.venv/bin:/usr/bin" if behaviour == "badpath" else "/usr/bin:/bin"
+                if behaviour == "privatetemp":
+                    opened = {k for k in keys if k in ("temp-append", "temp-create")}
+                for line in script.read_text().splitlines():
+                    if behaviour == "leaktemp" and ("check temp-append" in line or "check temp-create" in line):
+                        target = pathlib.Path(shlex.split(line.split("{ ")[1].split(";")[0])[-1])
+                        target.write_text("x\\n")
                 lines = [f"check {k} {'open' if k in opened else 'closed'}" for k in keys]
                 text, failed = "\\n".join([*lines, f"path-probe={seen}"]), False
                 if behaviour == "nomarkers":
@@ -804,6 +810,14 @@ def test_when_preflight_runs_its_script_then_the_guard_lets_it(
     assert done.stdout == ""
 
 
+def test_when_a_temp_write_reaches_only_the_sandbox_own_view_then_run_starts(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "preflight.txt").write_text("privatetemp")
+    done = _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    assert (done.returncode, len(_calls(home))) == (0, 1)
+
+
 def test_when_guard_not_loaded_then_run_refused(
     home: pathlib.Path,
     fake_claude: pathlib.Path,
@@ -1397,7 +1411,6 @@ def _filesystem_on(system: str, tmp_path: pathlib.Path) -> dict[str, list[str]]:
         plugins=[],
         project=tmp_path / "project",
         reads=[],
-        session_folders=["/tmp/claude-1/-other-session"],
         system=system,
     )
     return profile["sandbox"]["filesystem"]
@@ -1416,18 +1429,6 @@ def test_when_profile_built_on_macos_then_other_sessions_temp_folders_and_volume
         sessions <= set(filesystem["denyWrite"]),
         "/Volumes" in filesystem["denyRead"],
     ) == (True, True, True)
-
-
-@pytest.mark.parametrize("system", ["darwin", "linux"])
-def test_when_profile_built_then_sessions_found_at_launch_denied_by_name(
-    tmp_path: pathlib.Path, system: str
-) -> None:
-    filesystem = _filesystem_on(system, tmp_path)
-    named = "/tmp/claude-1/-other-session"
-    assert (named in filesystem["denyRead"], named in filesystem["denyWrite"]) == (
-        True,
-        True,
-    )
 
 
 def test_when_profile_built_on_linux_then_only_paths_linux_has_named(

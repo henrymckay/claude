@@ -313,7 +313,11 @@ class Check:
     """One thing the preflight's script tries, which the sandbox must refuse.
 
     ``shell`` is a condition true when the thing got through; the script prints only
-    ``check <key> open`` or ``check <key> closed`` for it, never what it read.
+    ``check <key> open`` or ``check <key> closed`` for it, never what it read. A check
+    that writes names the file in ``written``, and counts as through only where that file
+    reached the real file system: the Linux sandbox gives commands their own view of the
+    temp folder, so a write there can succeed without touching another session's folder
+    (Claude Code 2.1.330, ubuntu-24.04).
     """
 
     key: str
@@ -495,23 +499,6 @@ def _session_temp_folders(system: str) -> tuple[str, ...]:
     return (f"/private/tmp/claude-{uid}/-*", *linux) if system == "darwin" else linux
 
 
-def _find_session_folders(decoy: pathlib.Path) -> list[str]:
-    """Return every other session's temp folder now on the machine, the decoy's made first.
-
-    :param decoy: The folder shaped like another session's that the preflight plants
-        its decoys in, made here so the profile denies it by name like the rest.
-    :returns: The folders, by both spellings where the temp folder has two.
-    """
-    decoy.mkdir(mode=0o700, parents=True, exist_ok=True)
-    return sorted(
-        {
-            str(folder)
-            for folder in decoy.parent.glob("-*")
-            if folder.is_dir() and not folder.is_symlink()
-        }
-    )
-
-
 def build_profile(
     *,
     grant: grant_.Grant | None,
@@ -521,7 +508,6 @@ def build_profile(
     plugins: collections.abc.Sequence[pathlib.Path],
     project: pathlib.Path,
     reads: collections.abc.Sequence[str],
-    session_folders: collections.abc.Sequence[str],
     system: str,
 ) -> dict[str, typing.Any]:
     """Return the settings a run starts under.
@@ -537,9 +523,6 @@ def build_profile(
     :param plugins: The plugin folders loaded, which the sandbox lets commands read.
     :param project: The project folder.
     :param reads: More folders sandboxed commands may read.
-    :param session_folders: Other sessions' temp folders found at launch, denied by name
-        as well as by pattern, since the Linux sandbox let a command write into one the
-        pattern names (Claude Code 2.1.330, ubuntu-24.04).
     :param system: ``sys.platform`` of the machine the run starts on.
     :returns: The settings, as ``--settings`` takes them.
     """
@@ -611,14 +594,12 @@ def build_profile(
                     *(str(path) for path in protected),
                     *(str(p) for p in plugins),
                     *_session_temp_folders(system),
-                    *session_folders,
                 ],
                 "denyRead": [
                     "~/",
                     *(["/Volumes"] if system == "darwin" else []),
                     *_TOOLCHAIN_SECRETS,
                     *_session_temp_folders(system),
-                    *session_folders,
                 ],
             },
             "network": {
@@ -835,12 +816,13 @@ def judge_preflight(
     if _digest(plan.script) != plan.digest:
         found.append("the preflight's script was changed before it ran")
     for check in plan.checks:
-        if f"check {check.key} open" in lines or (
-            check.written is not None and check.written.exists()
-        ):
+        said = {f"check {check.key} {word}" for word in ("closed", "open")} & lines
+        if check.written is not None and check.written.exists():
             found.append(f"{check.name}: got through")
-        elif f"check {check.key} closed" not in lines:
+        elif not said:
             found.append(f"{check.name}: not finished")
+        elif check.written is None and f"check {check.key} open" in said:
+            found.append(f"{check.name}: got through")
     return found
 
 
@@ -951,6 +933,7 @@ def _plan_preflight(
             key="temp-append",
             name="appending to a file in another session's temp folder",
             shell=f"echo x >> {quote(str(other / 'append.txt'))}",
+            written=other / "append.txt",
         ),
         Check(
             key="temp-create",
@@ -1209,7 +1192,6 @@ def preflight(
     session: Session,
     *,
     allowed: collections.abc.Sequence[str],
-    other: pathlib.Path,
     servers: collections.abc.Set[str],
     system: str,
 ) -> tuple[list[str], decimal.Decimal]:
@@ -1217,8 +1199,6 @@ def preflight(
 
     :param session: How to start ``claude``, with the run's profile and environment.
     :param allowed: The hosts the profile lets commands reach.
-    :param other: The folder shaped like another session's temp folder, made before the
-        profile was written so the profile names it.
     :param servers: The MCP servers the owner's configuration names.
     :param system: ``sys.platform`` of the machine the run starts on.
     :returns: What got through or went untried, empty where the profile held, and what
@@ -1228,6 +1208,11 @@ def preflight(
         pathlib.Path.home() / ".cache" / "claude-preflight" / session.layout.root.name
     )
     forbidden = (session.project, session.layout.root, session.layout.work)
+    other = (
+        pathlib.Path("/tmp")
+        / f"claude-{os.getuid()}"
+        / f"-launcher-decoy-{secrets.token_hex(6)}"
+    )
     plan: PreflightPlan | None = None
     try:
         plan = _plan_preflight(
@@ -2150,11 +2135,6 @@ def main() -> None:
     except (LaunchError, OSError) as failure:
         raise SystemExit(f"launch: {failure}") from failure
     plugins = arguments.plugin_dir or _find_house_plugins(arguments.claude)
-    other = (
-        pathlib.Path("/tmp")
-        / f"claude-{os.getuid()}"
-        / f"-launcher-decoy-{secrets.token_hex(6)}"
-    )
     profile = build_profile(
         grant=grant,
         layout=layout,
@@ -2163,7 +2143,6 @@ def main() -> None:
         plugins=plugins,
         project=project,
         reads=arguments.allow_read,
-        session_folders=_find_session_folders(other),
         system=sys.platform,
     )
     layout.profile.write_text(json.dumps(profile, indent=2), encoding="utf-8")
@@ -2177,8 +2156,6 @@ def main() -> None:
     unsafe = check_path(
         environment.get("PATH", ""), forbidden=(project, layout.root, layout.work)
     )
-    if unsafe or arguments.dry_run:
-        shutil.rmtree(other, ignore_errors=True)
     if unsafe:
         raise SystemExit(
             "launch: " + "; ".join(unsafe) + "; hooks outside the sandbox find their "
@@ -2219,7 +2196,6 @@ def main() -> None:
         found, cost = preflight(
             session,
             allowed=profile["sandbox"]["network"]["allowedDomains"],
-            other=other,
             servers=servers,
             system=sys.platform,
         )
