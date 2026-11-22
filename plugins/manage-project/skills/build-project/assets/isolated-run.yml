@@ -1,0 +1,213 @@
+# An unattended build of a public project on a GitHub-hosted Linux runner, through
+# build-project's launcher: nothing of the owner's machine is in reach, the run's
+# commands sit in the bubblewrap sandbox under the run profile, and the launcher's gate
+# decides the job's result. The work comes back as a branch, claude-run/<run id>, pushed
+# by a second job only when the launcher reports finished; status.json and the stream
+# come back as an artifact either way.
+#
+# To use it: copy it to .github/workflows/ in the project, set PLUGINS_REPOSITORY and
+# PLUGINS_REF below to the house plugins' repository and a release's full commit SHA,
+# add the repository secret CLAUDE_CODE_OAUTH_TOKEN (made with `claude setup-token`),
+# then dispatch it from the Actions tab or with
+#   gh workflow run isolated-run.yml -f prompt='...' -f budget-usd=5
+# Public projects only: the artifact and the branch are as public as the repository.
+
+name: isolated run
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: The task, as the launcher's prompt
+        required: true
+        type: string
+      budget-usd:
+        description: The spend limit in dollars at list prices
+        required: true
+        default: "5"
+        type: string
+      model:
+        description: The run's model
+        required: true
+        default: sonnet
+        type: string
+      gate-command:
+        description: A command, such as the suite, that must pass in the sandbox before a finish counts
+        required: false
+        default: ""
+        type: string
+      commit-as:
+        description: The identity the run commits as
+        required: true
+        default: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+        type: string
+      claude-code-version:
+        description: The Claude Code release to install
+        required: true
+        default: 2.1.330
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: isolated-run-${{ github.repository }}
+  cancel-in-progress: false
+
+env:
+  PLUGINS_REPOSITORY: OWNER/REPOSITORY
+  PLUGINS_REF: RELEASE_COMMIT_SHA
+
+jobs:
+  run:
+    name: run the launcher
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    permissions:
+      contents: read # check out the project; nothing in this job can push
+    outputs:
+      commits: ${{ steps.bundle.outputs.commits }}
+    steps:
+      - name: Refuse placeholders
+        run: |
+          case "$PLUGINS_REPOSITORY" in */*) ;; *) bad=1 ;; esac
+          if [ "$PLUGINS_REPOSITORY" = OWNER/REPOSITORY ] || ! printf '%s' "$PLUGINS_REF" | grep -Eqx '[0-9a-f]{40}'; then bad=1; fi
+          if [ -n "${bad:-}" ]; then
+            echo "::error::Set PLUGINS_REPOSITORY to the house plugins' repository and PLUGINS_REF to a release's full commit SHA in this workflow."
+            exit 1
+          fi
+
+      - name: Check out the house plugins
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ env.PLUGINS_REPOSITORY }}
+          ref: ${{ env.PLUGINS_REF }}
+          path: plugins
+          persist-credentials: false
+
+      - name: Check out the project
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: project
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+
+      - name: Install Claude Code and the sandbox's tools
+        env:
+          VERSION: ${{ inputs.claude-code-version }}
+        run: |
+          printf '%s' "$VERSION" | grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+' || { echo "::error::claude-code-version must be a release number such as 2.1.330"; exit 1; }
+          sudo apt-get update -q
+          sudo apt-get install -y -q bubblewrap socat
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            printf '%s\n' 'abi <abi/4.0>,' 'include <tunables/global>' 'profile bwrap /usr/bin/bwrap flags=(unconfined) {' '  userns,' '}' | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo systemctl reload apparmor
+          fi
+          bwrap --ro-bind / / --dev /dev --proc /proc --unshare-all true
+          curl -fsSL https://claude.ai/install.sh | bash -s "$VERSION"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/claude" --version
+
+      - name: Refuse without the Claude token
+        env:
+          HAS_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != true ]; then
+            echo "::error::Add the repository secret CLAUDE_CODE_OAUTH_TOKEN, made with 'claude setup-token', then dispatch again. Nothing was run."
+            exit 1
+          fi
+
+      - name: Run the launcher
+        id: launch
+        working-directory: project
+        env:
+          BUDGET: ${{ inputs.budget-usd }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          COMMIT_AS: ${{ inputs.commit-as }}
+          GATE: ${{ inputs.gate-command }}
+          MODEL: ${{ inputs.model }}
+          PROMPT: ${{ inputs.prompt }}
+        run: |
+          printf '%s\n' "$PROMPT" > "$RUNNER_TEMP/prompt.md"
+          set -- --budget-usd "$BUDGET" --model "$MODEL" --commit-as "$COMMIT_AS"
+          if [ -n "$GATE" ]; then set -- "$@" --gate-command "$GATE"; fi
+          code=0
+          uv run --script "$GITHUB_WORKSPACE/plugins/plugins/manage-project/skills/build-project/scripts/launch.py" "$RUNNER_TEMP/prompt.md" "$@" || code=$?
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle the run's commits and records
+        id: bundle
+        if: always() && steps.launch.outputs.exit != ''
+        working-directory: project
+        env:
+          BASE: ${{ github.sha }}
+          CODE: ${{ steps.launch.outputs.exit }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/result"
+          for folder in "$HOME"/.cache/claude-runs/*/; do
+            find "$folder" -maxdepth 1 -type f ! -name grant.json -exec cp {} "$RUNNER_TEMP/result/" \;
+          done
+          git() { command git -c core.hooksPath=/dev/null -c core.fsmonitor=false "$@"; }
+          if [ "$(git rev-list --count "$BASE..HEAD")" -gt 0 ]; then
+            git bundle create "$RUNNER_TEMP/result/run.bundle" HEAD "^$BASE"
+            if [ "$CODE" = 0 ]; then echo "commits=true" >> "$GITHUB_OUTPUT"; fi
+          fi
+          ls -l "$RUNNER_TEMP/result"
+
+      - name: Upload status.json, the stream and the commits
+        if: always() && steps.launch.outputs.exit != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: run-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/result
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Take the launcher's exit code
+        if: always() && steps.launch.outputs.exit != ''
+        env:
+          CODE: ${{ steps.launch.outputs.exit }}
+        run: |
+          case "$CODE" in
+            0) echo "finished: the launcher's gate passed" ;;
+            3) echo "::error::blocked: read status.json in the artifact for what the owner must do" ;;
+            4) echo "::error::limit: the spend or turn limit was reached" ;;
+            *) echo "::error::failed (exit $CODE): read status.json in the artifact" ;;
+          esac
+          exit "$CODE"
+
+  publish:
+    name: push the run's branch
+    needs: run
+    if: needs.run.outputs.commits == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # push claude-run/<run id>; a push by this token starts no workflow
+    steps:
+      - name: Download the run's commits
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: run-${{ github.run_id }}-${{ github.run_attempt }}
+          path: result
+
+      - name: Check out the commit the run started from
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: repository
+          persist-credentials: true # the push below needs it; this job uploads nothing and runs none of the project's code
+
+      - name: Push the run's branch
+        working-directory: repository
+        env:
+          BRANCH: claude-run/${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          git() { command git -c core.hooksPath=/dev/null -c core.fsmonitor=false "$@"; }
+          git bundle verify ../result/run.bundle
+          git fetch --no-tags ../result/run.bundle "HEAD:refs/heads/$BRANCH"
+          git merge-base --is-ancestor "$GITHUB_SHA" "refs/heads/$BRANCH"
+          git push origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
+          echo "::notice::The run's work is on the branch $BRANCH; read the diff before running any of it."
