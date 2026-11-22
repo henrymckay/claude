@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__*"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/load-plugins.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "design-project@<marketplace>": true,
+    "maintain-plugin@<marketplace>": true,
+    "manage-project@<marketplace>": true,
+    "run-project@<marketplace>": true,
+    "structure-app@<marketplace>": true,
+    "write-code@<marketplace>": true
+  }
+}

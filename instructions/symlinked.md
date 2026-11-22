@@ -10,9 +10,10 @@
 
 ## Skill feedback
 
-When a skill steered you wrong, said nothing where it should have or contradicted another, or I corrected you on something a skill should cover, file an issue on the `repository` that the owning plugin's `.claude-plugin/plugin.json`, two folders above the skill's own, names, and carry on: `gh issue create -R <owner>/<repo> --label skill-feedback`.
+When a skill steered you wrong, said nothing where it should have or contradicted another, or I corrected you on something a skill should cover, file an issue on the `repository` named in the owning plugin's `.claude-plugin/plugin.json` and carry on: `gh issue create -R <owner>/<repo> --label skill-feedback`.
 Name the skill and section, what happened, what should have happened and the kind of project; describe the shape of the case, never the project's data, since the tracker is public.
-File it even for a project kept local or private, unless I say not to: that instruction governs the project's repository, and the issue carries none of its data.
+File it even for a project kept local or private, unless I say not to, since the issue carries none of its data.
+Where `gh` cannot reach it, as in a cloud session, report it instead, never stopping.
 Never park feedback in the project's plan or notes, or in memory, where no sweep reads it; edit a skill only in a `review-plugin` sweep, never mid-task.
 
 ## Answers

@@ -6,13 +6,5 @@
     "name": "claude contributors"
   },
   "repository": "https://github.com/henrymckay/claude",
-  "userConfig": {
-    "guard": {
-      "type": "string",
-      "title": "Guard hook",
-      "description": "on (the default): the guard hook asks you before an action that cannot be taken back, and refuses it when nobody is present (secure-project, Enforce the hard rules with the guard hook); off: it asks nothing in a session you attend, while a run with nobody present stays guarded.",
-      "default": "on"
-    }
-  },
   "license": "MIT"
 }

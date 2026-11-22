@@ -10,19 +10,6 @@
         ]
       }
     ],
-    "PreToolUse": [
-      {
-        "matcher": "^(Bash|Read|NotebookRead|Grep|Glob|Write|Edit|MultiEdit|NotebookEdit|WebFetch|WebSearch|mcp__.*)$",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/skills/secure-project/scripts/guard.sh\"",
-            "timeout": 30,
-            "onFailure": "block"
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [
