@@ -121,7 +121,7 @@ An unattended build is a cloud session on the project's repository alone, the pl
 ### Errors
 
 - **A description misfires, a rule drifts or a file outgrows its budget** — found by the sweep and fixed where the rule belongs; feedback holding project data is edited on sight.
-- **The start-up hook does not load the plugins** — the session starts without their skill lists and its transcript holds the hook's line; fix the pin or the hook and start a new session.
+- **The start-up hook does not load the plugins** — its line tells the session to stop, and the prompt's opening check catches a hook that never ran; fix it and start a new session.
 - **An unattended run needs more than it was given** — it lists the step for the owner in its report and on its branch.
 
 ### Decisions
@@ -133,14 +133,14 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | Item | Budget | Now |
 |---|---|---|
 | `instructions/installed.md` | 180 | 176 |
-| `instructions/symlinked.md` | 1,055 | 1,054 |
+| `instructions/symlinked.md` | 1,055 | 1,053 |
 | `hooks/shared.md`, each copy | 380 | 377 |
 | `manage-project`'s context file | 170 | 167 |
 | `write-code`'s context file | 80 | 75 |
 | Every other context file | 70 | 59 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
-| `README.md` | 980 | 935 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,490 |
+| `README.md` | 980 | 940 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,496 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |
@@ -228,9 +228,9 @@ D138 removed the launcher, guard and grant; their decisions stay, superseded, so
 - **D133** *(decided under delegation, 2026-11-22; superseded by D138)* Isolation that reads no commands around unattended runs, and a short guard list.
 - **D138** *(decided by the coordinator under the owner's delegation, 2026-11-22; not the owner's sign-off)* **The plugins carry no security machinery of their own: the launcher with its profile, preflight and gate, the guard hook and the standing grant are removed**, over a fourth sweep hardening them; isolation comes from the vendor and the skills say how to use it.
 An unattended run is a Claude Code cloud session on the project's repository alone, plugins loaded by a start-up hook pinned to a reviewed SHA, the default branch protected, work returned as a branch, "finished" decided by CI on that branch and the owner reading the diff; it is given no private data, money credential, connector or second repository, so such runs stay attended; a local unattended run is the lesser option for low-risk public work, under Claude Code's own `dontAsk` mode, permission rules and sandbox.
-Evidence: issue 173's replay (531 asks of 2,841 calls, 26 worth asking), issue 163's blocked shakedown, the preflight refused by the model on a hosted runner, three review findings against the gate in one afternoon, PR 176 closed unmerged, and T10; `build-project`, `secure-project`; issues 163, 170 to 173, 175, 177.
+Evidence: issue 173's replay (531 asks of 2,841 calls, 26 worth asking), issue 163, PR 176 closed unmerged, T10; `build-project`, `secure-project`.
 - **D139** *(proposed)* A cloud session loads the plugins from a `SessionStart` hook that installs only when the marketplace's checkout is at the pinned SHA, over `enabledPlugins` (documented not to load in a cloud session) and an environment setup script (untried); T10 throwaway and the hook's local tests.
-- **D140** *(proposed)* `secure-project` ships a deny-by-default permission template, Claude Code rules only, as the owner's step for local sessions; it stops the file tools and named commands, not a script reading a file, which only the sandbox stops.
+- **D140** *(proposed)* `secure-project` ships a starting set of denies and asks, Claude Code rules only, for the owner's user settings; it stops the file tools and named commands, not a script or a shell write, which only the sandbox stops; `build-project`'s `local-run.json` adds the sandbox keys for a local run.
 - **D141** *(proposed)* Skill feedback a run cannot file goes in its report and never stops it; issue 178.
 
 **Models**
@@ -317,7 +317,7 @@ Each line's dated results are in [`verification.csv`](verification.csv); the map
 
 **Coverage map.** Rows are a project's stages, so R6 is read from the rows; each cell names what delivers it and its grade.
 **S** seen once, **R** repeated on a second kind of project, **F** failing at its last recorded result, **D** designed only, **G** a gap and its issue, **—** not wanted yet (note below).
-Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6** to **T9** the launcher and guard runs (2026-11-21 to 22), cited no longer since D138 removed both; **T10** throwaway cloud sessions in the owner's public sandbox repository (2026-11-22), a probe, so cells resting on it are *designed*.
+Runs: **T1** nightly pipeline (M4, 2026-11-10); **T2** dashboard over its store (M18, 2026-11-12); **T3** three evaluated dashboard builds (2026-11-12); **T4** public scheduled pipeline with alerts, acceptance run 2026-11-19 at `ab59d13` (its own R1, R2, R4 and Acceptance failed; R8, R10, R12, R15 and R18 not run; coverage passed); **T5** each plugin alone (2026-11-11, 2026-11-21); **T6** to **T9** launcher and guard runs, uncited since D138; **T10** throwaway cloud sessions in the owner's public sandbox repository (2026-11-22).
 T4's grades are read by script from the last row per line of its `verification.csv`; T1 and T2 predate the records, so theirs rest on the dated milestone notes until their next run (`review-plugin`, Check the coverage map).
 
 | Stage | R1 | R2 | R3 | R4 | R5 | R7 | R8 | R9 |
@@ -325,7 +325,7 @@ T4's grades are read by script from the last row per line of its `verification.c
 | Frame | S autonomous plan T2 | R frame wider T1 T2; D outside plugins | R classes T1 T4 | S alone T5 | R sources T1 T2 | S Opus plan T2 | R docs read T1 T2 | D |
 | Plan | S unsigned T2 | S best in class T3; G top model for plans 168 | S classes T4; D threat model | S alone T5 | R Verification lines T1 T2 | D budget line | S kept current T4 | D size rule |
 | Design | D | S design system T3; G medium's conventions 159 | D loopback guard | S alone T5 | D grain, key | D run cost | S pick changed (D69) | — (1) |
-| Build | D cloud session, pinned hook, branch back T10; D finish by CI and the owner's diff | S evaluator T3 | D cloud VM refused an off-list host and another repository T10; D default branch protected; D permission template | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
+| Build | F plugins loaded, push refused by the old guard T10; D finish by the owner's diff | S evaluator T3 | D cloud VM refused an off-list host T10, another repository's API refused, git push untested; D binding branch rule; D permission rules | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
 | Verify | S review T2 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
 | Deploy | D deploy after the owner's merge; G from afar 155 | F dashboard slick and fast T4 (R4) | S deployed at no cost T4 (R6) | S alone T5 | F scheduled slot did not fire T4 (R2) | S free tier T4 (R6); D bill read | S tiers re-checked | — (1) |
 | Operate | F nightly fetch with no machine on T4 (R1, R2); G after failure 151 | D stale alert (T4's R12 not run) | D rotation; G 151 | S alone T5 | D stale threshold (D86) | D usage read | G update cadence 151 | — (1) |
@@ -384,6 +384,7 @@ Private-data and real-account trials (M22, M20) are attended for now (D138).
 - **Q9** Once MotherDuck takes the current DuckDB client, replace a project's two stores with one DuckLake? — recommended: yes, trialled in the next such project.
 - **Q11** Which technology makes slick, fast dashboards? — recommended: D56; blocks M21's dashboard.
 - **Q13** Accept R9 Legible and the sign-off by exception it implies? — recommended: yes; the alternative keeps every decision waiting for a full read.
+- **Q14** R3 says "enforced, not only advised", while D138 says the plugins enforce nothing: reword R3 to "enforced by the vendor's controls the skills configure", or reverse D138? — recommended: reword.
 
 **Unsigned backlog** (R9): 46 proposed decisions (D54 to D60, D82 to D132 bar the 15 D138 superseded, D139 to D141) and D138, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
 

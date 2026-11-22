@@ -17,7 +17,7 @@ Each plugin installs on its own and names any skill it needs from a plugin you l
   - [`retire-project`](plugins/manage-project/skills/retire-project) tears a project down from its records, confirming each removal.
   - [`choose-model`](plugins/manage-project/skills/choose-model) runs each stage on the right model and records its cost.
   - [`make-decisions`](plugins/manage-project/skills/make-decisions) settles an open question from the nearest precedent.
-  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows, enforced through Claude Code's own permission controls and sandbox.
+  - [`secure-project`](plugins/manage-project/skills/secure-project) keeps private data and credentials where their class allows, and says how to set Claude Code's own permission controls and sandbox.
   - [`use-git`](plugins/manage-project/skills/use-git) sets branching and [Conventional Commits](https://www.conventionalcommits.org).
   - [`write-markdown`](plugins/manage-project/skills/write-markdown) writes Markdown for humans and for models.
 - **`design-project`** — what a project shows and holds, settled before it is built.
@@ -104,8 +104,9 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-A Claude Code cloud session given only the trial's repository plans, builds and reviews a project from one prompt, with the house plugins loaded by a pinned start-up hook ([`build-project`](plugins/manage-project/skills/build-project), Run it with nobody present).
-Its work comes back as a branch; CI on that branch and your reading of the diff decide whether it is finished, and a sweep then works through the build's feedback.
+A trial is meant to run as a Claude Code cloud session given only the trial's repository, with the house plugins loaded by a pinned start-up hook ([`build-project`](plugins/manage-project/skills/build-project), Run it with nobody present).
+No trial has run that way yet.
+Its work is to come back as a branch, and your reading of the diff decides whether it is finished; a sweep then works through the build's feedback.
 [`PLAN.md`](PLAN.md)'s `Next` list orders them.
 
 ## 📄 Licence

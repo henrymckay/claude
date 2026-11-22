@@ -15,7 +15,7 @@ Reconstructed 2026-11-21 by sweep 13; entries before then were not recorded as t
 
 - **The GitHub CLI's login** — repository and issue access for a local sweep; kept in the CLI's own store on the owner's machine; never read or printed by a sweep.
 - **The scheduled task's GitHub access** — granted to the cloud environment when the task was made; revoked in the task's settings.
-- **`CLAUDE_CODE_OAUTH_TOKEN` in the owner's public sandbox repository** — recorded on the closed `sweep-15` branch as made by the owner on 2026-11-22 for the hosted runner, which sweep 16 removed; state not re-checked. Revoked at claude.ai under Settings, Claude Code, then removed with `gh secret delete CLAUDE_CODE_OAUTH_TOKEN -R <repository>`, since deleting the secret alone leaves the token valid.
+- **`CLAUDE_CODE_OAUTH_TOKEN` in the owner's public sandbox repository** — recorded on the closed `sweep-15` branch for the hosted runner, which sweep 16 removed; removed: the repository's secret list was empty when the coordinator checked it on 2026-11-22. A token made with `claude setup-token` for it, if one was, stays valid until revoked at claude.ai under Settings, Claude Code.
 
 No credential is held in the repository.
 
@@ -28,13 +28,13 @@ No credential is held in the repository.
 - **`uv`** — runs `costs.py` and its tests as PEP 723 scripts; Python 3.12 or later for those.
 - **`git` and `gh`** — branches, pull requests and issues.
 - **`pytest` and `ruff`** — pulled by `uv` for the suites and the formatting check.
-- **The launcher, guard hook and standing grant** — removed 2026-11-22 (sweep 16, D138), with `python3` 3.9's use for the guard, `pip`'s certificate setting and the `pre-commit` store inside a run; a machine on release `v0.5` or earlier still runs the guard from that release until its plugins are updated.
+- **The launcher, guard hook and standing grant** — removed 2026-11-22 (sweep 16, D138), with `python3` 3.9's use for the guard, `pip`'s certificate setting and the `pre-commit` store inside a run; no release tag ever held them, so only a machine loading the plugins from `main` between sweeps 12 and 16 runs the guard, until it loads them again.
 
 ## Connectors, plugins and skills
 
 - **The six house plugins** — this repository; `v0.5` is the newest release tag, behind `main` by sweeps 8 to 16.
 - **`skill-creator`, `plugin-dev`, `commit-commands`, `claude-security`** — Anthropic's official marketplace; optional companions named in the README; none required.
-- **`secure-project`'s permission template** — proposed for the owner to merge into their user settings; not merged by any sweep; removed by deleting its rules from that file.
+- **`secure-project`'s permission rules and `build-project`'s `local-run.json`** — proposed for the owner to merge, the first into their user settings, the second into a file passed with `--settings` for a local run; not merged by any sweep; removed by deleting the rules, or the file.
 
 No connector is used by a sweep.
 
