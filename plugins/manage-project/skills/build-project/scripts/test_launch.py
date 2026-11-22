@@ -1238,5 +1238,115 @@ def test_when_notify_given_then_report_line_handed_to_it(
     assert sink.read_text().startswith("finished:")
 
 
+def test_when_environment_built_then_tool_homes_sit_in_scratch_folder(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path, work=tmp_path / "work")
+    environment = launch.build_environment(
+        grant=None, layout=layout, source={}, usage_wait_hours=1.0
+    )
+    homes = (
+        "GH_CONFIG_DIR",
+        "PIP_CACHE_DIR",
+        "PRE_COMMIT_HOME",
+        "VIRTUALENV_OVERRIDE_APP_DATA",
+    )
+    assert all(
+        pathlib.Path(environment[name]).is_relative_to(layout.work) for name in homes
+    )
+
+
+def test_when_environment_built_then_pip_trusts_its_own_bundle(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path, work=tmp_path / "work")
+    environment = launch.build_environment(
+        grant=None, layout=layout, source={}, usage_wait_hours=1.0
+    )
+    assert environment["PIP_USE_DEPRECATED"] == "legacy-certs"
+
+
+_LOCAL_HOOK = """\
+repos:
+  - repo: local
+    hooks:
+      - id: say
+        name: say
+        entry: "true"
+        language: system
+"""
+
+
+def _uv_cache() -> dict[str, str]:
+    return {
+        "UV_CACHE_DIR": os.environ.get("UV_CACHE_DIR")
+        or str(pathlib.Path.home() / ".cache" / "uv")
+    }
+
+
+def _hook_repository(folder: pathlib.Path) -> str:
+    folder.mkdir()
+    (folder / ".pre-commit-hooks.yaml").write_text(
+        "- id: say\n  name: say\n  entry: 'true'\n  language: system\n"
+    )
+    _commit_all(folder)
+    return _head(folder)
+
+
+def test_when_project_has_pre_commit_config_then_store_seeded_in_scratch_folder(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (project / ".pre-commit-config.yaml").write_text(_LOCAL_HOOK)
+    _commit_all(project)
+    _launch(
+        home, fake_claude, project, "blocked", "--budget-usd", "5",
+        environment=_uv_cache(),
+    )  # fmt: skip
+    stores = list((home / "runs").glob("*/work/pre-commit/db.db"))
+    assert (_status(home)["pre_commit"], len(stores)) == ("seeded", 1)
+
+
+def test_when_hook_repository_is_a_local_path_then_nothing_fetched(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    hooks = tmp_path / "hooks"
+    rev = _hook_repository(hooks)
+    (project / ".pre-commit-config.yaml").write_text(
+        f"repos:\n  - repo: {hooks}\n    rev: {rev}\n    hooks:\n      - id: say\n"
+    )
+    _commit_all(project)
+    done = _launch(
+        home, fake_claude, project, "blocked", "--budget-usd", "5",
+        environment=_uv_cache(),
+    )  # fmt: skip
+    assert (
+        str(_status(home)["pre_commit"]).startswith("not seeded"),
+        "not allowed" in done.stderr,
+    ) == (True, True)
+
+
+def test_when_pre_commit_config_is_a_symlink_then_not_seeded(
+    home: pathlib.Path,
+    fake_claude: pathlib.Path,
+    project: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    outside = tmp_path / "outside.yaml"
+    outside.write_text(_LOCAL_HOOK)
+    (project / ".pre-commit-config.yaml").symlink_to(outside)
+    _commit_all(project)
+    _launch(home, fake_claude, project, "blocked", "--budget-usd", "5")
+    assert str(_status(home)["pre_commit"]).startswith("not seeded")
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q", *sys.argv[1:]]))
