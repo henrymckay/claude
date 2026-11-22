@@ -83,7 +83,7 @@ Where the precedent is another project's decision rather than a skill's, also fi
 ## Escalate only these
 
 - **Irreversible** — deleting data, rewriting pushed history, a schema change a reader cannot survive, anything published.
-- **Outward-facing** — an outward action as `plan-project`'s Plan with no user present lists them, or anything another person sees or receives, except an action the project's standing grant names, which the owner settled in advance (`plan-project`, Plan with no user present).
+- **Outward-facing** — an outward action as `plan-project`'s Plan with no user present lists them, or anything another person sees or receives, except returning the work as a branch of the project's own repository (`plan-project`, Plan with no user present).
 - **Costly** — money, a paid tier, or work that would take longer to undo than the milestone took to build.
 - **Security** — a data class looser than private, a credential for an account with money in it beyond read-only, private data sent to an outside service (`secure-project`).
 - **A change to the Brief or an override of a skill** — the user's alone, as `plan-project`'s Keep it current says; a requirement a house pick would weaken is one, and is built as stated (`plan-project`, step 4).
