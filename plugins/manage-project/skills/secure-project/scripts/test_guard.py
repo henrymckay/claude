@@ -1006,5 +1006,94 @@ def test_when_connector_reads_or_previews_then_no_decision(
     assert answer == {}
 
 
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        (
+            "Bash",
+            {
+                "command": "grep -n \"fail_under\\|include\" pyproject.toml; "
+                "uv run coverage report --include 'src/app/core/*,src/app/port/*' "
+                "--fail-under 100 2>&1 | tail -4"
+            },
+        ),
+        ("Bash", {"command": "ls sub/*"}),
+        ("Bash", {"command": "cat sub/*"}),
+        (
+            "Bash",
+            {
+                "command": "(npm run preview > $TMPDIR/web.log 2>&1 & echo $! > "
+                "$TMPDIR/web.pid); sleep 5; tail $TMPDIR/web.log; curl -sS -m 10 "
+                "http://127.0.0.1:4173/; kill $(cat $TMPDIR/web.pid)"
+            },
+        ),
+        (
+            "Bash",
+            {
+                "command": "python3 - <<'EOF'\nimport csv\n"
+                "rows = [(\"R1\", \"the suite's result\")]\n"
+                "with open(\"verification.csv\", \"a\", newline=\"\") as f:\n"
+                "    csv.writer(f).writerows(rows)\nEOF"
+            },
+        ),
+        ("Bash", {"command": "git commit -q --allow-empty -m \"fix: don't crash\""}),
+        (
+            "Grep",
+            {
+                "pattern": "alpha|beta",
+                "path": ".",
+                "glob": "{src,api/src,pyproject.toml,api/package.json}/**",
+            },
+        ),
+        ("Grep", {"pattern": "version", "path": ".", "glob": "**/*.json"}),
+    ],
+)
+def test_when_ordinary_call_from_shakedown_then_no_decision(
+    run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(granted, tool_input, tool=tool)
+    assert answer == {}
+
+
+@pytest.mark.parametrize(
+    ("tool", "tool_input"),
+    [
+        ("Bash", {"command": "(sleep 1 & echo $!); echo $API_TOKEN"}),
+        ("Bash", {"command": "echo ${!prefix*}"}),
+        ("Bash", {"command": "cat $DIR/*"}),
+        ("Bash", {"command": "sed -i s/a/b/ *"}),
+        ("Bash", {"command": "sed -i s/a/b/ $DIR/*"}),
+        ("Bash", {"command": "cp README.md $DIR/*.json"}),
+        ("Bash", {"command": "bash <<'EOF'\ngit push --force origin main\necho it's\nEOF"}),
+        ("Bash", {"command": "sh -c \"rm -rf ~; echo it's\""}),
+        (
+            "Bash",
+            {"command": "python3 - <<'EOF'\nimport os  # it's\nos.system(\"rm -rf ~\")\nEOF"},
+        ),
+        ("Bash", {"command": "x=claude-gr; cd ~/.config/${x}ants && echo y >> approved"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "{src,.env}"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "**/.env*"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "secrets/**"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "*.pem"}),
+    ],
+)
+def test_when_narrowed_rule_meets_its_dangerous_shape_then_asked(
+    run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
+) -> None:
+    answer = run(granted, tool_input, tool=tool)
+    assert answer.get("permissionDecision") == "ask"
+
+
+def test_when_unparsable_command_refused_unattended_then_reason_names_the_alternative(
+    run: Run, repo: pathlib.Path
+) -> None:
+    answer = run(
+        repo,
+        {"command": "echo 'unclosed"},
+        environment={"CLAUDE_GUARD": "deny"},
+    )
+    assert "Write tool" in str(answer.get("permissionDecisionReason"))
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

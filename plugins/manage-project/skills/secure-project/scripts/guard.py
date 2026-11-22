@@ -146,8 +146,14 @@ _SECRET_NAME: typing.Final = (
     r"|CREDENTIALS?|_PAT|_KEY)(?![A-Za-z0-9_])"
 )
 _SECRET_VARIABLE: typing.Final = re.compile(
-    r"\$\{?!|\$\{?" + _SECRET_NAME, re.IGNORECASE
+    r"\$\{!|\$\{?" + _SECRET_NAME, re.IGNORECASE
 )
+_ORDINARY_NAMES: typing.Final = ("README.md", "main.py", "package.json")
+_ALTERNATIVES: typing.Final = {
+    "a command the guard could not parse": (
+        "If it is a script, write it to a file with the Write tool and run that file."
+    ),
+}
 _SECRET_VALUE: typing.Final = re.compile(
     r"AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}"
     r"|(?<![A-Za-z0-9_-])(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}"
@@ -612,22 +618,41 @@ def _read_small(path: pathlib.Path) -> str:
     return ""
 
 
+def _picks_by_pattern(name: str, path: str, candidates: typing.Iterable[str]) -> bool:
+    """Return whether a file-name pattern picks out one of the candidates by name.
+
+    A pattern that also matches an ordinary file, such as ``*`` or ``*.json``, picks out
+    nothing by name: where the shell can expand it, the callers check what it matches on
+    disk instead; where it cannot, because the path holds a variable or a command
+    substitution, it still counts.
+
+    :param name: The last part of the path, perhaps a pattern.
+    :param path: The whole path, as written or resolved.
+    :param candidates: The file names being guarded.
+    :returns: True where the name is a pattern matching a candidate.
+    """
+    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    if not re.search(r"[*?\[]", name):
+        return False
+    wide = any(fnmatch.fnmatch(ordinary.lower(), name) for ordinary in _ORDINARY_NAMES)
+    unresolved = "$" in path or "`" in path
+    return (not wide or unresolved) and any(
+        fnmatch.fnmatch(candidate, name) for candidate in candidates
+    )
+
+
 def _is_secret_path(path: str) -> bool:
     """Return whether a path names, or as a glob could name, a file that holds a secret.
 
     :param path: The path as written or resolved.
     :returns: True for ``.env`` files, keys, credential stores and the like, and for a
-        pattern such as ``.env*`` or ``.en?`` one of them would match.
+        pattern such as ``.env*`` or ``.en?`` that picks one of them out by name.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     path = path.replace("\\", "/")
     if _SECRET_FILE.search(path):
         return True
-    name = path.rsplit("/", 1)[-1]
-    return bool(re.search(r"[*?\[]", name)) and any(
-        fnmatch.fnmatch(candidate, name) for candidate in _SECRET_NAMES
-    )
+    return _picks_by_pattern(path.rsplit("/", 1)[-1], path, _SECRET_NAMES)
 
 
 def _starts_with(words: list[str], prefix: tuple[str, ...]) -> bool:
@@ -1400,7 +1425,10 @@ def _check_shell(
 
     Every simple command is checked, from the real command name and from each dangerous
     tool named later in it; every here-document body and every word holding a space, the
-    usual shape of a command passed as a string, is checked as a command line too.
+    usual shape of a command passed as a string, is checked as a command line too. Such
+    nested text that will not tokenise, prose with an apostrophe or a script in another
+    language, is split again with its quotes and backslashes blanked, so every command
+    name in it is still seen; only a top-level line the guard cannot parse is refused.
 
     :param text: The command line as the Bash tool would run it.
     :param cwd: The folder it starts in.
@@ -1423,7 +1451,9 @@ def _check_shell(
     try:
         line = _split(text)
     except ValueError:
-        return [*findings, "a command the guard could not parse"]
+        if depth == 0:
+            return [*findings, "a command the guard could not parse"]
+        line = _split(re.sub(r"[\"'\\]", " ", text))
     for inner in re.findall(r"`([^`]*)`", text):
         findings += _check_shell(inner, cwd, context, depth + 1)
     for body in line.bodies:
@@ -1444,6 +1474,10 @@ def _check_shell(
         if not plain:
             continue
         if plain[0] in ("cd", "pushd") and len(plain) > 1:
+            if _touches_approvals(plain[1], cwd):
+                findings.append(
+                    "approving a standing grant or touching the owner's approvals"
+                )
             cwd = _resolve(cwd, plain[1])
             continue
         findings += _check_words(plain, assignments, cwd, context, depth, adds=adds)
@@ -1472,12 +1506,10 @@ def _names_grant(word: str) -> bool:
     """Return whether a word names the standing grant, as written or as a pattern.
 
     :param word: A path from a command.
-    :returns: True for ``grant.json`` in any case, or a glob that matches it.
+    :returns: True for ``grant.json`` in any case, or a glob that picks it out by name.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     name = os.path.basename(os.path.normpath(word)).lower()
-    return name == grant_.FILE_NAME or fnmatch.fnmatch(grant_.FILE_NAME, name)
+    return name == grant_.FILE_NAME or _picks_by_pattern(name, word, (grant_.FILE_NAME,))
 
 
 def _snake(name: str) -> str:
@@ -1590,7 +1622,11 @@ def check(call: Call, context: Context) -> list[str]:
             return [f"reading a secret file ({path})"]
         return []
     if tool in ("Grep", "Glob"):
-        where = f"{data.get('path', '')} {data.get('glob', '')}".split()
+        where = [
+            part
+            for word in f"{data.get('path', '')} {data.get('glob', '')}".split()
+            for part in _expand_braces(word)
+        ]
         pattern = str(data.get("pattern", ""))
         findings = []
         if tool == "Grep" and any(_is_secret_path(w) for w in where):
@@ -1689,12 +1725,19 @@ def _answer(findings: list[str], *, unattended: bool) -> dict[str, typing.Any]:
     :param unattended: Whether nobody is present to answer a prompt.
     :returns: The ``hookSpecificOutput`` object.
     """
-    said = "; ".join(dict.fromkeys(findings))
+    distinct = list(dict.fromkeys(findings))
+    said = "; ".join(distinct)
+    alternatives = [_ALTERNATIVES[f] for f in distinct if f in _ALTERNATIVES]
     if unattended:
+        then = (
+            " ".join(alternatives)
+            if len(alternatives) == len(distinct)
+            else "Do not retry it or reach the same end another way; list it in the "
+            "report as a step for the owner."
+        )
         reason = (
             f"Refused by the guard hook (secure-project): {said}. Nobody is present to "
-            "approve it. Do not retry it or reach the same end another way; list it in "
-            "the report as a step for the owner."
+            f"approve it. {then}"
         )
     else:
         reason = f"Guard hook (secure-project): {said}. Approve only if you meant it."
