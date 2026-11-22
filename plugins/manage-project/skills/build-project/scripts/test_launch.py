@@ -74,6 +74,8 @@ _FAKE = textwrap.dedent(
             command = probe["input"].get("command", "")
             if kind == "gate" and command.startswith("git status") and status == "dirty":
                 text, failed = "?? loose.py\\nporcelain-end", False
+            elif kind == "gate" and command.startswith("git status") and status == "placeholders":
+                text, failed = "?? .bashrc\\n?? .claude/\\n?? .mcp.json\\n?? grant.json\\nporcelain-end", False
             elif kind == "gate" and command.startswith("git ") and pathlib.Path(".git").is_file():
                 text, failed = "fatal: the stand-in sandbox runs no planted git", True
             elif kind == "gate" and command.startswith("git "):
@@ -575,6 +577,25 @@ def test_when_acceptance_row_failed_then_finish_not_accepted(
         "0",
     )
     assert (done.returncode, "Acceptance" in done.stdout) == (5, True)
+
+
+def test_when_only_the_linux_sandbox_placeholders_are_untracked_then_finished(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    (home / "status.txt").write_text("placeholders")
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0",
+    )  # fmt: skip
+    assert done.returncode == 0
+
+
+def test_when_run_starts_then_it_is_told_feedback_goes_in_its_report(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    prompt = _calls(home)[0]["argv"][-1]
+    assert "never a reason to end blocked" in prompt
 
 
 def test_when_work_left_uncommitted_then_finish_not_accepted(

@@ -57,6 +57,23 @@ _PREFLIGHT_INTRO: typing.Final = (
 _PROBE_MODEL: typing.Final = "haiku"
 _PROBE_SECONDS: typing.Final = 900
 _RECORDS: typing.Final = ("PLAN.md", "DEPENDENCIES.md", "costs.csv", "verification.csv")
+_PLACEHOLDERS: typing.Final = frozenset(
+    (
+        ".bash_profile",
+        ".bashrc",
+        ".claude",
+        ".gitconfig",
+        ".gitmodules",
+        ".idea",
+        ".mcp.json",
+        ".profile",
+        ".ripgreprc",
+        ".vscode",
+        ".zprofile",
+        ".zshrc",
+        "grant.json",
+    )
+)
 _STATUS_END: typing.Final = "porcelain-end"
 _STATUS_COMMAND: typing.Final = (
     f"git status --porcelain --untracked-files=normal && echo {_STATUS_END}"
@@ -193,6 +210,9 @@ This run is unattended: a launcher started it and nobody is watching. When the w
 task is done, end your final message with the line `{_MARKER} finished`. If you cannot
 go on without the owner, end it with `{_MARKER} blocked: <the one thing you need>`. A
 final message with neither line is taken as an interruption, and the session resumed.
+Skill feedback the session's rules ask you to file goes in your final message instead:
+filing an issue is an outward action this run takes only where its standing grant
+allows, and it is never a reason to end blocked.
 """
 _RESUME_NOTE: typing.Final = f"""The launcher resumed this session after {{why}}. Check
 the repository's state, carry on from where the work stopped, and end as instructed:
@@ -1362,6 +1382,29 @@ def _read_commits(result: str) -> set[str]:
     return {hashes[0]}
 
 
+def _uncommitted(result: str) -> list[str]:
+    """Return what ``git status --porcelain`` shows as uncommitted, less the placeholders.
+
+    On Linux the sandbox holds a write denial on a file that does not exist with an empty
+    placeholder while each command runs, so the gate's own ``git status`` lists Claude
+    Code's protected names and the grant as untracked (Claude Code 2.1.330,
+    ubuntu-24.04); none of them is a file the run can write, so an untracked entry by
+    one of those names is not the run's work. A status without its end marker shows
+    itself, so it fails.
+
+    :param result: What the status command printed.
+    :returns: Each line that is uncommitted work, or the output where the marker is missing.
+    """
+    lines = [line.rstrip() for line in result.splitlines() if line.strip()]
+    if _STATUS_END not in lines:
+        return lines or ["git status printed nothing"]
+    return [
+        line
+        for line in lines[: lines.index(_STATUS_END)]
+        if not (line.startswith("?? ") and line[3:].rstrip("/") in _PLACEHOLDERS)
+    ]
+
+
 def gate(
     session: Session, *, commands: collections.abc.Sequence[str]
 ) -> tuple[list[str], decimal.Decimal]:
@@ -1412,10 +1455,8 @@ def gate(
         tried = _attempts(probe, probed.calls)
         if not tried:
             found.append(f"`{probe.name}` was not run")
-        elif probe is status and (
-            tried[-1].failed or tried[-1].result.strip() != _STATUS_END
-        ):
-            shown = tried[-1].result.replace(_STATUS_END, "").split()
+        elif probe is status and (tried[-1].failed or _uncommitted(tried[-1].result)):
+            shown = _uncommitted(tried[-1].result)
             found.append(
                 f"uncommitted work: {' '.join(shown)[:200] or 'git status failed'}"
             )
