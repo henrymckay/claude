@@ -86,6 +86,8 @@ _FAKE = textwrap.dedent(
                 text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
             elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
+            elif behaviour.startswith("echo:") and command.endswith(f"echo {behaviour[5:]}"):
+                text, failed = behaviour[5:], False
             elif (behaviour == "leak" or (behaviour == "leaktemp" and "-launcher-decoy" in command)) and probe["tool"] in ("Read", "Bash"):
                 path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
                 if pathlib.Path(path).exists():
@@ -667,6 +669,11 @@ def test_when_preflight_refuses_every_probe_then_run_starts(
     [
         ("leak", "got through"),
         ("leaktemp", "another session's temp folder: got through"),
+        (
+            "echo:credential-visible",
+            "the Claude credential, in its environment or a process's: got through",
+        ),
+        ("echo:root-reached", "gaining root with sudo: got through"),
         ("connector", "connector"),
         ("skip", "not tried"),
     ],
@@ -1264,17 +1271,74 @@ def test_when_environment_built_then_tool_homes_sit_in_scratch_folder(
     )
 
 
-def test_when_profile_built_then_other_sessions_temp_folders_and_volumes_denied(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+def _filesystem_on(system: str, tmp_path: pathlib.Path) -> dict[str, list[str]]:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    profile = launch.build_profile(
+        grant=None,
+        layout=launch.Layout(root=tmp_path, work=tmp_path / "work"),
+        local_binding=False,
+        mode="dontAsk",
+        plugins=[],
+        project=tmp_path / "project",
+        reads=[],
+        system=system,
+    )
+    return profile["sandbox"]["filesystem"]
+
+
+def test_when_profile_built_on_macos_then_other_sessions_temp_folders_and_volumes_denied(
+    tmp_path: pathlib.Path,
 ) -> None:
-    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
-    filesystem = _profile(home)["sandbox"]["filesystem"]
-    sessions = {f"/private/tmp/claude-{os.getuid()}/-*", f"/tmp/claude-{os.getuid()}/-*"}
+    filesystem = _filesystem_on("darwin", tmp_path)
+    sessions = {
+        f"/private/tmp/claude-{os.getuid()}/-*",
+        f"/tmp/claude-{os.getuid()}/-*",
+    }
     assert (
         sessions <= set(filesystem["denyRead"]),
         sessions <= set(filesystem["denyWrite"]),
         "/Volumes" in filesystem["denyRead"],
     ) == (True, True, True)
+
+
+def test_when_profile_built_on_linux_then_only_paths_linux_has_named(
+    tmp_path: pathlib.Path,
+) -> None:
+    filesystem = _filesystem_on("linux", tmp_path)
+    named = filesystem["denyRead"] + filesystem["denyWrite"]
+    macos_only = [p for p in named if p.startswith(("/private/tmp", "/Volumes"))]
+    assert (macos_only, f"/tmp/claude-{os.getuid()}/-*" in filesystem["denyWrite"]) == (
+        [],
+        True,
+    )
+
+
+def test_when_environment_built_then_claude_code_does_not_update_mid_run(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path, work=tmp_path / "work")
+    environment = launch.build_environment(
+        grant=None, layout=layout, source={}, usage_wait_hours=1.0
+    )
+    assert environment["DISABLE_AUTOUPDATER"] == "1"
+
+
+@pytest.mark.parametrize("shared", ["/dev/shm/bin", "/var/tmp/bin"])
+def test_when_path_holds_a_shared_temp_folder_then_refused(
+    tmp_path: pathlib.Path, shared: str
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    found = launch.check_path(f"{shared}:/usr/bin", forbidden=[tmp_path])
+    assert found == [
+        f"PATH entry {shared} is a folder the run can write or a temp folder"
+    ]
 
 
 def test_when_environment_built_then_pip_trusts_its_own_bundle(
@@ -1314,7 +1378,9 @@ def _hook_repository(folder: pathlib.Path) -> str:
     return _head(folder)
 
 
-@pytest.mark.parametrize("remote", ["local-path", "https://hooks.example.invalid/hooks"])
+@pytest.mark.parametrize(
+    "remote", ["local-path", "https://hooks.example.invalid/hooks"]
+)
 def test_when_project_names_hook_repositories_then_launcher_fetches_and_builds_nothing(
     home: pathlib.Path,
     fake_claude: pathlib.Path,

@@ -65,6 +65,11 @@ _HEAD_COMMAND: typing.Final = (
     "git log -2 --format=%H && "
     f"(git diff --name-only HEAD~1 HEAD 2>/dev/null; echo {_HEAD_END})"
 )
+_CREDENTIAL_COMMAND: typing.Final = (
+    '{ test -n "${CLAUDE_CODE_OAUTH_TOKEN}${ANTHROPIC_API_KEY}" || grep -qas '
+    "-e CLAUDE_CODE_OAUTH_TOKEN= -e ANTHROPIC_API_KEY= /proc/[0-9]*/environ; } "
+    "&& echo credential-visible"
+)
 _PATH_PREFIX: typing.Final = "path-probe="
 _PATH_COMMAND: typing.Final = f'echo "{_PATH_PREFIX}$PATH"'
 _PROBE_ENVIRONMENT: typing.Final = {
@@ -76,10 +81,12 @@ _RECORD_FILES: typing.Final = frozenset(
     ("DEPENDENCIES.md", "costs.csv", "verification.csv")
 )
 _TEMP_FOLDERS: typing.Final = (
+    "/dev/shm",
     "/tmp",
     "/private/tmp",
-    "/var/folders",
     "/private/var/folders",
+    "/var/folders",
+    "/var/tmp",
 )
 _UNFINISHED: typing.Final = re.compile(
     r"(?i)moved to the background|running in (the )?background|timed out|timeout exceeded"
@@ -407,7 +414,9 @@ def build_environment(
     run's own, never the owner's, whose hooks run outside the sandbox on the owner's own
     commits; the launcher fetches nothing a project file names. ``pip`` checks certificates
     against its own bundle, since the system trust store it asks by default fails inside
-    the macOS sandbox (``OSStatus -26276``, pip 26.3). Claude Code's retry watchdog waits out a capacity error or the plan's usage window
+    the macOS sandbox (``OSStatus -26276``, pip 26.3). Claude Code's background updater is
+    off, so the preflight, the run and the gate run the version ``status.json`` records.
+    Claude Code's retry watchdog waits out a capacity error or the plan's usage window
     inside the request, rechecking every ten minutes, up to ``usage_wait_hours``; a reset
     further away fails at once, and the launcher reports it as a limit.
 
@@ -429,6 +438,7 @@ def build_environment(
             "CLAUDE_CODE_RETRY_WATCHDOG_MAX_WAIT_MS": wait_ms,
             "CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS": "600000",
             "CLAUDE_GUARD": "deny",
+            "DISABLE_AUTOUPDATER": "1",
             "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
             "GH_CONFIG_DIR": str(layout.work / "gh"),
             "PIP_CACHE_DIR": str(layout.work / "pip-cache"),
@@ -443,7 +453,7 @@ def build_environment(
     )
 
 
-def _session_temp_folders() -> tuple[str, ...]:
+def _session_temp_folders(system: str) -> tuple[str, ...]:
     """Return the patterns for every Claude session's own temp folder on this machine.
 
     Claude Code keeps each session's scripts and task output in a folder named for its
@@ -451,10 +461,12 @@ def _session_temp_folders() -> tuple[str, ...]:
     what is there outside any sandbox, so a run must neither read nor write them; the
     parent folder itself stays open, since the Bash tool needs it.
 
+    :param system: ``sys.platform`` of the machine the run starts on.
     :returns: The patterns, under both spellings of the temp folder on macOS.
     """
     uid = os.getuid()
-    return (f"/private/tmp/claude-{uid}/-*", f"/tmp/claude-{uid}/-*")
+    linux = (f"/tmp/claude-{uid}/-*",)
+    return (f"/private/tmp/claude-{uid}/-*", *linux) if system == "darwin" else linux
 
 
 def build_profile(
@@ -466,8 +478,12 @@ def build_profile(
     plugins: collections.abc.Sequence[pathlib.Path],
     project: pathlib.Path,
     reads: collections.abc.Sequence[str],
+    system: str,
 ) -> dict[str, typing.Any]:
     """Return the settings a run starts under.
+
+    The macOS sandbox is Seatbelt and the Linux one bubblewrap; each is given only the
+    paths its machine has, so mounted volumes are denied on macOS alone.
 
     :param grant: The standing grant, whose ``network`` and ``web`` widen the defaults.
     :param layout: The run's folders.
@@ -477,6 +493,7 @@ def build_profile(
     :param plugins: The plugin folders loaded, which the sandbox lets commands read.
     :param project: The project folder.
     :param reads: More folders sandboxed commands may read.
+    :param system: ``sys.platform`` of the machine the run starts on.
     :returns: The settings, as ``--settings`` takes them.
     """
     web = grant.web if grant else "docs"
@@ -544,13 +561,13 @@ def build_profile(
                 "denyWrite": [
                     *(str(path) for path in protected),
                     *(str(p) for p in plugins),
-                    *_session_temp_folders(),
+                    *_session_temp_folders(system),
                 ],
                 "denyRead": [
                     "~/",
-                    "/Volumes",
+                    *(["/Volumes"] if system == "darwin" else []),
                     *_TOOLCHAIN_SECRETS,
-                    *_session_temp_folders(),
+                    *_session_temp_folders(system),
                 ],
             },
             "network": {
@@ -828,9 +845,7 @@ def _plan_preflight(
             tool="Bash",
         ),
         Probe(
-            input={
-                "command": f"echo x >> {other / 'append.txt'} && echo appended-ok"
-            },
+            input={"command": f"echo x >> {other / 'append.txt'} && echo appended-ok"},
             marker=str(other / "append.txt"),
             name="appending to a file in another session's temp folder",
             through="appended-ok",
@@ -849,6 +864,20 @@ def _plan_preflight(
             marker="security show-keychain-info",
             name="reaching the login keychain with a command",
             through="keychain-open",
+            tool="Bash",
+        ),
+        Probe(
+            input={"command": _CREDENTIAL_COMMAND},
+            marker="/proc/[0-9]*/environ",
+            name="showing a command the Claude credential, in its environment or a process's",
+            through="credential-visible",
+            tool="Bash",
+        ),
+        Probe(
+            input={"command": "sudo -n true && echo root-reached"},
+            marker="sudo -n true",
+            name="gaining root with sudo",
+            through="root-reached",
             tool="Bash",
         ),
         Probe(
@@ -1998,6 +2027,7 @@ def main() -> None:
         plugins=plugins,
         project=project,
         reads=arguments.allow_read,
+        system=sys.platform,
     )
     layout.profile.write_text(json.dumps(profile, indent=2), encoding="utf-8")
     layout.profile.chmod(0o400)
