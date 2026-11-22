@@ -247,7 +247,7 @@ repos:
 ```
 
 Then `pre-commit install` once per clone, and `pre-commit autoupdate` to bump the `rev`.
-`pre-commit` and `npm` cache under the home directory; a run that must stay inside the project sets `PRE_COMMIT_HOME` and `npm_config_cache` to a folder there, except under `build-project`'s launcher, which sets both to its scratch folder and fetches the hook repositories into that store before the run.
+`pre-commit` and `npm` cache under the home directory; a run that must stay inside the project sets `PRE_COMMIT_HOME` and `npm_config_cache` to a folder there, except under `build-project`'s launcher, which sets both to its scratch folder, where `pre-commit` clones its hooks from the hosts the grant names.
 
 ## Release
 
