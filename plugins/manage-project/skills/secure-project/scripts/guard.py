@@ -156,6 +156,11 @@ _ALTERNATIVES: typing.Final = (
         "that file, or commit with git commit -F.",
     ),
     (
+        "a word with a backwards bracket range",
+        "Write the code or path without a range such as [z-a], or put a script that "
+        "needs one in a file with the Write tool and run that file.",
+    ),
+    (
         "changing the standing grant",
         "If a wildcard caused it, such as src/* whose * could match grant.json, name "
         "the files, or move the pattern into the tool's configuration file.",
@@ -313,6 +318,10 @@ _CREDENTIAL_PRINTS: typing.Final = (
 
 class OutOfTime(Exception):
     """The guard ran out of its time or git budget before it finished checking."""
+
+
+class UnreadablePattern(Exception):
+    """A word holds a bracket range the guard cannot match the way the shell would."""
 
 
 class Call(typing.NamedTuple):
@@ -602,22 +611,37 @@ def _resolve(cwd: pathlib.Path, path: str) -> pathlib.Path:
     )
 
 
-def _fnmatch(name: str, pattern: str) -> bool:
-    """Return whether a name matches a shell pattern, one Python cannot compile as written.
+def _has_descending_range(pattern: str) -> bool:
+    """Return whether a shell pattern holds a bracket range that runs backwards.
 
-    A descending range such as ``[x-a]`` raises ``re.error`` under Python 3.9, so such a
-    pattern is compared as written.
+    :param pattern: A word from a command.
+    :returns: True for a range such as ``[z-a]`` in any bracket expression, which Python
+        3.9 cannot compile and the shell expands by rules of its own.
+    """
+    return any(
+        start > end
+        for match in re.finditer(r"\[!?\]?[^\]]*\]", pattern)
+        for start, end in re.findall(r"(.)-(.)", match.group(0)[1:-1].lstrip("!"))
+    )
+
+
+def _fnmatch(name: str, pattern: str) -> bool:
+    """Return whether a name matches a shell pattern.
 
     :param name: The name.
     :param pattern: The pattern, from untrusted input.
     :returns: True where it matches.
+    :raises UnreadablePattern: For a pattern with a backwards bracket range, under every
+        Python, so such a word is guarded rather than read one way or another.
     """
     import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
 
+    if _has_descending_range(pattern):
+        raise UnreadablePattern
     try:
         return fnmatch.fnmatch(name, pattern)
-    except re.error:
-        return name == pattern
+    except re.error as failure:
+        raise UnreadablePattern from failure
 
 
 def _glob(cwd: pathlib.Path, word: str) -> list[str]:
@@ -632,10 +656,12 @@ def _glob(cwd: pathlib.Path, word: str) -> list[str]:
     pattern = str(_resolve(cwd, word))
     if not re.search(r"[*?\[]", word):
         return [pattern]
+    if _has_descending_range(word):
+        raise UnreadablePattern
     try:
         found = list(itertools.islice(glob.iglob(pattern), _GLOB_LIMIT))
-    except re.error:
-        found = []
+    except re.error as failure:
+        raise UnreadablePattern from failure
     return found or [pattern]
 
 
@@ -1796,6 +1822,8 @@ def main() -> None:
         findings = check(call, _context(call, started=started))
     except OutOfTime:
         findings = ["a call too large to check in the guard's time"]
+    except UnreadablePattern:
+        findings = ["a word with a backwards bracket range the guard cannot read"]
     except Exception as failure:  # noqa: BLE001 - any failure must guard, never let the call through
         findings = [f"a call the guard could not check ({type(failure).__name__})"]
     if findings:

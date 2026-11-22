@@ -1100,13 +1100,29 @@ def test_when_lone_quote_refused_unattended_then_reason_names_the_alternative(
 
 
 @pytest.mark.parametrize(
-    "command", ["ls test_b[x-a]", "python3 -c 'print(rows[:-1])' x[z-a].txt"]
+    "command",
+    [
+        "cat .en[z-av]",
+        "cp README.md gran[z-at].json",
+        "ls test_b[x-a]",
+        "python3 -c 'print(rows[:-1])'",
+    ],
 )
-def test_when_word_holds_descending_bracket_range_then_no_decision(
+def test_when_word_holds_backwards_bracket_range_then_asked(
     run: Run, repo: pathlib.Path, command: str
 ) -> None:
     answer = run(repo, {"command": command})
-    assert answer == {}
+    assert answer.get("permissionDecision") == "ask"
+
+
+def test_when_backwards_bracket_range_refused_unattended_then_reason_names_the_way_round(
+    run: Run, repo: pathlib.Path
+) -> None:
+    answer = run(
+        repo, {"command": "cat .en[z-av]"}, environment={"CLAUDE_GUARD": "deny"}
+    )
+    reason = str(answer.get("permissionDecisionReason"))
+    assert ("backwards bracket range" in reason, "Write tool" in reason) == (True, True)
 
 
 def test_when_one_finding_has_no_way_round_then_reason_names_none(
