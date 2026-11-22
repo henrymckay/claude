@@ -80,8 +80,7 @@ _STATUS_COMMAND: typing.Final = (
 )
 _HEAD_END: typing.Final = "head-end"
 _HEAD_COMMAND: typing.Final = (
-    "git log -2 --format=%H && "
-    f"(git diff --name-only HEAD~1 HEAD 2>/dev/null; echo {_HEAD_END})"
+    f"git log -20 --format=commit:%H --name-only && echo {_HEAD_END}"
 )
 _PATH_PREFIX: typing.Final = "path-probe="
 _PROBE_ENVIRONMENT: typing.Final = {
@@ -1362,24 +1361,29 @@ def _check_rows(
 
 
 def _read_commits(result: str) -> set[str]:
-    """Return the commits an acceptance row may name, from the gate's HEAD probe.
+    """Return the commits an acceptance row may name, from the gate's history probe.
 
-    :param result: What ``_HEAD_COMMAND`` printed: the current commit and its parent,
-        then the files the current commit changed, then the end marker.
-    :returns: The current commit, with its parent where the current commit changed only
-        the records; empty where the output is not that shape.
+    :param result: What ``_HEAD_COMMAND`` printed: each recent commit as ``commit:<hash>``
+        followed by the files it changed, newest first, then the end marker.
+    :returns: The current commit, and each one before it reached through commits that
+        changed only the records, so a run that fixes its records in a second commit
+        still finishes; empty where the output is not that shape.
     """
     lines = [line.strip() for line in result.splitlines() if line.strip()]
     if _HEAD_END not in lines:
         return set()
-    lines = lines[: lines.index(_HEAD_END)]
-    hashes = [line.lower() for line in lines if re.fullmatch(r"[0-9a-fA-F]{40}", line)]
-    changed = set(lines[len(hashes) :])
-    if not hashes:
-        return set()
-    if len(hashes) > 1 and changed and changed <= _RECORD_FILES:
-        return set(hashes[:2])
-    return {hashes[0]}
+    history: list[tuple[str, set[str]]] = []
+    for line in lines[: lines.index(_HEAD_END)]:
+        if line.startswith("commit:") and re.fullmatch(r"[0-9a-fA-F]{40}", line[7:]):
+            history.append((line[7:].lower(), set()))
+        elif history:
+            history[-1][1].add(line)
+    allowed = set()
+    for commit, changed in history:
+        allowed.add(commit)
+        if not changed or not changed <= _RECORD_FILES:
+            break
+    return allowed
 
 
 def _uncommitted(result: str) -> list[str]:

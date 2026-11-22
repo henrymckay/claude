@@ -579,6 +579,19 @@ def test_when_acceptance_row_failed_then_finish_not_accepted(
     assert (done.returncode, "Acceptance" in done.stdout) == (5, True)
 
 
+def test_when_records_fixed_in_a_second_records_commit_then_rows_may_name_the_work(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    costs = project / "costs.csv"
+    costs.write_text(costs.read_text() + "M1,haiku,0.01\n")
+    _commit_all(project)
+    done = _launch(
+        home, fake_claude, project, "finished", "--budget-usd", "5",
+        "--max-resumes", "0",
+    )  # fmt: skip
+    assert done.returncode == 0
+
+
 def test_when_only_the_linux_sandbox_placeholders_are_untracked_then_finished(
     home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
 ) -> None:
