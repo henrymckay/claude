@@ -169,6 +169,7 @@ _CLAUDE_CREDENTIALS: typing.Final = (
     "CLAUDE_CODE_OAUTH_TOKEN",
 )
 _FILE_WRITERS: typing.Final = ("Edit", "NotebookEdit", "Write")
+_WRITERS: typing.Final = frozenset(("Bash", *_FILE_WRITERS))
 _TOOLS: typing.Final = (
     "Bash",
     "Edit",
@@ -231,6 +232,11 @@ class Layout:
     def mcp(self) -> pathlib.Path:
         """Return the MCP configuration the run is limited to."""
         return self.root / "mcp.json"
+
+    @property
+    def check(self) -> pathlib.Path:
+        """Return the folder of the preflight's script, which commands read and none write."""
+        return self.root / "check"
 
     @property
     def profile(self) -> pathlib.Path:
@@ -489,6 +495,23 @@ def _session_temp_folders(system: str) -> tuple[str, ...]:
     return (f"/private/tmp/claude-{uid}/-*", *linux) if system == "darwin" else linux
 
 
+def _find_session_folders(decoy: pathlib.Path) -> list[str]:
+    """Return every other session's temp folder now on the machine, the decoy's made first.
+
+    :param decoy: The folder shaped like another session's that the preflight plants
+        its decoys in, made here so the profile denies it by name like the rest.
+    :returns: The folders, by both spellings where the temp folder has two.
+    """
+    decoy.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return sorted(
+        {
+            str(folder)
+            for folder in decoy.parent.glob("-*")
+            if folder.is_dir() and not folder.is_symlink()
+        }
+    )
+
+
 def build_profile(
     *,
     grant: grant_.Grant | None,
@@ -498,6 +521,7 @@ def build_profile(
     plugins: collections.abc.Sequence[pathlib.Path],
     project: pathlib.Path,
     reads: collections.abc.Sequence[str],
+    session_folders: collections.abc.Sequence[str],
     system: str,
 ) -> dict[str, typing.Any]:
     """Return the settings a run starts under.
@@ -513,6 +537,9 @@ def build_profile(
     :param plugins: The plugin folders loaded, which the sandbox lets commands read.
     :param project: The project folder.
     :param reads: More folders sandboxed commands may read.
+    :param session_folders: Other sessions' temp folders found at launch, denied by name
+        as well as by pattern, since the Linux sandbox let a command write into one the
+        pattern names (Claude Code 2.1.330, ubuntu-24.04).
     :param system: ``sys.platform`` of the machine the run starts on.
     :returns: The settings, as ``--settings`` takes them.
     """
@@ -525,6 +552,7 @@ def build_profile(
     protected = (
         project / grant_.FILE_NAME,
         project / ".mcp.json",
+        layout.check,
         layout.grant,
         layout.log,
         layout.mcp,
@@ -572,6 +600,7 @@ def build_profile(
                 "allowRead": [
                     str(project),
                     str(layout.work),
+                    str(layout.check),
                     str(transcripts),
                     *(str(plugin) for plugin in plugins),
                     *_TOOLCHAIN_READS,
@@ -582,12 +611,14 @@ def build_profile(
                     *(str(path) for path in protected),
                     *(str(p) for p in plugins),
                     *_session_temp_folders(system),
+                    *session_folders,
                 ],
                 "denyRead": [
                     "~/",
                     *(["/Volumes"] if system == "darwin" else []),
                     *_TOOLCHAIN_SECRETS,
                     *_session_temp_folders(system),
+                    *session_folders,
                 ],
             },
             "network": {
@@ -748,9 +779,11 @@ def judge_preflight(
     """Return what the preflight found wrong, or nothing where the profile held.
 
     Each check in the script counts as refused only where the script's own output for
-    this exact command, run once to its end, says so and nothing it should not have
-    written exists; a check with no line, a script changed before it ran, or a call left
-    unmade fails, since the launcher cannot tell those from a sandbox that let it through.
+    this exact command, run to its end, says so and nothing it should not have written
+    exists; a check with no line, a script changed, a call left unmade, or any command or
+    file write the launcher did not ask for fails, since the launcher cannot tell those
+    from a sandbox that let it through. The script sits where nothing in the session can
+    write, so its output is the sandbox's answer, not the model's.
 
     :param plan: The script, its checks and the tool calls the session was told to make.
     :param probed: What the session showed.
@@ -787,6 +820,13 @@ def judge_preflight(
             found.append(f"{probe.name}: got through")
         elif not tried:
             found.append(f"{probe.name}: not tried")
+    planned = (plan.run, *plan.probes)
+    found += [
+        f"a call the preflight did not ask for: {call.name}"
+        for call in probed.calls
+        if call.name in _WRITERS
+        and not any(_attempts(probe, [call]) for probe in planned)
+    ]
     ran = _attempts(plan.run, probed.calls)
     if not ran:
         found.append(f"{plan.run.name}: not tried")
@@ -864,7 +904,8 @@ def _plan_preflight(
     are put to the guard hook by the launcher itself (``check_guard``).
 
     :param layout: The run's folders: the writes aim at the launcher's own folder, which
-        a run must not change, and the script sits in the scratch folder.
+        a run must not change, and the script sits read-only in its ``check`` folder,
+        which commands may read and nothing in the session may write.
     :param allowed: The hosts the profile lets commands reach.
     :param home: A new folder in the home folder for the decoys a run must not read.
     :param other: A new folder shaped like another session's temp folder.
@@ -872,8 +913,8 @@ def _plan_preflight(
     :returns: The plan.
     """
     owned = layout.root / "decoy"
-    for folder in (home, owned, other):
-        folder.mkdir(mode=0o700, parents=True)
+    for folder in (home, owned, other, layout.check):
+        folder.mkdir(mode=0o700, parents=True, exist_ok=True)
 
     def decoy(path: pathlib.Path) -> str:
         token = secrets.token_hex(12)
@@ -938,8 +979,9 @@ def _plan_preflight(
         ),
         Check(key="sudo", name="gaining root with sudo", shell="sudo -n true"),
     ]
-    script = layout.work / "preflight.sh"
+    script = layout.check / "preflight.sh"
     digest = _write_script(script, checks)
+    script.chmod(0o400)
     command = f"sh {quote(str(script))}"
     run = Probe(
         input={"command": command},
@@ -1167,6 +1209,7 @@ def preflight(
     session: Session,
     *,
     allowed: collections.abc.Sequence[str],
+    other: pathlib.Path,
     servers: collections.abc.Set[str],
     system: str,
 ) -> tuple[list[str], decimal.Decimal]:
@@ -1174,6 +1217,8 @@ def preflight(
 
     :param session: How to start ``claude``, with the run's profile and environment.
     :param allowed: The hosts the profile lets commands reach.
+    :param other: The folder shaped like another session's temp folder, made before the
+        profile was written so the profile names it.
     :param servers: The MCP servers the owner's configuration names.
     :param system: ``sys.platform`` of the machine the run starts on.
     :returns: What got through or went untried, empty where the profile held, and what
@@ -1183,11 +1228,6 @@ def preflight(
         pathlib.Path.home() / ".cache" / "claude-preflight" / session.layout.root.name
     )
     forbidden = (session.project, session.layout.root, session.layout.work)
-    other = (
-        pathlib.Path("/tmp")
-        / f"claude-{os.getuid()}"
-        / f"-launcher-decoy-{secrets.token_hex(6)}"
-    )
     plan: PreflightPlan | None = None
     try:
         plan = _plan_preflight(
@@ -1204,10 +1244,14 @@ def preflight(
             *check_guard(session, init=probed.init),
         ], probed.cost_usd
     finally:
-        for folder in (home, session.layout.root / "decoy", other):
+        for folder in (
+            home,
+            session.layout.root / "decoy",
+            other,
+            session.layout.check,
+        ):
             shutil.rmtree(folder, ignore_errors=True)
         if plan is not None:
-            plan.script.unlink(missing_ok=True)
             for written in (*plan.checks, *plan.probes):
                 if written.written is not None and written.written.is_file():
                     written.written.unlink()
@@ -2106,6 +2150,11 @@ def main() -> None:
     except (LaunchError, OSError) as failure:
         raise SystemExit(f"launch: {failure}") from failure
     plugins = arguments.plugin_dir or _find_house_plugins(arguments.claude)
+    other = (
+        pathlib.Path("/tmp")
+        / f"claude-{os.getuid()}"
+        / f"-launcher-decoy-{secrets.token_hex(6)}"
+    )
     profile = build_profile(
         grant=grant,
         layout=layout,
@@ -2114,6 +2163,7 @@ def main() -> None:
         plugins=plugins,
         project=project,
         reads=arguments.allow_read,
+        session_folders=_find_session_folders(other),
         system=sys.platform,
     )
     layout.profile.write_text(json.dumps(profile, indent=2), encoding="utf-8")
@@ -2127,6 +2177,8 @@ def main() -> None:
     unsafe = check_path(
         environment.get("PATH", ""), forbidden=(project, layout.root, layout.work)
     )
+    if unsafe or arguments.dry_run:
+        shutil.rmtree(other, ignore_errors=True)
     if unsafe:
         raise SystemExit(
             "launch: " + "; ".join(unsafe) + "; hooks outside the sandbox find their "
@@ -2167,6 +2219,7 @@ def main() -> None:
         found, cost = preflight(
             session,
             allowed=profile["sandbox"]["network"]["allowedDomains"],
+            other=other,
             servers=servers,
             system=sys.platform,
         )

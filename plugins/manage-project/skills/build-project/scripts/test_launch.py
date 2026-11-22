@@ -86,6 +86,7 @@ _FAKE = textwrap.dedent(
                 opened = {"leak": set(keys), "leaktemp": {k for k in keys if k.startswith("temp-")}}.get(
                     behaviour, {behaviour[5:]} if behaviour.startswith("open:") else set())
                 if behaviour == "tamper":
+                    script.chmod(0o600)
                     script.write_text(script.read_text() + "echo tampered\\n")
                 seen = f"{os.getcwd()}/.venv/bin:/usr/bin" if behaviour == "badpath" else "/usr/bin:/bin"
                 lines = [f"check {k} {'open' if k in opened else 'closed'}" for k in keys]
@@ -102,6 +103,11 @@ _FAKE = textwrap.dedent(
                     text, failed = path.read_text(), False
             emit({"type": "user", "message": {"content": [
                 {"type": "tool_result", "tool_use_id": f"t{n}", "content": text, "is_error": failed}]}})
+        if kind == "preflight" and behaviour == "extra":
+            emit({"type": "assistant", "message": {"id": "mx", "content": [
+                {"type": "tool_use", "id": "tx", "name": "Bash", "input": {"command": "echo check home-read closed"}}]}})
+            emit({"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "tx", "content": "check home-read closed", "is_error": False}]}})
         if behaviour != "noresult":
             emit({"type": "result", "subtype": "success", "result": "done", "num_turns": 2,
                   "total_cost_usd": 0.01, "session_id": "probe"})
@@ -688,6 +694,7 @@ def test_when_preflight_refuses_every_probe_then_run_starts(
             "reading a decoy in the home folder with a command: not finished",
         ),
         ("tamper", "the preflight's script was changed before it ran"),
+        ("extra", "a call the preflight did not ask for: Bash"),
         ("connector", "connector"),
         ("skip", "not tried"),
     ],
@@ -715,6 +722,30 @@ def test_when_preflight_asks_the_model_then_no_call_reads_like_reaching_for_secr
         if word in prompt
     ]
     assert named == []
+
+
+def test_when_preflight_planned_then_script_sits_where_the_session_cannot_write(
+    tmp_path: pathlib.Path,
+) -> None:
+    sys.path.insert(0, str(_HERE))
+    import launch  # noqa: PLC0415 - the script is imported only for its pure builders
+
+    layout = launch.Layout(root=tmp_path / "run", work=tmp_path / "run" / "work")
+    layout.work.mkdir(parents=True)
+    plan = launch._plan_preflight(
+        layout,
+        allowed=[],
+        home=tmp_path / "home",
+        other=tmp_path / "other",
+        system="linux",
+    )
+    filesystem = _filesystem_on("linux", tmp_path / "run")
+    assert (
+        plan.script.is_relative_to(layout.work),
+        plan.script.stat().st_mode & 0o777,
+        str(plan.script.parent) in filesystem["allowRead"],
+        str(plan.script.parent) in filesystem["denyWrite"],
+    ) == (False, 0o400, True, True)
 
 
 @pytest.mark.parametrize(("system", "keychain"), [("darwin", True), ("linux", False)])
@@ -1366,6 +1397,7 @@ def _filesystem_on(system: str, tmp_path: pathlib.Path) -> dict[str, list[str]]:
         plugins=[],
         project=tmp_path / "project",
         reads=[],
+        session_folders=["/tmp/claude-1/-other-session"],
         system=system,
     )
     return profile["sandbox"]["filesystem"]
@@ -1384,6 +1416,18 @@ def test_when_profile_built_on_macos_then_other_sessions_temp_folders_and_volume
         sessions <= set(filesystem["denyWrite"]),
         "/Volumes" in filesystem["denyRead"],
     ) == (True, True, True)
+
+
+@pytest.mark.parametrize("system", ["darwin", "linux"])
+def test_when_profile_built_then_sessions_found_at_launch_denied_by_name(
+    tmp_path: pathlib.Path, system: str
+) -> None:
+    filesystem = _filesystem_on(system, tmp_path)
+    named = "/tmp/claude-1/-other-session"
+    assert (named in filesystem["denyRead"], named in filesystem["denyWrite"]) == (
+        True,
+        True,
+    )
 
 
 def test_when_profile_built_on_linux_then_only_paths_linux_has_named(
