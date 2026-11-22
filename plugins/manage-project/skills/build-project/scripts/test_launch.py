@@ -1272,7 +1272,7 @@ def test_when_environment_built_then_pip_trusts_its_own_bundle(
     assert environment["PIP_USE_DEPRECATED"] == "legacy-certs"
 
 
-_LOCAL_HOOK = """\
+_HOOKS_CONFIG = """\
 repos:
   - repo: local
     hooks:
@@ -1280,14 +1280,11 @@ repos:
         name: say
         entry: "true"
         language: system
+  - repo: {remote}
+    rev: {rev}
+    hooks:
+      - id: say
 """
-
-
-def _uv_cache() -> dict[str, str]:
-    return {
-        "UV_CACHE_DIR": os.environ.get("UV_CACHE_DIR")
-        or str(pathlib.Path.home() / ".cache" / "uv")
-    }
 
 
 def _hook_repository(folder: pathlib.Path) -> str:
@@ -1299,53 +1296,40 @@ def _hook_repository(folder: pathlib.Path) -> str:
     return _head(folder)
 
 
-def test_when_project_has_pre_commit_config_then_store_seeded_in_scratch_folder(
-    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
-) -> None:
-    (project / ".pre-commit-config.yaml").write_text(_LOCAL_HOOK)
-    _commit_all(project)
-    _launch(
-        home, fake_claude, project, "blocked", "--budget-usd", "5",
-        environment=_uv_cache(),
-    )  # fmt: skip
-    stores = list((home / "runs").glob("*/work/pre-commit/db.db"))
-    assert (_status(home)["pre_commit"], len(stores)) == ("seeded", 1)
-
-
-def test_when_hook_repository_is_a_local_path_then_nothing_fetched(
+@pytest.mark.parametrize("remote", ["local-path", "https://hooks.example.invalid/hooks"])
+def test_when_project_names_hook_repositories_then_launcher_fetches_and_builds_nothing(
     home: pathlib.Path,
     fake_claude: pathlib.Path,
     project: pathlib.Path,
+    grant: pathlib.Path,
     tmp_path: pathlib.Path,
+    remote: str,
 ) -> None:
     hooks = tmp_path / "hooks"
     rev = _hook_repository(hooks)
+    where = str(hooks) if remote == "local-path" else remote
     (project / ".pre-commit-config.yaml").write_text(
-        f"repos:\n  - repo: {hooks}\n    rev: {rev}\n    hooks:\n      - id: say\n"
+        _HOOKS_CONFIG.format(remote=where, rev=rev)
     )
     _commit_all(project)
-    done = _launch(
-        home, fake_claude, project, "blocked", "--budget-usd", "5",
-        environment=_uv_cache(),
-    )  # fmt: skip
-    assert (
-        str(_status(home)["pre_commit"]).startswith("not seeded"),
-        "not allowed" in done.stderr,
-    ) == (True, True)
+    _approve(home, project)
+    done = _launch(home, fake_claude, project, "blocked")
+    stores = list((home / "runs").glob("*/work/pre-commit"))
+    assert (stores, where in done.stderr) == ([], False)
 
 
-def test_when_pre_commit_config_is_a_symlink_then_not_seeded(
+def test_when_grant_names_code_host_then_run_may_reach_it(
     home: pathlib.Path,
     fake_claude: pathlib.Path,
     project: pathlib.Path,
-    tmp_path: pathlib.Path,
+    grant: pathlib.Path,
 ) -> None:
-    outside = tmp_path / "outside.yaml"
-    outside.write_text(_LOCAL_HOOK)
-    (project / ".pre-commit-config.yaml").symlink_to(outside)
-    _commit_all(project)
-    _launch(home, fake_claude, project, "blocked", "--budget-usd", "5")
-    assert str(_status(home)["pre_commit"]).startswith("not seeded")
+    grant.write_text(
+        grant.read_text().replace('"secrets"', '"network": ["github.com"], "secrets"')
+    )
+    _approve(home, project)
+    _launch(home, fake_claude, project, "finished")
+    assert "github.com" in _profile(home)["sandbox"]["network"]["allowedDomains"]
 
 
 if __name__ == "__main__":

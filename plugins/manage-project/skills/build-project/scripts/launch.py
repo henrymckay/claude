@@ -53,14 +53,6 @@ _PREFLIGHT_INTRO: typing.Final = (
     "build, because the launcher cannot tell an unmade call from a rule that let it "
     "through."
 )
-_PRE_COMMIT: typing.Final = "pre-commit==4.7.0"
-_PRE_COMMIT_CONFIG: typing.Final = ".pre-commit-config.yaml"
-_PRE_COMMIT_SEED: typing.Final = (
-    "import sys\n"
-    "from pre_commit import clientlib, repository, store\n"
-    "repository.all_hooks(clientlib.load_config(sys.argv[1]), store.Store(sys.argv[2]))\n"
-)
-_PRE_COMMIT_STORE: typing.Final = "pre-commit"
 _PROBE_MODEL: typing.Final = "haiku"
 _PROBE_SECONDS: typing.Final = 900
 _RECORDS: typing.Final = ("PLAN.md", "DEPENDENCIES.md", "costs.csv", "verification.csv")
@@ -411,8 +403,9 @@ def build_environment(
     Every tool that keeps a cache or reads its configuration under the home folder,
     which the profile denies, is pointed at the scratch folder instead: ``gh`` then reads
     an empty configuration and a token only from a variable the grant names, and
-    ``pre-commit`` uses the store ``seed_pre_commit`` filled, never the owner's, whose
-    hooks run outside the sandbox on the owner's own commits. ``pip`` checks certificates
+    ``pre-commit`` clones and builds its hooks inside the sandbox into a store of the
+    run's own, never the owner's, whose hooks run outside the sandbox on the owner's own
+    commits; the launcher fetches nothing a project file names. ``pip`` checks certificates
     against its own bundle, since the system trust store it asks by default fails inside
     the macOS sandbox (``OSStatus -26276``, pip 26.3). Claude Code's retry watchdog waits out a capacity error or the plan's usage window
     inside the request, rechecking every ten minutes, up to ``usage_wait_hours``; a reset
@@ -440,7 +433,7 @@ def build_environment(
             "GH_CONFIG_DIR": str(layout.work / "gh"),
             "PIP_CACHE_DIR": str(layout.work / "pip-cache"),
             "PIP_USE_DEPRECATED": "legacy-certs",
-            "PRE_COMMIT_HOME": str(layout.work / _PRE_COMMIT_STORE),
+            "PRE_COMMIT_HOME": str(layout.work / "pre-commit"),
             "TMPDIR": str(layout.work),
             "UV_CACHE_DIR": str(layout.work / "uv-cache"),
             "VIRTUALENV_OVERRIDE_APP_DATA": str(layout.work / "virtualenv"),
@@ -1776,53 +1769,6 @@ def _prepare_repository(project: pathlib.Path, *, commit_as: str) -> None:
             raise LaunchError(f"{shlex.join(command)} failed: {done.stderr.strip()}")
 
 
-def seed_pre_commit(project: pathlib.Path, *, layout: Layout, uv: str) -> str:
-    """Fetch the project's pre-commit hook repositories into the run's own store.
-
-    A run cannot reach the hosts hook repositories live on, and must not write the
-    owner's store, whose hooks run outside the sandbox on the owner's commits; so the
-    launcher fetches each repository at its pinned revision into a store in the scratch
-    folder, and the run builds the hooks' environments there, inside the sandbox, from
-    the package indexes it may reach. Fetching runs nothing from the project or the
-    repositories: the launcher's own pinned ``pre-commit`` reads the configuration as
-    data, from a folder the run cannot write, git may use only ``https``, so no local
-    path the run made is fetched from, and a configuration that is a symlink is skipped.
-
-    :param project: The project folder.
-    :param layout: The run's folders; the store is made in the scratch folder.
-    :param uv: The ``uv`` executable.
-    :returns: ``none`` with no configuration, ``seeded``, or why seeding failed.
-    """
-    config = project / _PRE_COMMIT_CONFIG
-    if not os.path.lexists(config):
-        return "none"
-    if config.is_symlink() or not config.is_file():
-        return f"not seeded: {_PRE_COMMIT_CONFIG} is not a plain file"
-    command = [
-        uv, "run", "--no-config", "--no-project", "--isolated", "--quiet",
-        "--with", _PRE_COMMIT,
-        "python", "-I", "-c", _PRE_COMMIT_SEED,
-        str(config), str(layout.work / _PRE_COMMIT_STORE),
-    ]  # fmt: skip
-    try:
-        done = subprocess.run(
-            command,
-            capture_output=True,
-            check=False,
-            cwd=layout.root,
-            env=os.environ | {"GIT_ALLOW_PROTOCOL": "https", "GIT_TERMINAL_PROMPT": "0"},
-            stdin=subprocess.DEVNULL,
-            text=True,
-            timeout=900,
-        )
-    except (OSError, subprocess.TimeoutExpired) as failure:
-        return f"not seeded: {type(failure).__name__}"
-    if done.returncode != 0:
-        print(f"launch: seeding pre-commit failed:\n{done.stderr}", file=sys.stderr)
-        return f"not seeded: pre-commit exited {done.returncode}"
-    return "seeded"
-
-
 def _notify(command: str, line: str) -> None:
     """Hand the report line to the owner's message command, if one was given.
 
@@ -2031,7 +1977,6 @@ def main() -> None:
     }
     probe_spend = [decimal.Decimal(0)]
     found: list[str] = []
-    seeded = "none"
 
     def accept() -> list[str]:
         findings, spent = gate(session, commands=arguments.gate_command)
@@ -2062,9 +2007,6 @@ def main() -> None:
                 turns=0,
             )
         else:
-            seeded = seed_pre_commit(
-                project, layout=layout, uv=shutil.which("uv") or "uv"
-            )
             report = run(
                 accept=accept,
                 claude=arguments.claude,
@@ -2095,7 +2037,6 @@ def main() -> None:
         | {
             "ended": _now(),
             "preflight": "passed" if not found else found,
-            "pre_commit": seeded,
             "probe_spent_usd": f"{probe_spend[0]:.2f}",
             "spent_usd": f"{report.spent_usd:.2f}",
         }
