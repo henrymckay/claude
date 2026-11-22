@@ -86,7 +86,7 @@ _FAKE = textwrap.dedent(
                 text, failed = "Command was moved to the background with ID: b1. Output is being written to: x", False
             elif kind == "gate":
                 text, failed = ("1 failed", True) if behaviour == "fail" else ("3 passed", False)
-            elif behaviour == "leak" and probe["tool"] in ("Read", "Bash"):
+            elif (behaviour == "leak" or (behaviour == "leaktemp" and "-launcher-decoy" in command)) and probe["tool"] in ("Read", "Bash"):
                 path = probe["input"].get("file_path") or shlex.split(probe["input"]["command"])[-1]
                 if pathlib.Path(path).exists():
                     text, failed = pathlib.Path(path).read_text(), False
@@ -664,7 +664,12 @@ def test_when_preflight_refuses_every_probe_then_run_starts(
 
 @pytest.mark.parametrize(
     ("behaviour", "said"),
-    [("leak", "got through"), ("connector", "connector"), ("skip", "not tried")],
+    [
+        ("leak", "got through"),
+        ("leaktemp", "another session's temp folder: got through"),
+        ("connector", "connector"),
+        ("skip", "not tried"),
+    ],
 )
 def test_when_preflight_not_clean_then_run_refused(
     home: pathlib.Path,
@@ -1257,6 +1262,19 @@ def test_when_environment_built_then_tool_homes_sit_in_scratch_folder(
     assert all(
         pathlib.Path(environment[name]).is_relative_to(layout.work) for name in homes
     )
+
+
+def test_when_profile_built_then_other_sessions_temp_folders_and_volumes_denied(
+    home: pathlib.Path, fake_claude: pathlib.Path, project: pathlib.Path
+) -> None:
+    _launch(home, fake_claude, project, "finished", "--budget-usd", "5")
+    filesystem = _profile(home)["sandbox"]["filesystem"]
+    sessions = {f"/private/tmp/claude-{os.getuid()}/-*", f"/tmp/claude-{os.getuid()}/-*"}
+    assert (
+        sessions <= set(filesystem["denyRead"]),
+        sessions <= set(filesystem["denyWrite"]),
+        "/Volumes" in filesystem["denyRead"],
+    ) == (True, True, True)
 
 
 def test_when_environment_built_then_pip_trusts_its_own_bundle(
