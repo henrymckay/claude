@@ -1019,6 +1019,7 @@ def test_when_connector_reads_or_previews_then_no_decision(
         ),
         ("Bash", {"command": "ls sub/*"}),
         ("Bash", {"command": "cat sub/*"}),
+        ("Bash", {"command": "wc -l *"}),
         (
             "Bash",
             {
@@ -1027,16 +1028,6 @@ def test_when_connector_reads_or_previews_then_no_decision(
                 "http://127.0.0.1:4173/; kill $(cat $TMPDIR/web.pid)"
             },
         ),
-        (
-            "Bash",
-            {
-                "command": "python3 - <<'EOF'\nimport csv\n"
-                "rows = [(\"R1\", \"the suite's result\")]\n"
-                "with open(\"verification.csv\", \"a\", newline=\"\") as f:\n"
-                "    csv.writer(f).writerows(rows)\nEOF"
-            },
-        ),
-        ("Bash", {"command": "git commit -q --allow-empty -m \"fix: don't crash\""}),
         (
             "Grep",
             {
@@ -1066,6 +1057,10 @@ def test_when_ordinary_call_from_shakedown_then_no_decision(
         ("Bash", {"command": "cp README.md $DIR/*.json"}),
         ("Bash", {"command": "bash <<'EOF'\ngit push --force origin main\necho it's\nEOF"}),
         ("Bash", {"command": "sh -c \"rm -rf ~; echo it's\""}),
+        ("Bash", {"command": "bash -c \"gi\\\"t\\\" pu's'h -f; echo it's\""}),
+        ("Bash", {"command": "cat .e\"nv\""}),
+        ("Bash", {"command": "base64 < *"}),
+        ("Bash", {"command": "git show HEAD:*"}),
         (
             "Bash",
             {"command": "python3 - <<'EOF'\nimport os  # it's\nos.system(\"rm -rf ~\")\nEOF"},
@@ -1075,23 +1070,32 @@ def test_when_ordinary_call_from_shakedown_then_no_decision(
         ("Grep", {"pattern": "x", "path": ".", "glob": "**/.env*"}),
         ("Grep", {"pattern": "x", "path": ".", "glob": "secrets/**"}),
         ("Grep", {"pattern": "x", "path": ".", "glob": "*.pem"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "*"}),
+        ("Grep", {"pattern": "x", "path": ".", "glob": "{sub,.env}/**"}),
+        ("Grep", {"pattern": "x", "glob": "**"}),
     ],
 )
 def test_when_narrowed_rule_meets_its_dangerous_shape_then_asked(
     run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
 ) -> None:
+    (granted / ".env").write_text("NAME=value\n")
     answer = run(granted, tool_input, tool=tool)
     assert answer.get("permissionDecision") == "ask"
 
 
-def test_when_unparsable_command_refused_unattended_then_reason_names_the_alternative(
-    run: Run, repo: pathlib.Path
+@pytest.mark.parametrize(
+    "command",
+    [
+        "python3 - <<'EOF'\nimport csv\nrows = [(\"R1\", \"the suite's result\")]\n"
+        "with open(\"verification.csv\", \"a\", newline=\"\") as f:\n"
+        "    csv.writer(f).writerows(rows)\nEOF",
+        "git commit -q --allow-empty -m \"fix: don't crash\"",
+    ],
+)
+def test_when_lone_quote_refused_unattended_then_reason_names_the_alternative(
+    run: Run, repo: pathlib.Path, command: str
 ) -> None:
-    answer = run(
-        repo,
-        {"command": "echo 'unclosed"},
-        environment={"CLAUDE_GUARD": "deny"},
-    )
+    answer = run(repo, {"command": command}, environment={"CLAUDE_GUARD": "deny"})
     assert "Write tool" in str(answer.get("permissionDecisionReason"))
 
 

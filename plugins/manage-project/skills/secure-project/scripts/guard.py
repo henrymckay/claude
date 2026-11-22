@@ -51,6 +51,7 @@ _INPUT_LIMIT: typing.Final = 1024 * 1024
 _NEST_DEPTH: typing.Final = 6
 _SECONDS: typing.Final = 20.0
 _UNTRACKED_LIMIT: typing.Final = 300
+_WALK_LIMIT: typing.Final = 5000
 
 _ANCHORS: typing.Final = frozenset(
     "aws cat curl gcloud gh git glab gsutil http https printenv rclone rm rsync "
@@ -151,7 +152,9 @@ _SECRET_VARIABLE: typing.Final = re.compile(
 _ORDINARY_NAMES: typing.Final = ("README.md", "main.py", "package.json")
 _ALTERNATIVES: typing.Final = {
     "a command the guard could not parse": (
-        "If it is a script, write it to a file with the Write tool and run that file."
+        "A lone quote, often an apostrophe in a here-document or a message, stops the "
+        "guard reading it: write the script or message to a file with the Write tool "
+        "and run that file, or pass it with git commit -F."
     ),
 }
 _SECRET_VALUE: typing.Final = re.compile(
@@ -618,17 +621,20 @@ def _read_small(path: pathlib.Path) -> str:
     return ""
 
 
-def _picks_by_pattern(name: str, path: str, candidates: typing.Iterable[str]) -> bool:
-    """Return whether a file-name pattern picks out one of the candidates by name.
+def _picks_by_pattern(
+    name: str, path: str, candidates: typing.Iterable[str], *, checked: bool
+) -> bool:
+    """Return whether a file-name pattern could match one of the candidates.
 
-    A pattern that also matches an ordinary file, such as ``*`` or ``*.json``, picks out
-    nothing by name: where the shell can expand it, the callers check what it matches on
-    disk instead; where it cannot, because the path holds a variable or a command
-    substitution, it still counts.
+    A wide pattern, one that also matches an ordinary file such as ``*`` or ``*.json``,
+    is let through only where the caller has already checked what it matches on disk
+    and the path holds no variable or command substitution the disk check could not
+    follow; everywhere else it counts.
 
     :param name: The last part of the path, perhaps a pattern.
     :param path: The whole path, as written or resolved.
     :param candidates: The file names being guarded.
+    :param checked: Whether the caller checked the pattern's matches on disk.
     :returns: True where the name is a pattern matching a candidate.
     """
     import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
@@ -637,22 +643,88 @@ def _picks_by_pattern(name: str, path: str, candidates: typing.Iterable[str]) ->
         return False
     wide = any(fnmatch.fnmatch(ordinary.lower(), name) for ordinary in _ORDINARY_NAMES)
     unresolved = "$" in path or "`" in path
-    return (not wide or unresolved) and any(
+    return (not (wide and checked) or unresolved) and any(
         fnmatch.fnmatch(candidate, name) for candidate in candidates
     )
 
 
-def _is_secret_path(path: str) -> bool:
+def _is_secret_path(path: str, *, checked: bool = False) -> bool:
     """Return whether a path names, or as a glob could name, a file that holds a secret.
 
     :param path: The path as written or resolved.
+    :param checked: Whether the caller checked a pattern's matches on disk.
     :returns: True for ``.env`` files, keys, credential stores and the like, and for a
-        pattern such as ``.env*`` or ``.en?`` that picks one of them out by name.
+        pattern such as ``.env*`` or ``.en?`` one of them would match.
     """
     path = path.replace("\\", "/")
     if _SECRET_FILE.search(path):
         return True
-    return _picks_by_pattern(path.rsplit("/", 1)[-1], path, _SECRET_NAMES)
+    return _picks_by_pattern(
+        path.rsplit("/", 1)[-1], path, _SECRET_NAMES, checked=checked
+    )
+
+
+def _glob_checked(cwd: pathlib.Path, word: str) -> tuple[list[str], bool]:
+    """Return what a word matches on disk, and whether that is every match.
+
+    :param cwd: The folder the command runs in.
+    :param word: The word.
+    :returns: The matches as ``_glob`` gives them, and False where they hit its limit.
+    """
+    matches = _glob(cwd, word)
+    return matches, len(matches) < _GLOB_LIMIT
+
+
+def _secret_under(root: pathlib.Path, context: Context) -> bool:
+    """Return whether a folder holds a secret file at any depth, hidden files included.
+
+    :param root: The folder, or a file.
+    :param context: The shared budget.
+    :returns: True where one is found or the folder is too large to walk.
+    """
+    if not root.is_dir():
+        return _is_secret_path(str(root))
+    seen = 0
+    for folder, folders, files in os.walk(root):
+        _spend(context)
+        seen += len(folders) + len(files)
+        if seen > _WALK_LIMIT or any(
+            _is_secret_path(os.path.join(folder, name)) for name in files
+        ):
+            return True
+    return False
+
+
+def _grep_reaches_secret(
+    cwd: pathlib.Path, path: str, glob: str, context: Context
+) -> bool:
+    """Return whether a Grep's path or glob could search a secret file.
+
+    The path and each part of a braced glob count where they name a secret file, as for
+    a command; a wide glob such as ``src/**`` counts unless the folder it searches, the
+    part before its first wildcard, holds no secret file on disk.
+
+    :param cwd: The session's folder.
+    :param path: The Grep's path, perhaps empty.
+    :param glob: The Grep's glob, perhaps empty.
+    :param context: The shared budget.
+    :returns: True where the search could read a secret file.
+    """
+    base = _resolve(cwd, path or ".")
+    if any(_is_secret_path(part) for part in _expand_braces(path)):
+        return True
+    for part in _expand_braces(glob) if glob else []:
+        if _is_secret_path(part, checked=True):
+            return True
+        if _is_secret_path(part):
+            fixed = list(
+                itertools.takewhile(
+                    lambda step: not re.search(r"[*?\[]", step), part.split("/")
+                )
+            )
+            if _secret_under(base.joinpath(*fixed) if "/" in part else base, context):
+                return True
+    return False
 
 
 def _starts_with(words: list[str], prefix: tuple[str, ...]) -> bool:
@@ -1295,7 +1367,10 @@ def _check_words(
             value = word.split("=", 1)[1] if word.startswith(("if=", "-in=")) else word
             if value.startswith("-"):
                 continue
-            if any(_is_secret_path(path) for path in [value, *_glob(cwd, value)]):
+            matches, checked = _glob_checked(cwd, value)
+            if any(
+                _is_secret_path(path, checked=checked) for path in [value, *matches]
+            ):
                 findings.append(f"printing a secret file ({value})")
     for redirect, target in zip(arguments, arguments[1:]):
         if redirect == "<" and _is_secret_path(target) and name not in ("source", "."):
@@ -1350,7 +1425,7 @@ def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
     protected = os.path.join(home, ".config", "claude-grants")
     return any(
         fnmatch.fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
-        for candidate in (expanded, *_glob(cwd, expanded))
+        for candidate in (str(_resolve(cwd, expanded)), *_glob(cwd, expanded))
         for target in (protected, os.path.join(protected, "approved"))
     )
 
@@ -1374,12 +1449,13 @@ def _mentions_grant(word: str, cwd: pathlib.Path) -> bool:
         word.split("=", 1)[-1],
         word[2:] if re.match(r"^-[A-Za-z]", word) else word,
     }
-    return any(
-        _names_grant(candidate)
-        or any(_names_grant(match) for match in _glob(cwd, candidate))
-        for candidate in candidates
-        if candidate
-    )
+    for candidate in (c for c in candidates if c):
+        matches, checked = _glob_checked(cwd, candidate)
+        if any(
+            _names_grant(path, checked=checked) for path in (candidate, *matches)
+        ):
+            return True
+    return False
 
 
 def _check_environment_words(words: list[str], *, pushes: bool) -> list[str]:
@@ -1425,10 +1501,10 @@ def _check_shell(
 
     Every simple command is checked, from the real command name and from each dangerous
     tool named later in it; every here-document body and every word holding a space, the
-    usual shape of a command passed as a string, is checked as a command line too. Such
-    nested text that will not tokenise, prose with an apostrophe or a script in another
-    language, is split again with its quotes and backslashes blanked, so every command
-    name in it is still seen; only a top-level line the guard cannot parse is refused.
+    usual shape of a command passed as a string, is checked as a command line too. Text
+    that will not tokenise, a lone apostrophe in a commit message or in a script's
+    here-document included, is refused rather than split some other way, since any other
+    split can join words differently from the shell; the refusal names the alternative.
 
     :param text: The command line as the Bash tool would run it.
     :param cwd: The folder it starts in.
@@ -1451,9 +1527,7 @@ def _check_shell(
     try:
         line = _split(text)
     except ValueError:
-        if depth == 0:
-            return [*findings, "a command the guard could not parse"]
-        line = _split(re.sub(r"[\"'\\]", " ", text))
+        return [*findings, "a command the guard could not parse"]
     for inner in re.findall(r"`([^`]*)`", text):
         findings += _check_shell(inner, cwd, context, depth + 1)
     for body in line.bodies:
@@ -1502,14 +1576,17 @@ def _check_shell(
     return findings
 
 
-def _names_grant(word: str) -> bool:
+def _names_grant(word: str, *, checked: bool = False) -> bool:
     """Return whether a word names the standing grant, as written or as a pattern.
 
     :param word: A path from a command.
-    :returns: True for ``grant.json`` in any case, or a glob that picks it out by name.
+    :param checked: Whether the caller checked a pattern's matches on disk.
+    :returns: True for ``grant.json`` in any case, or a glob that could match it.
     """
     name = os.path.basename(os.path.normpath(word)).lower()
-    return name == grant_.FILE_NAME or _picks_by_pattern(name, word, (grant_.FILE_NAME,))
+    return name == grant_.FILE_NAME or _picks_by_pattern(
+        name, word, (grant_.FILE_NAME,), checked=checked
+    )
 
 
 def _snake(name: str) -> str:
@@ -1622,14 +1699,13 @@ def check(call: Call, context: Context) -> list[str]:
             return [f"reading a secret file ({path})"]
         return []
     if tool in ("Grep", "Glob"):
-        where = [
-            part
-            for word in f"{data.get('path', '')} {data.get('glob', '')}".split()
-            for part in _expand_braces(word)
-        ]
+        path = str(data.get("path", ""))
+        globs = str(data.get("glob", "")).split() or [""]
         pattern = str(data.get("pattern", ""))
         findings = []
-        if tool == "Grep" and any(_is_secret_path(w) for w in where):
+        if tool == "Grep" and any(
+            _grep_reaches_secret(call.cwd, path, glob, context) for glob in globs
+        ):
             findings.append("searching a secret file's contents")
         if tool == "Grep" and (
             str(data.get("type", "")).lower() in ("env", "dotenv")
