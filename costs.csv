@@ -29,3 +29,5 @@ agents,cache_read,cache_write,dollars,effort,input,model,output,session,source,s
 1,,,18.28,max,218,claude-fable-5-2,,,costs.py on the reviewer's transcript,sweep 13: outside review,2026-11-21,42
 1,15089332,348253,11.36,max,130,claude-fable-5-2,121477,,costs.py on the reviewer's transcript,plan review before sweep 13,2026-11-21,26
 1,1126822,58407,0.48,,48,claude-sonnet-5-5,12307,a2823323-e5db-44fc-b241-afaabc96398f,the launcher's status.json and the stream's result,launcher shakedown on the trial project,2026-11-22,10
+1,81715937,2558747,33.73,high,510,claude-opus-5-5,229653,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 14: builder,2026-11-22,228
+1,18218529,533867,19.65,max,176,claude-fable-5-2,266777,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,sweep 14: outside review,2026-11-22,64
