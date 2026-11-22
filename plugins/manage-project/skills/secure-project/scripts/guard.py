@@ -602,6 +602,24 @@ def _resolve(cwd: pathlib.Path, path: str) -> pathlib.Path:
     )
 
 
+def _fnmatch(name: str, pattern: str) -> bool:
+    """Return whether a name matches a shell pattern, one Python cannot compile as written.
+
+    A descending range such as ``[x-a]`` raises ``re.error`` under Python 3.9, so such a
+    pattern is compared as written.
+
+    :param name: The name.
+    :param pattern: The pattern, from untrusted input.
+    :returns: True where it matches.
+    """
+    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
+
+    try:
+        return fnmatch.fnmatch(name, pattern)
+    except re.error:
+        return name == pattern
+
+
 def _glob(cwd: pathlib.Path, word: str) -> list[str]:
     """Return what a word names after glob expansion, bounded.
 
@@ -614,7 +632,11 @@ def _glob(cwd: pathlib.Path, word: str) -> list[str]:
     pattern = str(_resolve(cwd, word))
     if not re.search(r"[*?\[]", word):
         return [pattern]
-    return list(itertools.islice(glob.iglob(pattern), _GLOB_LIMIT)) or [pattern]
+    try:
+        found = list(itertools.islice(glob.iglob(pattern), _GLOB_LIMIT))
+    except re.error:
+        found = []
+    return found or [pattern]
 
 
 def _read_small(path: pathlib.Path) -> str:
@@ -642,14 +664,12 @@ def _is_secret_path(path: str) -> bool:
     :returns: True for ``.env`` files, keys, credential stores and the like, and for a
         pattern such as ``.env*`` or ``.en?`` one of them would match.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     path = path.replace("\\", "/")
     if _SECRET_FILE.search(path):
         return True
     name = path.rsplit("/", 1)[-1]
     return bool(re.search(r"[*?\[]", name)) and any(
-        fnmatch.fnmatch(candidate, name) for candidate in _SECRET_NAMES
+        _fnmatch(candidate, name) for candidate in _SECRET_NAMES
     )
 
 
@@ -1333,8 +1353,6 @@ def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
     :param cwd: The folder the command runs in.
     :returns: True where the word may approve a grant or reach the approvals.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     if _GRANT_APPROVAL.search(word):
         return True
     home = os.path.expanduser("~")
@@ -1347,7 +1365,7 @@ def _touches_approvals(word: str, cwd: pathlib.Path) -> bool:
         return True
     protected = os.path.join(home, ".config", "claude-grants")
     return any(
-        fnmatch.fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
+        _fnmatch(target, candidate) or _GRANT_APPROVAL.search(candidate)
         for candidate in (expanded, *_glob(cwd, expanded))
         for target in (protected, os.path.join(protected, "approved"))
     )
@@ -1504,10 +1522,8 @@ def _names_grant(word: str) -> bool:
     :param word: A path from a command.
     :returns: True for ``grant.json`` in any case, or a glob that matches it.
     """
-    import fnmatch  # noqa: PLC0415 - deferred to keep ordinary calls fast
-
     name = os.path.basename(os.path.normpath(word)).lower()
-    return name == grant_.FILE_NAME or fnmatch.fnmatch(grant_.FILE_NAME, name)
+    return name == grant_.FILE_NAME or _fnmatch(grant_.FILE_NAME, name)
 
 
 def _snake(name: str) -> str:
@@ -1725,10 +1741,14 @@ def _answer(findings: list[str], *, unattended: bool) -> dict[str, typing.Any]:
     """
     distinct = list(dict.fromkeys(findings))
     said = "; ".join(distinct)
+    covered = all(
+        any(finding.startswith(prefix) for prefix, _ in _ALTERNATIVES)
+        for finding in distinct
+    )
     alternatives = [
         text
         for prefix, text in _ALTERNATIVES
-        if any(finding.startswith(prefix) for finding in distinct)
+        if covered and any(finding.startswith(prefix) for finding in distinct)
     ]
     if unattended:
         reason = " ".join(

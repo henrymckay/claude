@@ -1099,5 +1099,24 @@ def test_when_lone_quote_refused_unattended_then_reason_names_the_alternative(
     assert "Write tool" in str(answer.get("permissionDecisionReason"))
 
 
+@pytest.mark.parametrize(
+    "command", ["ls test_b[x-a]", "python3 -c 'print(rows[:-1])' x[z-a].txt"]
+)
+def test_when_word_holds_descending_bracket_range_then_no_decision(
+    run: Run, repo: pathlib.Path, command: str
+) -> None:
+    answer = run(repo, {"command": command})
+    assert answer == {}
+
+
+def test_when_one_finding_has_no_way_round_then_reason_names_none(
+    run: Run, repo: pathlib.Path
+) -> None:
+    command = "python3 - <<'EOF'\nprint(open('.env').read())  # it's here\nEOF"
+    answer = run(repo, {"command": command}, environment={"CLAUDE_GUARD": "deny"})
+    reason = str(answer.get("permissionDecisionReason"))
+    assert ("Write tool" in reason, "Do not retry" in reason) == (False, True)
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
