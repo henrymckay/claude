@@ -31,7 +31,7 @@ Standardise on these five tools; set them up once and defer to them everywhere:
 
 `sqlfluff` joins them for SQL once a project holds a `.sql` file (Pre-commit hooks).
 A web front end brings its own under `web/`: `npm` from the development dependency `nodejs-wheel`, run as `uv run npm --prefix web …` so no system Node is needed, TypeScript's checker in its build, `oxlint` as its linter, Prettier as its formatter and `vitest` for its tests, wired in `write-entry-points`' TypeScript reference and written as `write-typescript` says.
-Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job deployed to a container platform such as Cloud Run (`deploy-project`), from the `ghcr.io/astral-sh/uv` image, since a machine you own and an Actions runner both install from `uv.lock`; documentation is the README plus `--help`; CI is declined until a project has a second contributor or a deploy (the plan records the exception).
+Nothing else by default: no task runner (`just`, `make`) until a project has a command `uv run` can't express; Docker only for an API or job deployed to a container platform such as Cloud Run (`deploy-project`), from the `ghcr.io/astral-sh/uv` image, since a machine you own and an Actions runner both install from `uv.lock`; documentation is the README plus `--help`; CI is declined until a project has a second contributor, a deploy or an unattended build, whose workflow the owner puts on the default branch before the first run, so CI runs what the owner wrote rather than only what the session did (`build-project`, Run it with nobody present); the plan records the exception.
 
 ## Configure the project
 
