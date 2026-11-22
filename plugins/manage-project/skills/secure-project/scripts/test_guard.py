@@ -1006,28 +1006,29 @@ def test_when_connector_reads_or_previews_then_no_decision(
     assert answer == {}
 
 
+def test_when_server_started_and_stopped_by_pid_then_no_decision(
+    run: Run, repo: pathlib.Path
+) -> None:
+    command = (
+        "(npm run preview > $TMPDIR/web.log 2>&1 & echo $! > $TMPDIR/web.pid); "
+        "sleep 5; tail $TMPDIR/web.log; curl -sS -m 10 http://127.0.0.1:4173/; "
+        "kill $(cat $TMPDIR/web.pid)"
+    )
+    answer = run(repo, {"command": command})
+    assert answer == {}
+
+
 @pytest.mark.parametrize(
     ("tool", "tool_input"),
     [
         (
             "Bash",
             {
-                "command": "grep -n \"fail_under\\|include\" pyproject.toml; "
-                "uv run coverage report --include 'src/app/core/*,src/app/port/*' "
-                "--fail-under 100 2>&1 | tail -4"
+                "command": "uv run coverage report "
+                "--include 'src/app/core/*,src/app/port/*' --fail-under 100"
             },
         ),
-        ("Bash", {"command": "ls sub/*"}),
         ("Bash", {"command": "cat sub/*"}),
-        ("Bash", {"command": "wc -l *"}),
-        (
-            "Bash",
-            {
-                "command": "(npm run preview > $TMPDIR/web.log 2>&1 & echo $! > "
-                "$TMPDIR/web.pid); sleep 5; tail $TMPDIR/web.log; curl -sS -m 10 "
-                "http://127.0.0.1:4173/; kill $(cat $TMPDIR/web.pid)"
-            },
-        ),
         (
             "Grep",
             {
@@ -1036,14 +1037,13 @@ def test_when_connector_reads_or_previews_then_no_decision(
                 "glob": "{src,api/src,pyproject.toml,api/package.json}/**",
             },
         ),
-        ("Grep", {"pattern": "version", "path": ".", "glob": "**/*.json"}),
     ],
 )
-def test_when_ordinary_call_from_shakedown_then_no_decision(
+def test_when_wildcard_refused_unattended_then_reason_names_the_alternative(
     run: Run, granted: pathlib.Path, tool: str, tool_input: dict[str, object]
 ) -> None:
-    answer = run(granted, tool_input, tool=tool)
-    assert answer == {}
+    answer = run(granted, tool_input, tool=tool, environment={"CLAUDE_GUARD": "deny"})
+    assert "If a wildcard caused it" in str(answer.get("permissionDecisionReason"))
 
 
 @pytest.mark.parametrize(
