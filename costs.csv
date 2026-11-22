@@ -31,3 +31,9 @@ agents,cache_read,cache_write,dollars,effort,input,model,output,session,source,s
 1,1126822,58407,0.48,,48,claude-sonnet-5-5,12307,a2823323-e5db-44fc-b241-afaabc96398f,the launcher's status.json and the stream's result,launcher shakedown on the trial project,2026-11-22,10
 1,81715937,2558747,33.73,high,510,claude-opus-5-5,229653,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 14: builder,2026-11-22,228
 1,18218529,533867,19.65,max,176,claude-fable-5-2,266777,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,sweep 14: outside review,2026-11-22,64
+1,97907950,877659,28.32,high,574,claude-opus-5-5,217187,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 15: builder (superseded by sweep 16),2026-11-22,122
+1,714899,235889,0.04,medium,22,claude-haiku-5-5,11027,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the agent's transcript,sweep 15: documentation check,2026-11-22,51
+1,42013092,1073451,17.00,high,348,claude-opus-5-5,161274,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 16: builder,2026-11-22,100
+1,1037242,180384,0.05,high,24,claude-haiku-5-5,33794,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 16: builder's Haiku calls,2026-11-22,100
+1,30272884,926149,27.70,max,282,claude-fable-5-2,309423,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,sweep 16: outside review,2026-11-22,62
+2,,,0.89,,,,,799ed84f-d731-4c85-8dbc-c42c5dc5c243,claude plugin eval's printed totals,sweep 16: trigger cases,2026-11-22,
