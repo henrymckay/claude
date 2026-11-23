@@ -46,7 +46,8 @@ A trial build tests the plugins on a real project, so its planning is under test
 - **The session under test plans and builds it; the coordinating session does neither**, even when "new project" fires `plan-project`: it writes a brief in the user's words that names no technology the skills should choose, starts a fresh session with only the plugins, and relays the user's own answers, never its own.
 Run with nobody watching, it is a cloud session on the trial's repository alone, as `build-project`'s `references/unattended.md` sets up, so it holds none of the owner's credentials or other projects, and none of their connectors once each is removed from the task and the template's deny is in place; a local headless run sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the backstop `choose-model`'s Hold a stage on its model names, and says in its report what it ran with.
 - **Total its cost with `choose-model`'s script** from its transcripts, whether or not the build kept `costs.csv`, so every trial build is priced the same way.
-- **Sweep what it leaves**: its skill feedback, and its transcripts where they are on the machine, read for a skill that should have loaded and never did and a stage served by the wrong model; cite each finding's file and line and file it as feedback, since a session that skipped a skill never reports the gap itself.
+- **Sweep what it leaves**, and a real build's wherever its run log can be read: its skill feedback, and a table from its transcript or run log of the skills the main session invoked against the skills the work called for (a language's skill for each language written, `write-tests` for each test, `build-project` for the build), with any stage served by the wrong model.
+File each miss as feedback citing its file and line, since a session that skipped a skill never reports the gap itself, and every one-line trigger case passed while two builds missed skills mid-task.
 - **Fill in the coverage map's evidence** where the marketplace's plan keeps one (Check the coverage map): each cell the build exercised gets the build as its evidence, and each it found wanting the issue it filed.
 
 ## Check the coverage map
@@ -74,7 +75,7 @@ How a sweep is carried out, so another session or another user of the plugin run
 ## Review it from outside
 
 **End every sweep with one targeted review by a fresh agent on the best available model at its highest effort (`choose-model`), read-only, given the diff and the plan but none of the builder's reasoning or report**, since a builder checked by its own model and effort finds what it already looked for: twelve sweeps passed their own checks while an outside review found unproven claims graded proven, a boundary tested less than its second layer and a plan too long to act on.
-Brief it with the questions below rather than having it load this skill, whose frontmatter effort would hold it at `high` for the rest of its turn (`choose-model`, Set the model from inside Claude).
+Brief it with the questions below, asking for no tidy-ups, rather than having it load this skill, whose frontmatter effort would hold it at `high` for the rest of its turn (`choose-model`, Set the model from inside Claude).
 It has two parts:
 
 1. **The plan and the trajectory, always**, by the same questions every sweep, so one sweep's answers can be compared with the last:
@@ -85,11 +86,16 @@ It has two parts:
    5. Can a fresh session act on the plan at its current size?
    6. What is the weakest part of the whole approach to a sceptical outsider, and what would they do instead?
    7. What did the last review propose, and was it done, declined with a reason, or dropped silently?
+   8. Given the recent builds' tables of skills invoked against skills called for (Run a trial build) and every description and start-up line, which triggers are likeliest to miss or misfire, and what prompt would show each?
 2. **The sweep's riskiest change, chosen per sweep**: code that runs, a boundary, or the skill a build depends on most, reviewed from the diff.
+
+**The reviewer judges the wording; runs on the building model judge whether a skill fires**, since a skill that fires for the best model can stay silent for the model that builds.
+So each prompt question 8 proposes becomes a trigger case (Check the wiring), with a scaffold where the miss is mid-task, run on the building model against the old wording and the new, and a predicted miss counts only once a run shows it.
+Question 8 also runs alone, before the merge, in any sweep that changes a description or a start-up line.
 
 - **The report ranks findings by how much each should change what is done next**, marks each verified (re-run) or inferred (read), and ends with proposals the owner accepts or declines.
 - **A finding that blocks the merge is fixed in the sweep; the rest are filed** as issues, so the next sweep starts from them.
-- **It records its cost against the plan's budget for it**, and is skipped only with the reason in the report; a full review of every skill stays a separate, rarer event.
+- **It runs with no spend cap and records its cost against the plan's budget for it afterwards**, a review over budget reported with the reason rather than cut short, and is skipped only with the reason in the report; a full review of every skill stays a separate, rarer event.
 
 ## Land it as one pull request
 
@@ -131,6 +137,7 @@ A file patched sweep after sweep reads as drip-fed even when every line is true;
 - **Hold each always-on file to a word budget**, the plan's or one the sweep sets and records there, kept as `write-markdown` says; a file over budget is a finding.
 The instruction files and the context files carry no defaults (see `write-markdown`).
 - **The README is true**: it lists every skill as its skill describes itself, and its setup, configuration and feedback sections hold against the repo and the plan; a section describing something a `PLAN.md` decision, proposed or signed off, removes is a finding even while the thing still exists.
+- **A routine's prompt the repo holds is true** against the repo, the plan and this skill, read as the README is, since a scheduled sweep's prompt kept only in the task went stale unseen.
 - **`PLAN.md`'s Decisions agree with the skills both ways**; a decision a skill contradicts, or a skill default the plan overrides without saying so, is a finding.
 
 ## Check the wiring
@@ -143,7 +150,7 @@ Verify each finding against the files before acting, as for the cold read.
 - **Every symlink resolves**, into `~/.claude` and from a top-level `skills/` folder into the plugins, or is dangling on purpose.
 - **`.gitignore` covers what should never be committed**: editor folders, caches, OS files, folders synced in by other tools.
 - **No sync-conflict copies** (`name 2.ext` from iCloud and the like) sit in the tree.
-- **Each trigger suite passes**, run from every plugin folder the sweep touched: `claude plugin eval . --ablation none --no-publish --trust-plugin`.
+- **Each trigger suite passes**, run from every plugin folder the sweep touched: `claude plugin eval . --ablation none --no-publish --trust-plugin`, adding `--scaffold` where a case names a `scaffold_script`, which otherwise runs in an empty folder, and `--allow-tools Write` where a case writes a file.
 Each skill has a case that should fire it; a skill with a near neighbour that could claim its prompts also gets one that should not, a `tool_used` grader on `Skill` with `min: 0` and `max: 0`, added only where the two are likeliest to be confused, since every case is a paid session.
 A case whose skill hands its work to a subagent lists `Agent` under `disallowed_tools` in its `prompt.md`, since `allowed_tools` does not withhold it and the subagent runs the whole stage after the `Skill` call has already passed, at many times the cost and up to the cap; one whose skill works at length inline raises `timeout_seconds` above the 300-second default instead.
 The no-plugin arm (`--ablation with-without`) shows nothing for a trigger case, which cannot fire a skill that is not installed; it earns its cost only for a case that grades behaviour.
