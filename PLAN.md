@@ -5,8 +5,8 @@ A marketplace of Claude Code plugins that let Claude do impressive projects enti
 Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verification.csv`](verification.csv).
 
 Signed off by the owner: R1 to R8 (2026-11-21, issue 157), D1 to D53 (2026-11-12), D61 bar its `author.name` sentence (2026-11-13), D62 to D70 (under the owner's delegation, 2026-11-19) and D71 to D81 (2026-11-20).
-Everything else is proposed: R9, the Fails-when lines under R1 to R8, D54 to D60, D82 onwards bar D133 and D138 (decided under delegation), the amendments dated 2026-11-21 and 2026-11-23, the coverage map, the Design's text and the Not yet list.
-The unsigned backlog is counted under Open.
+Everything else is proposed: R9, the Fails-when lines under R1 to R8, D54 to D60, D82 onwards bar D133 and D138 (decided under delegation) and D143 and D144 (2026-11-23), the amendments dated 2026-11-21 and 2026-11-23, the coverage map, the Design's text and the Not yet list.
+The backlog's count is under Open.
 One line per decision; each signed decision's full text is at commit `7aa0625`, and test logs and rationale live in the pull request or skill each line cites.
 
 ## Brief

@@ -44,3 +44,7 @@ agents,cache_read,cache_write,dollars,effort,input,model,output,session,source,s
 1,1022229,100057,0.46,medium,28,claude-sonnet-5-5,10454,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 17: cold read,2026-11-23,23.1
 38,,,8.30,,,,,799ed84f-d731-4c85-8dbc-c42c5dc5c243,claude plugin eval's printed totals,"sweep 17: trigger suites, checker",2026-11-23,
 1,4029806,137133,2.08,medium,74,claude-opus-5-5,29167,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,control build after sweep 17: blind review,2026-11-23,7.6
+1,6872868,164642,3.10,medium,114,claude-opus-5-5,44963,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 18: builder,2026-11-23,9.6
+1,578224,92851,0.38,medium,18,claude-sonnet-5-5,9241,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 18: cold read,2026-11-23,9.6
+15,,,3.60,,,,,799ed84f-d731-4c85-8dbc-c42c5dc5c243,claude plugin eval's printed totals,"sweep 18: trigger suites, checker",2026-11-23,
+1,19403056,652257,19.93,max,194,claude-fable-5-2,238090,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,sweeps 17 and 18: outside review,2026-11-23,43.8
