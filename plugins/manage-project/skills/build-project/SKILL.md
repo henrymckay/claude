@@ -59,7 +59,7 @@ Either needs a public repository or a paid GitHub plan for a private one; it sto
 The session's git proxy refuses tags and branch deletions but does not limit which branches a push can update (cloud-environments, GitHub proxy), and a push to the default branch was reported allowed with no rule in place (tried 2026-11-22), so before the first run the owner shows one push from a cloud session refused and records it in `DEPENDENCIES.md`.
 - **Keep the environment's network at Limited**, its default, and add a host the project's data needs to that environment's list rather than opening it to Full; Limited is not an exit control, since its default list includes cloud storage and `gist.github.com`, so it does not keep a private repository's code in.
 - **Give a key the run needs as a network secret** of the environment, which the proxy attaches to requests for the hosts listed without the session seeing it, never as an environment variable, which anyone using the environment can read (cloud-environments).
-- **The work comes back as a branch** (`claude/…` when tried), and the session takes no other outward action (`plan-project`, Plan with no user present), which is text and auto mode's classifier, not a control.
+- **The work comes back as a branch** (`claude/…` when tried), each milestone's branch merged into it rather than into the default branch, and the session takes no other outward action (`plan-project`, Plan with no user present), which is text and auto mode's classifier, not a control.
 
 **Give it nothing it could spend, leak or damage**, since an instruction slipped into something it reads acts with whatever it holds; a run that needs any of these stays attended:
 
@@ -148,7 +148,7 @@ The session that handed the milestone over spawns it after the hand-back (Hand e
 
 - **Bring `PLAN.md` up to date** as `plan-project` says, **and the README wherever the milestone changed what a user runs, sets or sees**, committing both on the milestone's branch with the change that made them true; a README left for the final review misleads everyone who reads it in between.
 - **Bring the records up to date** (Keep the records): `DEPENDENCIES.md` with every account, service, credential, tool, connector or plugin the milestone used or created, and `verification.csv` with each Verification line its gate ran, in the milestone's commits; its row of `costs.csv` is written and committed by the session that spawned the milestone's subagent, once it has returned.
-- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule says, never in the project's plan.
+- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule says (`maintain-plugin` prints it; without that plugin, in the report), never in the project's plan.
 - **Keep the state in the repo, not the conversation.** The ticked milestones, Open and the commits are what a fresh session resumes from after a compaction or a break.
 - **Report the milestone** — what now works, one line each for every decision proposed, idea noticed and assumption made, and the decisions settled by precedent as a count (`make-decisions`) — then start the next milestone.
 Each gate check names the command that ran it and what it printed — the suite's pass count and coverage, the real run's rows; a check not run is reported as not run, never as "should pass", since the next milestone builds on what the report claims.
