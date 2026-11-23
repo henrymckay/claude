@@ -39,7 +39,8 @@ An unattended build that recorded "small, so build in the main session" as a pro
 
 ## Pick the path
 
-**Take the small path only where the plan shows all of these, and the full path otherwise**: at most three milestones, one language, nothing deployed or scheduled, no credential, and every input and output classed public (`secure-project`, Classify the data); a plan that classes nothing takes the full path.
+**Take the small path only where the plan shows all of these, and the full path otherwise**: at most three milestones, one language, nothing deployed or scheduled, no credential held, no data leaving the machine, and no private or personal data read from an account or from content another person writes (`secure-project`, Classify the data); a plan that classes nothing takes the full path.
+An app that keeps what its one user enters on that user's machine passes whatever the data's class, since the steps the small path drops guard a boundary it never crosses; an unattended build that read "every input classed public" took the small path anyway, by a proposed decision overriding the test.
 The test reads the plan, never the prompt, since a brief calling the work small changes nothing (`choose-model`, Hold a stage on its model); a milestone that adds any of these moves the rest of the build to the full path.
 
 - **Full path** — each milestone handed to a subagent on the build rung, with the evaluator and the gate's reviews spawned by the handing session (Hand each milestone to a subagent).
