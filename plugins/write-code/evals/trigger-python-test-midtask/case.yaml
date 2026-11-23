@@ -1,0 +1,27 @@
+schema_version: "1.1"
+name: trigger-python-test-midtask
+description: >-
+  A small Python package with a test suite is asked for one more function
+  and its test; write-python, be-functional and write-tests must each load
+  before the code. Run with --scaffold, or the workspace is empty.
+tags: [trigger, midtask]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: "Add a median function next to mean, with a test."
+  max_turns: 6
+  allowed_tools: [Read, Glob, Grep, Skill]
+  disallowed_tools: [Agent]
+graders:
+  - type: tool_used
+    name: write-python-fired
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?write-python"'
+  - type: tool_used
+    name: be-functional-fired
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?be-functional"'
+  - type: tool_used
+    name: write-tests-fired
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?write-tests"'
