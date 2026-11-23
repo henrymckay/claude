@@ -98,7 +98,7 @@ claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs -
 claude plugin install manage-project@henrymckay
 ```
 
-An unattended build is a cloud session on the project's repository alone, the plugins loaded by `build-project`'s hook pinned to a reviewed commit; its work comes back as a branch (`build-project`, Run it with nobody present).
+An unattended build is a cloud session on the project's repository alone, the plugins loaded by `build-project`'s hook pinned to a reviewed commit; its work comes back as a branch (`build-project`'s `references/unattended.md`).
 
 | Plugin | Skills |
 |---|---|
@@ -139,8 +139,8 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | `write-code`'s context file | 80 | 78 |
 | Every other context file | 70 | 56 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
-| `README.md` | 980 | 951 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,499 |
+| `README.md` | 980 | 948 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,495 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |

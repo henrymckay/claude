@@ -102,7 +102,7 @@ Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verif
 - **<artefact>** — <host and tier, its limit that matters and the expected use of it, the expected monthly running cost ($0 inside the tier), how it is deployed from the repo; the date the tier was checked>.
 - **Teardown** — <what is kept when the project is retired: the plan, the records, which data is archived and where; anything left standing> (`retire-project`).
 - **Threat model** — <for a project holding a credential or data that is not public: each secret and class, each input that may carry instructions, each outside call and served surface, what could reach or leak each, and the control that stops it> (`secure-project`).
-- **Unattended runs** — <whether the build or the job runs with nobody present, where (a cloud session on this repository alone, or a local run for low-risk public work), what it is given beyond the code (a network level, a secret: none by default) and what it is withheld, or "none: every run is attended"> (`build-project`, Run it with nobody present).
+- **Unattended runs** — <whether the build or the job runs with nobody present, where (a cloud session on this repository alone, or a local run for low-risk public work), what it is given beyond the code (a network level, a secret: none by default) and what it is withheld, or "none: every run is attended"> (`build-project`'s `references/unattended.md`).
 
 ### Errors
 

@@ -39,18 +39,18 @@ An unattended build that recorded "small, so build in the main session" as a pro
 
 ## Pick the path
 
-**Take the small path only where the plan shows all of these, and the full path otherwise**: at most three milestones, one language, nothing deployed or scheduled, no credential, and no data that is not public (`secure-project`, Classify the data).
+**Take the small path only where the plan shows all of these, and the full path otherwise**: at most three milestones, one language, nothing deployed or scheduled, no credential, and every input and output classed public (`secure-project`, Classify the data); a plan that classes nothing takes the full path.
 The test reads the plan, never the prompt, since a brief calling the work small changes nothing (`choose-model`, Hold a stage on its model); a milestone that adds any of these moves the rest of the build to the full path.
 
 - **Full path** — each milestone handed to a subagent on the build rung, with the evaluator and the gate's reviews spawned by the handing session (Hand each milestone to a subagent).
-- **Small path** — the main session builds each milestone itself, from Start a milestone to Close it, running every gate check but the evaluator (step 3), `/code-review` (step 5) and step 6's review agent.
+- **Small path** — the main session builds each milestone itself, on its own model, from Start a milestone to Close it, running every gate check but the evaluator (step 3), `/code-review` (step 5) and step 6's review agent.
 
-Both paths end with Finish the build unchanged: the review by a fresh agent, even where the session already runs on Opus, since its worth is a reader who did not write the code, and on the small path it judges the running surface against `design-interface`'s criteria as well as the code; then the acceptance run.
+Both paths end with Finish the build unchanged: the review by a fresh agent — `review-project`'s own hand-off to an Opus subagent is that agent — even where the session already runs on Opus, since its worth is a reader who did not write the code, and on the small path it judges the running surface against `design-interface`'s criteria as well as the code; then the acceptance run.
 For a thirteen-minute app, an Opus planning subagent alone took five minutes and about 144,000 tokens, and the full path adds a subagent per milestone and three gate agents each; the small path keeps the two checks that make an unwatched "finished" worth reading and drops the rest.
 
 ## Run it with nobody present
 
-**A build nobody watches runs as a Claude Code cloud session on the project's repository alone, the plugins loaded by the pinned start-up hook in `assets/`, set up by the owner before the first run as `references/unattended.md` says**: the hook and its pin, the branch rule, the network level, what the run is never given, the lesser local option and what goes in `DEPENDENCIES.md`.
+**A build nobody watches runs as a Claude Code cloud session on the project's repository alone, the plugins loaded by the pinned start-up hook in `assets/`, set up by the owner before the first run as `references/unattended.md` says**.
 The building session follows three lines of it:
 
 - **Stop and say so unless `build-project` is among your skills**, since a start-up hook that fails can print nothing.
