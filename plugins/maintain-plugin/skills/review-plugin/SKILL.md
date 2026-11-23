@@ -4,11 +4,11 @@ effort: high
 description: >-
   How to review a Claude Code plugin, marketplace or skills repo for drift —
   skill feedback, every check (counts, descriptions, duplicates, claims,
-  instruction files, manifests, hooks, trigger suites, records, memory), the
-  coverage map, trial builds, how a sweep runs, an outside review on the top
-  model, one pull request. Use whenever the user asks to review, audit, tidy or
-  sweep skills or a plugin — even if they just say "check the skills for
-  drift" or "work through the skill feedback".
+  instruction files, hooks, trigger suites, records), the coverage map, trial
+  builds, how a sweep runs, an outside review, one pull request. Load it
+  before the first check of a review, audit or sweep of a plugin or skills
+  repo — even if the user just says "check the skills for drift" or "work
+  through the skill feedback".
 ---
 
 # Review the plugin

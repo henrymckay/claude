@@ -1,13 +1,13 @@
 ---
 name: design-interface
 description: >-
-  How every surface a person meets in a project looks and reads — a house
-  design system for screens and charts, and a standard for each alert,
-  digest, command line, API, README and report, planned before code and
-  judged running. Load it before the first line of any screen, chart, page,
-  message, help text or styled output, even a prototype. Use whenever
-  designing, styling, wording or judging a surface — even if the user just
-  says "make it look good", "add dark mode" or "make the alerts clearer".
+  How every surface a person meets looks and reads — a house design system for
+  screens and charts, and a standard for each alert, digest, command line,
+  API, README and report, planned before code and judged running. Load it
+  before the first line of any screen, chart, page, message, help text or
+  styled output, even a prototype. Use whenever designing, styling, wording or
+  judging a surface — even if the user just says "make it look good", "add
+  dark mode" or "make the alerts clearer".
 ---
 
 # Design the interface

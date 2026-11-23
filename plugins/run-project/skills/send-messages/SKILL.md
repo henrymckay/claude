@@ -4,10 +4,10 @@ description: >-
   How a deployed job or assistant reaches a person — what deserves a message
   (a failure alert, an event the job finds, a digest, a chat, never a routine
   success), alerting once per change of state or event, and the channel: ntfy
-  for an alert, email for a digest, Claude Code channels for a chat. Use
-  whenever adding a notification, alert, digest or chat to a job — even if the
-  user just says "text me when it breaks", "ping me when it finds something"
-  or "let me chat with it from my phone".
+  for an alert, email for a digest, Claude Code channels for a chat. Load it
+  before the first line of an alert, digest, notification or chat — even if
+  the user just says "text me when it breaks" or "let me chat with it from my
+  phone".
 ---
 
 # Send messages

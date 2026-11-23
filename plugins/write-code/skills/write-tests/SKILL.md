@@ -4,9 +4,10 @@ description: >-
   How to write and structure tests in any language — given-when-then, naming
   by behaviour, behaviour over implementation, where test data and expected
   values come from, table-driven and property-based tests, coverage levels,
-  and testing a store, a dashboard and a CLI. Use whenever writing, editing or reviewing
-  tests or setting up a suite — even if the user just says "add tests", "test
-  this" or names a runner like pytest.
+  and testing a store, a dashboard and a CLI. Load it before the first test,
+  in any language, even one written beside new code. Use whenever writing,
+  editing or reviewing tests — even if the user just says "add tests" or names
+  a runner like pytest.
 ---
 
 # Write tests

@@ -4,9 +4,9 @@ description: >-
   The decisions around SQL in a project, whatever the engine — SQL or Polars,
   where a query lives, the engine's dialect with types pinned, the house
   style, changing a stored schema, and testing documented queries. Load it
-  before the first line of any SQL, even a query answered inline. Use whenever
-  writing or reviewing SQL, a view or a migration, or adding or retyping a
-  stored column — even if the user just says "write a query" or "query the
+  before the first line of any SQL, a query inside Python or a migration
+  included, even one answered inline. Use whenever writing or reviewing SQL or
+  a stored column — even if the user just says "write a query" or "query the
   parquet".
 ---
 

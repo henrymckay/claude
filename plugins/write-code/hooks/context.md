@@ -1,9 +1,9 @@
 # Skills from the `write-code` plugin
 
-- **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
-- **`be-oop`** for object-oriented design: classes, inheritance, patterns.
-- **`use-polars`** when working with `polars`.
-- **`write-python`** when writing or editing Python.
-- **`write-sql`** when writing SQL or deciding where it belongs.
-- **`write-tests`** for writing or editing tests, in any language.
-- **`write-typescript`** when writing or editing TypeScript, React or a Cloudflare Worker.
+- **`be-functional`** before the first line of any code, tests included.
+- **`be-oop`** before a class hierarchy or when OOP is named; opt-in.
+- **`use-polars`** before any `polars` code.
+- **`write-python`** before the first line of any Python, tests included.
+- **`write-sql`** before the first line of any SQL.
+- **`write-tests`** before the first test, beside `be-functional` and the language's skill.
+- **`write-typescript`** before the first line of any TypeScript or TSX.

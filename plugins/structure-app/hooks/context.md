@@ -1,5 +1,5 @@
 # Skills from the `structure-app` plugin
 
-- **`setup-python`** when scaffolding, packaging or configuring a Python project.
-- **`structure-python`** when organising a Python application into layers.
-- **`write-entry-points`** for building an app's entry points: a CLI, API, GUI or scheduled job.
+- **`setup-python`** before the first file of a Python project or script, or a dependency or tool added.
+- **`structure-python`** before deciding where a Python module belongs.
+- **`write-entry-points`** before the first line of a CLI, API, dashboard, front end or scheduled command.

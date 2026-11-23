@@ -4,9 +4,9 @@ description: >-
   Functional programming done well — pure functions, immutability,
   composition, explicit data flow, algebraic data types and pattern matching,
   functions shaped by the data they transform. Load it before the first line
-  of any code you write, tidy or refactor, even a snippet answered inline. Use
-  by default whenever writing, reviewing or refactoring code in any language,
-  even if the user never says "functional".
+  of any code you write, tidy or refactor, tests included, even a snippet
+  answered inline. Use by default whenever writing, reviewing or refactoring
+  code in any language, even if the user never says "functional".
 ---
 
 # Be functional

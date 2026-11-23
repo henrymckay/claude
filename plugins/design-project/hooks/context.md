@@ -1,4 +1,4 @@
 # Skills from the `design-project` plugin
 
-- **`design-interface`** before building, styling or wording a screen, chart, page, message, help text or any output a person reads.
-- **`design-pipeline`** before planning a pipeline or its tables, or changing how often it runs.
+- **`design-interface`** before the first line of any screen, chart, message or other output a person reads.
+- **`design-pipeline`** before naming a pipeline's first table or job, or changing its cadence.

@@ -4,10 +4,9 @@ description: >-
   The operational side of a job that runs on a schedule with nobody watching —
   which day it fetches, the overlap lock, catch-up and backfill, exit codes,
   failed items, a status command, logs, and picking launchd, a systemd timer
-  or GitHub Actions. Use whenever scheduling a nightly or periodic job,
-  deciding what it does when a night is missed or a source fails, or keeping a
-  service running — even if the user just says "run this every night", "cron
-  this" or "why did last night not run".
+  or GitHub Actions. Load it before the first line of a scheduled job or its
+  schedule, or of a service kept running — even if the user just says "run
+  this every night", "cron this" or "why did last night not run".
 ---
 
 # Run unattended

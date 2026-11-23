@@ -1,6 +1,6 @@
 # Skills from the `run-project` plugin
 
-- **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud.
-- **`run-unattended`** when a job runs on a schedule with nobody watching.
-- **`send-messages`** when a job or assistant must reach the user.
-- **`store-data`** when deciding where a project's data lives and how it is written and read.
+- **`deploy-project`** before choosing a host or putting anything online.
+- **`run-unattended`** before the first line of a scheduled job or its schedule.
+- **`send-messages`** before the first line of an alert, digest or chat.
+- **`store-data`** before the first line that saves a project's data or picks its database.

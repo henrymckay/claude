@@ -3,11 +3,11 @@ name: write-typescript
 description: >-
   In-code conventions for TypeScript that tooling can't decide — strict
   settings, interfaces and unions, unknown checked at the boundary, naming,
-  modules, errors and async, with React and Cloudflare Worker references.
-  Load it before the first line of any TypeScript or TSX, even a component
-  answered inline. Use whenever writing, editing or reviewing TypeScript —
-  even if the user just says "add a screen" or "fix this component". Not for
-  the scaffold or toolchain, which is write-entry-points'.
+  modules, errors and async, with React and Cloudflare Worker references. Load
+  it before the first line of any TypeScript or TSX, even a component answered
+  inline. Use whenever writing, editing or reviewing TypeScript — even if the
+  user just says "add a screen" or "fix this component". Not for the scaffold
+  or toolchain, which is write-entry-points'.
 ---
 
 # Write TypeScript

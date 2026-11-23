@@ -4,10 +4,10 @@ description: >-
   Where a project's data lives and how it is written and read —
   hive-partitioned Parquet queried by DuckDB, a table format once writes span
   partitions, MotherDuck to share, SQLite for small state, atomic writes, the
-  raw archive, the quarantine and the run manifest. Use whenever deciding
-  where output goes, writing a store adapter or picking a database — even if
-  the user just says "save the results", "where should this live" or "add a
-  database". Targets Polars 2.x and DuckDB 2.x.
+  raw archive, the quarantine and the run manifest. Load it before the first
+  line that saves a project's data or picks its database — even if the user
+  just says "save the results", "where should this live" or "add a database".
+  Targets Polars 2.x and DuckDB 2.x.
 ---
 
 # Store data
