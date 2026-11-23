@@ -188,7 +188,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D52** A named method plugin leads; the convention skills still apply.
 - **D57** Every shipped surface aims at the best in class.
 - **D58** An evaluator pass in the gate, up to three rounds.
-- **D59** The ladder holds when a prompt calls the work small. *Amended by D143 (proposed): the plan's counts, never the prompt, can choose `build-project`'s small path.*
+- **D59** The ladder holds when a prompt calls the work small. *Amended by D143: the plan's counts, never the prompt, can choose `build-project`'s small path.*
 - **D74** A build ends with the review, then an acceptance run.
 - **D75** Three records beside `PLAN.md` (`build-project`, Keep the records).
 - **D76** Stage costs totalled into `costs.csv` by `costs.py`.
@@ -204,8 +204,8 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D113** Untrusted content is a section of `secure-project`.
 - **D114** Threat model and Unattended runs lines in a plan's Runs on.
 - **D142** *(proposed)* A skill fires at a moment the session sees before acting, named alike in its description and context line, never a topic or a state its work creates late, and hands on by invoking the next skill; over topic triggers, which left four skills unloaded in two unattended builds; `write-skills`; issue 181.
-- **D143** *(proposed; amends D27 and D70, signed, and D59)* `build-project` has a small path, read from the plan (at most three milestones, one language, nothing deployed or scheduled, no credential or private data), built in the main session with the review by a fresh agent and the acceptance run always, over one size a session waived; issue 181.
-- **D144** *(proposed; amends D27, signed)* `plan-project` plans in place when the session's start-up model is Opus, and a run with nobody present skips plan mode; issue 186.
+- **D143** *(signed 2026-11-23; amends D27, D70 and D59)* `build-project` has a small path, read from the plan (at most three milestones, one language, nothing deployed or scheduled, no credential or private data), built in the main session with the review by a fresh agent and the acceptance run always, over one size a session waived; issue 181.
+- **D144** *(signed 2026-11-23; amends D27)* `plan-project` plans in place when the session's start-up model is Opus, and a run with nobody present skips plan mode; issue 186.
 - **D145** *(proposed)* The owner's unattended set-up moves to `build-project`'s `references/unattended.md`, off the builder's path.
 - **D125** *(proposed)* A plan holds to about 5,000 words, 5,500 at most, with a `Next` list, one line per decision and one budget table, cut without waiting for sign-off, over the 17,000 words this one reached; adds R9; `plan-project`; issue 165.
 
@@ -374,7 +374,7 @@ Private-data and real-account trials (M22, M20) are attended for now (D138).
 - **Q13** Accept R9 Legible and the sign-off by exception it implies? — recommended: yes; the alternative keeps every decision waiting for a full read.
 - **Q14** R3 says "enforced, not only advised", while D138 says the plugins enforce nothing: reword R3 to "enforced by the vendor's controls the skills configure", or reverse D138? — recommended: reword.
 
-**Unsigned backlog** (R9): 50 proposed decisions (D54 to D60, D82 to D132 bar the 15 D138 superseded, D139 to D145) and D138, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
+**Unsigned backlog** (R9): 48 proposed decisions (D54 to D60, D82 to D132 bar the 15 D138 superseded, D139 to D142, D145) and D138, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
 
 ### Ideas
 

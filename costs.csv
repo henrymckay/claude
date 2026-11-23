@@ -40,3 +40,6 @@ agents,cache_read,cache_write,dollars,effort,input,model,output,session,source,s
 1,8501777,226350,3.70,medium,102,claude-opus-5-5,43384,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,control build: blind review,2026-11-22,10
 1,5035280,163714,2.49,high:40/medium:1,82,claude-opus-5-5,33391,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the reviewer's transcript,control build rerun: blind review,2026-11-23,8.4
 16,,,9.08,,,claude-opus-5-5,,,claude -p printed totals,sweep 17: trigger probes old and new wording,2026-11-23,
+1,32239572,332159,10.65,medium,292,claude-opus-5-5,127071,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 17: builder,2026-11-23,23.1
+1,1022229,100057,0.46,medium,28,claude-sonnet-5-5,10454,799ed84f-d731-4c85-8dbc-c42c5dc5c243,costs.py on the builder's transcript,sweep 17: cold read,2026-11-23,23.1
+38,,,8.30,,,,,799ed84f-d731-4c85-8dbc-c42c5dc5c243,claude plugin eval's printed totals,"sweep 17: trigger suites, checker",2026-11-23,
