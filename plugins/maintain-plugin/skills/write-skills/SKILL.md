@@ -2,12 +2,11 @@
 name: write-skills
 description: >-
   House conventions for authoring a Claude Code skill — its name, a
-  description that triggers within the listing's budget, the opening, rules
-  stated once with an observable why and their exceptions, house picks,
-  general examples, a control run for a doubtful rule, and references. Use
-  whenever creating or editing a SKILL.md or its references, or writing a
-  skill description — even if the user just says "make a skill" or "fix this
-  skill's description".
+  description that fires on an observable moment within the listing's budget,
+  the opening and its hand-offs, rules stated once with an observable why,
+  house picks, general examples, a control run and references. Load it before
+  the first edit to a SKILL.md, its references or a skill description — even
+  if the user just says "make a skill" or "fix this skill's description".
 ---
 
 # Write skills
@@ -52,9 +51,12 @@ Claude Code cuts each description at 1,536 characters, and once the session's de
 Write plain prose with no backticks (see `write-markdown`), in this order:
 
 1. **What it is** — a phrase naming the skill's subject and its main topics, not its rules; counterparts use parallel forms ("Functional programming done well — …" / "Object-oriented design done well — …").
-2. **When to use it** — "Use when/whenever …", the contexts that should invoke it, ending with the casual phrasings ("even if the user just says '…'").
+2. **When to use it** — "Load it before <the moment> …", then any further contexts ("Use whenever …"), ending with the casual phrasings ("even if the user just says '…'").
    Cover the whole body and promise nothing it lacks.
-   For a skill that governs work a model can answer inline — a snippet, a function, a README — open this part with "Load it before the first line of …, even …", since the model otherwise answers without loading anything.
+
+**Name the moment a skill fires, not its topic**: an act the session can see itself about to take — the first line of a kind of code, the first file of a new project, the first command that writes, the report that calls work finished — never a state the triggering work itself creates late, and the plugin's context line names the same moment.
+In two unattended builds with every plugin loaded, skills whose triggers named an act ("before the first line of any Python") loaded as the work reached them, while those named by topic ("for writing tests", "when deciding where data lives") were never invoked though tests and a store were written, and `build-project`'s "a project that has a PLAN.md" never applied to a session that wrote the plan after the code.
+The context line is the copy always in view, since the listing can drop a description to its name, so a line that names a topic undoes a description that names a moment: `write-sql`'s description named the first line of SQL, its line "when writing SQL", and it fired in neither build.
 3. **What it targets**, only where a version matters — "Targets Polars 2.x."
 4. **Opt-in-ness**, for an opt-in style skill only, verbatim: "Opt-in: reach for <X> where it genuinely fits, not by default."
 5. **A boundary**, only where a near neighbour would claim the same prompt — "Not for <…>, which is <skill>'s."
@@ -66,6 +68,7 @@ Neighbours, references and house picks belong in the opening, which is read when
 Every skill opens with these parts, in order:
 
 1. **Placement** — a line or two saying what the skill is, the skills it **builds on** and the skills it **hands off to** ("for scaffolding, see `setup-python`"), as bare backticked names.
+   A skill whose work runs on into another's, as a plan into its build, ends its steps with one that says to invoke the next by name before doing its work, since the hand-off named only in this line went unfollowed: sessions loaded `plan-project` and never `build-project`.
 2. **Failure modes** — the two or three mistakes behind most of what goes wrong.
    Take them from what a real run got wrong; a mistake nobody makes spends attention the real ones needed.
 3. **Language pointer**, only with a language reference — `**Language-agnostic here.** The Python specifics live in references/python.md.`
