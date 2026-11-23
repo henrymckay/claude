@@ -95,6 +95,7 @@ Beyond these, `plan-project` looks for an outside plugin where no skill here cov
 
 Each plugin's `evals/` holds a casual prompt that should fire each skill, and, where a neighbour could claim one, a prompt that should not.
 Pass `--trust-plugin` only for a plugin whose source you have read.
+Add `--scaffold --allow-tools Write` in `manage-project` and `write-code`, whose mid-task cases start from a prepared folder.
 
 ```bash
 cd plugins/write-code
