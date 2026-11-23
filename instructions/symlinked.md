@@ -39,8 +39,8 @@ Where I or the project name another plugin's method as driving, such as `superpo
 - **`design-pipeline`** before planning a pipeline or its tables, or changing how often it runs.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
 - **`plan-project`** before building a new project, however small, or a new input, output or interface.
-- **`review-plugin`** when reviewing a Claude Code plugin or skills repo.
 - **`retire-project`** when retiring a project or removing what it created.
+- **`review-plugin`** when reviewing a Claude Code plugin or skills repo.
 - **`review-project`** when reviewing, auditing or fixing a project.
 - **`run-unattended`** when a job runs on a schedule with nobody watching.
 - **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, reads content others write, or serves something.

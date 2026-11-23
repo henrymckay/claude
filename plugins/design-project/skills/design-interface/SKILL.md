@@ -39,7 +39,8 @@ The bar per kind of surface, each a summary of the criteria the evaluator checks
 - **README** — the name, one sentence, a current picture and the live address before any install line, then a quick start that runs as written, use by task, every setting, how it runs (`references/docs.md`).
 - **Report** — the verdict first, then what to open, then each claim with its evidence, then what is left (`references/docs.md`).
 
-Every surface shows its data's freshness and marks a record still forming (`design-pipeline`) as such, in its own form: an age on a screen, a time in a message, a header from an API, a line from `status`.
+Every surface over data something else writes — a scheduled job, a source, another user — shows the data's freshness and marks a record still forming (`design-pipeline`) as such, in its own form: an age on a screen, a time in a message, a header from an API, a line from `status`.
+Where the surface is the data's only writer, as in an app whose records the user enters through it, there is no age to show and it shows none.
 
 ## The house design system
 
@@ -87,7 +88,7 @@ A project with its own brand swaps the values under a plan decision and keeps th
 - **A 4 px grid**: 4, 8, 12, 16, 24, 32; card padding 16 (12 at phone width), the gap between cards 16 (12).
 - **Radii** 6 px for controls, 8 for inner elements, 12 for cards.
 - **Cards are flat** — a 1 px `border`, no shadow; a shadow only on what floats (popovers, tooltips: `0 4px 16px` black at 16%).
-- **Content at most 1280 px wide**, centred, under a header 56 px tall holding the name, the navigation, the data's age and the scheme toggle.
+- **Content at most 1280 px wide**, centred, under a header 56 px tall holding the name, the navigation, the data's age where it has one (Set the bar) and the scheme toggle.
 
 ### Layout and density
 
@@ -110,7 +111,7 @@ Design four states besides the happy one:
 
 - **Loading** — a skeleton in the content's own shape, and fixed heights so nothing jumps when data arrives.
 - **Empty** — what would fill it and what to do ("No runs yet — the first nightly writes here").
-- **Stale** — the data's age always visible, `warning` once it is stale (the freshness the plan states per table, `design-pipeline`, else `run-unattended`'s threshold in Report the outcome) and `critical` when the last run failed, with text and an icon.
+- **Stale**, over data something else writes — the data's age always visible, `warning` once it is stale (the freshness the plan states per table, `design-pipeline`, else `run-unattended`'s threshold in Report the outcome) and `critical` when the last run failed, with text and an icon.
 - **Error** — what failed and what to do about it, in the interface's voice, with the rest of the page still working.
 
 ### Light and dark
@@ -151,7 +152,7 @@ Look at every screenshot yourself as you build and fix what reads wrong; `build-
 3. **Charts** — each titled with what and unit, axes legible and unclipped, series from the palette, redrawn in dark.
 4. **Numbers** — tabular, aligned and formatted as above; no raw float, no ISO timestamp on screen.
 5. **Phone** — no sideways page scroll at 390 px, nothing clipped or overlapping, every control reachable.
-6. **States** — the data's age visible; the empty and error states designed, forced where the evaluator can force them.
+6. **States** — the data's age visible where something else writes it; the empty and error states designed, forced where the evaluator can force them.
 7. **Speed** — each interaction within the bar's time on the real data, measured.
 8. **Copy** — sentence case, plain words, units named, no placeholder.
 9. **Access** — text contrast at least 4.5 to 1, a visible focus ring, status never by colour alone, each chart labelled for a screen reader.

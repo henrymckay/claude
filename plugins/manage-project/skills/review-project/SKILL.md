@@ -26,6 +26,7 @@ Three mistakes account for most weak reviews: reading code instead of running it
 
 **Review on Opus at high effort, whatever the session started on: hand the review and its fixes to a foreground subagent with `model: opus` and `effort: high`**, briefed as `choose-model`'s Hold a stage on its model says, with whether the run is autonomous, and relay its report.
 A session briefed as that subagent works directly.
+It may be unable to spawn an agent (`choose-model`, Hold a stage on its model), so the handing session runs `/code-review` (Check correctness) and the cold read once the review comes back, and hands what they find to a subagent on the same model to verify and fix.
 
 Judge the project against what it set out to do and what the skills require, never against taste.
 
@@ -85,7 +86,7 @@ Where the records are missing because the project predates them, create them as 
 ## Get a cold read
 
 After your own pass, give a fresh agent on `sonnet` (see `choose-model`) the files and the standard, never your conclusions, and ask what breaks the plan or the skills; an agent handed your findings tends to confirm them.
-Spawn it even when this review was handed to you with "do the work yourself": that line forbids passing the review on whole, not a second reader.
+Spawn it even when told to "do the work yourself", which forbids passing the review on whole, not a second reader; where the review was handed to a subagent, the handing session spawns it (Set the standard).
 Where the skills live outside the directories the agent may read, put the rules themselves in the brief, and report a cold read that never saw the standard as partial.
 Verify each finding, the cold read's and your own, by re-running its evidence — open the line, run the command — before it enters the report; an agent's mistakes read as confidently as its catches, and `/code-review` and `claude-security` already have independent agents confirm theirs.
 

@@ -32,6 +32,10 @@ Go from one milestone to the next without asking; stop only when:
 
 **In autonomous mode the first two stops become records**, as `plan-project`'s Plan with no user present says; a failing gate still stops the build, and an outward action is left undone and listed in the report, its milestone unticked where the done-when check needs it (`plan-project`, Plan with no user present).
 
+**No proposed decision skips the method, however small the project**: a subagent per milestone, the gate's fresh evaluator and review, the final review and the acceptance run hold whatever the prompt or the session makes of the project's size (`choose-model`, Hold a stage on its model), since with nobody present they are what make "finished" worth reading.
+An unattended build that recorded "small, so build in the main session" as a proposed decision ran no review and shipped two high defects one would have caught.
+Only the user's words or a signed decision drop one of these, and the report's first lines name every one that did not run.
+
 Without a `PLAN.md`, plan first (`plan-project`).
 
 ## Run it with nobody present
@@ -55,7 +59,7 @@ Either needs a public repository or a paid GitHub plan for a private one; it sto
 The session's git proxy refuses tags and branch deletions but does not limit which branches a push can update (cloud-environments, GitHub proxy), and a push to the default branch was reported allowed with no rule in place (tried 2026-11-22), so before the first run the owner shows one push from a cloud session refused and records it in `DEPENDENCIES.md`.
 - **Keep the environment's network at Limited**, its default, and add a host the project's data needs to that environment's list rather than opening it to Full; Limited is not an exit control, since its default list includes cloud storage and `gist.github.com`, so it does not keep a private repository's code in.
 - **Give a key the run needs as a network secret** of the environment, which the proxy attaches to requests for the hosts listed without the session seeing it, never as an environment variable, which anyone using the environment can read (cloud-environments).
-- **The work comes back as a branch** (`claude/…` when tried), and the session takes no other outward action (`plan-project`, Plan with no user present), which is text and auto mode's classifier, not a control.
+- **The work comes back as a branch** (`claude/…` when tried), each milestone's branch merged into it rather than into the default branch, and the session takes no other outward action (`plan-project`, Plan with no user present), which is text and auto mode's classifier, not a control.
 
 **Give it nothing it could spend, leak or damage**, since an instruction slipped into something it reads acts with whatever it holds; a run that needs any of these stays attended:
 
@@ -83,9 +87,12 @@ In a session with that file (2026-11-22, Claude Code 2.1.330): another folder's 
 
 ## Hand each milestone to a subagent
 
-**Build on Sonnet at medium effort, whatever the session started on: hand each milestone, from Start a milestone to Close it, to a foreground subagent with `model: sonnet` and `effort: medium`**, briefed as `choose-model`'s Hold a stage on its model says, with the milestone's ID and whether the run is autonomous, and check its report against the repo — the suite, the tick, the commits — before handing over the next.
+**Build on Sonnet at medium effort, whatever the session started on: hand each milestone, from Start a milestone to Close it bar the gate's agents and the tick (below), to a foreground subagent with `model: sonnet` and `effort: medium`**, briefed as `choose-model`'s Hold a stage on its model says, with the milestone's ID and whether the run is autonomous, and check its report against the repo — the suite, the tick, the commits — before handing over the next.
 **Never end a turn while a milestone's subagent is running** (`choose-model`, Hold a stage on its model).
 A session briefed as that subagent works directly.
+
+**The gate's agents are the handing session's, since a subagent may be unable to spawn one** (`choose-model`, Hold a stage on its model): the milestone's subagent runs every other gate check, commits and returns unticked; the handing session then spawns the evaluator (step 3), `/code-review` (step 5) and a `claude-security` review (step 6) on the milestone's branch, hands their findings to a subagent to fix with the suite re-run, and ticks the milestone only once each passes.
+Briefed to "follow Start a milestone through Close it", builders in an unattended build judged their own screens and code instead, and one review at the end found nine problems.
 
 **Name in each brief the skills the milestone's files call for, to be invoked before the first file**, read from the plan sections it builds and from each file's language and surface — the language's skill and `be-functional` for any code, `write-tests` for its tests, `secure-project`, `write-entry-points` and `deploy-project` for a served API, `design-interface` for a screen, `write-markdown` for the README.
 Briefed without a list, later subagents in a trial build loaded only this skill, even for a token-holding API in a new language; a list is checkable against the transcript.
@@ -130,7 +137,7 @@ Read each check by what the project ships, as `plan-project` reads the Design: f
 Tests show the code does what it says; only looking shows whether the surface is any good, and a builder grading its own screens passes what it meant to build.
 
 - **Hand the running surface to a fresh evaluator**, briefed as `references/evaluate.md` says, which scores it against `design-interface`'s criteria.
-Whichever session runs the gate spawns it — the milestone's subagent, or the main session when the subagent cannot spawn one — and the builder never scores its own screens.
+The session that handed the milestone over spawns it after the hand-back (Hand each milestone to a subagent), and the builder never scores its own screens.
 - **Fix the failures, then evaluate again with a fresh evaluator**, at most three rounds; what still fails after the third goes under the plan's Questions with the evaluator's evidence and proposed change, and the milestone is ticked, since an unmet criterion is open polish, not a failed gate, unless it breaks a requirement.
 - **Report each round's cost**, totalled by `choose-model`'s script for the evaluator's subagent (Record what a stage cost), so the user sees what the polish cost.
 - **A fix that would loosen another rule is reported, not made** (`design-interface`, Set the bar).
@@ -141,7 +148,7 @@ Whichever session runs the gate spawns it — the milestone's subagent, or the m
 
 - **Bring `PLAN.md` up to date** as `plan-project` says, **and the README wherever the milestone changed what a user runs, sets or sees**, committing both on the milestone's branch with the change that made them true; a README left for the final review misleads everyone who reads it in between.
 - **Bring the records up to date** (Keep the records): `DEPENDENCIES.md` with every account, service, credential, tool, connector or plugin the milestone used or created, and `verification.csv` with each Verification line its gate ran, in the milestone's commits; its row of `costs.csv` is written and committed by the session that spawned the milestone's subagent, once it has returned.
-- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule says, never in the project's plan.
+- **File any skill gap the milestone hit** before ticking it, as the session's skill-feedback rule says (`maintain-plugin` prints it; without that plugin, in the report), never in the project's plan.
 - **Keep the state in the repo, not the conversation.** The ticked milestones, Open and the commits are what a fresh session resumes from after a compaction or a break.
 - **Report the milestone** — what now works, one line each for every decision proposed, idea noticed and assumption made, and the decisions settled by precedent as a count (`make-decisions`) — then start the next milestone.
 Each gate check names the command that ran it and what it printed — the suite's pass count and coverage, the real run's rows; a check not run is reported as not run, never as "should pass", since the next milestone builds on what the report claims.

@@ -120,8 +120,9 @@ The cost is a second toolchain, Node, carried as a development dependency (the P
 - **Observable Framework** for a report that is mostly prose around charts, rebuilt by the pipeline; **DuckDB-WASM** only when the viewer must write SQL, since it ships tens of megabytes.
 - **Ruled out** by the same research: Streamlit, which reruns the whole script on every interaction, server BI tools and Evidence.
 
-**Re-read the store when the run manifest changes**: poll the manifest's last run and fetch the data again only when it changes.
+**Re-read the store when the run manifest changes**, where a job writes the data: poll the manifest's last run and fetch the data again only when it changes.
 **Re-judge the last run's age on a slow clock** — a minute to an hour — since a night that never ran changes no file, and a tab left open would show yesterday's verdict for ever.
+Where the page is the data's only writer, there is no manifest: re-read after each save and poll nothing.
 **Give the browser two signals**: each screen's navigation control carries `data-view="<screen>"`, and the root element's `data-ready` is `1` once the screen on show has drawn its data and `0` while another loads, so a smoke test and the build's evaluator wait for data, never a guessed delay, and never shoot a skeleton.
 
 **Test it as `write-tests` tests a dashboard**, each screen through the framework's in-process client and one browser smoke test per screen that waits for `data-ready`; the Python reference has each build-out, and the TypeScript reference the front end's own toolchain: its compiler settings, linter, formatter, test runner and the one `check` script that gates them.

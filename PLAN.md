@@ -139,7 +139,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | `write-code`'s context file | 80 | 75 |
 | Every other context file | 70 | 59 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
-| `README.md` | 980 | 940 |
+| `README.md` | 980 | 951 |
 | `PLAN.md` (D125: about 5,000) | 5,500 | 5,500 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
@@ -363,7 +363,7 @@ Sweeps are not milestones; their order is the `Next` list.
 
 **Next**, in order:
 
-1. The control build as three cloud sessions (issue 150), with issue 152's subset arm.
+1. The owner's blind ranking of the control build's three arms, run 2026-11-22 (issue 150).
 2. A full sweep ending in an outside review on the top model at maximum effort, which the owner asked for before the intraday trial.
 3. The intraday trial (D90), on the owner's go.
 4. Issues 153, 159 and 160.
