@@ -3,11 +3,11 @@ name: choose-model
 description: >-
   How to pick the model, effort and mode for each stage of work, with an eye
   on cost — the ladder (Opus to plan, review and edit skills; Sonnet to build;
-  Haiku to grade), holding a stage on its model through a subagent, spending
-  tokens well within one, a ledger of what each cost, and current prices. Use
-  whenever starting a stage, spawning a subagent, or asked which model
-  to use, what a build cost or how to cut token cost — even if the user just
-  says "this is expensive" or "use a cheaper model".
+  Haiku to grade), holding a stage on its model through a subagent, a ledger
+  of what each cost, and current prices. Load it before spawning a subagent or
+  starting a stage of work. Use whenever asked which model to use or what a
+  build cost — even if the user just says "this is expensive" or "use a
+  cheaper model".
 ---
 
 # Choose the model
@@ -50,7 +50,8 @@ The Agent tool's `model` is the one setting that decides which model serves the 
 After the last turn `claude -p` waits for background work only until it has sat idle for `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, ten minutes by default, then stops waiting and drops the partial result, so a milestone left running is cut off mid-work and repeated (code.claude.com/docs/en/headless and env-vars, 2026-11-19).
 Whoever starts a long headless run may set that variable to `0`, which waits indefinitely, or `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`, which keeps every subagent in the foreground but removes background commands too; either is a backstop to the rule, not a substitute.
 - **Hand it over however small the prompt says the work is.** "This should take minutes" changes the size of the stage, never its model: a short stage on the right model costs cents more, and sessions told a task was quick otherwise planned on Sonnet.
-The one exception is the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage.
+The exceptions are the short plan in the conversation for a fix or a small change (`plan-project`, When to plan), which is no planning stage; a plan in a session whose start-up model is already Opus, since no house skill names a model to misreport and `plan-project`'s frontmatter holds the turn at high effort; and `build-project`'s small path, chosen from the plan's counts, never the prompt's word.
+A review is never an exception, since its worth is a fresh reader.
 - **Keep in the main session only what needs the user or the conversation** — the questions, the sign-off, a stop, the report — so its own model is paid for a handful of messages, not the stage.
 - **Brief the subagent as the stage's own**: say it is the subagent the stage was handed to and must do the work itself, without which it would load the skill and try to hand the stage on again, and give it the repo, the unit of work, the stage's skill by name and the user's words verbatim, since it sees none of the conversation.
 - **Run every step that spawns an agent from the session that handed the stage over** — an evaluator, a cold read, research fanned out, a command that starts reviewers such as `/code-review` — since whether a subagent can start one depends on where it runs: Claude Code allows three layers below the main session by default, but a cloud session sets `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1`, which withholds the Agent tool from every subagent (code.claude.com/docs/en/sub-agents; seen in a cloud session, 2026-11-23).
