@@ -140,7 +140,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | `write-code`'s context file | 80 | 78 |
 | Every other context file | 70 | 56 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
-| `README.md` | 980 | 964 |
+| `README.md` | 980 | 965 |
 | `PLAN.md` (D125: about 5,000) | 5,500 | 5,498 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |

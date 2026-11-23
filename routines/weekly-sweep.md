@@ -11,7 +11,7 @@ The instruction files are `instructions/installed.md` and `instructions/symlinke
 Read `PLAN.md`, `plugins/maintain-plugin/skills/review-plugin/SKILL.md`, `plugins/manage-project/skills/review-project/SKILL.md`, `plugins/maintain-plugin/skills/write-skills/SKILL.md`, `plugins/manage-project/skills/write-markdown/SKILL.md` and `plugins/manage-project/skills/use-git/SKILL.md` first.
 Then carry out `review-plugin` as written: work the feedback, then every Check section.
 The skill is the method; where this file and the skill differ on how a check is done, the skill wins.
-What follows is only what this environment changes.
+What follows is only what this environment changes, and step 7's skips are the only checks left out.
 
 1. You are the sweep's builder and already run on Opus, so do the work in this session rather than handing it to a subagent; a subagent here cannot spawn agents of its own.
    Spawn the cold read yourself, giving it the files and the standard (`write-skills`, `write-markdown`), never your conclusions, and verify each of its findings before applying one.
@@ -23,10 +23,10 @@ What follows is only what this environment changes.
    You may update `PLAN.md`'s `Next` list and coverage map to match what the sweep did.
 5. Where an issue describes a case, verify the fix by running that case on the old wording and the new, not by reading.
    Say in the report when a case passed on both, since that fix is then unproven.
-6. If the `claude` CLI is available, run `claude plugin validate --strict .` at the root and in each plugin folder, and the trigger suite in each plugin folder you touched: `claude plugin eval . --ablation none --no-publish --trust-plugin --runs 1`, adding `--scaffold --allow-tools Write` in `manage-project` and `write-code`, whose mid-task cases start from a prepared folder or write a file.
+6. If the `claude` CLI is available, run `claude plugin validate --strict .` at the root and in each plugin folder, and the trigger suite in each plugin folder you touched: `claude plugin eval . --ablation none --no-publish --trust-plugin --runs 1`, with the flags `review-plugin`'s Check the wiring adds for a case that needs them.
    Rerun a case that scored 0 at no cost, since that is an outage.
    If the CLI or the eval command is unavailable or refused, say so.
-7. Skip the trial build and the sweep of a build's run log, the outside review on the top model, the memory check and the cost rows: the owner starts the first two, and the last two need the owner's machine.
+7. Skip the trial build with the sweep of its run log, and the outside review on the top model, since the owner starts both; skip the memory check and the cost rows, since both need the owner's machine.
    Name each as skipped, with that reason, in the report.
    If the sweep changed a description or a start-up line, say at the top of the report that `review-plugin`'s question 8 must run before the merge.
 8. Commit each skill's fixes separately, staged by explicit path, as `henrymckay <henrymckay@users.noreply.github.com>` (`git config user.name henrymckay; git config user.email henrymckay@users.noreply.github.com`), in Conventional Commits form, with the word count before and after from `wc -w` in the body and `Fixes #<n>` on its own line where an issue is fixed.
@@ -36,5 +36,5 @@ What follows is only what this environment changes.
    Do not merge it.
    If there is nothing to change, push nothing and open an issue titled "Sweep <YYYY-MM-DD>: no changes", labelled `sweep-report` (create the label if it is missing), with the report as its body.
 
-The repo is public: describe the shape of any case, never a user's project data, and never name the owner's accounts.
+The repo is public: describe the shape of any case, never a user's project data, and never name the owner's accounts beyond this repository and its no-reply identity.
 Do not edit anything under `plugins/*/evals/results/`.
