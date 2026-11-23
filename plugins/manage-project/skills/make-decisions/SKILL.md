@@ -5,9 +5,9 @@ description: >-
   principles the house picks share, deciding from the general case, the
   nearest precedent cited in one line, and escalating only what is
   irreversible, outward-facing, costly, security-touching or unprecedented.
-  Use whenever about to ask the user a question, record an assumption or
-  propose a decision — even if the user just says "decide it yourself", "stop
-  asking me", "what would we normally do" or "what if this changes later".
+  Load it before asking the user a question, recording an assumption or
+  proposing a decision — even if the user just says "decide it yourself",
+  "stop asking me" or "what would we normally do".
 ---
 
 # Make decisions

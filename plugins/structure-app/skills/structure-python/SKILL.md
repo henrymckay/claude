@@ -4,10 +4,10 @@ description: >-
   How to structure a non-trivial Python application — a pure core behind
   ports, an outer edge of adapters and drivers, the error package, where
   configuration, data assets and tests live, and outside services called
-  through one paced, retried client. Use when organising an app into layers,
-  deciding where a module, adapter, constant or secret belongs, or designing a
-  port — even if the user just says "structure this app" or "where does this
-  go".
+  through one paced, retried client. Load it before laying out an
+  application's packages or deciding where a module, adapter, constant or
+  secret belongs — even if the user just says "structure this app" or "where
+  does this go".
 ---
 
 # Structure a Python application

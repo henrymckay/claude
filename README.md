@@ -104,7 +104,7 @@ claude plugin eval . --ablation none --no-publish --trust-plugin
 ## 🧪 Trial builds
 
 The trigger suites show a skill loads; a trial build shows it steers well.
-A trial is meant to run as a Claude Code cloud session given only the trial's repository, with the house plugins loaded by a pinned start-up hook ([`build-project`](plugins/manage-project/skills/build-project), Run it with nobody present).
+A trial is meant to run as a Claude Code cloud session given only the trial's repository, with the house plugins loaded by a pinned start-up hook ([`build-project`'s set-up](plugins/manage-project/skills/build-project/references/unattended.md)).
 The control build of 2026-11-22 ran three that way, one prompt with all, none and two of the plugins.
 Its work is to come back as a branch, and your reading of the diff decides whether it is finished; a sweep then works through the build's feedback.
 [`PLAN.md`](PLAN.md)'s `Next` list orders them.

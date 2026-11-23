@@ -1,13 +1,13 @@
 ---
 name: build-project
 description: >-
-  How to build a planned project milestone by milestone — each on the
-  ladder's model through a subagent, failing tests first, a gate (the suite,
-  a real run, an evaluator, a review, security checks) before each tick,
-  records of dependencies, cost and checks, a final review and acceptance run,
-  and a cloud session for a run nobody watches. Use whenever building, implementing
-  or continuing a project that has a PLAN.md — even if the user just says
-  "build it", "go", "start on M1" or "carry on".
+  How to build a planned project milestone by milestone — a small or a full
+  path, failing tests first, a gate (the suite, a real run, an evaluator,
+  reviews, security) before each tick, the records, a final review by a fresh
+  agent and an acceptance run, and a cloud session for a run nobody watches.
+  Load it before the first line of a project's code, even one planned minutes
+  ago in the same session, and before calling a build finished — even if the
+  user just says "build it", "go" or "carry on".
 ---
 
 # Build the project
@@ -32,62 +32,34 @@ Go from one milestone to the next without asking; stop only when:
 
 **In autonomous mode the first two stops become records**, as `plan-project`'s Plan with no user present says; a failing gate still stops the build, and an outward action is left undone and listed in the report, its milestone unticked where the done-when check needs it (`plan-project`, Plan with no user present).
 
-**No proposed decision skips the method, however small the project**: a subagent per milestone, the gate's fresh evaluator and review, the final review and the acceptance run hold whatever the prompt or the session makes of the project's size (`choose-model`, Hold a stage on its model), since with nobody present they are what make "finished" worth reading.
+**Only the user's words or a signed decision drop a step of the path that ran** (Pick the path), whatever the prompt or the session makes of the project's size, and the report's first lines name the path and every step that did not run.
 An unattended build that recorded "small, so build in the main session" as a proposed decision ran no review and shipped two high defects one would have caught.
-Only the user's words or a signed decision drop one of these, and the report's first lines name every one that did not run.
 
-Without a `PLAN.md`, plan first (`plan-project`).
+**Without a `PLAN.md`, invoke `plan-project` before any code, and come back here once the plan is written**; a session that planned inline and wrote the plan after the code was never reached by this skill.
+
+## Pick the path
+
+**Take the small path only where the plan shows all of these, and the full path otherwise**: at most three milestones, one language, nothing deployed or scheduled, no credential, and every input and output classed public (`secure-project`, Classify the data); a plan that classes nothing takes the full path.
+The test reads the plan, never the prompt, since a brief calling the work small changes nothing (`choose-model`, Hold a stage on its model); a milestone that adds any of these moves the rest of the build to the full path.
+
+- **Full path** — each milestone handed to a subagent on the build rung, with the evaluator and the gate's reviews spawned by the handing session (Hand each milestone to a subagent).
+- **Small path** — the main session builds each milestone itself, on its own model, from Start a milestone to Close it, running every gate check but the evaluator (step 3), `/code-review` (step 5) and step 6's review agent.
+
+Both paths end with Finish the build unchanged: the review by a fresh agent — `review-project`'s own hand-off to an Opus subagent is that agent — even where the session already runs on Opus, since its worth is a reader who did not write the code, and on the small path it judges the running surface against `design-interface`'s criteria as well as the code; then the acceptance run.
+For a thirteen-minute app, an Opus planning subagent alone took five minutes and about 144,000 tokens, and the full path adds a subagent per milestone and three gate agents each; the small path keeps the two checks that make an unwatched "finished" worth reading and drops the rest.
 
 ## Run it with nobody present
 
-**The plugins enforce nothing themselves: the only enforced boundaries for a run nobody watches are a cloud session's virtual machine and network policy, and, on the owner's machine, Claude Code's permission mode and built-in sandbox; a local session with neither has none**, whatever a skill tells it, so it holds only what the owner would hand a stranger.
-Everything else below is text the session follows or a step the owner takes, and says which; `secure-project`'s Use Claude Code's own controls has the controls themselves.
+**A build nobody watches runs as a Claude Code cloud session on the project's repository alone, the plugins loaded by the pinned start-up hook in `assets/`, set up by the owner before the first run as `references/unattended.md` says**.
+The building session follows three lines of it:
 
-**Run a build nobody watches — a trial build, or one started from a phone or a schedule — as a Claude Code cloud session on the project's repository alone**, started from claude.ai/code, `claude --cloud` or a scheduled task: it runs in a fresh Linux virtual machine Anthropic hosts, with nothing of the owner's machine in reach and the GitHub credential kept outside it, swapped in by a proxy (code.claude.com/docs/en/claude-code-on-the-web and cloud-environments, read 2026-11-22).
-It is included in a Claude subscription, counted against its usage limits with no charge for the machine, and no per-session spend cap is documented, so the plan's budget is checked from the transcript afterwards (`choose-model`); scheduled tasks are a research preview, and a scheduled task's run starts in auto mode, whose classifier "does not guarantee safety" (permission-modes).
-
-- **Load the plugins with the start-up hook in `assets/`**: copy `load-plugins.sh` into the project's `.claude/hooks/` and merge `settings.json` into its `.claude/settings.json`, on the default branch.
-A cloud session installs none of the plugins a repository's `enabledPlugins` names (documented, and seen: the setting alone loaded nothing), so the hook adds the marketplace and installs each plugin at project scope, which loads them into that same session: the shipped hook, pinned, installed all six in a one-repository cloud session, whose skills and start-up text arrived, no `mcp__` tool was offered and `.claude/settings.json` stayed unchanged (Claude Code 2.1.330 in the VM, 2026-11-22, a throwaway probe).
-The template's static `enabledPlugins` load nothing alone; they are there because the install writes the same entries back, so the file stays unchanged.
-The hook runs only where `CLAUDE_CODE_REMOTE` is `true`, prints nothing when it works and logs nowhere; on a failed step it first uninstalls the plugins it installed, removes the marketplace and puts the settings file back as it found it, then prints "Plugins not loaded: <why>. Do no work; report this line and stop." on standard output and exits 0, since a `SessionStart` hook's standard error reaches the user alone (code.claude.com/docs/en/hooks; tried locally, where a session given that line stopped and reported it; the failure path is not yet run in a cloud session).
-- **Check that the plugins loaded, since some failures print nothing**: a session given two repositories, or a thread in a claude.ai project, runs no hook from the repository's settings at all (documented), and an install that succeeds may still not load in that session.
-So every unattended prompt opens with "stop and say so unless `build-project` is among your skills", and the owner checks the transcript's skill list before reading the branch; both are text, not a control.
-- **Pin the marketplace to a reviewed commit, by its full SHA and nothing else**: the hook adds `<owner>/<repo>#<full commit SHA>`, refuses a pin that is not 40 lowercase hexadecimal characters, and installs nothing unless the marketplace's checkout is at exactly that commit and each plugin's source in it is a relative path inside the checkout, so a moved tag or branch, or a plugin fetched from elsewhere, cannot change what runs; the pinned commit must stay on a branch or tag of the repository, or the add fails and nothing loads (a marketplace's `ref` takes a full SHA from Claude Code 2.1.324, code.claude.com/docs/en/plugins/marketplace-reference, read 2026-11-22; the `#` form with a SHA matched in the cloud run above; a missing SHA, a moved checkout, an outside plugin source and a failed third install, each refused and undone, tried locally on 2.1.330).
-Move the pin only after reading the diff between the two commits, since the plugins' hooks run as commands in every session.
-- **Protect the default branch in the form that binds the session**, since GitHub applies a rule to the access the owner connected and a classic rule exempts administrators by default: a ruleset with an empty bypass list, or a classic rule with "Do not allow bypassing the above settings" (code.claude.com/docs/en/routines; docs.github.com, About protected branches and About rulesets, read 2026-11-22).
-Either needs a public repository or a paid GitHub plan for a private one; it stops a direct push, not a pull request the session opens and merges through the API, which only auto mode's default block on merging an unapproved pull request and the rule above stand against.
-The session's git proxy refuses tags and branch deletions but does not limit which branches a push can update (cloud-environments, GitHub proxy), and a push to the default branch was reported allowed with no rule in place (tried 2026-11-22), so before the first run the owner shows one push from a cloud session refused and records it in `DEPENDENCIES.md`.
-- **Keep the environment's network at Limited**, its default, and add a host the project's data needs to that environment's list rather than opening it to Full; Limited is not an exit control, since its default list includes cloud storage and `gist.github.com`, so it does not keep a private repository's code in.
-- **Give a key the run needs as a network secret** of the environment, which the proxy attaches to requests for the hosts listed without the session seeing it, never as an environment variable, which anyone using the environment can read (cloud-environments).
-- **The work comes back as a branch** (`claude/…` when tried), each milestone's branch merged into it rather than into the default branch, and the session takes no other outward action (`plan-project`, Plan with no user present), which is text and auto mode's classifier, not a control.
-
-**Give it nothing it could spend, leak or damage**, since an instruction slipped into something it reads acts with whatever it holds; a run that needs any of these stays attended:
-
-- **Private or personal data** (`secure-project`, Classify the data).
-- **A credential for an account with money in it**, as an environment variable or anywhere else.
-- **A second repository**, or `/web-setup`'s token, which reaches every repository the owner's `gh` login can.
-- **A connector**: a scheduled task includes every connector on the account by default, writes included, and connector traffic skips the network list (routines, cloud-environments), so remove each from the task; the template's `mcp__*` deny refuses any that remains in a session with one repository (documented; tried locally, not yet in a cloud session).
-
-**The owner's reading of the diff is the one independent check; CI on the branch reruns only what the branch says to run**, since the session writes the tests, their thresholds, the linters' configuration and, for a new project, the workflow itself.
-The review, the acceptance run and the records are done on the branch as Finish the build and Keep the records say, and nothing the run says about itself makes it finished.
-
-- **Read first, against the default branch**: `.github/workflows/`; tests removed, skipped or loosened; coverage and other thresholds; tool configuration; `.claude/`, `CLAUDE.md`, `.pre-commit-config.yaml` and the build files, which run on the owner's machine, or in CI with its secrets, once the branch is checked out or pushed, outside any sandbox; for a first build, the whole workflow.
-- **Put the workflow on the default branch before the first unattended build** (`setup-python`, Toolchain), so CI runs what the owner wrote, not only what the session did.
-- **Keep secrets out of reach of the branch's CI**: GitHub withholds secrets only from workflows triggered from a fork, so a workflow the session edits runs on its own branch with the repository's secrets; a deploy's secrets go in a GitHub environment whose deployment branches allow the default branch alone, which on GitHub Free exists for public repositories only (docs.github.com, Using secrets, Deployments and environments, Managing environments for deployment, read 2026-11-22).
-
-**A local run nobody watches is the lesser option, for low-risk public work only**, configured with Claude Code's own controls and no code of ours (code.claude.com/docs/en/permissions, permission-modes, sandboxing and cli-reference, read 2026-11-22):
-
-- **One settings file, passed with `--settings`**: `assets/local-run.json` with `secure-project`'s permission rules merged into it and its placeholders filled; sandbox keys given that way, or by managed settings, are ones the project's own settings cannot loosen.
-It turns the sandbox on with no unsandboxed retry and no run without it, denies sandboxed commands the home folder but the project, denies writes to other sessions' folders under `/private/tmp/claude-<uid>/` (on macOS; Linux takes no wildcard there, so name each), leaves the network list empty and refuses every connector.
-- **The command**: `claude -p` from the project's folder with `--settings` that file, `--setting-sources project,local` so the owner's own allow rules and hooks are not inherited, `--strict-mcp-config`, `--permission-mode dontAsk`, an `--allowedTools` list of the tools the build uses, and `--max-budget-usd` and `--max-turns`, an estimate spend can pass.
-- **What it leaves open**: `dontAsk` refuses only what would otherwise prompt, so reads in the working folder and read-only commands run unasked, as do the project's own allow rules and a hook's approval; Claude's file tools, MCP servers and hooks run outside the sandbox; every host added to the network list is a way out, and the empty list stops installs until the hosts are named; a toolchain or cache in the home folder needs an `allowRead` entry or a cache inside the project.
-In a session with that file (2026-11-22, Claude Code 2.1.330): another folder's `.env` was refused to the Read tool and to a script, a project file read, an append to another session's script refused, a write to the run's own temporary folder made, `pypi.org` refused at the proxy, and every push, history rewrite and environment dump the rules name refused.
-
-**Record each set-up step the owner takes in `DEPENDENCIES.md` when it is taken**, with who made it, when and how it is removed (Keep the records): the cloud environment with its network level, hosts and network secrets, the Claude GitHub App's access to the repository, the start-up hook and the commit it pins, the branch rule and the refused push that proved it, the CI workflow put on the default branch, a scheduled task by name, and the branches the runs leave.
+- **Stop and say so unless `build-project` is among your skills**, since a start-up hook that fails can print nothing.
+- **Return the work as a branch** of the project's own repository, each milestone's branch merged into it rather than into the default branch, and take no other outward action (`plan-project`, Plan with no user present).
+- **Nothing the run says about itself makes it finished**: the review, the acceptance run and the records are done on the branch as Finish the build and Keep the records say, and the owner's reading of the diff is the one independent check.
 
 ## Hand each milestone to a subagent
 
-**Build on Sonnet at medium effort, whatever the session started on: hand each milestone, from Start a milestone to Close it bar the gate's agents and the tick (below), to a foreground subagent with `model: sonnet` and `effort: medium`**, briefed as `choose-model`'s Hold a stage on its model says, with the milestone's ID and whether the run is autonomous, and check its report against the repo — the suite, the tick, the commits — before handing over the next.
+**On the full path, build on Sonnet at medium effort, whatever the session started on: hand each milestone, from Start a milestone to Close it bar the gate's agents and the tick (below), to a foreground subagent with `model: sonnet` and `effort: medium`**, briefed as `choose-model`'s Hold a stage on its model says, with the milestone's ID and whether the run is autonomous, and check its report against the repo — the suite, the commits, the records — before the gate's agents run.
 **Never end a turn while a milestone's subagent is running** (`choose-model`, Hold a stage on its model).
 A session briefed as that subagent works directly.
 
@@ -208,7 +180,7 @@ The lock file lists them.
 
 After the last milestone, before the final report and in this order, autonomous and headless runs included:
 
-1. **Run `review-project` against the plan.** The build is not finished until it has run; a report written without it says why at the top and calls the build unreviewed.
+1. **Invoke `review-project` and run it against the plan, by a fresh agent** (Pick the path). The build is not finished until it has run; a report written without it says why at the top and calls the build unreviewed.
 2. **Run the acceptance run**: every line of the plan's Verification on the final commit, the Acceptance line's commands included, after the review's fixes so it proves what ships; a full-size line that already passed on that commit is recorded from that run rather than repeated.
 Each line goes into `verification.csv` with the stage `acceptance`, and the report lists each with the command that ran it and what it printed, a line not run as not run with the reason, and both coverage levels with any uncovered branch named; without the list the build is not reported complete.
 

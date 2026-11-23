@@ -5,9 +5,9 @@ description: >-
   input and output deciding where it may go, read-only credentials for an
   account with money in it, secrets kept out of git, untrusted content as
   data, Claude Code's own controls, a guarded surface and outside plugins
-  vetted. Use whenever a project reads data that is not public or that others
-  write, holds a credential or serves something — even if the user just says
-  "connect it to my broker" or "is this plugin safe".
+  vetted. Load it before the first line that reads private data or content
+  others write, holds a credential or serves something — even if the user just
+  says "connect it to my broker" or "is this plugin safe".
 ---
 
 # Secure the project
@@ -123,7 +123,7 @@ A plugin whose source cannot be read, that runs something its purpose does not e
 
 ## Use Claude Code's own controls
 
-**Configure these rather than trusting a rule's wording**: with what a session is given, they are the only enforced boundary, as `build-project`'s Run it with nobody present states and sets up for a run nobody watches (code.claude.com/docs/en/permissions, permission-modes, sandboxing and managed-settings, read 2026-11-22).
+**Configure these rather than trusting a rule's wording**: with what a session is given, they are the only enforced boundary, as `build-project`'s `references/unattended.md` states and sets up for a run nobody watches (code.claude.com/docs/en/permissions, permission-modes, sandboxing and managed-settings, read 2026-11-22).
 
 - **A permission mode**: `default` asks before edits, commands and network requests; `acceptEdits` takes file edits and common file commands in the working folder unasked; `plan` reads, plus commands the classifier approves where auto mode is available; `auto` runs without routine prompts while a classifier checks each action, and "does not guarantee safety" — it is the mode a terminal session starts in from Claude Code 2.1.283 and a scheduled task's run starts in; `dontAsk` refuses every call that would otherwise prompt, the mode for a local run nobody watches; `bypassPermissions` asks about almost nothing, though no mode auto-approves a tool an explicit ask rule matches, so it is never used with a credential or private data in reach.
 - **Permission rules** under `permissions.deny`, `ask` and `allow`, checked in that order with the first match deciding: deny `Read` of `.env` and every secret store; keep a connector's tools that order, transfer, pay, send or share under `ask` (`mcp__<server>__<tool>`) and never allow a whole server that can act on an account (`mcp__<server>__*`), so each such call reaches the person.

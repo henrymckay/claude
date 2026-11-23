@@ -6,9 +6,9 @@ description: >-
   dependency record, what runs stopped first, data archived before any store
   goes, credentials revoked at the issuer, each removal confirmed by a
   command, irreversible steps confirmed one by one, and the plan and records
-  kept. Use whenever retiring, decommissioning or deleting a project or what
-  it created — even if the user just says "tear it down", "shut this project
-  off" or "delete everything it made".
+  kept. Load it before the first step that retires a project or removes what
+  it created — even if the user just says "tear it down" or "delete everything
+  it made".
 ---
 
 # Retire the project

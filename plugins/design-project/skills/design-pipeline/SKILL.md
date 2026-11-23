@@ -4,10 +4,10 @@ description: >-
   How to design a data pipeline and its tables before the store and schedule
   are picked — each table's grain and key, raw to clean to derived layers,
   idempotent loads, open against final records, when each fact was known,
-  freshness per table, rebuilds and the contract readers rely on, daily or
-  intraday. Use whenever planning a pipeline, its tables or a change of
-  cadence — even if the user just says "make it update hourly". Not for where
-  data is saved, which is store-data's.
+  freshness, rebuilds and the contract readers rely on. Load it before naming
+  a pipeline's first table or job, or changing how often one runs — even if
+  the user just says "make it update hourly". Not for where data is saved,
+  which is store-data's.
 ---
 
 # Design the pipeline

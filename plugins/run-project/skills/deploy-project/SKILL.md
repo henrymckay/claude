@@ -4,10 +4,10 @@ description: >-
   Where each artefact of a project runs in the cloud at little or no cost,
   picked from the data's class — a scheduled pipeline on GitHub Actions, a
   dashboard as a static site or on a free host, an API once earned, private
-  data kept on the owner's machine. Use whenever deploying, hosting or
-  publishing a pipeline, dashboard, API or site, or choosing a free tier —
-  even if the user just says "put this online" or "host the dashboard". Not
-  for a job on the user's own machine, which is run-unattended's.
+  data kept on the owner's machine. Load it before choosing a host or free
+  tier, or putting anything online — even if the user just says "put this
+  online" or "host the dashboard". Not for a job on the user's own machine,
+  which is run-unattended's.
 ---
 
 # Deploy a project

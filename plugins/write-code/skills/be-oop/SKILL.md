@@ -3,10 +3,10 @@ name: be-oop
 description: >-
   Object-oriented design done well — when classes earn their place, value
   objects, structural interfaces, Liskov, mixins, and which design patterns
-  collapse to a function. Use when designing or reviewing class hierarchies,
-  working in an OOP framework, modelling long-lived stateful objects, or when
-  the user names OOP, inheritance, SOLID or a pattern. Opt-in: reach for OOP
-  where it genuinely fits, not by default.
+  collapse to a function. Load it before designing or reviewing a class
+  hierarchy, working in an OOP framework or modelling long-lived stateful
+  objects, or when the user names OOP, inheritance, SOLID or a pattern.
+  Opt-in: reach for OOP where it genuinely fits, not by default.
 ---
 
 # Be object-oriented

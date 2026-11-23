@@ -4,11 +4,11 @@ effort: high
 description: >-
   How to review a Claude Code plugin, marketplace or skills repo for drift —
   skill feedback, every check (counts, descriptions, duplicates, claims,
-  instruction files, manifests, hooks, trigger suites, records, memory), the
-  coverage map, trial builds, how a sweep runs, an outside review on the top
-  model, one pull request. Use whenever the user asks to review, audit, tidy or
-  sweep skills or a plugin — even if they just say "check the skills for
-  drift" or "work through the skill feedback".
+  instruction files, hooks, trigger suites, records), the coverage map, trial
+  builds, how a sweep runs, an outside review, one pull request. Load it
+  before the first check of a review, audit or sweep of a plugin or skills
+  repo — even if the user just says "check the skills for drift" or "work
+  through the skill feedback".
 ---
 
 # Review the plugin
@@ -44,7 +44,7 @@ Several reports against one skill mean its structure is wrong; rework the skill 
 A trial build tests the plugins on a real project, so its planning is under test as much as its code.
 
 - **The session under test plans and builds it; the coordinating session does neither**, even when "new project" fires `plan-project`: it writes a brief in the user's words that names no technology the skills should choose, starts a fresh session with only the plugins, and relays the user's own answers, never its own.
-Run with nobody watching, it is a cloud session on the trial's repository alone, as `build-project`'s Run it with nobody present sets up, so it holds none of the owner's credentials or other projects, and none of their connectors once each is removed from the task and the template's deny is in place; a local headless run sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the backstop `choose-model`'s Hold a stage on its model names, and says in its report what it ran with.
+Run with nobody watching, it is a cloud session on the trial's repository alone, as `build-project`'s `references/unattended.md` sets up, so it holds none of the owner's credentials or other projects, and none of their connectors once each is removed from the task and the template's deny is in place; a local headless run sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, the backstop `choose-model`'s Hold a stage on its model names, and says in its report what it ran with.
 - **Total its cost with `choose-model`'s script** from its transcripts, whether or not the build kept `costs.csv`, so every trial build is priced the same way.
 - **Sweep what it leaves**: its skill feedback, and its transcripts where they are on the machine, read for a skill that should have loaded and never did and a stage served by the wrong model; cite each finding's file and line and file it as feedback, since a session that skipped a skill never reports the gap itself.
 - **Fill in the coverage map's evidence** where the marketplace's plan keeps one (Check the coverage map): each cell the build exercised gets the build as its evidence, and each it found wanting the issue it filed.

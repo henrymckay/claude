@@ -4,10 +4,10 @@ description: >-
   How to build an application's entry points — a CLI, an HTTP API, a dashboard
   or web front end, and the command a scheduler calls — as thin drivers over
   the core: output forms, exit codes, settings read once, a guarded loopback
-  server, and the TypeScript toolchain. Load it before adding or changing a
-  CLI, API, dashboard or scheduled command. Use whenever building,
-  structuring or tooling one — even if the user just says "add a CLI",
-  "expose an API" or "set up linting for the front end".
+  server, and the TypeScript toolchain. Load it before the first line of a
+  CLI, API, dashboard, front end or scheduled command, or its tooling — even
+  if the user just says "add a CLI", "expose an API" or "set up linting for
+  the front end".
 ---
 
 # Write entry points

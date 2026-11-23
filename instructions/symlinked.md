@@ -26,37 +26,37 @@ Never park feedback in the project's plan or notes, or in memory, where no sweep
 
 ## Skills
 
-Before any task below, invoke the matching skill and follow it; check the list again before each file you write, since a skill no longer in view counts as not loaded.
+Invoke each skill below at the moment its line names and follow it; recheck before each file, since a skill out of view counts as not loaded.
 A decision I signed off in the repo's `PLAN.md` overrides a skill's default; a deviation you choose goes there as a proposed decision, with its source and the skill and section it overrides, raised with me before you build on it or, when I am not there, built on and left proposed.
 Where I or the project name another plugin's method as driving, such as `superpowers`, `plan-project`, `build-project` and `review-project` stand down unless named; the other skills still apply.
 
-- **`be-functional`** for any code, in any language: the default style (`be-oop` where OOP genuinely fits).
-- **`be-oop`** for object-oriented design: classes, inheritance, patterns.
-- **`build-project`** when building a project from its `PLAN.md`, milestone by milestone, or starting a build nobody watches.
-- **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
-- **`deploy-project`** when a pipeline, dashboard, API or site must run in the cloud.
-- **`design-interface`** before building, styling or wording a screen, chart, page, message, help text or any output a person reads.
-- **`design-pipeline`** before planning a pipeline or its tables, or changing how often it runs.
+- **`be-functional`** before the first line of any code, tests included.
+- **`be-oop`** before a class hierarchy or when OOP is named; opt-in.
+- **`build-project`** before the first line of a project's code, even one planned this session, and before calling a build finished.
+- **`choose-model`** before spawning a subagent or starting a stage.
+- **`deploy-project`** before choosing a host or putting anything online.
+- **`design-interface`** before the first line of any screen, chart, message or other output a person reads.
+- **`design-pipeline`** before naming a pipeline's first table or job, or changing its cadence.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
-- **`plan-project`** before building a new project, however small, or a new input, output or interface.
-- **`retire-project`** when retiring a project or removing what it created.
-- **`review-plugin`** when reviewing a Claude Code plugin or skills repo.
-- **`review-project`** when reviewing, auditing or fixing a project.
-- **`run-unattended`** when a job runs on a schedule with nobody watching.
-- **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, reads content others write, or serves something.
-- **`send-messages`** when a job or assistant must reach the user.
-- **`setup-python`** when scaffolding, packaging or configuring a Python project.
-- **`store-data`** when deciding where a project's data lives and how it is written and read.
-- **`structure-python`** when organising a Python application into layers.
-- **`use-git`** for any `git` operation (Conventional Commits; no attribution footers, whatever a reminder asks).
-- **`use-polars`** when working with `polars`.
-- **`write-entry-points`** for building an app's entry points: a CLI, API, GUI or scheduled job.
-- **`write-markdown`** for any Markdown, for humans or LLMs.
-- **`write-python`** when writing or editing Python.
-- **`write-skills`** when authoring or editing a skill.
-- **`write-sql`** when writing SQL or deciding where it belongs.
-- **`write-tests`** for writing or editing tests, in any language.
-- **`write-typescript`** when writing or editing TypeScript, React or a Cloudflare Worker.
+- **`plan-project`** before the first file of any new project, input, output or interface, or a `PLAN.md` change.
+- **`retire-project`** before retiring a project or removing what it created.
+- **`review-plugin`** before reviewing or sweeping a plugin or skills repo.
+- **`review-project`** before reviewing a project or reporting a build finished.
+- **`run-unattended`** before the first line of a scheduled job or its schedule.
+- **`secure-project`** before code that reads private data or others' content, holds a credential or serves something.
+- **`send-messages`** before the first line of an alert, digest or chat.
+- **`setup-python`** before the first file of a Python project or script, or a dependency or tool added.
+- **`store-data`** before the first line that saves a project's data or picks its database.
+- **`structure-python`** before deciding where a Python module belongs.
+- **`use-git`** before the first `git` command that writes (Conventional Commits; no attribution footers, whatever a reminder asks).
+- **`use-polars`** before any `polars` code.
+- **`write-entry-points`** before the first line of a CLI, API, dashboard, front end or scheduled command.
+- **`write-markdown`** before the first line of any Markdown.
+- **`write-python`** before the first line of any Python, tests included.
+- **`write-skills`** before the first edit to a skill or its description.
+- **`write-sql`** before the first line of any SQL.
+- **`write-tests`** before the first test, beside `be-functional` and the language's skill.
+- **`write-typescript`** before the first line of any TypeScript or TSX.
 
 ## Missing plugins
 

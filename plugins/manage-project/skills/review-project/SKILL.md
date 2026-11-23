@@ -4,11 +4,11 @@ effort: high
 description: >-
   How to review a whole project and fix what it finds — against its PLAN.md,
   then correctness, tests, the skills' conventions, current releases, docs and
-  safety, with a cold read, each finding's evidence re-run and each fix its
-  own commit. Use whenever the user asks to review, audit or tidy a repo,
-  check it against its plan or fix what a review found — even if they just say
-  "review this repo" or "is this up to date". Not for a plugin or skills repo,
-  which is review-plugin's.
+  safety, with a cold read, each finding re-run and each fix its own commit.
+  Load it before the first check of a review or audit of a project, and before
+  a build is reported finished — even if the user just says "review this repo"
+  or "is this up to date". Not for a plugin or skills repo, which is
+  review-plugin's.
 ---
 
 # Review the project

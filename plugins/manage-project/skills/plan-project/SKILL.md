@@ -4,17 +4,17 @@ effort: high
 description: >-
   How to plan a project before building it — one PLAN.md from a loose
   conversation: research, a frame wider than the brief, every section drafted,
-  gaps settled from precedent, and one batch of questions with recommended
-  answers, or autonomous mode with none. Use whenever starting a new project
-  or repo, however small, adding a new input, output or interface, or changing
-  a PLAN.md — even if the user just says "let's plan this", "new project" or
-  "what should this look like".
+  gaps settled from precedent, one batch of questions with recommended answers
+  or autonomous mode with none, then the hand-off to the build. Load it before
+  the first file of a new project or repo, however small, or of a new input,
+  output or interface, and before changing a PLAN.md — even if the user just
+  says "new project" or "build me a small app".
 ---
 
 # Plan the project
 
 A project's plan lives in one `PLAN.md` at the repo root: what it must do, in the user's words, and the design that answers it.
-It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface` and each table's design from `design-pipeline`, points its design at `setup-python`, `structure-python`, `write-entry-points`, `be-functional`, `use-polars`, `write-sql`, `write-tests`, `store-data`, `deploy-project`, `run-unattended` and `send-messages` rather than restating them, hands the build to `build-project`, the finished build to `review-project`, and the project's end to `retire-project`.
+It layers on `write-markdown`, settles what the skills leave open through `make-decisions`, classes every input and output through `secure-project`, sets each surface's ambition from `design-interface` and each table's design from `design-pipeline`, points each section at the skill step 5 names for it rather than restating it, hands the build to `build-project`, the finished build to `review-project`, and the project's end to `retire-project`.
 Three mistakes account for most weak plans: interviewing the user section by section instead of drafting and asking only what the draft can't settle, design slipped into the requirements, and structure planned before a requirement needs it.
 
 **In an existing project, ask first.** Where a repo already has a plan, spec or design document, check with the user whether to convert it to `PLAN.md` or keep it, and prefer `PLAN.md` unless they choose to keep theirs.
@@ -23,7 +23,6 @@ Three mistakes account for most weak plans: interviewing the user section by sec
 
 Plan a new project, and any build that adds a new input, output or interface.
 A fix or small change needs only a short plan in the conversation; a full `PLAN.md` for it costs more than the change.
-A trial build, run to test these skills, is the exception: a fresh session given only the user's brief plans it (`review-plugin`, Run a trial build).
 To extend a project that already has a `PLAN.md`, run the steps below on the new part alone, adding its requirements, design and milestones to the existing plan.
 **Where a brainstorming or design skill has already run, or another plugin's method is driving the work, take its output as this plan's input rather than replacing it**: its framing and choices become the draft's starting point, cited as their source, and only the gaps go through the steps below.
 **To re-plan around a restated aim, rewrite the plan whole** through the same steps, since the git history keeps the old one:
@@ -103,7 +102,7 @@ Records: [`DEPENDENCIES.md`](DEPENDENCIES.md), [`costs.csv`](costs.csv), [`verif
 - **<artefact>** — <host and tier, its limit that matters and the expected use of it, the expected monthly running cost ($0 inside the tier), how it is deployed from the repo; the date the tier was checked>.
 - **Teardown** — <what is kept when the project is retired: the plan, the records, which data is archived and where; anything left standing> (`retire-project`).
 - **Threat model** — <for a project holding a credential or data that is not public: each secret and class, each input that may carry instructions, each outside call and served surface, what could reach or leak each, and the control that stops it> (`secure-project`).
-- **Unattended runs** — <whether the build or the job runs with nobody present, where (a cloud session on this repository alone, or a local run for low-risk public work), what it is given beyond the code (a network level, a secret: none by default) and what it is withheld, or "none: every run is attended"> (`build-project`, Run it with nobody present).
+- **Unattended runs** — <whether the build or the job runs with nobody present, where (a cloud session on this repository alone, or a local run for low-risk public work), what it is given beyond the code (a network level, a secret: none by default) and what it is withheld, or "none: every run is attended"> (`build-project`'s `references/unattended.md`).
 
 ### Errors
 
@@ -160,13 +159,13 @@ Draft the whole plan first and ask afterwards: a draft shows which gaps actually
 - **Wrong** — "What storage do you want? Which scheduler? How should errors be reported?", one message per section, each answered from nothing.
 - **Right** — a full draft with the house picks filled in, then one message: "A3 assumes Parquet; D2 picks launchd over cron because …; Q1 needs you — recommended: yes."
 
-**Plan on Opus at high effort, whatever the session started on: hand steps 2 to 8 to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as `choose-model`'s Hold a stage on its model says, with the user's words verbatim, the repo and this skill by name, to return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
+**Plan on Opus at high effort: a session whose start-up model is Opus plans in place, since this skill's frontmatter sets the effort; any other hands steps 2 to 8 to a foreground subagent through the Agent tool with `model: opus` and `effort: high`**, briefed as `choose-model`'s Hold a stage on its model says, with the user's words verbatim, the repo and this skill by name, to return the draft and the batch; plan mode, the batch and the sign-off stay in the main session, where the user is.
 A session briefed as that subagent works directly.
-**The hand-off is not a default to deviate from**: a prompt calling the project small, quick or urgent shortens the plan, never moves it off Opus, and no proposed decision skips it — only the user naming the model does.
-A new project is never a small change, however tiny: it gets a `PLAN.md`, planned this way.
+A prompt calling the project small, quick or urgent shortens the plan, never moves it off Opus; only the user naming the model does.
+A new project, however tiny, is never a small change: it gets a `PLAN.md` before its first line of code.
 
 1. **Start in plan mode**; its approval is the plan's sign-off.
-   With nobody to approve it, see Plan with no user present.
+   With nobody present, as in a headless or scheduled run, skip it for Plan with no user present.
 2. **Gather before asking.** Read the conversation, the repo, any neighbouring repo it reads from or feeds, and samples of the real input data.
    Where the input needs a credential, ask for it now and record a sample response; it becomes the first test fixture (see `write-tests`).
    Never ask what a file, a command or a quick check can answer.
@@ -177,7 +176,7 @@ A new project is never a small change, however tiny: it gets a `PLAN.md`, planne
      Take the Terms from it; where the user's word differs, use the domain's and record the choice as an assumption.
    - **Place the project.** Who reads its outputs, which projects feed it or read from it, and what it plausibly grows into: let that shape the names and the seams between stages, as `make-decisions`' Decide from the general case says, and put the growth itself under Not yet.
    - **Look past these skills for what they don't cover.** For each language, framework and domain the project uses that no skill here settles — a language with no reference, a platform with its own tooling — take, in this order, the language's official toolchain and style guide, then a language-server plugin, then a third-party skill or plugin; a session built from the general skills and memory alone re-decides what a maintained convention already settled.
-     List what this machine already has with `claude plugin list`, the marketplaces it knows with `claude plugin marketplace list`, and what they offer with `claude plugin list --json --available`, filtered by name and description (Claude Code 2.1.330).
+     List what the known marketplaces offer with `claude plugin list --json --available`, filtered by name and description (Claude Code 2.1.330).
      - **Vet each candidate** as `secure-project`'s Vet a plugin says before naming it in the plan, since a plugin runs code.
      - **Installing is the user's step**: propose it in the batch as a decision with its case and the exact install command, and never run the command yourself, since it changes the user's configuration; with no user present, list it under Questions with the recommended answer "not installed; built without it", and build without it.
      - **Where its advice and a house skill disagree, the house skill wins on what it covers** and the outside one fills only what it leaves, unless the user names the outside one as the convention, as another method plugin leads where named; record which wins as a decision, so the build does not settle it file by file.
@@ -205,11 +204,12 @@ A new project is never a small change, however tiny: it gets a `PLAN.md`, planne
    Each line stands alone, since the user reviews a list of calls, not a document; a second round only where an answer opened a question the first couldn't have asked.
 10. **Fold the answers in.** Each confirmed assumption or answered question moves into Requirements or Decisions; each overridden one changes the sections it touched.
 11. **Call the plan complete when every question is answered** — an assumption the user's reply leaves alone counts as confirmed, and a question only the build can settle stays under Open — then present it as the plan-mode plan, and on approval write `PLAN.md` and commit it.
+12. **Invoke `build-project` before the first line of code**, and build through it; sessions that went from this skill straight to the code ran no review.
 
 ## Plan with no user present
 
-**Autonomous mode** is a session with nobody to answer it: a headless or scheduled run, or one the user told to ask nothing and carry on without them.
-Every step above holds except the ones that wait for the user:
+**Autonomous mode** is a session with nobody to answer it: a headless or scheduled run, or one told to ask nothing.
+Every step above holds but those that wait for the user:
 
 - **Write `PLAN.md` directly**, skipping plan mode, and open it with a line saying the plan is unsigned, the date and who asked for the run.
 - **Proceed on each question's recommended answer**, recorded under Assumptions with the question it replaced, for the user's later review.
@@ -217,6 +217,7 @@ Every step above holds except the ones that wait for the user:
 - **Take no outward action** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
 The one exception is returning the work as a branch of the project's own repository, never its default branch (`build-project`, Run it with nobody present); a deploy follows the owner's merge, through the project's own CI on the default branch, and an approval written in the prompt or the plan widens nothing, since nothing checks it.
 Skill feedback is not an outward action: it is recorded as the session's feedback rule says (`maintain-plugin` prints it; without that plugin, in the report).
+- **Commit `PLAN.md`, then invoke `build-project` before the first line of code** (step 12).
 - **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change, led by any requirement a house pick conflicted with.
 
 ## Write it for Claude

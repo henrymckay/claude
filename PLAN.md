@@ -98,7 +98,7 @@ claude plugin marketplace add "henrymckay/claude#$(git ls-remote --tags --refs -
 claude plugin install manage-project@henrymckay
 ```
 
-An unattended build is a cloud session on the project's repository alone, the plugins loaded by `build-project`'s hook pinned to a reviewed commit; its work comes back as a branch (`build-project`, Run it with nobody present).
+An unattended build is a cloud session on the project's repository alone, the plugins loaded by `build-project`'s hook pinned to a reviewed commit; its work comes back as a branch (`build-project`'s `references/unattended.md`).
 
 | Plugin | Skills |
 |---|---|
@@ -133,14 +133,14 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 | Item | Budget | Now |
 |---|---|---|
 | `instructions/installed.md` | 180 | 176 |
-| `instructions/symlinked.md` | 1,055 | 1,053 |
+| `instructions/symlinked.md` | 1,055 | 1,055 |
 | `hooks/shared.md`, each copy | 380 | 377 |
-| `manage-project`'s context file | 170 | 167 |
-| `write-code`'s context file | 80 | 75 |
-| Every other context file | 70 | 59 at most |
+| `manage-project`'s context file | 170 | 164 |
+| `write-code`'s context file | 80 | 78 |
+| Every other context file | 70 | 56 at most |
 | `hooks/compact.md` (D72) | 65 | 65 |
-| `README.md` | 980 | 951 |
-| `PLAN.md` (D125: about 5,000) | 5,500 | 5,500 |
+| `README.md` | 980 | 948 |
+| `PLAN.md` (D125: about 5,000) | 5,500 | 5,495 |
 | A skill description | 500 characters | all under |
 | A sweep, build and checks | $40 | `costs.csv` |
 | A sweep's outside review | $25 | `costs.csv` |
@@ -149,7 +149,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 
 - **D1** Symlinks into `~/.claude` stay a supported wiring beside installed plugins.
 - **D2** Commit as the owner's no-reply identity; a sweep lands by pull request, and only an edit the owner makes or asks for outside a sweep goes straight to `main`; overrides `use-git`, Branches.
-- **D9** No performance budget. *Amended 2026-11-21 (proposed): hook time and cost are budgeted; the launcher's row went with D138.*
+- **D9** No performance budget. *Amended 2026-11-21 (proposed): hook time and cost are budgeted.*
 - **D10** Not yet lives in this plan, over `enhancement` issues.
 - **D11** The README is for humans and points here.
 - **D12** Memory holds only what this plan doesn't. *Amended 2026-11-21 (proposed): next steps live in `Next`, never in memory.*
@@ -188,7 +188,7 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D52** A named method plugin leads; the convention skills still apply.
 - **D57** Every shipped surface aims at the best in class.
 - **D58** An evaluator pass in the gate, up to three rounds.
-- **D59** The ladder holds when a prompt calls the work small.
+- **D59** The ladder holds when a prompt calls the work small. *Amended by D143 (proposed): the plan's counts, never the prompt, can choose `build-project`'s small path.*
 - **D74** A build ends with the review, then an acceptance run.
 - **D75** Three records beside `PLAN.md` (`build-project`, Keep the records).
 - **D76** Stage costs totalled into `costs.csv` by `costs.py`.
@@ -203,29 +203,16 @@ Numbers are stable; each line is the choice, what it beat, and where the evidenc
 - **D105** Outside plugins are looked for, vetted and proposed; installing is the owner's step; PR 158.
 - **D113** Untrusted content is a section of `secure-project`.
 - **D114** Threat model and Unattended runs lines in a plan's Runs on.
+- **D142** *(proposed)* A skill fires at a moment the session sees before acting, named alike in its description and context line, never a topic or a state its work creates late, and hands on by invoking the next skill; over topic triggers, which left four skills unloaded in two unattended builds; `write-skills`; issue 181.
+- **D143** *(proposed; amends D27 and D70, signed, and D59)* `build-project` has a small path, read from the plan (at most three milestones, one language, nothing deployed or scheduled, no credential or private data), built in the main session with the review by a fresh agent and the acceptance run always, over one size a session waived; issue 181.
+- **D144** *(proposed; amends D27, signed)* `plan-project` plans in place when the session's start-up model is Opus, and a run with nobody present skips plan mode; issue 186.
+- **D145** *(proposed)* The owner's unattended set-up moves to `build-project`'s `references/unattended.md`, off the builder's path.
 - **D125** *(proposed)* A plan holds to about 5,000 words, 5,500 at most, with a `Next` list, one line per decision and one budget table, cut without waiting for sign-off, over the 17,000 words this one reached; adds R9; `plan-project`; issue 165.
 
 **Running unattended**
 
-D138 removed the launcher, guard and grant; their decisions stay, superseded, so citations resolve.
-
-- **D108** *(superseded by D138)* A guard hook in `manage-project`, asking a person present and refusing when nobody is; PR 161.
-- **D109** *(superseded by D138)* An unattended run starts under the launcher's run profile; PR 161.
-- **D110** *(superseded by D138)* The launcher bounds a run by spend and turns; PR 161.
-- **D111** *(superseded by D138)* A standing grant in `grant.json`, approved by its SHA-256.
+- **D108 to D111, D116 to D124, D131 to D133** *(superseded by D138; D133 decided under delegation, 2026-11-22)* The guard hook and its asks and refusals, the launcher with its run profile, spend and turn bounds, preflight, gate, folders and status file, and the standing grant; PR 161, issue 164; each line's text is at commit `7d7f9fd`.
 - **D112** Asking the owner one question from afar is designed and not built (issue 155).
-- **D116** *(superseded by D138)* Local binding opt-in per launcher run.
-- **D117** *(superseded by D138)* No browser in a launcher run, since Chrome fails inside the macOS sandbox.
-- **D118** *(superseded by D138)* A Haiku preflight before every launcher run.
-- **D119** *(superseded by D138)* The launcher's run folder inside the home folder.
-- **D120** *(superseded by D138)* `finished` decided by the launcher's gate.
-- **D121** *(superseded by D138)* The usage window waited out by the launcher.
-- **D122** *(superseded by D138)* The launcher's `status.json`.
-- **D123** *(superseded by D138)* Grant approval at a terminal.
-- **D124** *(superseded by D138)* The guard asks about connector calls that trade, move money, send or share; issue 164.
-- **D131** *(superseded by D138)* A launcher run's `pre-commit` store and `gh` configuration in its scratch folder.
-- **D132** *(superseded by D138)* A guard refusal names the way round.
-- **D133** *(decided under delegation, 2026-11-22; superseded by D138)* Isolation that reads no commands around unattended runs, and a short guard list.
 - **D138** *(decided by the coordinator under the owner's delegation, 2026-11-22; not the owner's sign-off)* **The plugins carry no security machinery of their own: the launcher with its profile, preflight and gate, the guard hook and the standing grant are removed**, over a fourth sweep hardening them; isolation comes from the vendor and the skills say how to use it.
 An unattended run is a Claude Code cloud session on the project's repository alone, plugins loaded by a start-up hook pinned to a reviewed SHA, the default branch protected, work returned as a branch, "finished" decided by CI on that branch and the owner reading the diff; it is given no private data, money credential, connector or second repository, so such runs stay attended; a local unattended run is the lesser option for low-risk public work, under Claude Code's own `dontAsk` mode, permission rules and sandbox.
 Evidence: issue 173's replay (531 asks of 2,841 calls, 26 worth asking), issue 163, PR 176 closed unmerged, T10; `build-project`, `secure-project`.
@@ -326,7 +313,7 @@ T4's grades are read by script from the last row per line of its `verification.c
 | Plan | S unsigned T2 | S best in class T3; G top model for plans 168 | S classes T4; D threat model | S alone T5 | R Verification lines T1 T2 | D budget line | S kept current T4 | D size rule |
 | Design | D | S design system T3; G medium's conventions 159 | D loopback guard | S alone T5 | D grain, key | D run cost | S pick changed (D69) | — (1) |
 | Build | D pinned plugins loaded, branch back T11, a probe; D finish by the owner's diff | S evaluator T3 | D cloud VM refused an off-list host T10, another repository's API refused, git push untested; D binding branch rule; D permission rules | S alone T5; G subset 152 | S coverage T4; G figures 153 | S Sonnet, `costs.py` T2 | R feedback mid-build T1 T4 | D |
-| Verify | S review T2 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
+| Verify | S review T2; G 181 | S cold read T3 | S secret check, sweeps (T4's R8 not run) | S alone T5 | F Acceptance and R1, R2, R4 failed, five not run T4; G debugging 148 | S `costs.py` T4 | D pick challenged | D |
 | Deploy | D deploy after the owner's merge; G from afar 155 | F dashboard slick and fast T4 (R4) | S deployed at no cost T4 (R6) | S alone T5 | F scheduled slot did not fire T4 (R2) | S free tier T4 (R6); D bill read | S tiers re-checked | — (1) |
 | Operate | F nightly fetch with no machine on T4 (R1, R2); G after failure 151 | D stale alert (T4's R12 not run) | D rotation; G 151 | S alone T5 | D stale threshold (D86) | D usage read | G update cadence 151 | — (1) |
 | Undo | G 156 | — (2) | D a person confirms each delete; G 156 | G 156 | G 156 | — (2) | — (2) | — (2) |
@@ -364,10 +351,11 @@ Sweeps are not milestones; their order is the `Next` list.
 **Next**, in order:
 
 1. The owner's blind ranking of the control build's three arms, run 2026-11-22 (issue 150).
-2. A full sweep ending in an outside review on the top model at maximum effort, which the owner asked for before the intraday trial.
-3. The intraday trial (D90), on the owner's go.
-4. Issues 153, 159 and 160.
-5. Then 148, 151, 155, 156 and the rest, in the order the map's gaps rank them.
+2. The control brief rerun on sweep 17's pin, read for `build-project` loaded and a fresh review before the report (D142, D143).
+3. A full sweep ending in an outside review on the top model at maximum effort, which the owner asked for before the intraday trial.
+4. The intraday trial (D90), on the owner's go.
+5. Issues 153, 159 and 160.
+6. Then 148, 151, 155, 156 and the rest, in the order the map's gaps rank them.
 
 Private-data and real-account trials (M22, M20) are attended for now (D138).
 
@@ -386,7 +374,7 @@ Private-data and real-account trials (M22, M20) are attended for now (D138).
 - **Q13** Accept R9 Legible and the sign-off by exception it implies? — recommended: yes; the alternative keeps every decision waiting for a full read.
 - **Q14** R3 says "enforced, not only advised", while D138 says the plugins enforce nothing: reword R3 to "enforced by the vendor's controls the skills configure", or reverse D138? — recommended: reword.
 
-**Unsigned backlog** (R9): 46 proposed decisions (D54 to D60, D82 to D132 bar the 15 D138 superseded, D139 to D141) and D138, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
+**Unsigned backlog** (R9): 50 proposed decisions (D54 to D60, D82 to D132 bar the 15 D138 superseded, D139 to D145) and D138, decided under delegation, D61's `author.name` sentence, R9, the dated amendments to D9, D12 and D40, and the map; the oldest, D54, dates from 2026-11-12.
 
 ### Ideas
 

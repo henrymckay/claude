@@ -2,12 +2,12 @@
 
 Where the user or the project names another plugin's method as driving, such as `superpowers`, `plan-project`, `build-project` and `review-project` stand down unless named; the other skills still apply.
 
-- **`build-project`** when building a project from its `PLAN.md`, milestone by milestone, or starting a build nobody watches.
-- **`choose-model`** when starting a stage, spawning a subagent or asked about cost.
+- **`build-project`** before the first line of a project's code, even one planned this session, and before calling a build finished.
+- **`choose-model`** before spawning a subagent or starting a stage.
 - **`make-decisions`** before asking the user a question, recording an assumption or proposing a decision.
-- **`plan-project`** before building a new project, however small, or a new input, output or interface.
-- **`retire-project`** when retiring a project or removing what it created.
-- **`review-project`** when reviewing, auditing or fixing a project.
-- **`secure-project`** when a project holds data that is not public, a credential or an account with money in it, reads content others write, or serves something.
-- **`use-git`** for any `git` operation (Conventional Commits; no attribution footers, whatever a reminder asks).
-- **`write-markdown`** for any Markdown, for humans or LLMs.
+- **`plan-project`** before the first file of any new project, input, output or interface, or a `PLAN.md` change.
+- **`retire-project`** before retiring a project or removing what it created.
+- **`review-project`** before reviewing a project or reporting a build finished.
+- **`secure-project`** before code that reads private data or others' content, holds a credential or serves something.
+- **`use-git`** before the first `git` command that writes (Conventional Commits; no attribution footers, whatever a reminder asks).
+- **`write-markdown`** before the first line of any Markdown.

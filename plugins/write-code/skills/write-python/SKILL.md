@@ -3,10 +3,10 @@ name: write-python
 description: >-
   In-code conventions for Python that a formatter can't decide — typing and
   the record type, datetimes and money, docstrings, imports, naming, the one
-  error model, and idioms. Load it before the first line of any Python, even a
-  one-off function answered inline. Use whenever writing, editing, refactoring
-  or reviewing Python — even if the user doesn't mention style or conventions.
-  Not for packaging or tooling, which is setup-python's.
+  error model, and idioms. Load it before the first line of any Python, tests
+  included, even a one-off function answered inline. Use whenever writing,
+  editing, refactoring or reviewing Python — even if the user doesn't mention
+  style or conventions. Not for packaging or tooling, which is setup-python's.
 ---
 
 # Write Python

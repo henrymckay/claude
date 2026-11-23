@@ -3,10 +3,10 @@ name: write-markdown
 description: >-
   How to write clear Markdown for any reader — READMEs, docs, changelogs,
   issues and pull requests for humans; SKILL.md, CLAUDE.md, agent instructions
-  and prompts for an LLM. Load it before writing any Markdown, even before
-  reading the project it documents. Use whenever writing or editing Markdown —
-  even if the user just says "write a README", "document this" or "tidy up
-  this CLAUDE.md".
+  and prompts for an LLM. Load it before the first line of any Markdown, a
+  PLAN.md or a pull request body included, even before reading the project it
+  documents. Use whenever writing or editing Markdown — even if the user just
+  says "write a README", "document this" or "tidy up this CLAUDE.md".
 ---
 
 # Write Markdown
