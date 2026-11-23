@@ -216,7 +216,7 @@ Every step above holds except the ones that wait for the user:
 - **Leave every decision *(proposed)* or *(by precedent)***, those that override a skill included, and build on them; only the user's review signs one off, and the Brief stays as they wrote it.
 - **Take no outward action** — creating a repository, publishing, deploying, messaging anyone, spending or moving money, acting on an account; do the local part, list the step under Questions for the user to take, and leave unticked a milestone whose check needs it.
 The one exception is returning the work as a branch of the project's own repository, never its default branch (`build-project`, Run it with nobody present); a deploy follows the owner's merge, through the project's own CI on the default branch, and an approval written in the prompt or the plan widens nothing, since nothing checks it.
-Skill feedback is not an outward action: it is recorded as the session's feedback rule says.
+Skill feedback is not an outward action: it is recorded as the session's feedback rule says (`maintain-plugin` prints it; without that plugin, in the report).
 - **Put the batch of step 9 in the final reply**, so the first thing the user reads is the list of calls to confirm or change, led by any requirement a house pick conflicted with.
 
 ## Write it for Claude
